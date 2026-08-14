@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { getUserProfile, saveUserProfile } from '../../lib/firestore'
+import { resizeImageToDataUrl } from '../../lib/image'
+import Avatar from './Avatar'
 
 const inputClass =
   'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
@@ -9,6 +11,8 @@ const inputClass =
 export default function ProfileModal({ user, onClose, onSave }) {
   const [name, setName] = useState(user?.displayName || '')
   const [birthday, setBirthday] = useState('')
+  const [photoDataUrl, setPhotoDataUrl] = useState(null)
+  const [photoError, setPhotoError] = useState('')
   const [focused, setFocused] = useState(false)
   const [birthdayFocused, setBirthdayFocused] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -18,8 +22,26 @@ export default function ProfileModal({ user, onClose, onSave }) {
     if (!user?.uid) return
     getUserProfile(user.uid).then((profile) => {
       if (profile?.birthday) setBirthday(profile.birthday)
+      if (profile?.photoDataUrl) setPhotoDataUrl(profile.photoDataUrl)
     })
   }, [user?.uid])
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Elige un archivo de imagen.')
+      return
+    }
+    setPhotoError('')
+    try {
+      const dataUrl = await resizeImageToDataUrl(file)
+      setPhotoDataUrl(dataUrl)
+    } catch {
+      setPhotoError('No pudimos procesar esa imagen.')
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -32,7 +54,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
     setError('')
     try {
       await onSave(trimmed)
-      await saveUserProfile(user.uid, { birthday: birthday || null })
+      await saveUserProfile(user.uid, { birthday: birthday || null, photoDataUrl: photoDataUrl || null })
       onClose()
     } catch {
       setError('No pudimos guardar los cambios.')
@@ -60,6 +82,26 @@ export default function ProfileModal({ user, onClose, onSave }) {
       >
         <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Mi Perfil</h2>
         <p className="mt-1 text-[13px] text-[#888888]">{user?.email}</p>
+
+        <div className="mt-5 flex items-center gap-4">
+          <Avatar photoURL={photoDataUrl} displayName={name} email={user?.email} size={56} />
+          <div>
+            <label className="cursor-pointer text-[13px] font-medium text-[#1E5FAD] hover:underline">
+              {photoDataUrl ? 'Cambiar foto' : 'Subir foto'}
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+            {photoDataUrl && (
+              <button
+                type="button"
+                onClick={() => setPhotoDataUrl(null)}
+                className="ml-3 text-[13px] text-[#888888] hover:text-[#F5F5F5]"
+              >
+                Quitar
+              </button>
+            )}
+            {photoError && <p className="mt-1 text-[12px] text-[#888888]">{photoError}</p>}
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <div>

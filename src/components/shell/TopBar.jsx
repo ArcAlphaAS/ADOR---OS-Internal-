@@ -7,7 +7,9 @@ import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
+import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
+import { useUserPhoto } from '../../hooks/useUserPhoto'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
 // pill expanding) — a symmetric ease-in-out curve reads as smoother/more
@@ -31,28 +33,6 @@ function shortFullName(user) {
   return raw.trim().split(/\s+/).slice(0, 2).join(' ')
 }
 
-function Avatar({ user, size = 32 }) {
-  if (user?.photoURL) {
-    return (
-      <img
-        src={user.photoURL}
-        alt=""
-        referrerPolicy="no-referrer"
-        className="flex-shrink-0 rounded-full object-cover"
-        style={{ width: size, height: size }}
-      />
-    )
-  }
-  const initial = (user?.displayName || user?.email || '?').charAt(0).toUpperCase()
-  return (
-    <div
-      className="flex flex-shrink-0 items-center justify-center rounded-full bg-[#1E5FAD] font-medium text-[#F5F5F5]"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {initial}
-    </div>
-  )
-}
 
 function PillTabs({ activeModule, onNavigate }) {
   return (
@@ -125,6 +105,7 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
   const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
   const [hovered, setHovered] = useState(false)
+  const photoURL = useUserPhoto(user?.uid, user?.photoURL)
 
   useEffect(() => {
     if (!profileOpen) return
@@ -166,7 +147,7 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
             </motion.span>
           )}
         </AnimatePresence>
-        <Avatar user={user} size={32} />
+        <Avatar photoURL={photoURL} displayName={user?.displayName} email={user?.email} size={32} />
       </motion.div>
 
       {rect &&

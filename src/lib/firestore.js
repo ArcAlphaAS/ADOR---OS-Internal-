@@ -105,6 +105,15 @@ export function subscribeUsers(onData) {
   return subscribeToCollection(COLLECTIONS.users, [], onData)
 }
 
+export function subscribeUserProfile(userId, onData) {
+  if (!db || !userId) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.users, userId),
+    (snap) => onData(snap.exists() ? snap.data() : null),
+    (error) => console.error('Firestore subscription to user profile failed:', error.message)
+  )
+}
+
 // ---- Clientes (SPC/SP) ----
 
 export function createClient(data, actorName) {

@@ -1,28 +1,7 @@
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-
-function Avatar({ user, size }) {
-  if (user?.photoURL) {
-    return (
-      <img
-        src={user.photoURL}
-        alt=""
-        referrerPolicy="no-referrer"
-        className="rounded-full object-cover"
-        style={{ width: size, height: size }}
-      />
-    )
-  }
-  const initial = (user?.displayName || user?.email || '?').charAt(0).toUpperCase()
-  return (
-    <div
-      className="flex items-center justify-center rounded-full bg-[#1E5FAD] font-medium text-[#F5F5F5]"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {initial}
-    </div>
-  )
-}
+import Avatar from './Avatar'
+import { useUserPhoto } from '../../hooks/useUserPhoto'
 
 const MENU_ITEMS = [
   { id: 'perfil', label: 'Mi Perfil' },
@@ -46,6 +25,7 @@ function formatLastSignIn(user) {
 }
 
 export default function ProfileMenu({ user, name, role, onClose, onSelect, anchorRect }) {
+  const photoURL = useUserPhoto(user?.uid, user?.photoURL)
   if (!anchorRect) return null
 
   const lastSignIn = formatLastSignIn(user)
@@ -70,7 +50,7 @@ export default function ProfileMenu({ user, name, role, onClose, onSelect, ancho
       }}
     >
       <div className="flex flex-col items-center gap-2 px-4 py-5">
-        <Avatar user={user} size={40} />
+        <Avatar photoURL={photoURL} displayName={user?.displayName} email={user?.email} size={40} />
         <div className="text-center leading-tight">
           <div className="text-[13px] font-semibold text-[#F5F5F5]">{name}</div>
           <div className="mt-0.5 text-[11px] text-[#888888]">{role}</div>
