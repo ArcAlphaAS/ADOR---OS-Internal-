@@ -1,9 +1,19 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createTask, createProyectoInterno } from '../../lib/firestore'
-import { LAYERS, currentLayer, workstreamId as buildWorkstreamId, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
+import {
+  LAYERS,
+  currentLayer,
+  workstreamId as buildWorkstreamId,
+  TASK_ROW_GRID,
+  withTimeout,
+  PRIORITIES,
+  STATUSES,
+  priorityMeta,
+} from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
+import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
 
 // Shown instead of a real workstream when the company has none yet — never
@@ -46,17 +56,26 @@ function LayerIndicator({ week, totalWeeks }) {
   )
 }
 
-function InlineAddTask({ workstreamId, actorUserId, actorName }) {
+function emptyDraft(actorUserId) {
+  return { title: '', description: '', assignedTo: actorUserId ? [actorUserId] : [], priority: 'media', startDate: null, dueDate: null }
+}
+
+// Renders as a full grid row (same TASK_ROW_GRID as TaskRow) so Asignado,
+// Prioridad, Estimación, and Descripción can each be set independently
+// *before* the task exists — reusing the exact same cell components
+// TaskRow uses, just against local draft state instead of a Firestore doc.
+// Only the title input's Enter key saves; there's deliberately no onBlur
+// auto-submit here, since clicking into any of the other cells (they're all
+// separate popover triggers) would otherwise blur the title and submit
+// early with whatever was typed so far.
+function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }) {
   const [adding, setAdding] = useState(false)
-  const [title, setTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [draft, setDraft] = useState(() => emptyDraft(actorUserId))
   const showToast = useToast()
 
   const submit = async () => {
-    if (!title.trim()) {
-      setAdding(false)
-      return
-    }
+    if (!draft.title.trim()) return
     setSaving(true)
     try {
       let targetWorkstreamId = workstreamId
@@ -66,11 +85,11 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
       }
       await withTimeout(
         createTask(
-          { title: title.trim(), workstreamId: targetWorkstreamId, assignedTo: [actorUserId], priority: 'media', dueDate: null },
+          { ...draft, title: draft.title.trim(), description: draft.description.trim(), workstreamId: targetWorkstreamId },
           actorName
         )
       )
-      setTitle('')
+      setDraft(emptyDraft(actorUserId))
     } catch (error) {
       showToast(`No se pudo crear la tarea: ${error.message}`)
     } finally {
@@ -90,25 +109,63 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
     )
   }
 
+  const firstStatus = STATUSES[0]
+
   return (
-    <div className="px-2 py-1">
+    <div
+      className="grid items-center gap-3 rounded-lg px-2 py-2"
+      style={{ gridTemplateColumns: TASK_ROW_GRID }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          setDraft(emptyDraft(actorUserId))
+          setAdding(false)
+        }
+      }}
+    >
+      <span className="h-[15px] w-[15px] flex-shrink-0 rounded-full border" style={{ borderColor: '#444444' }} />
+
       <input
         autoFocus
         type="text"
         disabled={saving}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit()
-          if (e.key === 'Escape') {
-            setTitle('')
-            setAdding(false)
-          }
-        }}
-        onBlur={submit}
+        value={draft.title}
+        onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Título de la tarea — Enter para guardar'}
-        className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
+
+      <DescriptionCell description={draft.description} onChange={(text) => setDraft((d) => ({ ...d, description: text }))} />
+
+      <AssigneeCell
+        assignedTo={draft.assignedTo}
+        userById={userById}
+        users={users}
+        onChange={(next) => setDraft((d) => ({ ...d, assignedTo: next }))}
+      />
+
+      <PillCell
+        options={PRIORITIES}
+        value={draft.priority}
+        meta={priorityMeta(draft.priority)}
+        onChange={(id) => setDraft((d) => ({ ...d, priority: id }))}
+      />
+
+      <EstimationCell
+        startDate={draft.startDate}
+        dueDate={draft.dueDate}
+        overdue={false}
+        dueToday={false}
+        onChangeStart={(date) => setDraft((d) => ({ ...d, startDate: date }))}
+        onChangeDue={(date) => setDraft((d) => ({ ...d, dueDate: date }))}
+      />
+
+      <span
+        className="w-fit rounded-full px-2.5 py-1 text-[11px] font-medium"
+        style={{ background: `${firstStatus.color}22`, color: firstStatus.color }}
+      >
+        {firstStatus.label}
+      </span>
     </div>
   )
 }
@@ -178,7 +235,7 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
             )}
 
             <div className="overflow-x-auto px-3 pb-3">
-              <div style={{ minWidth: 620 }}>
+              <div style={{ minWidth: 680 }}>
                 <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                   {COLUMN_HEADERS.map((h, i) => (
                     <span
@@ -198,7 +255,13 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
                 </div>
 
                 <div className="pt-1">
-                  <InlineAddTask workstreamId={workstream.id} actorUserId={actorUserId} actorName={actorName} />
+                  <InlineAddTask
+                    workstreamId={workstream.id}
+                    actorUserId={actorUserId}
+                    actorName={actorName}
+                    userById={userById}
+                    users={users}
+                  />
                 </div>
               </div>
             </div>
