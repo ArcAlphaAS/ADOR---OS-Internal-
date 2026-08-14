@@ -100,7 +100,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
   )
 }
 
-function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId, actorName }) {
+function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actorUserId, actorName }) {
   const [collapsed, setCollapsed] = useState(false)
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
@@ -180,7 +180,7 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
 
                 <div className="flex flex-col divide-y divide-white/[0.04]">
                   {tasks.map((task) => (
-                    <TaskRow key={task.id} task={task} userById={userById} onOpen={onOpenTask} />
+                    <TaskRow key={task.id} task={task} userById={userById} users={users} onOpen={onOpenTask} />
                   ))}
                 </div>
 
@@ -196,7 +196,7 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
   )
 }
 
-export default function ListaView({ workstreams, tasksByWorkstream, userById, onOpenTask, actorUserId, actorName }) {
+export default function ListaView({ workstreams, tasksByWorkstream, userById, users, onOpenTask, actorUserId, actorName }) {
   const visibleGroups = workstreams.length > 0 ? workstreams : [GENERAL_WORKSTREAM]
 
   return (
@@ -207,6 +207,7 @@ export default function ListaView({ workstreams, tasksByWorkstream, userById, on
           workstream={w}
           tasks={(w.id && tasksByWorkstream.get(w.id)) || []}
           userById={userById}
+          users={users}
           onOpenTask={onOpenTask}
           actorUserId={actorUserId}
           actorName={actorName}

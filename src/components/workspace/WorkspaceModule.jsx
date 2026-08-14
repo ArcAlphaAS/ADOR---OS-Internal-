@@ -96,6 +96,7 @@ export default function WorkspaceModule({ user }) {
                 workstreams={visibleWorkstreams}
                 tasksByWorkstream={tasksByWorkstream}
                 userById={userById}
+                users={users}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
                 actorUserId={user?.uid}
                 actorName={actorName}
