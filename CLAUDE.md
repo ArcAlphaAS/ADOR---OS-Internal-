@@ -51,6 +51,12 @@ This split came from direct user reference images (a pill-tab nav bar + a separa
 
 Shows on: first login of the day, or returning after 13:00 when the last login was before 13:00 same day. Tracked via `localStorage` keys `ador_last_login_at` and `ador_welcome_shown` (keyed by date + time-block so it never repeats within the same block). If this logic ever needs to change, the block boundaries (`morning` 6–13, `lunch` 13–15, `afternoon` 15–19, `evening` 19–6) are in that file.
 
+### 7. Finance lives on Home now, Finanzas module later — deliberately not merged into Clientes
+
+User asked (2026-08-14) where a financial overview for founders should live, and specifically floated combining it with Clientes. Decision: keep them separate. Clientes is a CRM/relationship model (client status, intervention progress); finance is a money-flow model (revenue, eventually expenses/runway) — different mental models that get harder to scan together as both grow, even though finance will eventually reference `clientId` for per-client breakdowns.
+
+What shipped now: a compact `FinanceBlock.jsx` on Home (latest monthly revenue, % change vs. prior month, hand-drawn SVG sparkline of the last 6 months — no charting library, per the "every control is hand-built" convention) reading from a new `revenue` Firestore collection (`{ month: 'YYYY-MM', amount: number }`, one doc per month). There's no data-entry UI yet — records are added by hand via the Firestore console until the full Finanzas module (a top-bar or sidebar nav item, TBD which surface) gets built with real forms and per-client drill-down.
+
 ## "Psychology of software" polish already applied (Phase 2)
 
 These came from an explicit design discussion — worth preserving as a pattern, not just one-off features:
@@ -73,6 +79,7 @@ These came from an explicit design discussion — worth preserving as a pattern,
 ## Next recommended steps (in priority order, as discussed with the user)
 
 1. **Build out one real module end-to-end** — user's stated preference is **Clientes** (core to the CRM concept), rather than spreading effort thin across all 10 placeholder modules at once. This is now the highest-value next step: auth, data layer, deployment, and profile/settings are all done, so Clientes is the next real milestone.
+2. **Build a dedicated Finanzas module** (2026-08-14 decision — see "Finance lives on Home now, Finanzas module later" below for why it's not merged into Clientes). A `revenue` Firestore collection and a Home summary block already exist; the module needs its own data-entry UI (records are currently added by hand via the Firestore console) and per-client revenue breakdowns.
 
 ## Other context that only exists in conversation history (not in any file)
 

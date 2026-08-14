@@ -1,4 +1,14 @@
-import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore'
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  doc,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 
 // Central data model. Every entity references related entities by ID —
@@ -11,6 +21,7 @@ import { app, isFirebaseConfigured } from '../firebase'
 //   /decisions/{decisionId}         references interventionId
 //   /meetings/{meetingId}           references clientId
 //   /notifications/{notificationId} references userId
+//   /revenue/{recordId}             { month: 'YYYY-MM', amount: number } — one per month
 export const COLLECTIONS = {
   users: 'users',
   clients: 'clients',
@@ -19,6 +30,7 @@ export const COLLECTIONS = {
   decisions: 'decisions',
   meetings: 'meetings',
   notifications: 'notifications',
+  revenue: 'revenue',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -66,6 +78,10 @@ export function subscribeNotificationsForUser(userId, onData) {
     [where('userId', '==', userId)],
     onData
   )
+}
+
+export function subscribeRevenue(onData) {
+  return subscribeToCollection(COLLECTIONS.revenue, [orderBy('month', 'asc')], onData)
 }
 
 // Profile fields that live outside Firebase Auth (which only holds

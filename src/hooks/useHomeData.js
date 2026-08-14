@@ -5,6 +5,7 @@ import {
   subscribeTasksForUser,
   subscribeDecisions,
   subscribeMeetings,
+  subscribeRevenue,
 } from '../lib/firestore'
 
 // Shapes expected on each collection (beyond what's in firestore.js):
@@ -13,17 +14,20 @@ import {
 //   tasks:         { assignedTo, title, dueDate: Timestamp, status }
 //   decisions:     { title, decidedAt: Timestamp }
 //   meetings:      { title, startsAt: Timestamp }
+//   revenue:       { month: 'YYYY-MM', amount: number } — one doc per month
 export function useHomeData(userId) {
   const [clients, setClients] = useState([])
   const [interventions, setInterventions] = useState([])
   const [tasks, setTasks] = useState([])
   const [decisions, setDecisions] = useState([])
   const [meetings, setMeetings] = useState([])
+  const [revenue, setRevenue] = useState([])
 
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeInterventions(setInterventions), [])
   useEffect(() => subscribeDecisions(setDecisions), [])
   useEffect(() => subscribeMeetings(setMeetings), [])
+  useEffect(() => subscribeRevenue(setRevenue), [])
   useEffect(() => {
     if (!userId) return
     return subscribeTasksForUser(userId, setTasks)
@@ -58,6 +62,13 @@ export function useHomeData(userId) {
     .filter((d) => d.decidedAt?.toDate)
     .sort((a, b) => b.decidedAt.toDate() - a.decidedAt.toDate())[0]
 
+  const latestRevenue = revenue[revenue.length - 1]
+  const previousRevenue = revenue[revenue.length - 2]
+  const revenueChangePct =
+    latestRevenue && previousRevenue?.amount
+      ? ((latestRevenue.amount - previousRevenue.amount) / previousRevenue.amount) * 100
+      : null
+
   return {
     activeClientsCount: activeClients.length,
     activeInterventionsCount: activeInterventions.length,
@@ -65,5 +76,8 @@ export function useHomeData(userId) {
     interventions: interventionRows,
     upcomingMeeting,
     latestDecision,
+    revenueSeries: revenue.slice(-6),
+    latestRevenueAmount: latestRevenue?.amount,
+    revenueChangePct,
   }
 }

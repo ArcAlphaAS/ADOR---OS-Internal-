@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-08-14. This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-08-14 (later same day). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -32,6 +32,7 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 - [x] Metrics row (3 cards) — shimmer skeletons, no real values
 - [x] Interventions card — pulsing live-dot, shimmer empty state
 - [x] Meeting + Decision cards — breathing icons, empty-state copy
+- [x] Finance block — latest monthly revenue, % change vs. prior month, hand-drawn SVG sparkline (last 6 months), shimmer empty state. Reads from new `revenue` Firestore collection — no input UI yet, records are added manually via Firestore console until a full Finanzas module exists
 - [x] Activity list — pulsing dot, "todo al día" empty state
 - [x] Quick Links — Google Drive only
 
@@ -57,4 +58,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: build out the Clientes module end-to-end (highest-value next milestone now that the platform itself is operational for daily use).
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: build out the Clientes module end-to-end, then a dedicated Finanzas module (deliberately kept separate from Clientes — see CLAUDE.md for why) with real data-entry UI instead of manual Firestore console edits.

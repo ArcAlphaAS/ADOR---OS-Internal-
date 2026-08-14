@@ -3,6 +3,7 @@ import { firstName } from '../../lib/user'
 import { useHomeData } from '../../hooks/useHomeData'
 import GreetingBlock from './GreetingBlock'
 import MetricsBlock from './MetricsBlock'
+import FinanceBlock from './FinanceBlock'
 import InterventionsBlock from './InterventionsBlock'
 import MeetingDecisionBlock from './MeetingDecisionBlock'
 import ActivityBlock from './ActivityBlock'
@@ -16,6 +17,9 @@ export default function HomeScreen({ user, onNavigate }) {
     interventions,
     upcomingMeeting,
     latestDecision,
+    revenueSeries,
+    latestRevenueAmount,
+    revenueChangePct,
   } = useHomeData(user?.uid)
 
   return (
@@ -31,6 +35,11 @@ export default function HomeScreen({ user, onNavigate }) {
         activeClientsCount={activeClientsCount}
         activeInterventionsCount={activeInterventionsCount}
         tasksTodayCount={tasksTodayCount}
+      />
+      <FinanceBlock
+        latestRevenueAmount={latestRevenueAmount}
+        revenueChangePct={revenueChangePct}
+        revenueSeries={revenueSeries}
       />
       <InterventionsBlock interventions={interventions} />
       <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
