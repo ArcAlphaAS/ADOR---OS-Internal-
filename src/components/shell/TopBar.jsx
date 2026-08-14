@@ -7,9 +7,12 @@ import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
-// pill expanding) — a soft "expo out" curve reads as more premium than the
-// linear/easeOut used for simple fades elsewhere.
-const REFLOW_TRANSITION = { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+// pill expanding) — a symmetric ease-in-out curve reads as smoother/more
+// deliberate than a pure ease-out, which front-loads all the motion into the
+// first ~100ms and reads as an abrupt snap. `type: 'tween'` is required here:
+// Framer Motion's `layout` prop defaults to a spring for size/position
+// animations and silently ignores a plain duration/ease transition otherwise.
+const REFLOW_TRANSITION = { type: 'tween', duration: 0.35, ease: [0.65, 0, 0.35, 1] }
 
 const PRIMARY_MODULES = [
   { id: 'inicio', label: 'Inicio' },
