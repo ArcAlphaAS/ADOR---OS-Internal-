@@ -190,14 +190,7 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
                   <div className="fixed inset-0 z-40" onClick={onCloseAll} />,
                   document.body
                 )}
-                <ProfileMenu
-                  user={user}
-                  name={name}
-                  role={role}
-                  anchorRect={rect}
-                  onClose={onCloseAll}
-                  onSelect={onSelect}
-                />
+                <ProfileMenu user={user} anchorRect={rect} onClose={onCloseAll} onSelect={onSelect} />
               </>
             )}
           </AnimatePresence>,
