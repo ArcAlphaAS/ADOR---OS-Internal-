@@ -19,7 +19,7 @@ const MODULE_LABELS = {
   'ador-ia': 'ADOR IA',
 }
 
-export default function AppShell({ user, onSignOut }) {
+export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
   const [activeModule, setActiveModule] = useState('inicio')
 
   return (
@@ -30,7 +30,14 @@ export default function AppShell({ user, onSignOut }) {
           'radial-gradient(ellipse at 50% 30%, rgba(30,95,173,0.06) 0%, transparent 60%)',
       }}
     >
-      <TopBar user={user} onSignOut={onSignOut} activeModule={activeModule} onNavigate={setActiveModule} />
+      <TopBar
+        user={user}
+        onSignOut={onSignOut}
+        onUpdateDisplayName={onUpdateDisplayName}
+        onResetPassword={onResetPassword}
+        activeModule={activeModule}
+        onNavigate={setActiveModule}
+      />
 
       <div className="flex min-h-0 flex-1">
         <Sidebar activeModule={activeModule} onNavigate={setActiveModule} />

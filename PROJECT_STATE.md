@@ -22,7 +22,9 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 - [x] Sidebar — floating capsule (Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA)
 - [x] Search icon → expands to input (non-functional placeholder, real UI)
 - [x] Notification bell → dropdown (empty-state only, no real notifications)
-- [x] Profile avatar → hover reveals name/role, click opens compact dropdown (Mi Perfil / Configuración / Cerrar Sesión — only Cerrar Sesión is wired)
+- [x] Profile avatar → hover reveals name/role (smooth push-reflow animation, no overlap), click opens compact dropdown (Mi Perfil / Configuración / Cerrar Sesión — all three wired)
+- [x] Mi Perfil modal — edit and save display name (Firebase `updateProfile`)
+- [x] Configuración modal — change password via reset email
 - [x] Module placeholders for everything except Inicio ("En construcción")
 
 **Phase 2 — Home (only module with real content)**
@@ -35,7 +37,6 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 
 **Not built yet**
 - [ ] No module besides Inicio has real content (Workspace, Objetivos, Calendario, Clientes, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
-- [ ] "Mi Perfil" / "Configuración" menu items do nothing
 
 ## Infrastructure status
 

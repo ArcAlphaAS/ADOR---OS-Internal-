@@ -45,13 +45,13 @@ function formatLastSignIn(user) {
   return text.replace('.', '')
 }
 
-export default function ProfileMenu({ user, name, role, onClose, onSignOut, anchorRect }) {
+export default function ProfileMenu({ user, name, role, onClose, onSelect, anchorRect }) {
   if (!anchorRect) return null
 
   const lastSignIn = formatLastSignIn(user)
 
   const handleClick = (id) => {
-    if (id === 'logout') onSignOut?.()
+    onSelect?.(id)
     onClose?.()
   }
 

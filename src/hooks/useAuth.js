@@ -4,6 +4,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updateProfile,
 } from 'firebase/auth'
 import { auth } from '../firebase'
 
@@ -39,5 +40,13 @@ export function useAuth() {
     return firebaseSignOut(auth)
   }, [])
 
-  return { user, loading, signInWithEmail, resetPassword, signOut }
+  // Firebase mutates auth.currentUser in place on updateProfile, but React
+  // won't re-render from that alone — merge the change into local state too.
+  const updateDisplayName = useCallback(async (displayName) => {
+    if (!auth?.currentUser) return Promise.reject(NOT_CONFIGURED)
+    await updateProfile(auth.currentUser, { displayName })
+    setUser((prev) => (prev ? { ...prev, displayName } : prev))
+  }, [])
+
+  return { user, loading, signInWithEmail, resetPassword, signOut, updateDisplayName }
 }

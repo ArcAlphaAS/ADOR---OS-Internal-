@@ -24,7 +24,7 @@ function App() {
   const [loginNotice, setLoginNotice] = useState('')
   const [welcomeDismissed, setWelcomeDismissed] = useState(false)
 
-  const { user, loading, signInWithEmail, resetPassword, signOut } = useAuth()
+  const { user, loading, signInWithEmail, resetPassword, signOut, updateDisplayName } = useAuth()
   const welcome = useWelcomeScreen(user ? user.uid : null)
 
   useEffect(() => {
@@ -106,11 +106,27 @@ function App() {
       />
     )
   } else {
-    content = <AppShell key="home" user={user} onSignOut={signOut} />
+    content = (
+      <AppShell
+        key="home"
+        user={user}
+        onSignOut={signOut}
+        onUpdateDisplayName={updateDisplayName}
+        onResetPassword={resetPassword}
+      />
+    )
   }
 
   if (PREVIEW_MOCK_USER) {
-    content = <AppShell key="home" user={PREVIEW_MOCK_USER} onSignOut={() => {}} />
+    content = (
+      <AppShell
+        key="home"
+        user={PREVIEW_MOCK_USER}
+        onSignOut={() => {}}
+        onUpdateDisplayName={() => Promise.resolve()}
+        onResetPassword={() => Promise.resolve()}
+      />
+    )
   }
 
   return (

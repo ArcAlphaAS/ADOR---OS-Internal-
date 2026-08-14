@@ -5,6 +5,8 @@ import Logo from '../Logo'
 import { SearchIcon, BellIcon } from '../icons'
 import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
+import ProfileModal from './ProfileModal'
+import SettingsModal from './SettingsModal'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
 // pill expanding) — a symmetric ease-in-out curve reads as smoother/more
@@ -118,7 +120,7 @@ function SearchToggle() {
 // capsule, so it doesn't hit the width-leak bug described in Sidebar.jsx.
 // Only the click-to-open ProfileMenu dropdown is portaled, since it needs to
 // float above everything at a viewport-anchored position.
-function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSignOut }) {
+function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
   const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
   const [hovered, setHovered] = useState(false)
@@ -181,7 +183,7 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSignOut }) {
                   role={role}
                   anchorRect={rect}
                   onClose={onClose}
-                  onSignOut={onSignOut}
+                  onSelect={onSelect}
                 />
               </>
             )}
@@ -192,10 +194,19 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSignOut }) {
   )
 }
 
-export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasUnreadNotifications = false }) {
+export default function TopBar({
+  user,
+  onSignOut,
+  onUpdateDisplayName,
+  onResetPassword,
+  activeModule,
+  onNavigate,
+  hasUnreadNotifications = false,
+}) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
 
   useEffect(() => {
@@ -203,6 +214,7 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
       if (e.key !== 'Escape') return
       setNotifOpen(false)
       setProfileOpen(false)
+      setActiveModal(null)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -211,6 +223,12 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
   const toggleNotif = () => {
     if (!notifOpen) setNotifRect(bellRef.current.getBoundingClientRect())
     setNotifOpen((v) => !v)
+  }
+
+  const handleMenuSelect = (id) => {
+    if (id === 'logout') onSignOut?.()
+    else if (id === 'perfil') setActiveModal('profile')
+    else if (id === 'config') setActiveModal('settings')
   }
 
   return (
@@ -263,9 +281,28 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
           profileOpen={profileOpen}
           onToggle={() => setProfileOpen((v) => !v)}
           onClose={() => setProfileOpen(false)}
-          onSignOut={onSignOut}
+          onSelect={handleMenuSelect}
         />
       </motion.div>
+
+      <AnimatePresence>
+        {activeModal === 'profile' && (
+          <ProfileModal
+            key="profile-modal"
+            user={user}
+            onClose={() => setActiveModal(null)}
+            onSave={onUpdateDisplayName}
+          />
+        )}
+        {activeModal === 'settings' && (
+          <SettingsModal
+            key="settings-modal"
+            user={user}
+            onClose={() => setActiveModal(null)}
+            onResetPassword={onResetPassword}
+          />
+        )}
+      </AnimatePresence>
     </header>
   )
 }
