@@ -1,8 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { priorityMeta, statusMeta } from '../../lib/workspace'
 
-const PX_PER_DAY = 30
-const MIN_BAR_WIDTH = 90
 const DAY_MS = 86400000
 
 function startOfDay(date) {
@@ -10,25 +8,116 @@ function startOfDay(date) {
   d.setHours(0, 0, 0, 0)
   return d
 }
-
-function pickTickStepDays(spanDays) {
-  if (spanDays <= 14) return 1
-  if (spanDays <= 40) return 5
-  if (spanDays <= 90) return 10
-  return 15
+function addDays(date, n) {
+  return new Date(date.getTime() + n * DAY_MS)
 }
-
-function formatShort(date) {
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+function addMonths(date, n) {
+  return new Date(date.getFullYear(), date.getMonth() + n, 1)
+}
+function startOfQuarter(date) {
+  return new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1)
+}
+function quarterLabel(date) {
+  return `T${Math.floor(date.getMonth() / 3) + 1} ${date.getFullYear()}`
+}
+function shortDate(date) {
   return date.toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '')
 }
+function monthLabel(date) {
+  const label = date.toLocaleDateString('es', { month: 'short' }).replace('.', '')
+  return date.getMonth() === 0 ? `${label} ${date.getFullYear()}` : label
+}
+
+// Each granularity controls three independent things: how zoomed-in the
+// pixel scale is (pxPerDay), how far the default window reaches before/after
+// today (real task dates always extend this if they fall outside it — see
+// below), and how the axis ticks are generated/labeled. Day and week tick by
+// calendar day; month/quarter/year tick by calendar unit so labels land on
+// real month/quarter/year boundaries instead of arbitrary N-day offsets.
+const RANGES = {
+  dia: {
+    label: 'Día',
+    pxPerDay: 72,
+    padBefore: 2,
+    padAfter: 12,
+    minBarWidth: 110,
+    ticks(min, max) {
+      const out = []
+      for (let d = startOfDay(min); d <= max; d = addDays(d, 1)) out.push(d)
+      return out
+    },
+    format: shortDate,
+  },
+  semana: {
+    label: 'Semana',
+    pxPerDay: 22,
+    padBefore: 7,
+    padAfter: 35,
+    minBarWidth: 90,
+    ticks(min, max) {
+      const out = []
+      for (let d = startOfDay(min); d <= max; d = addDays(d, 7)) out.push(d)
+      return out
+    },
+    format: shortDate,
+  },
+  mes: {
+    label: 'Mes',
+    pxPerDay: 8,
+    padBefore: 14,
+    padAfter: 120,
+    minBarWidth: 70,
+    ticks(min, max) {
+      const out = []
+      for (let d = startOfMonth(min); d <= max; d = addMonths(d, 1)) out.push(d)
+      return out
+    },
+    format: monthLabel,
+  },
+  trimestre: {
+    label: 'Trimestre',
+    pxPerDay: 3,
+    padBefore: 20,
+    padAfter: 270,
+    minBarWidth: 56,
+    ticks(min, max) {
+      const out = []
+      for (let d = startOfQuarter(min); d <= max; d = addMonths(d, 3)) out.push(d)
+      return out
+    },
+    format: quarterLabel,
+  },
+  año: {
+    label: 'Año',
+    pxPerDay: 1.4,
+    padBefore: 30,
+    padAfter: 420,
+    minBarWidth: 44,
+    ticks(min, max) {
+      const out = []
+      for (let d = startOfMonth(min); d <= max; d = addMonths(d, 1)) out.push(d)
+      return out
+    },
+    format: monthLabel,
+  },
+}
+
+const RANGE_ORDER = ['dia', 'semana', 'mes', 'trimestre', 'año']
 
 export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTask }) {
   const [hoverTaskId, setHoverTaskId] = useState(null)
+  const [range, setRange] = useState('semana')
+  const config = RANGES[range]
+  const scrollRef = useRef(null)
 
   const now = startOfDay(new Date())
   const datedByWorkstream = workstreams
     .map((w) => ({ workstream: w, tasks: (tasksByWorkstream.get(w.id) || []).filter((t) => t.dueDate?.toDate) }))
     .filter((g) => g.tasks.length > 0)
+  const hasDatedTasks = datedByWorkstream.length > 0
 
   const allDates = [now]
   for (const group of datedByWorkstream) {
@@ -39,46 +128,62 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
     }
   }
 
-  const hasDatedTasks = datedByWorkstream.length > 0
-
   const rawMin = new Date(Math.min(...allDates.map((d) => d.getTime())))
   const rawMax = new Date(Math.max(...allDates.map((d) => d.getTime())))
-  // With no dated tasks yet, allDates only holds `now` — default to a
-  // 5-week window (a week back, a month ahead) so the calendar axis and
-  // "Hoy" line still render instead of the board looking broken/empty.
-  const minDate = new Date(rawMin.getTime() - (hasDatedTasks ? 3 : 7) * DAY_MS)
-  const maxDate = new Date(rawMax.getTime() + (hasDatedTasks ? 5 : 30) * DAY_MS)
+  // Real task dates always win over the granularity's default window — a
+  // task due in 4 months still shows up in "Día" view, just far down the
+  // (scrollable) track, rather than being silently clipped.
+  const minDate = new Date(Math.min(rawMin.getTime(), now.getTime()) - config.padBefore * DAY_MS)
+  const maxDate = new Date(Math.max(rawMax.getTime(), now.getTime()) + config.padAfter * DAY_MS)
   const spanDays = Math.max(1, Math.round((maxDate - minDate) / DAY_MS))
-  const trackWidth = spanDays * PX_PER_DAY
+  const trackWidth = Math.max(600, spanDays * config.pxPerDay)
 
-  const dateToX = (date) => ((date.getTime() - minDate.getTime()) / DAY_MS) * PX_PER_DAY
+  const dateToX = (date) => ((date.getTime() - minDate.getTime()) / DAY_MS) * config.pxPerDay
 
-  const tickStep = pickTickStepDays(spanDays)
-  const ticks = []
-  for (let d = 0; d <= spanDays; d += tickStep) {
-    ticks.push(new Date(minDate.getTime() + d * DAY_MS))
-  }
-
+  const ticks = config.ticks(minDate, maxDate)
   const nowX = dateToX(now)
-  const totalMonths = (spanDays / 30).toFixed(1).replace('.0', '')
+  const spanLabel = spanDays >= 60 ? `${(spanDays / 30).toFixed(1).replace('.0', '')} meses` : `${spanDays} días`
+
+  // Center the scroll on "Hoy" whenever the range/track changes — without
+  // this, a track that extends far into the future (a real task due in
+  // months) leaves the viewport parked at the far-left edge by default,
+  // showing mostly empty space instead of what's actually relevant now.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollLeft = Math.max(0, nowX - el.clientWidth / 2)
+  }, [range, nowX])
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[12px] text-[#888888]">Duración visible: {totalMonths} meses</span>
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-[12px] text-[#888888]">Rango visible: {spanLabel}</span>
+        <div className="ador-glass flex items-center gap-1 rounded-full p-1">
+          {RANGE_ORDER.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setRange(id)}
+              className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150"
+              style={{ background: range === id ? '#1E5FAD' : 'transparent', color: range === id ? '#F5F5F5' : '#888888' }}
+            >
+              {RANGES[id].label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="overflow-x-auto pb-4">
+      <div ref={scrollRef} className="overflow-x-auto pb-4">
         <div className="relative" style={{ width: trackWidth, minWidth: '100%' }}>
           {/* Date axis */}
           <div className="relative flex h-8 items-center border-b border-white/[0.06]">
             {ticks.map((tick) => (
               <span
                 key={tick.getTime()}
-                className="absolute text-[11px] text-[#444444]"
+                className="absolute whitespace-nowrap text-[11px] text-[#444444]"
                 style={{ left: dateToX(tick), transform: 'translateX(-50%)' }}
               >
-                {formatShort(tick)}
+                {config.format(tick)}
               </span>
             ))}
             <span
@@ -121,7 +226,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                       const priority = priorityMeta(task.priority)
                       const days = Math.max(1, Math.round((due - start) / DAY_MS))
                       const left = dateToX(start)
-                      const width = Math.max(MIN_BAR_WIDTH, dateToX(due) - dateToX(start))
+                      const width = Math.max(config.minBarWidth, dateToX(due) - dateToX(start))
                       const hovering = hoverTaskId === task.id
 
                       return (
@@ -154,12 +259,14 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                               onMouseLeave={() => setHoverTaskId(null)}
                             >
                               <span className="truncate text-[13px] font-medium text-[#F5F5F5]">{task.title}</span>
-                              <span
-                                className="flex-shrink-0 rounded-full px-2 py-0.5 font-medium"
-                                style={{ fontSize: 10, background: 'rgba(255,255,255,0.12)', color: '#F5F5F5' }}
-                              >
-                                {days}d
-                              </span>
+                              {width >= 60 && (
+                                <span
+                                  className="flex-shrink-0 rounded-full px-2 py-0.5 font-medium"
+                                  style={{ fontSize: 10, background: 'rgba(255,255,255,0.12)', color: '#F5F5F5' }}
+                                >
+                                  {days}d
+                                </span>
+                              )}
                             </div>
                           )}
 
@@ -173,7 +280,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                                 <span style={{ color: status.color }}>{status.label}</span>
                                 <span style={{ color: priority.color }}>· Prioridad {priority.label}</span>
                               </div>
-                              <div className="text-[11px] text-[#444444]">Vence {formatShort(due)}</div>
+                              <div className="text-[11px] text-[#444444]">Vence {shortDate(due)}</div>
                             </div>
                           )}
                         </div>
