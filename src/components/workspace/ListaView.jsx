@@ -166,19 +166,17 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
 
             <div className="overflow-x-auto px-3 pb-3">
               <div style={{ minWidth: 620 }}>
-                {tasks.length > 0 && (
-                  <div className="grid gap-3 px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
-                    {COLUMN_HEADERS.map((h, i) => (
-                      <span
-                        key={h || i}
-                        className="font-medium text-[#444444]"
-                        style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                      >
-                        {h}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
+                  {COLUMN_HEADERS.map((h, i) => (
+                    <span
+                      key={h || i}
+                      className="font-medium text-[#444444]"
+                      style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                    >
+                      {h}
+                    </span>
+                  ))}
+                </div>
 
                 <div className="flex flex-col divide-y divide-white/[0.04]">
                   {tasks.map((task) => (
