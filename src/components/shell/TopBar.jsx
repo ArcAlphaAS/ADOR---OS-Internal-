@@ -6,6 +6,11 @@ import { SearchIcon, BellIcon } from '../icons'
 import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 
+// Shared easing for the top-bar's layout reflows (search opening, profile
+// pill expanding) — a soft "expo out" curve reads as more premium than the
+// linear/easeOut used for simple fades elsewhere.
+const REFLOW_TRANSITION = { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+
 const PRIMARY_MODULES = [
   { id: 'inicio', label: 'Inicio' },
   { id: 'workspace', label: 'Workspace' },
@@ -75,7 +80,7 @@ function SearchToggle() {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="flex items-center">
+    <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center">
       <AnimatePresence>
         {open && (
           <motion.input
@@ -83,7 +88,7 @@ function SearchToggle() {
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 200, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={REFLOW_TRANSITION}
             autoFocus
             type="text"
             placeholder="Buscar en ADOR OS..."
@@ -100,7 +105,7 @@ function SearchToggle() {
       >
         <SearchIcon size={16} />
       </button>
-    </div>
+    </motion.div>
   )
 }
 
@@ -136,7 +141,7 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSignOut }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onClick={onToggle}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        transition={REFLOW_TRANSITION}
         className="ador-glass ador-grain flex cursor-pointer items-center overflow-hidden rounded-full"
         style={{ height: 32 }}
       >
@@ -221,10 +226,10 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
         <PillTabs activeModule={activeModule} onNavigate={onNavigate} />
       </div>
 
-      <div className="flex items-center gap-2 justify-self-end">
+      <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
         <SearchToggle />
 
-        <div className="relative">
+        <motion.div layout="position" transition={REFLOW_TRANSITION} className="relative">
           <button
             ref={bellRef}
             type="button"
@@ -248,7 +253,7 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
               </>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         <ProfileTrigger
           user={user}
@@ -257,7 +262,7 @@ export default function TopBar({ user, onSignOut, activeModule, onNavigate, hasU
           onClose={() => setProfileOpen(false)}
           onSignOut={onSignOut}
         />
-      </div>
+      </motion.div>
     </header>
   )
 }
