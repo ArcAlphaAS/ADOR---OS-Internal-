@@ -33,6 +33,8 @@ export function useHomeData(userId) {
   const activeSPs = clients.filter((c) => c.stage === 'intervencion_activa')
   const pipelineSPCs = clients.filter((c) => c.stage !== 'intervencion_activa')
 
+  const clientNameById = Object.fromEntries(clients.map((c) => [c.id, c.name]))
+
   const startOfToday = new Date()
   startOfToday.setHours(0, 0, 0, 0)
   const endOfToday = new Date()
@@ -41,6 +43,15 @@ export function useHomeData(userId) {
     const due = t.dueDate?.toDate?.()
     return due && due >= startOfToday && due <= endOfToday
   })
+  const tasksTodayRows = tasksToday
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      clientName: clientNameById[t.clientId],
+      dueDate: t.dueDate.toDate(),
+      status: t.status || 'pendiente',
+    }))
+    .sort((a, b) => a.dueDate - b.dueDate)
 
   const interventionRows = activeSPs.map((c) => ({
     client: c.name,
@@ -50,8 +61,6 @@ export function useHomeData(userId) {
       ? Math.round(((c.interventionWeek || 1) / c.interventionTotalWeeks) * 100)
       : 0,
   }))
-
-  const clientNameById = Object.fromEntries(clients.map((c) => [c.id, c.name]))
 
   const now = new Date()
   const upcomingMeetingRaw = meetings
@@ -96,6 +105,7 @@ export function useHomeData(userId) {
     activeSPCount: activeSPs.length,
     pipelineSPCCount: pipelineSPCs.length,
     tasksTodayCount: tasksToday.length,
+    tasksTodayRows,
     interventions: interventionRows,
     upcomingMeeting,
     latestDecision,

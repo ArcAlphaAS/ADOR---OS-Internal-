@@ -4,6 +4,7 @@ import { useHomeData } from '../../hooks/useHomeData'
 import GreetingBlock from './GreetingBlock'
 import MetricsBlock from './MetricsBlock'
 import FinanceBlock from './FinanceBlock'
+import TasksTodayBlock from './TasksTodayBlock'
 import InterventionsBlock from './InterventionsBlock'
 import MeetingDecisionBlock from './MeetingDecisionBlock'
 import ActivityBlock from './ActivityBlock'
@@ -14,6 +15,7 @@ export default function HomeScreen({ user, onNavigate }) {
     pipelineSPCCount,
     activeSPCount,
     tasksTodayCount,
+    tasksTodayRows,
     interventions,
     upcomingMeeting,
     latestDecision,
@@ -41,6 +43,7 @@ export default function HomeScreen({ user, onNavigate }) {
         revenueChangePct={revenueChangePct}
         revenueSeries={revenueSeries}
       />
+      <TasksTodayBlock tasks={tasksTodayRows} />
       <InterventionsBlock interventions={interventions} />
       <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
       <ActivityBlock />
