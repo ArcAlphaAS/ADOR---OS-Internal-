@@ -54,35 +54,45 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
 
   if (!adding) {
     return (
-      <button
-        type="button"
-        onClick={() => setAdding(true)}
-        className="w-full rounded-lg px-3 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#888888]"
-      >
-        + Agregar tarea
-      </button>
+      <tr>
+        <td colSpan={6} className="pt-1">
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="w-full rounded-lg px-1 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#888888]"
+          >
+            + Agregar tarea
+          </button>
+        </td>
+      </tr>
     )
   }
 
   return (
-    <input
-      autoFocus
-      type="text"
-      value={title}
-      onChange={(e) => setTitle(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') submit()
-        if (e.key === 'Escape') {
-          setTitle('')
-          setAdding(false)
-        }
-      }}
-      onBlur={submit}
-      placeholder="Título de la tarea — Enter para guardar"
-      className="w-full rounded-lg border border-white/[0.1] bg-transparent px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
-    />
+    <tr>
+      <td colSpan={6} className="pt-1">
+        <input
+          autoFocus
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit()
+            if (e.key === 'Escape') {
+              setTitle('')
+              setAdding(false)
+            }
+          }}
+          onBlur={submit}
+          placeholder="Título de la tarea — Enter para guardar"
+          className="w-full rounded-lg border border-white/[0.1] bg-transparent px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        />
+      </td>
+    </tr>
   )
 }
+
+const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Vence', 'Estado']
 
 function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId, actorName }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -132,13 +142,36 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
               </div>
             )}
 
-            <div className="flex flex-col py-1">
-              {tasks.length === 0 ? (
-                <p className="py-3 text-[13px] font-light text-[#444444]">Sin tareas todavía</p>
-              ) : (
-                tasks.map((task) => <TaskRow key={task.id} task={task} userById={userById} onOpen={onOpenTask} />)
-              )}
-              <InlineAddTask workstreamId={workstream.id} actorUserId={actorUserId} actorName={actorName} />
+            <div className="py-1">
+              <table className="w-full border-collapse">
+                {tasks.length > 0 && (
+                  <thead>
+                    <tr>
+                      {COLUMN_HEADERS.map((h, i) => (
+                        <th
+                          key={h || i}
+                          className="pb-2 text-left font-medium text-[#444444]"
+                          style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                )}
+                <tbody className="divide-y divide-white/[0.04]">
+                  {tasks.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-3 text-[13px] font-light text-[#444444]">
+                        Sin tareas todavía
+                      </td>
+                    </tr>
+                  ) : (
+                    tasks.map((task) => <TaskRow key={task.id} task={task} userById={userById} onOpen={onOpenTask} />)
+                  )}
+                  <InlineAddTask workstreamId={workstream.id} actorUserId={actorUserId} actorName={actorName} />
+                </tbody>
+              </table>
             </div>
           </motion.div>
         )}
