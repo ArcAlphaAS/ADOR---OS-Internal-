@@ -236,7 +236,7 @@ export default function TopBar({
   return (
     <header
       className="relative z-40 grid w-full flex-shrink-0 grid-cols-3 items-center px-5"
-      style={{ height: 64 }}
+      style={{ height: 64, backgroundColor: '#0A0A0A' }}
     >
       <div className="flex items-baseline gap-[6px] justify-self-start">
         <Logo size={13} />
