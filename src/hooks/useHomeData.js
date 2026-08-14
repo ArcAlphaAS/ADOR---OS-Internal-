@@ -9,9 +9,13 @@ import {
 // Shapes expected on each collection (beyond what's in firestore.js):
 //   clients:   { name, stage, pago1: {amount, status, date}, pago2: {...},
 //                interventionWeek, interventionTotalWeeks }
-//   tasks:     { assignedTo, title, dueDate: Timestamp, status }
-//   decisions: { title, decidedAt: Timestamp }
-//   meetings:  { title, startsAt: Timestamp }
+//   tasks:     { assignedTo, title, dueDate: Timestamp, status, clientId? }
+//   decisions: { title, decidedAt: Timestamp, clientId? }
+//   meetings:  { title, startsAt: Timestamp, clientId? }
+// `clientId` on tasks/decisions/meetings is optional — there's no UI to
+// create them yet (Workspace/Calendario are still placeholders), but Home
+// already resolves it to a client name wherever present so nothing needs to
+// change here once those modules exist and start writing it.
 export function useHomeData(userId) {
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
@@ -47,14 +51,24 @@ export function useHomeData(userId) {
       : 0,
   }))
 
+  const clientNameById = Object.fromEntries(clients.map((c) => [c.id, c.name]))
+
   const now = new Date()
-  const upcomingMeeting = meetings
+  const upcomingMeetingRaw = meetings
     .filter((m) => m.startsAt?.toDate?.() >= now)
     .sort((a, b) => a.startsAt.toDate() - b.startsAt.toDate())[0]
+  const upcomingMeeting = upcomingMeetingRaw && {
+    ...upcomingMeetingRaw,
+    clientName: clientNameById[upcomingMeetingRaw.clientId],
+  }
 
-  const latestDecision = decisions
+  const latestDecisionRaw = decisions
     .filter((d) => d.decidedAt?.toDate)
     .sort((a, b) => b.decidedAt.toDate() - a.decidedAt.toDate())[0]
+  const latestDecision = latestDecisionRaw && {
+    ...latestDecisionRaw,
+    clientName: clientNameById[latestDecisionRaw.clientId],
+  }
 
   // Revenue is derived from real payment records (pago1/pago2 across all
   // clients) rather than a hand-entered monthly total — one source of truth

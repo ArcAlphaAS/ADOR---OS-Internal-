@@ -34,7 +34,7 @@ export default function MeetingDecisionBlock({ upcomingMeeting, latestDecision }
         title="Próxima Reunión"
         content={
           upcomingMeeting
-            ? `${upcomingMeeting.title} — ${meetingFormatter.format(upcomingMeeting.startsAt.toDate())}`
+            ? `${upcomingMeeting.title}${upcomingMeeting.clientName ? ` — ${upcomingMeeting.clientName}` : ''} — ${meetingFormatter.format(upcomingMeeting.startsAt.toDate())}`
             : 'Sin reuniones programadas'
         }
       />
@@ -42,7 +42,11 @@ export default function MeetingDecisionBlock({ upcomingMeeting, latestDecision }
         Icon={CheckCircleIcon}
         iconColor="#B8860B"
         title="Última Decisión"
-        content={latestDecision ? latestDecision.title : 'Sin decisiones registradas'}
+        content={
+          latestDecision
+            ? `${latestDecision.title}${latestDecision.clientName ? ` — ${latestDecision.clientName}` : ''}`
+            : 'Sin decisiones registradas'
+        }
       />
     </div>
   )
