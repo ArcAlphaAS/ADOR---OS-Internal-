@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createTask } from '../../lib/firestore'
-import { LAYERS, currentLayer } from '../../lib/workspace'
+import { createTask, createProyectoInterno } from '../../lib/firestore'
+import { LAYERS, currentLayer, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import TaskRow from './TaskRow'
+
+// Shown instead of a real workstream when the company has none yet — never
+// persisted itself. The first task added through it silently provisions a
+// real "General" Proyecto Interno and attaches the task there, so Workspace
+// is usable from the very first click instead of gating everything behind
+// "create a project first."
+const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
 
 function LayerIndicator({ week, totalWeeks }) {
   const active = currentLayer(week, totalWeeks)
@@ -40,13 +47,18 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
 
-  const submit = () => {
+  const submit = async () => {
     if (!title.trim()) {
       setAdding(false)
       return
     }
+    let targetWorkstreamId = workstreamId
+    if (!targetWorkstreamId) {
+      const ref = await createProyectoInterno({ name: 'General' }, actorName)
+      targetWorkstreamId = buildWorkstreamId('proyecto', ref.id)
+    }
     createTask(
-      { title: title.trim(), workstreamId, assignedTo: [actorUserId], priority: 'media', dueDate: null },
+      { title: title.trim(), workstreamId: targetWorkstreamId, assignedTo: [actorUserId], priority: 'media', dueDate: null },
       actorName
     )
     setTitle('')
@@ -142,23 +154,21 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
               </div>
             )}
 
-            <div className="py-1">
-              <table className="w-full border-collapse">
-                {tasks.length > 0 && (
-                  <thead>
-                    <tr>
-                      {COLUMN_HEADERS.map((h, i) => (
-                        <th
-                          key={h || i}
-                          className="pb-2 text-left font-medium text-[#444444]"
-                          style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                )}
+            <div className="overflow-x-auto py-1">
+              <table className="w-full min-w-[560px] border-collapse">
+                <thead>
+                  <tr>
+                    {COLUMN_HEADERS.map((h, i) => (
+                      <th
+                        key={h || i}
+                        className="pb-2 text-left font-medium text-[#444444]"
+                        style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   {tasks.length === 0 ? (
                     <tr>
@@ -181,24 +191,15 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
 }
 
 export default function ListaView({ workstreams, tasksByWorkstream, userById, onOpenTask, actorUserId, actorName }) {
-  if (workstreams.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-24">
-        <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
-        <p className="text-[14px] font-light text-[#444444]">
-          Sin Intervenciones activas ni Proyectos Internos — crea un Proyecto Interno para empezar.
-        </p>
-      </div>
-    )
-  }
+  const visibleGroups = workstreams.length > 0 ? workstreams : [GENERAL_WORKSTREAM]
 
   return (
     <div className="flex flex-col gap-6">
-      {workstreams.map((w) => (
+      {visibleGroups.map((w) => (
         <WorkstreamGroup
-          key={w.id}
+          key={w.id ?? 'general'}
           workstream={w}
-          tasks={tasksByWorkstream.get(w.id) || []}
+          tasks={(w.id && tasksByWorkstream.get(w.id)) || []}
           userById={userById}
           onOpenTask={onOpenTask}
           actorUserId={actorUserId}
