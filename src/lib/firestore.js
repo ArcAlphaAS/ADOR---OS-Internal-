@@ -1,4 +1,4 @@
-import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
+import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 
 // Central data model. Every entity references related entities by ID —
@@ -66,4 +66,18 @@ export function subscribeNotificationsForUser(userId, onData) {
     [where('userId', '==', userId)],
     onData
   )
+}
+
+// Profile fields that live outside Firebase Auth (which only holds
+// displayName/photoURL) — e.g. birthday. Stored at users/{uid}, merged so
+// partial updates never clobber other fields.
+export async function getUserProfile(userId) {
+  if (!db || !userId) return null
+  const snap = await getDoc(doc(db, COLLECTIONS.users, userId))
+  return snap.exists() ? snap.data() : null
+}
+
+export function saveUserProfile(userId, data) {
+  if (!db || !userId) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
 }

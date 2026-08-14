@@ -1,15 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import { getUserProfile, saveUserProfile } from '../../lib/firestore'
 
 const inputClass =
   'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
 
 export default function ProfileModal({ user, onClose, onSave }) {
   const [name, setName] = useState(user?.displayName || '')
+  const [birthday, setBirthday] = useState('')
   const [focused, setFocused] = useState(false)
+  const [birthdayFocused, setBirthdayFocused] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!user?.uid) return
+    getUserProfile(user.uid).then((profile) => {
+      if (profile?.birthday) setBirthday(profile.birthday)
+    })
+  }, [user?.uid])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -22,6 +32,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
     setError('')
     try {
       await onSave(trimmed)
+      await saveUserProfile(user.uid, { birthday: birthday || null })
       onClose()
     } catch {
       setError('No pudimos guardar los cambios.')
@@ -71,6 +82,27 @@ export default function ProfileModal({ user, onClose, onSave }) {
             {error && <p className="mt-2 px-1 text-[12px] text-[#888888]">{error}</p>}
           </div>
 
+          <div>
+            <label
+              className="mb-1.5 block font-medium text-[#444444]"
+              style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+            >
+              Cumpleaños
+            </label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
+              onFocus={() => setBirthdayFocused(true)}
+              onBlur={() => setBirthdayFocused(false)}
+              className={inputClass}
+              style={{
+                borderColor: birthdayFocused ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+                colorScheme: 'dark',
+              }}
+            />
+          </div>
+
           <div className="mt-2 flex justify-end gap-3">
             <button
               type="button"
@@ -85,11 +117,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.99 }}
               transition={{ duration: 0.15 }}
-              className="rounded-xl border border-[#4A8FE0]/40 px-5 py-2 text-[13px] font-medium text-[#F5F5F5] disabled:opacity-60"
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(30,95,173,0.55) 100%)',
-                boxShadow: '0 8px 20px -8px rgba(30,95,173,0.6), inset 0 1px 0 0 rgba(255,255,255,0.35)',
-              }}
+              className="ador-btn-primary rounded-xl px-5 py-2 text-[13px] font-medium"
             >
               {saving ? 'Guardando…' : 'Guardar'}
             </motion.button>

@@ -159,15 +159,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.99 }}
             transition={{ duration: 0.15 }}
-            className="mt-1 w-full rounded-xl border border-[#4A8FE0]/40 py-[14px] text-[14px] font-medium text-[#F5F5F5] disabled:opacity-60"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(30,95,173,0.55) 100%)',
-              backdropFilter: 'blur(16px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-              boxShadow:
-                '0 14px 32px -12px rgba(30,95,173,0.6), inset 0 1px 0 0 rgba(255,255,255,0.35)',
-            }}
+            className="ador-btn-primary mt-1 w-full rounded-xl py-[14px] text-[14px] font-medium"
           >
             {submitting ? 'Ingresando…' : 'Ingresar'}
           </motion.button>
