@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createTask, createProyectoInterno } from '../../lib/firestore'
-import { LAYERS, currentLayer, workstreamId as buildWorkstreamId } from '../../lib/workspace'
+import { LAYERS, currentLayer, workstreamId as buildWorkstreamId, TASK_ROW_GRID } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import TaskRow from './TaskRow'
 
@@ -11,6 +11,8 @@ import TaskRow from './TaskRow'
 // is usable from the very first click instead of gating everything behind
 // "create a project first."
 const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
+
+const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Vence', 'Estado']
 
 function LayerIndicator({ week, totalWeeks }) {
   const active = currentLayer(week, totalWeeks)
@@ -66,45 +68,37 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
 
   if (!adding) {
     return (
-      <tr>
-        <td colSpan={6} className="pt-1">
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="w-full rounded-lg px-1 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#888888]"
-          >
-            + Agregar tarea
-          </button>
-        </td>
-      </tr>
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
+      >
+        <span className="text-[15px] leading-none">+</span> Agregar tarea
+      </button>
     )
   }
 
   return (
-    <tr>
-      <td colSpan={6} className="pt-1">
-        <input
-          autoFocus
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submit()
-            if (e.key === 'Escape') {
-              setTitle('')
-              setAdding(false)
-            }
-          }}
-          onBlur={submit}
-          placeholder="Título de la tarea — Enter para guardar"
-          className="w-full rounded-lg border border-white/[0.1] bg-transparent px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
-        />
-      </td>
-    </tr>
+    <div className="px-2 py-1">
+      <input
+        autoFocus
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') {
+            setTitle('')
+            setAdding(false)
+          }
+        }}
+        onBlur={submit}
+        placeholder="Título de la tarea — Enter para guardar"
+        className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50"
+      />
+    </div>
   )
 }
-
-const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Vence', 'Estado']
 
 function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId, actorName }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -113,28 +107,44 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
   const accent = workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
 
   return (
-    <div className="rounded-2xl border-l-2 pl-4" style={{ borderColor: accent }}>
-      <button type="button" onClick={() => setCollapsed((v) => !v)} className="flex w-full items-center gap-3 py-2 text-left">
-        <ChevronDownIcon
-          size={14}
-          style={{ color: '#444444', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
-        />
-        <span className="text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
-        <span className="text-[12px] text-[#444444]">
-          {completedCount}/{tasks.length} · {pct}%
-        </span>
-        <div className="ml-auto flex items-center gap-3">
-          {workstream.kind === 'intervencion' && (
-            <span className="text-[11px] text-[#888888]">
-              Semana {workstream.interventionWeek} de {workstream.interventionTotalWeeks}
+    <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
+      <div className="flex items-center gap-3 border-l-2 px-5 py-3.5" style={{ borderColor: accent }}>
+        <button type="button" onClick={() => setCollapsed((v) => !v)} className="flex flex-1 items-center gap-3 text-left">
+          <ChevronDownIcon
+            size={14}
+            style={{ color: '#444444', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
+          />
+          <span className="text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
+          {tasks.length > 0 && (
+            <span className="text-[12px] text-[#444444]">
+              {completedCount}/{tasks.length} · {pct}%
             </span>
           )}
-        </div>
-      </button>
-
-      <div className="h-[2px] w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: accent }} />
+          <span
+            className="rounded-full px-2 py-0.5 font-medium"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: accent,
+              background: `${accent}1F`,
+            }}
+          >
+            {workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto Interno'}
+          </span>
+        </button>
+        {workstream.kind === 'intervencion' && (
+          <span className="flex-shrink-0 text-[11px] text-[#888888]">
+            Semana {workstream.interventionWeek} de {workstream.interventionTotalWeeks}
+          </span>
+        )}
       </div>
+
+      {tasks.length > 0 && (
+        <div className="h-[2px] w-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: accent }} />
+        </div>
+      )}
 
       <AnimatePresence initial={false}>
         {!collapsed && (
@@ -146,7 +156,7 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
             className="overflow-hidden"
           >
             {workstream.kind === 'intervencion' && (
-              <div className="flex items-center gap-2 py-3">
+              <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3.5">
                 <LayerIndicator week={workstream.interventionWeek} totalWeeks={workstream.interventionTotalWeeks} />
                 <span className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: 'rgba(30,95,173,0.15)', color: '#1E5FAD' }}>
                   En curso
@@ -154,34 +164,32 @@ function WorkstreamGroup({ workstream, tasks, userById, onOpenTask, actorUserId,
               </div>
             )}
 
-            <div className="overflow-x-auto py-1">
-              <table className="w-full min-w-[560px] border-collapse">
-                <thead>
-                  <tr>
+            <div className="overflow-x-auto px-3 pb-3">
+              <div style={{ minWidth: 620 }}>
+                {tasks.length > 0 && (
+                  <div className="grid gap-3 px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                     {COLUMN_HEADERS.map((h, i) => (
-                      <th
+                      <span
                         key={h || i}
-                        className="pb-2 text-left font-medium text-[#444444]"
+                        className="font-medium text-[#444444]"
                         style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                       >
                         {h}
-                      </th>
+                      </span>
                     ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {tasks.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-3 text-[13px] font-light text-[#444444]">
-                        Sin tareas todavía
-                      </td>
-                    </tr>
-                  ) : (
-                    tasks.map((task) => <TaskRow key={task.id} task={task} userById={userById} onOpen={onOpenTask} />)
-                  )}
+                  </div>
+                )}
+
+                <div className="flex flex-col divide-y divide-white/[0.04]">
+                  {tasks.map((task) => (
+                    <TaskRow key={task.id} task={task} userById={userById} onOpen={onOpenTask} />
+                  ))}
+                </div>
+
+                <div className="pt-1">
                   <InlineAddTask workstreamId={workstream.id} actorUserId={actorUserId} actorName={actorName} />
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
@@ -194,7 +202,7 @@ export default function ListaView({ workstreams, tasksByWorkstream, userById, on
   const visibleGroups = workstreams.length > 0 ? workstreams : [GENERAL_WORKSTREAM]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {visibleGroups.map((w) => (
         <WorkstreamGroup
           key={w.id ?? 'general'}

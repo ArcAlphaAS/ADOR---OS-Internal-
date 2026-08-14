@@ -66,3 +66,9 @@ export function isDueToday(task) {
 export function workstreamId(kind, id) {
   return kind === 'intervencion' ? `client:${id}` : `proyecto:${id}`
 }
+
+// Shared between the Lista header row and every TaskRow so columns always
+// line up — a CSS grid template rather than an HTML <table> so column
+// widths are explicit and predictable instead of shrinking/overflowing
+// based on content (which is what was clipping the Estado column).
+export const TASK_ROW_GRID = '28px minmax(0,1fr) 96px 92px 76px 104px'
