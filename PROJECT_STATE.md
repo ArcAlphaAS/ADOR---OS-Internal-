@@ -10,7 +10,7 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 | Phase 2 — Shell + Home | ✅ Done |
 | Phase 3 — Clientes module | ✅ Done (2026-08-14) |
 | Phase 3 — Finanzas module | ✅ Done (2026-08-14) |
-| Phase 3 — Workspace module (Lista + Kanban; Timeline deferred) | ✅ Done (2026-08-14) |
+| Phase 3 — Workspace module (Lista + Kanban + Timeline) | ✅ Done (2026-08-14) |
 | Phase 3 — remaining modules (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
 
 ## What's actually built
@@ -69,13 +69,13 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 - [x] Task Detail Panel — slide-in 440px, editable title/status/priority/due date/multi-assignee, delete with a second confirming click (no native browser `confirm()`)
 - [x] Decisiones panel — fixed right rail, last 3 decisions, "+ Registrar Decisión" (new `createDecision()` — decisions collection existed for reads only before this). Shows up in Home's "Última Decisión" automatically, same collection
 - [x] Tasks schema changed: `workstreamId`, `assignedTo` (now an array), `priority`, and a 4-state `status` (`por_hacer`/`en_progreso`/`completado`/`bloqueado`) replacing the old 2-state one — `TasksTodayBlock.jsx`/`useHomeData.js` updated to match
-- [ ] **Not built (deliberate scope cut):** Timeline view (week/month Gantt-style) — see CLAUDE.md §10 for reasoning. View toggle currently only shows Lista/Kanban
+- [x] Timeline view — added same day from a reference image. Pixel-mapped date axis, "Hoy" line, rounded date-bounded bars, diamond milestones for tasks with only a due date. Tasks got an optional `startDate` field (Task Detail Panel) to give them real duration
+- [x] **Bug fixed while building Timeline:** `.ador-grain`'s `position: relative` was unlayered CSS silently beating Tailwind's layered `.fixed` utility, breaking every panel combining the two (Task Detail Panel, and pre-existing `ClientDetailPanel` in Clientes) — panels rendered off-screen instead of sliding in. Fixed in `index.css` via `@layer components`; see CLAUDE.md §10. Worth a quick manual check next time Clientes → Ficha is touched
 - [ ] **Action needed:** same Firestore-rules check as Finanzas (§9) — `proyectosInternos` needs to be covered by the console rules before real writes succeed
 
 **Not built yet**
 - [ ] No module besides Inicio, Clientes, Finanzas, and Workspace has real content (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
-- [ ] Workspace Timeline view (see above)
 
 ## Infrastructure status
 
@@ -96,4 +96,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision). Workspace's Timeline view is a good candidate for the next Workspace pass once Lista/Kanban get real daily use.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision).

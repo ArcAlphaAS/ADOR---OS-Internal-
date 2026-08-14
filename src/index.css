@@ -65,8 +65,20 @@ input:-webkit-autofill:focus {
   }
 }
 
-.ador-grain {
-  position: relative;
+/* Layered so Tailwind's own utilities (`.fixed`, `.absolute`, `.relative` —
+   all in Tailwind v4's unlayered-beating `utilities` layer) always win the
+   `position` property when combined on the same element, e.g.
+   `ador-grain fixed right-0 top-0` on a slide-in panel. Without `@layer`,
+   this rule is "unlayered" author CSS, and per the CSS Cascade Layers spec
+   unlayered rules beat ALL layered rules regardless of source order or
+   specificity — so `position: relative` here was silently overriding
+   `.fixed` and breaking every panel that combined the two (confirmed via
+   getComputedStyle while building Workspace's Task Detail Panel — it landed
+   as position:relative, rendering off-screen below the viewport). */
+@layer components {
+  .ador-grain {
+    position: relative;
+  }
 }
 
 .ador-grain::after {

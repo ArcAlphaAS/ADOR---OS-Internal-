@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeDecisions, getUserProfile, saveUserProfile } from '../../lib/firestore'
-import { KanbanIcon, ListViewIcon } from '../icons'
+import { KanbanIcon, ListViewIcon, TimelineIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import ListaView from './ListaView'
 import KanbanView from './KanbanView'
+import TimelineView from './TimelineView'
 import TaskDetailPanel from './TaskDetailPanel'
 import DecisionesPanel from './DecisionesPanel'
 import NewProyectoModal from './NewProyectoModal'
@@ -18,6 +19,7 @@ function actorNameFor(user) {
 const VIEWS = [
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
+  { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
 ]
 
 export default function WorkspaceModule({ user }) {
@@ -99,9 +101,17 @@ export default function WorkspaceModule({ user }) {
                 actorName={actorName}
               />
             </motion.div>
-          ) : (
+          ) : view === 'kanban' ? (
             <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <KanbanView tasks={visibleTasks} workstreamById={workstreamById} userById={userById} onOpenTask={(t) => setOpenTaskId(t.id)} />
+            </motion.div>
+          ) : (
+            <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <TimelineView
+                workstreams={visibleWorkstreams}
+                tasksByWorkstream={tasksByWorkstream}
+                onOpenTask={(t) => setOpenTaskId(t.id)}
+              />
             </motion.div>
           )}
         </AnimatePresence>

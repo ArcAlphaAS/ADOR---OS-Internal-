@@ -166,6 +166,16 @@ export function KanbanIcon(props) {
   )
 }
 
+export function TimelineIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
+      <rect x="3" y="4.5" width="9" height="4" rx="2" />
+      <rect x="7.5" y="10.5" width="13.5" height="4" rx="2" />
+      <rect x="3" y="16.5" width="7" height="4" rx="2" />
+    </svg>
+  )
+}
+
 export function ListViewIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
