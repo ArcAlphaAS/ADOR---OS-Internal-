@@ -24,7 +24,7 @@ function App() {
   const [loginNotice, setLoginNotice] = useState('')
   const [welcomeDismissed, setWelcomeDismissed] = useState(false)
 
-  const { user, loading, signInWithEmail, signInWithGoogle, resetPassword, signOut } = useAuth()
+  const { user, loading, signInWithEmail, resetPassword, signOut } = useAuth()
   const welcome = useWelcomeScreen(user ? user.uid : null)
 
   useEffect(() => {
@@ -63,15 +63,6 @@ function App() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    setLoginError('')
-    try {
-      await signInWithGoogle()
-    } catch {
-      setLoginError('No pudimos completar el acceso con Google.')
-    }
-  }
-
   const handleForgotPassword = async (email) => {
     setLoginError('')
     setLoginNotice('')
@@ -98,7 +89,6 @@ function App() {
       <LoginScreen
         key="login"
         onSubmit={handleSubmit}
-        onGoogleSignIn={handleGoogleSignIn}
         onForgotPassword={handleForgotPassword}
         error={loginError}
         notice={loginNotice}
