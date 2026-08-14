@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from '../Logo'
-import { SearchIcon, BellIcon } from '../icons'
+import { SearchIcon, BellIcon, ChevronDownIcon } from '../icons'
 import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 import ProfileModal from './ProfileModal'
@@ -95,27 +95,42 @@ function SearchToggle() {
   )
 }
 
-// The hover-reveal pill lives in normal flex flow (not portaled) so that
-// its growth pushes the search/bell icons to the left instead of covering
-// them — this container is a plain flex row, not a shrink-wrapped rounded-full
-// capsule, so it doesn't hit the width-leak bug described in Sidebar.jsx.
-// Only the click-to-open ProfileMenu dropdown is portaled, since it needs to
-// float above everything at a viewport-anchored position.
-function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
+// Two independent, click-driven states (no hover): `expanded` reveals
+// name/role/chevron and stays open until clicked again — not a hover
+// tooltip. `menuOpen` (only reachable once expanded, via the chevron) shows
+// the actual Mi Perfil/Configuración/Cerrar Sesión dropdown. This pill lives
+// in normal flex flow (not portaled) so its growth pushes the search/bell
+// icons left instead of covering them — this container is a plain flex row,
+// not a shrink-wrapped rounded-full capsule, so it doesn't hit the
+// width-leak bug described in Sidebar.jsx. Only the dropdown itself is
+// portaled, since it needs to float above everything at a viewport-anchored
+// position.
+function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMenu, onCloseAll, onSelect }) {
   const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
-  const [hovered, setHovered] = useState(false)
   const photoURL = useUserPhoto(user?.uid, user?.photoURL)
 
   useEffect(() => {
-    if (!profileOpen) return
+    if (!menuOpen) return
     const measure = () => {
       if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect())
     }
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [profileOpen])
+  }, [menuOpen])
+
+  // Collapses the pill when expanded-but-menu-closed and the user clicks
+  // elsewhere. When the menu IS open, its own full-screen backdrop already
+  // handles outside clicks (and closes both states via onCloseAll).
+  useEffect(() => {
+    if (!expanded || menuOpen) return
+    const handleClick = (e) => {
+      if (triggerRef.current && !triggerRef.current.contains(e.target)) onCloseAll()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [expanded, menuOpen, onCloseAll])
 
   const name = shortFullName(user)
   const role = 'Fundador'
@@ -125,25 +140,41 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
       <motion.div
         ref={triggerRef}
         layout
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onClick={onToggle}
+        onClick={onToggleExpanded}
         transition={REFLOW_TRANSITION}
         className="ador-glass ador-grain flex cursor-pointer items-center overflow-hidden rounded-full"
-        style={{ height: 32 }}
+        style={{ minHeight: 32 }}
       >
         <AnimatePresence initial={false}>
-          {hovered && !profileOpen && (
+          {expanded && (
             <motion.span
-              key="name"
+              key="info"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center gap-1.5 whitespace-nowrap pl-3"
+              className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3.5"
             >
-              <span className="text-[13px] font-medium text-[#F5F5F5]">{name}</span>
-              <span className="text-[11px] text-[#888888]">{role}</span>
+              <span className="leading-tight">
+                <span className="block text-[13px] font-semibold text-[#F5F5F5]">{name}</span>
+                <span className="block text-[11px] text-[#888888]">{role}</span>
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleMenu()
+                }}
+                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+              >
+                <ChevronDownIcon
+                  size={14}
+                  style={{
+                    transform: menuOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 150ms ease-out',
+                  }}
+                />
+              </button>
             </motion.span>
           )}
         </AnimatePresence>
@@ -153,10 +184,10 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
       {rect &&
         createPortal(
           <AnimatePresence>
-            {profileOpen && (
+            {menuOpen && (
               <>
                 {createPortal(
-                  <div className="fixed inset-0 z-40" onClick={onClose} />,
+                  <div className="fixed inset-0 z-40" onClick={onCloseAll} />,
                   document.body
                 )}
                 <ProfileMenu
@@ -164,7 +195,7 @@ function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSelect }) {
                   name={name}
                   role={role}
                   anchorRect={rect}
-                  onClose={onClose}
+                  onClose={onCloseAll}
                   onSelect={onSelect}
                 />
               </>
@@ -186,17 +217,23 @@ export default function TopBar({
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
-  const [profileOpen, setProfileOpen] = useState(false)
+  const [profileExpanded, setProfileExpanded] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
   const notifications = useClientNotifications()
   const hasUnreadNotifications = notifications.length > 0
 
+  const closeProfileAll = () => {
+    setProfileExpanded(false)
+    setProfileMenuOpen(false)
+  }
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'Escape') return
       setNotifOpen(false)
-      setProfileOpen(false)
+      closeProfileAll()
       setActiveModal(null)
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -261,9 +298,11 @@ export default function TopBar({
 
         <ProfileTrigger
           user={user}
-          profileOpen={profileOpen}
-          onToggle={() => setProfileOpen((v) => !v)}
-          onClose={() => setProfileOpen(false)}
+          expanded={profileExpanded}
+          onToggleExpanded={() => (profileExpanded ? closeProfileAll() : setProfileExpanded(true))}
+          menuOpen={profileMenuOpen}
+          onToggleMenu={() => setProfileMenuOpen((v) => !v)}
+          onCloseAll={closeProfileAll}
           onSelect={handleMenuSelect}
         />
       </motion.div>
