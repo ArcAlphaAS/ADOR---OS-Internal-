@@ -28,7 +28,7 @@ export default function SettingsModal({ user, onClose, onResetPassword }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[10px]"
       onClick={onClose}
     >
       <motion.div

@@ -28,7 +28,7 @@ export default function ClientDetailPanel({ client, actorName, onClose }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 bg-black/40"
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[6px]"
         onClick={onClose}
       />
       <motion.div
