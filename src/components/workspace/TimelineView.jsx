@@ -177,15 +177,17 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
         <div className="relative" style={{ width: trackWidth, minWidth: '100%' }}>
           {/* Date axis */}
           <div className="relative flex h-8 items-center border-b border-white/[0.06]">
-            {ticks.map((tick) => (
-              <span
-                key={tick.getTime()}
-                className="absolute whitespace-nowrap text-[11px] text-[#444444]"
-                style={{ left: dateToX(tick), transform: 'translateX(-50%)' }}
-              >
-                {config.format(tick)}
-              </span>
-            ))}
+            {ticks
+              .filter((tick) => Math.abs(dateToX(tick) - nowX) > 26)
+              .map((tick) => (
+                <span
+                  key={tick.getTime()}
+                  className="absolute whitespace-nowrap text-[11px] text-[#444444]"
+                  style={{ left: dateToX(tick), transform: 'translateX(-50%)' }}
+                >
+                  {config.format(tick)}
+                </span>
+              ))}
             <span
               className="absolute rounded-full px-2 py-0.5 font-medium"
               style={{ left: nowX, transform: 'translateX(-50%)', fontSize: 10, background: 'rgba(30,95,173,0.2)', color: '#1E5FAD' }}
