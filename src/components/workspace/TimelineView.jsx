@@ -39,21 +39,15 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
     }
   }
 
-  if (datedByWorkstream.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-24">
-        <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
-        <p className="text-[14px] font-light text-[#444444]">
-          Sin tareas con fecha límite todavía — el Timeline se dibuja solo cuando las tareas tienen fechas.
-        </p>
-      </div>
-    )
-  }
+  const hasDatedTasks = datedByWorkstream.length > 0
 
   const rawMin = new Date(Math.min(...allDates.map((d) => d.getTime())))
   const rawMax = new Date(Math.max(...allDates.map((d) => d.getTime())))
-  const minDate = new Date(rawMin.getTime() - 3 * DAY_MS)
-  const maxDate = new Date(rawMax.getTime() + 5 * DAY_MS)
+  // With no dated tasks yet, allDates only holds `now` — default to a
+  // 5-week window (a week back, a month ahead) so the calendar axis and
+  // "Hoy" line still render instead of the board looking broken/empty.
+  const minDate = new Date(rawMin.getTime() - (hasDatedTasks ? 3 : 7) * DAY_MS)
+  const maxDate = new Date(rawMax.getTime() + (hasDatedTasks ? 5 : 30) * DAY_MS)
   const spanDays = Math.max(1, Math.round((maxDate - minDate) / DAY_MS))
   const trackWidth = spanDays * PX_PER_DAY
 
@@ -97,6 +91,15 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
 
           {/* Now line spans the whole board */}
           <div className="pointer-events-none absolute bottom-0 top-8 w-px" style={{ left: nowX, background: 'rgba(30,95,173,0.5)' }} />
+
+          {!hasDatedTasks && (
+            <div className="flex flex-col items-center gap-3 py-16">
+              <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
+              <p className="text-[14px] font-light text-[#444444]">
+                Sin tareas con fecha límite todavía — ponle fecha a una tarea desde su panel de detalle para que aparezca aquí.
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-6 pt-5">
             {datedByWorkstream.map(({ workstream, tasks }) => {
