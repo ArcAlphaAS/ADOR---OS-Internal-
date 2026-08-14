@@ -53,7 +53,7 @@ export default function GreetingBlock({ name }) {
       <h1
         className="font-semibold tracking-[-0.02em]"
         style={{
-          fontSize: 56,
+          fontSize: 42,
           backgroundImage: 'linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.85) 100%)',
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',

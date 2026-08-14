@@ -56,7 +56,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="ador-glass ador-grain w-[380px] rounded-[28px] p-8"
+        className="ador-modal-surface ador-grain w-[380px] rounded-[28px] p-8"
       >
         <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Mi Perfil</h2>
         <p className="mt-1 text-[13px] text-[#888888]">{user?.email}</p>

@@ -88,6 +88,18 @@ input:-webkit-autofill:focus {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
+/* A more opaque glass surface for floating panels (modals) that sit above
+   other .ador-glass cards — the standard 0.05 opacity reads as too see-through
+   once there's already glass content behind it, making modal text hard to
+   read against the page underneath. */
+.ador-modal-surface {
+  background: rgba(10, 10, 10, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
 /* Flat "liquid glass" primary button — a soft frosted pill with a faint
    brand-blue tint, no gradient and no drop shadow. Deliberately replaces an
    earlier button treatment that used a strong gradient + glow shadow and
