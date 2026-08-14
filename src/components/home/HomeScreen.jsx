@@ -32,20 +32,33 @@ export default function HomeScreen({ user, onNavigate }) {
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-10 px-12 pb-16"
     >
       <GreetingBlock name={firstName(user)} />
-      <MetricsBlock
-        onNavigate={onNavigate}
-        pipelineSPCCount={pipelineSPCCount}
-        activeSPCount={activeSPCount}
-        tasksTodayCount={tasksTodayCount}
-      />
-      <FinanceBlock
-        latestRevenueAmount={latestRevenueAmount}
-        revenueChangePct={revenueChangePct}
-        revenueSeries={revenueSeries}
-      />
-      <TasksTodayBlock tasks={tasksTodayRows} />
+
+      {/* Two-column "sections" layout (per reference dashboard shared by user,
+          2026-08-14): left = chart-driven overview + its paired secondary
+          cards, right = at-a-glance stats + a real data table underneath —
+          mirrors "My Campaigns" + "Total Balance"/"Popular Campaigns". */}
+      <div className="grid grid-cols-[1fr_1.3fr] items-start gap-6">
+        <div className="flex flex-col gap-6">
+          <FinanceBlock
+            latestRevenueAmount={latestRevenueAmount}
+            revenueChangePct={revenueChangePct}
+            revenueSeries={revenueSeries}
+          />
+          <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <MetricsBlock
+            onNavigate={onNavigate}
+            pipelineSPCCount={pipelineSPCCount}
+            activeSPCount={activeSPCount}
+            tasksTodayCount={tasksTodayCount}
+          />
+          <TasksTodayBlock tasks={tasksTodayRows} />
+        </div>
+      </div>
+
       <InterventionsBlock interventions={interventions} />
-      <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
       <ActivityBlock />
       <QuickLinksBlock />
     </motion.div>
