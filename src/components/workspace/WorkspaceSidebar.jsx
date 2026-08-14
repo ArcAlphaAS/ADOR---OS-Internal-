@@ -23,13 +23,32 @@ function NavItem({ label, sublabel, active, accentColor, onClick, disabled }) {
   )
 }
 
-export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, onNewProyecto }) {
+export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, onNewProyecto, onlyMine, onToggleOnlyMine, myTaskCount }) {
   const intervenciones = workstreams.filter((w) => w.kind === 'intervencion')
   const proyectos = workstreams.filter((w) => w.kind === 'proyecto_interno')
 
   return (
     <div className="flex h-full w-[200px] flex-shrink-0 flex-col gap-4 border-r border-white/[0.06] px-3 py-6">
-      <NavItem label="Todo" active={selectedId === null} onClick={() => onSelect(null)} />
+      <button
+        type="button"
+        onClick={onToggleOnlyMine}
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-150"
+        style={{ background: onlyMine ? 'rgba(30,95,173,0.16)' : 'transparent' }}
+      >
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium" style={{ color: onlyMine ? '#1E5FAD' : '#F5F5F5' }}>
+          Mis tareas
+        </span>
+        {myTaskCount > 0 && (
+          <span
+            className="flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+            style={{ background: onlyMine ? 'rgba(30,95,173,0.25)' : 'rgba(255,255,255,0.08)', color: onlyMine ? '#1E5FAD' : '#888888' }}
+          >
+            {myTaskCount}
+          </span>
+        )}
+      </button>
+
+      <NavItem label="Todo" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
 
       {intervenciones.length > 0 && (
         <div className="flex flex-col gap-0.5">

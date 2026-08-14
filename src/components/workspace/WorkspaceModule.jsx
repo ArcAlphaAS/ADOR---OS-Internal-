@@ -27,6 +27,7 @@ export default function WorkspaceModule({ user }) {
   const [decisions, setDecisions] = useState([])
   const [view, setView] = useState('lista')
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
+  const [onlyMine, setOnlyMine] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
   const [showNewProyecto, setShowNewProyecto] = useState(false)
   const [showRegisterDecision, setShowRegisterDecision] = useState(false)
@@ -48,8 +49,25 @@ export default function WorkspaceModule({ user }) {
   }
 
   const workstreamById = Object.fromEntries(workstreams.map((w) => [w.id, w]))
-  const visibleWorkstreams = selectedWorkstreamId ? workstreams.filter((w) => w.id === selectedWorkstreamId) : workstreams
-  const visibleTasks = selectedWorkstreamId ? tasks.filter((t) => t.workstreamId === selectedWorkstreamId) : tasks
+
+  const isMine = (t) => (t.assignedTo || []).includes(user?.uid)
+  const myTaskCount = tasks.filter((t) => isMine(t) && t.status !== 'completado').length
+
+  const byWorkstream = selectedWorkstreamId ? workstreams.filter((w) => w.id === selectedWorkstreamId) : workstreams
+  const visibleTasks = tasks.filter((t) => (!selectedWorkstreamId || t.workstreamId === selectedWorkstreamId) && (!onlyMine || isMine(t)))
+  const visibleTasksByWorkstream = onlyMine
+    ? new Map([...tasksByWorkstream].map(([id, list]) => [id, list.filter(isMine)]))
+    : tasksByWorkstream
+  const visibleWorkstreams = onlyMine ? byWorkstream.filter((w) => (visibleTasksByWorkstream.get(w.id) || []).length > 0) : byWorkstream
+
+  const selectWorkstream = (id) => {
+    setOnlyMine(false)
+    setSelectedWorkstreamId(id)
+  }
+  const toggleOnlyMine = () => {
+    setSelectedWorkstreamId(null)
+    setOnlyMine((v) => !v)
+  }
 
   const openTask = tasks.find((t) => t.id === openTaskId) || null
 
@@ -63,15 +81,20 @@ export default function WorkspaceModule({ user }) {
       <WorkspaceSidebar
         workstreams={workstreams}
         selectedId={selectedWorkstreamId}
-        onSelect={setSelectedWorkstreamId}
+        onSelect={selectWorkstream}
         onNewProyecto={() => setShowNewProyecto(true)}
+        onlyMine={onlyMine}
+        onToggleOnlyMine={toggleOnlyMine}
+        myTaskCount={myTaskCount}
       />
 
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Workspace</h1>
-            <p className="text-[13px] text-[#888888]">Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta.</p>
+            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{onlyMine ? 'Mis tareas' : 'Workspace'}</h1>
+            <p className="text-[13px] text-[#888888]">
+              {onlyMine ? 'Todo lo que tienes pendiente, cruzando Intervenciones y Proyectos Internos.' : 'Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta.'}
+            </p>
           </div>
           <div className="ador-glass flex items-center gap-1 rounded-full p-1">
             {VIEWS.map((v) => (
@@ -90,11 +113,18 @@ export default function WorkspaceModule({ user }) {
         </div>
 
         <AnimatePresence mode="wait">
-          {view === 'lista' ? (
+          {onlyMine && visibleWorkstreams.length === 0 ? (
+            <motion.div key="empty-mine" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <div className="flex flex-col items-center gap-3 py-24">
+                <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
+                <p className="text-[14px] font-light text-[#444444]">Sin tareas asignadas a ti — todo al día.</p>
+              </div>
+            </motion.div>
+          ) : view === 'lista' ? (
             <motion.div key="lista" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <ListaView
                 workstreams={visibleWorkstreams}
-                tasksByWorkstream={tasksByWorkstream}
+                tasksByWorkstream={visibleTasksByWorkstream}
                 userById={userById}
                 users={users}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
@@ -110,7 +140,7 @@ export default function WorkspaceModule({ user }) {
             <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <TimelineView
                 workstreams={visibleWorkstreams}
-                tasksByWorkstream={tasksByWorkstream}
+                tasksByWorkstream={visibleTasksByWorkstream}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
               />
             </motion.div>
