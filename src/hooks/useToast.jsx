@@ -7,15 +7,15 @@ const ToastContext = createContext(null)
 
 function ToastStack({ toasts, onDismiss }) {
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 bottom-8 z-[100] flex flex-col items-center gap-2">
+    <div className="pointer-events-none fixed right-6 top-6 z-[100] flex flex-col items-end gap-2">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
             layout
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            initial={{ opacity: 0, x: 24, scale: 0.97 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 24, scale: 0.97 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="ador-modal-surface ador-grain pointer-events-auto flex items-center gap-3 rounded-2xl py-3 pl-4 pr-3"
           >
