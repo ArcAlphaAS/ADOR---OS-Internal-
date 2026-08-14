@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { firstName } from '../../lib/user'
+import { useHomeData } from '../../hooks/useHomeData'
 import GreetingBlock from './GreetingBlock'
 import MetricsBlock from './MetricsBlock'
 import InterventionsBlock from './InterventionsBlock'
@@ -8,6 +9,15 @@ import ActivityBlock from './ActivityBlock'
 import QuickLinksBlock from './QuickLinksBlock'
 
 export default function HomeScreen({ user, onNavigate }) {
+  const {
+    activeClientsCount,
+    activeInterventionsCount,
+    tasksTodayCount,
+    interventions,
+    upcomingMeeting,
+    latestDecision,
+  } = useHomeData(user?.uid)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -16,9 +26,14 @@ export default function HomeScreen({ user, onNavigate }) {
       className="mx-auto flex max-w-[1160px] flex-col gap-10 px-10 pb-16"
     >
       <GreetingBlock name={firstName(user)} />
-      <MetricsBlock onNavigate={onNavigate} />
-      <InterventionsBlock />
-      <MeetingDecisionBlock />
+      <MetricsBlock
+        onNavigate={onNavigate}
+        activeClientsCount={activeClientsCount}
+        activeInterventionsCount={activeInterventionsCount}
+        tasksTodayCount={tasksTodayCount}
+      />
+      <InterventionsBlock interventions={interventions} />
+      <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
       <ActivityBlock />
       <QuickLinksBlock />
     </motion.div>

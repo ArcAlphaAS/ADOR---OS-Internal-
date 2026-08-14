@@ -23,12 +23,12 @@ function MetricCard({ label, value, onClick }) {
   )
 }
 
-export default function MetricsBlock({ onNavigate }) {
+export default function MetricsBlock({ onNavigate, activeClientsCount, activeInterventionsCount, tasksTodayCount }) {
   return (
     <div className="grid grid-cols-3 gap-5">
-      <MetricCard label="Clientes Activos" />
-      <MetricCard label="Intervenciones en Curso" />
-      <MetricCard label="Tareas Hoy" onClick={() => onNavigate?.('workspace')} />
+      <MetricCard label="Clientes Activos" value={activeClientsCount} />
+      <MetricCard label="Intervenciones en Curso" value={activeInterventionsCount} />
+      <MetricCard label="Tareas Hoy" value={tasksTodayCount} onClick={() => onNavigate?.('workspace')} />
     </div>
   )
 }

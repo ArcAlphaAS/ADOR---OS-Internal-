@@ -17,20 +17,32 @@ function InfoCard({ Icon, iconColor, title, content }) {
   )
 }
 
-export default function MeetingDecisionBlock() {
+const meetingFormatter = new Intl.DateTimeFormat('es-ES', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+export default function MeetingDecisionBlock({ upcomingMeeting, latestDecision }) {
   return (
     <div className="grid grid-cols-2 gap-5">
       <InfoCard
         Icon={CalendarIcon}
         iconColor="#1E5FAD"
         title="Próxima Reunión"
-        content="Sin reuniones programadas"
+        content={
+          upcomingMeeting
+            ? `${upcomingMeeting.title} — ${meetingFormatter.format(upcomingMeeting.startsAt.toDate())}`
+            : 'Sin reuniones programadas'
+        }
       />
       <InfoCard
         Icon={CheckCircleIcon}
         iconColor="#B8860B"
         title="Última Decisión"
-        content="Sin decisiones registradas"
+        content={latestDecision ? latestDecision.title : 'Sin decisiones registradas'}
       />
     </div>
   )

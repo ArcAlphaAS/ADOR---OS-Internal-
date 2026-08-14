@@ -8,7 +8,7 @@ import { useAuth } from './hooks/useAuth'
 import { useWelcomeScreen } from './hooks/useWelcomeScreen'
 import { firstName } from './lib/user'
 
-const PREVIEW_MOCK_USER = new URLSearchParams(window.location.search).has('preview')
+const PREVIEW_MOCK_USER = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview')
   ? {
       uid: 'preview',
       displayName: 'Ángel Samillán García',

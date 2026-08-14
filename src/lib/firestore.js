@@ -29,9 +29,15 @@ function subscribeToCollection(collectionName, constraints, onData) {
   if (!db) return () => {}
   const ref = collection(db, collectionName)
   const q = constraints.length ? query(ref, ...constraints) : ref
-  return onSnapshot(q, (snapshot) => {
-    onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
-  })
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+    },
+    (error) => {
+      console.error(`Firestore subscription to "${collectionName}" failed:`, error.message)
+    }
+  )
 }
 
 export function subscribeClients(onData) {
