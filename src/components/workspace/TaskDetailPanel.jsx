@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { updateTask, deleteTask } from '../../lib/firestore'
+import { applyTaskUpdate, deleteTask, subscribeTaskHistory } from '../../lib/firestore'
 import { STATUSES, PRIORITIES } from '../../lib/workspace'
 import { CloseIcon } from '../icons'
 import AvatarStack from './AvatarStack'
+
+function formatHistoryDate(value) {
+  const date = value?.toDate?.()
+  if (!date) return ''
+  return date.toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
 
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 
@@ -33,9 +39,15 @@ function PillToggle({ options, value, onChange }) {
   )
 }
 
-export default function TaskDetailPanel({ task, workstream, users, userById, onClose }) {
+export default function TaskDetailPanel({ task, workstream, users, userById, actorName, onClose }) {
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    if (!task?.id) return
+    return subscribeTaskHistory(task.id, setHistory)
+  }, [task?.id])
 
   if (!task) return null
 
@@ -43,13 +55,15 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
   const startValue = task.startDate?.toDate?.() ? task.startDate.toDate().toISOString().slice(0, 10) : ''
   const assignedTo = task.assignedTo || []
 
+  const applyUpdate = (data) => applyTaskUpdate(task.id, data, actorName)
+
   const saveTitle = () => {
-    if (title.trim() && title.trim() !== task.title) updateTask(task.id, { title: title.trim() })
+    if (title.trim() && title.trim() !== task.title) applyUpdate({ title: title.trim() })
   }
 
   const toggleAssignee = (uid) => {
     const next = assignedTo.includes(uid) ? assignedTo.filter((id) => id !== uid) : [...assignedTo, uid]
-    updateTask(task.id, { assignedTo: next })
+    applyUpdate({ assignedTo: next })
   }
 
   const handleDelete = () => {
@@ -109,7 +123,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
             <textarea
               defaultValue={task.description || ''}
               onBlur={(e) => {
-                if (e.target.value !== (task.description || '')) updateTask(task.id, { description: e.target.value.trim() })
+                if (e.target.value !== (task.description || '')) applyUpdate({ description: e.target.value.trim() })
               }}
               rows={3}
               placeholder="Sin descripción"
@@ -121,14 +135,14 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
               Estado
             </span>
-            <PillToggle options={STATUSES} value={task.status} onChange={(id) => updateTask(task.id, { status: id })} />
+            <PillToggle options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
           </div>
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
               Prioridad
             </span>
-            <PillToggle options={PRIORITIES} value={task.priority} onChange={(id) => updateTask(task.id, { priority: id })} />
+            <PillToggle options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -140,7 +154,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
                 type="date"
                 value={startValue}
                 onChange={(e) =>
-                  updateTask(task.id, {
+                  applyUpdate({
                     startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null,
                   })
                 }
@@ -155,7 +169,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
                 type="date"
                 value={dueValue}
                 onChange={(e) =>
-                  updateTask(task.id, {
+                  applyUpdate({
                     dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null,
                   })
                 }
@@ -185,6 +199,24 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
                 </label>
               ))}
             </div>
+          </div>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Historial
+            </span>
+            {history.length === 0 ? (
+              <p className="text-[13px] font-light text-[#444444]">Sin actividad registrada</p>
+            ) : (
+              <div className="flex flex-col divide-y divide-white/[0.04]">
+                {history.map((event) => (
+                  <div key={event.id} className="flex flex-col gap-0.5 py-2 first:pt-0">
+                    <span className="text-[13px] text-[#F5F5F5]">{event.description}</span>
+                    <span className="text-[11px] text-[#444444]">{formatHistoryDate(event.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button

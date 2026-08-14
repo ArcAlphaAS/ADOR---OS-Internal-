@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
-import { toggleTaskComplete, updateTask } from '../../lib/firestore'
+import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
 import { CheckCircleIcon } from '../icons'
 
-export default function TaskRow({ task, userById, users, onOpen }) {
+export default function TaskRow({ task, userById, users, onOpen, actorName }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
 
@@ -13,9 +13,11 @@ export default function TaskRow({ task, userById, users, onOpen }) {
   // commonly: Firestore rules don't yet cover this collection for this
   // account, or the signed-in user isn't in allowedEmails) surfaces as a
   // visible toast instead of silently doing nothing — which otherwise looks
-  // indistinguishable from the click not having worked at all.
+  // indistinguishable from the click not having worked at all. applyTaskUpdate
+  // also leaves an activity-log entry, so every edit surface writes the same
+  // trail (see Historial in the Task Detail Panel).
   const applyUpdate = (data) => {
-    withTimeout(updateTask(task.id, data)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
+    withTimeout(applyTaskUpdate(task.id, data, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
   }
 
   return (
@@ -27,7 +29,7 @@ export default function TaskRow({ task, userById, users, onOpen }) {
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          withTimeout(toggleTaskComplete(task)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+          withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
         }}
         className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-150"
         style={{ color: completed ? '#4CAF50' : '#444444' }}

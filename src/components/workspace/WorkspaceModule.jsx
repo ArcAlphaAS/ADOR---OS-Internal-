@@ -134,7 +134,13 @@ export default function WorkspaceModule({ user }) {
             </motion.div>
           ) : view === 'kanban' ? (
             <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <KanbanView tasks={visibleTasks} workstreamById={workstreamById} userById={userById} onOpenTask={(t) => setOpenTaskId(t.id)} />
+              <KanbanView
+                tasks={visibleTasks}
+                workstreamById={workstreamById}
+                userById={userById}
+                onOpenTask={(t) => setOpenTaskId(t.id)}
+                actorName={actorName}
+              />
             </motion.div>
           ) : (
             <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -157,6 +163,7 @@ export default function WorkspaceModule({ user }) {
             workstream={workstreamById[openTask.workstreamId]}
             users={users}
             userById={userById}
+            actorName={actorName}
             onClose={() => setOpenTaskId(null)}
           />
         )}

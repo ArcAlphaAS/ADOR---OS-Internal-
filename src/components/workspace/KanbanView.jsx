@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { updateTask } from '../../lib/firestore'
+import { applyTaskUpdate } from '../../lib/firestore'
 import { STATUSES, priorityMeta } from '../../lib/workspace'
 import AvatarStack from './AvatarStack'
 
@@ -10,7 +10,7 @@ function formatDueDate(task) {
   return due.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn }) {
+function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn, actorName }) {
   const priority = priorityMeta(task.priority)
   const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
   const dueLabel = formatDueDate(task)
@@ -25,7 +25,7 @@ function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn }) {
       whileDrag={{ scale: 1.03, boxShadow: '0 20px 40px -12px rgba(0,0,0,0.6)', zIndex: 20 }}
       onDragEnd={(_, info) => {
         const targetStatus = resolveDropColumn(info.point.x, info.point.y)
-        if (targetStatus && targetStatus !== task.status) updateTask(task.id, { status: targetStatus })
+        if (targetStatus && targetStatus !== task.status) applyTaskUpdate(task.id, { status: targetStatus }, actorName)
       }}
       onClick={() => onOpen(task)}
       className="ador-glass ador-grain relative cursor-pointer rounded-xl border-l-[3px] p-3.5"
@@ -51,7 +51,7 @@ function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn }) {
   )
 }
 
-function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, onOpenTask, resolveDropColumn }) {
+function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, onOpenTask, resolveDropColumn, actorName }) {
   const ref = useRef(null)
   return (
     <div
@@ -82,6 +82,7 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
               userById={userById}
               onOpen={onOpenTask}
               resolveDropColumn={resolveDropColumn}
+              actorName={actorName}
             />
           ))
         )}
@@ -90,7 +91,7 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
   )
 }
 
-export default function KanbanView({ tasks, workstreamById, userById, onOpenTask }) {
+export default function KanbanView({ tasks, workstreamById, userById, onOpenTask, actorName }) {
   const columnRefs = useRef({})
 
   const registerRef = useCallback((statusId, el) => {
@@ -124,6 +125,7 @@ export default function KanbanView({ tasks, workstreamById, userById, onOpenTask
           registerRef={registerRef}
           onOpenTask={onOpenTask}
           resolveDropColumn={resolveDropColumn}
+          actorName={actorName}
         />
       ))}
     </div>

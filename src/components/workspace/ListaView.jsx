@@ -250,7 +250,7 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
 
                 <div className="flex flex-col divide-y divide-white/[0.04]">
                   {tasks.map((task) => (
-                    <TaskRow key={task.id} task={task} userById={userById} users={users} onOpen={onOpenTask} />
+                    <TaskRow key={task.id} task={task} userById={userById} users={users} onOpen={onOpenTask} actorName={actorName} />
                   ))}
                 </div>
 

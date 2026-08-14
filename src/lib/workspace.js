@@ -31,6 +31,20 @@ export function priorityMeta(id) {
   return PRIORITY_BY_ID[id] || PRIORITY_BY_ID.media
 }
 
+// Turns a raw updateTask() patch into a human-readable activity-log line —
+// used by lib/firestore.js's applyTaskUpdate so every edit surface (Lista's
+// inline cells, the Task Detail Panel, Kanban drag-and-drop) leaves the same
+// kind of trail without each call site having to know the copy itself.
+export function describeTaskChange(data) {
+  if ('status' in data) return `Estado → ${statusMeta(data.status).label}`
+  if ('priority' in data) return `Prioridad → ${priorityMeta(data.priority).label}`
+  if ('assignedTo' in data) return 'Asignados actualizados'
+  if ('startDate' in data || 'dueDate' in data) return 'Fechas actualizadas'
+  if ('description' in data) return 'Descripción actualizada'
+  if ('title' in data) return 'Título actualizado'
+  return 'Tarea actualizada'
+}
+
 // ADOR's 7-layer methodology — every Intervención moves through these over
 // its fixed 8-week run. There's no per-client "current layer" field on
 // purpose (see file header): it's computed from the existing
