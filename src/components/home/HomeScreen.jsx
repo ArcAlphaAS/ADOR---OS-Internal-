@@ -23,7 +23,7 @@ export default function HomeScreen({ user, onNavigate }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex max-w-[1160px] flex-col gap-10 px-10 pb-16"
+      className="mx-auto flex w-full max-w-[1520px] flex-col gap-10 px-12 pb-16"
     >
       <GreetingBlock name={firstName(user)} />
       <MetricsBlock
