@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { toggleTaskComplete, updateTask } from '../../lib/firestore'
-import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID } from '../../lib/workspace'
+import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
+import { useToast } from '../../hooks/useToast'
 import AvatarStack from './AvatarStack'
 import CellPopover from './CellPopover'
 import { CheckCircleIcon } from '../icons'
@@ -62,7 +63,7 @@ function PillCell({ options, value, meta, onChange, emptyLabel }) {
   )
 }
 
-function DueDateCell({ task }) {
+function DueDateCell({ task, onUpdate }) {
   const [editing, setEditing] = useState(false)
   const due = task.dueDate?.toDate?.()
   const dueLabel = formatDueDate(task)
@@ -77,7 +78,7 @@ function DueDateCell({ task }) {
         defaultValue={due ? due.toISOString().slice(0, 10) : ''}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => {
-          updateTask(task.id, { dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
+          onUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
           setEditing(false)
         }}
         onBlur={() => setEditing(false)}
@@ -101,7 +102,7 @@ function DueDateCell({ task }) {
   )
 }
 
-function AssigneeCell({ task, userById, users = [] }) {
+function AssigneeCell({ task, userById, users = [], onUpdate }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
@@ -109,7 +110,7 @@ function AssigneeCell({ task, userById, users = [] }) {
 
   const toggle = (uid) => {
     const next = assignedTo.includes(uid) ? assignedTo.filter((id) => id !== uid) : [...assignedTo, uid]
-    updateTask(task.id, { assignedTo: next })
+    onUpdate({ assignedTo: next })
   }
 
   return (
@@ -156,6 +157,16 @@ function AssigneeCell({ task, userById, users = [] }) {
 
 export default function TaskRow({ task, userById, users, onOpen }) {
   const completed = task.status === 'completado'
+  const showToast = useToast()
+
+  // Every inline cell edit routes through here so a failed write (most
+  // commonly: Firestore rules don't yet cover this collection for this
+  // account, or the signed-in user isn't in allowedEmails) surfaces as a
+  // visible toast instead of silently doing nothing — which otherwise looks
+  // indistinguishable from the click not having worked at all.
+  const applyUpdate = (data) => {
+    withTimeout(updateTask(task.id, data)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
+  }
 
   return (
     <div
@@ -166,7 +177,7 @@ export default function TaskRow({ task, userById, users, onOpen }) {
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          toggleTaskComplete(task)
+          withTimeout(toggleTaskComplete(task)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
         }}
         className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-150"
         style={{ color: completed ? '#4CAF50' : '#444444' }}
@@ -183,23 +194,23 @@ export default function TaskRow({ task, userById, users, onOpen }) {
         {task.title}
       </motion.span>
 
-      <AssigneeCell task={task} userById={userById} users={users} />
+      <AssigneeCell task={task} userById={userById} users={users} onUpdate={applyUpdate} />
 
       <PillCell
         options={PRIORITIES}
         value={task.priority}
         meta={task.priority ? priorityMeta(task.priority) : null}
         emptyLabel="Prioridad"
-        onChange={(id) => updateTask(task.id, { priority: id })}
+        onChange={(id) => applyUpdate({ priority: id })}
       />
 
-      <DueDateCell task={task} />
+      <DueDateCell task={task} onUpdate={applyUpdate} />
 
       <PillCell
         options={STATUSES}
         value={task.status}
         meta={statusMeta(task.status)}
-        onChange={(id) => updateTask(task.id, { status: id })}
+        onChange={(id) => applyUpdate({ status: id })}
       />
     </div>
   )

@@ -67,6 +67,19 @@ export function workstreamId(kind, id) {
   return kind === 'intervencion' ? `client:${id}` : `proyecto:${id}`
 }
 
+// Firestore writes that never get a valid auth token attached (signed-out
+// session, expired token) don't always reject promptly — the SDK can leave
+// the promise pending indefinitely instead of surfacing a clear error. Every
+// inline write in Workspace races against this so a stuck write reads as
+// "this failed, try again" instead of silently doing nothing forever, which
+// looks indistinguishable from a broken button.
+export function withTimeout(promise, ms = 8000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Tardó demasiado — revisa tu conexión o que tu sesión siga activa')), ms)),
+  ])
+}
+
 // Shared between the Lista header row and every TaskRow so columns always
 // line up — a CSS grid template rather than an HTML <table> so column
 // widths are explicit and predictable instead of shrinking/overflowing

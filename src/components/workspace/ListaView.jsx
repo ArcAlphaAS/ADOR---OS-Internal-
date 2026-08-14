@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createTask, createProyectoInterno } from '../../lib/firestore'
-import { LAYERS, currentLayer, workstreamId as buildWorkstreamId, TASK_ROW_GRID } from '../../lib/workspace'
+import { LAYERS, currentLayer, workstreamId as buildWorkstreamId, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
+import { useToast } from '../../hooks/useToast'
 import TaskRow from './TaskRow'
 
 // Shown instead of a real workstream when the company has none yet — never
@@ -48,22 +49,33 @@ function LayerIndicator({ week, totalWeeks }) {
 function InlineAddTask({ workstreamId, actorUserId, actorName }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
+  const [saving, setSaving] = useState(false)
+  const showToast = useToast()
 
   const submit = async () => {
     if (!title.trim()) {
       setAdding(false)
       return
     }
-    let targetWorkstreamId = workstreamId
-    if (!targetWorkstreamId) {
-      const ref = await createProyectoInterno({ name: 'General' }, actorName)
-      targetWorkstreamId = buildWorkstreamId('proyecto', ref.id)
+    setSaving(true)
+    try {
+      let targetWorkstreamId = workstreamId
+      if (!targetWorkstreamId) {
+        const ref = await withTimeout(createProyectoInterno({ name: 'General' }, actorName))
+        targetWorkstreamId = buildWorkstreamId('proyecto', ref.id)
+      }
+      await withTimeout(
+        createTask(
+          { title: title.trim(), workstreamId: targetWorkstreamId, assignedTo: [actorUserId], priority: 'media', dueDate: null },
+          actorName
+        )
+      )
+      setTitle('')
+    } catch (error) {
+      showToast(`No se pudo crear la tarea: ${error.message}`)
+    } finally {
+      setSaving(false)
     }
-    createTask(
-      { title: title.trim(), workstreamId: targetWorkstreamId, assignedTo: [actorUserId], priority: 'media', dueDate: null },
-      actorName
-    )
-    setTitle('')
   }
 
   if (!adding) {
@@ -83,6 +95,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
       <input
         autoFocus
         type="text"
+        disabled={saving}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => {
@@ -93,8 +106,8 @@ function InlineAddTask({ workstreamId, actorUserId, actorName }) {
           }
         }}
         onBlur={submit}
-        placeholder="Título de la tarea — Enter para guardar"
-        className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50"
+        placeholder={saving ? 'Guardando...' : 'Título de la tarea — Enter para guardar'}
+        className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
     </div>
   )
