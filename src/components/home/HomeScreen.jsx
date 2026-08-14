@@ -11,8 +11,8 @@ import QuickLinksBlock from './QuickLinksBlock'
 
 export default function HomeScreen({ user, onNavigate }) {
   const {
-    activeClientsCount,
-    activeInterventionsCount,
+    pipelineSPCCount,
+    activeSPCount,
     tasksTodayCount,
     interventions,
     upcomingMeeting,
@@ -32,8 +32,8 @@ export default function HomeScreen({ user, onNavigate }) {
       <GreetingBlock name={firstName(user)} />
       <MetricsBlock
         onNavigate={onNavigate}
-        activeClientsCount={activeClientsCount}
-        activeInterventionsCount={activeInterventionsCount}
+        pipelineSPCCount={pipelineSPCCount}
+        activeSPCount={activeSPCount}
         tasksTodayCount={tasksTodayCount}
       />
       <FinanceBlock

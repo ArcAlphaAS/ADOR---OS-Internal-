@@ -7,6 +7,7 @@ import AppShell from './components/shell/AppShell'
 import { useAuth } from './hooks/useAuth'
 import { useWelcomeScreen } from './hooks/useWelcomeScreen'
 import { firstName } from './lib/user'
+import { saveUserProfile } from './lib/firestore'
 
 const PREVIEW_MOCK_USER = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview')
   ? {
@@ -32,6 +33,14 @@ function App() {
     setLoginError('')
     setLoginNotice('')
   }, [user?.uid])
+
+  // Self-registers a lightweight users/{uid} directory entry on login — the
+  // only way to populate "Asociado responsable" pickers without a Firebase
+  // Admin SDK backend to list every Auth user. See lib/firestore.js.
+  useEffect(() => {
+    if (!user || user.uid === 'preview') return
+    saveUserProfile(user.uid, { displayName: user.displayName || null, email: user.email })
+  }, [user?.uid, user?.displayName])
 
   // Splash and Login aren't separate routes, just state — without a history
   // entry the browser's Back button leaves the app entirely instead of

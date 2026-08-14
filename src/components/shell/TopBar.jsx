@@ -7,6 +7,7 @@ import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
+import { useClientNotifications } from '../../hooks/useClientNotifications'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
 // pill expanding) — a symmetric ease-in-out curve reads as smoother/more
@@ -201,13 +202,14 @@ export default function TopBar({
   onResetPassword,
   activeModule,
   onNavigate,
-  hasUnreadNotifications = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
+  const notifications = useClientNotifications()
+  const hasUnreadNotifications = notifications.length > 0
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -270,7 +272,7 @@ export default function TopBar({
                   <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />,
                   document.body
                 )}
-                <NotificationCenter items={[]} anchorRect={notifRect} />
+                <NotificationCenter items={notifications} anchorRect={notifRect} />
               </>
             )}
           </AnimatePresence>

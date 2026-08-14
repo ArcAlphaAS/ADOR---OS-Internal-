@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-08-14 (later same day). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-08-14 (evening). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -8,7 +8,8 @@ Last updated: 2026-08-14 (later same day). This is the living status snapshot �
 |---|---|
 | Phase 1 — Splash, Login, Welcome | ✅ Done |
 | Phase 2 — Shell + Home | ✅ Done |
-| Phase 3 — real data + remaining modules | ⬜ Not started |
+| Phase 3 — Clientes module | ✅ Done (2026-08-14) |
+| Phase 3 — remaining modules (Workspace, Objetivos, Calendario, Finanzas, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
 
 ## What's actually built
 
@@ -32,12 +33,24 @@ Last updated: 2026-08-14 (later same day). This is the living status snapshot �
 - [x] Metrics row (3 cards) — shimmer skeletons, no real values
 - [x] Interventions card — pulsing live-dot, shimmer empty state
 - [x] Meeting + Decision cards — breathing icons, empty-state copy
-- [x] Finance block — latest monthly revenue, % change vs. prior month, hand-drawn SVG sparkline (last 6 months), shimmer empty state. Reads from new `revenue` Firestore collection — no input UI yet, records are added manually via Firestore console until a full Finanzas module exists
+- [x] Finance block — latest monthly revenue, % change vs. prior month, hand-drawn SVG sparkline (last 6 months), shimmer empty state. **Derives from real client payment records** (`clients/{id}.pago1`/`pago2`), not a manually-entered collection — see below
 - [x] Activity list — pulsing dot, "todo al día" empty state
 - [x] Quick Links — Google Drive only
+- [x] Metrics + notifications now use ADOR vocabulary and real Clientes data ("SPC en Pipeline", "SP Activos"; bell shows real "sin contacto +7 días" items)
+
+**Phase 3 — Clientes module (2026-08-14)**
+- [x] Full SPC→SP pipeline CRM — 7 stages (Generación → Contacto → Calificación → Lectura → Propuesta Comercial → Cierre → Intervención Activa), ADOR vocabulary throughout (never "cliente"/"prospecto")
+- [x] Kanban view — drag-and-drop between stage columns (Framer Motion, hit-tested against column rects), glow-pulse animation + gray→blue accent change on SPC→SP conversion
+- [x] List view — sortable, filterable (stage/type/asociado/pago), searchable, inline-editable "next step", hover quick-actions
+- [x] View toggle persists per user in `users/{uid}.clientesView`
+- [x] Ficha detail panel (480px slide-in) — General (editable fields, contact, auto-save notes), Pagos (60/40 split, auto-unlock Pago 2, auto "Intervención Pagada" badge), Documentos (drag-drop, **metadata only — see Infrastructure status**), Historial (auto-logged events + manual "Registrar interacción")
+- [x] "+ Nuevo SPC" 3-step modal (Organización → Contacto → Pipeline)
+- [x] Living-system connections verified end-to-end: SPC→SP conversion updates Home's "SP Activos" + Intervenciones Activas; payments marked Recibido update Home's Resumen Financiero; stale SPCs (+7 días sin avance) surface in the notification bell
+- [x] Self-registering `users/{uid}` directory (App.jsx, on login) — populates "Asociado responsable" pickers without a Firebase Admin SDK backend
 
 **Not built yet**
-- [ ] No module besides Inicio has real content (Workspace, Objetivos, Calendario, Clientes, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
+- [ ] No module besides Inicio and Clientes has real content (Workspace, Objetivos, Calendario, Finanzas, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
+- [ ] Documentos tab (Ficha panel) only stores file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
 ## Infrastructure status
 
@@ -58,4 +71,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: build out the Clientes module end-to-end, then a dedicated Finanzas module (deliberately kept separate from Clientes — see CLAUDE.md for why) with real data-entry UI instead of manual Firestore console edits.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: enable Firebase Storage for real Documentos uploads, then build a dedicated Finanzas module (quarterly/annual rollups, expenses — reading from the same `clients/{id}.pago1`/`pago2` records Clientes already writes, not a separate ledger).

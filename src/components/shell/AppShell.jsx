@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ModulePlaceholder from './ModulePlaceholder'
 import HomeScreen from '../home/HomeScreen'
+import ClientesModule from '../clientes/ClientesModule'
 
 const MODULE_LABELS = {
   inicio: 'Inicio',
@@ -46,6 +47,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           <AnimatePresence mode="wait">
             {activeModule === 'inicio' ? (
               <HomeScreen key="inicio" user={user} onNavigate={setActiveModule} />
+            ) : activeModule === 'clientes' ? (
+              <ClientesModule key="clientes" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}

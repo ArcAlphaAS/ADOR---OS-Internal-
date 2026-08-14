@@ -1,8 +1,4 @@
-const currencyFormatter = new Intl.NumberFormat('es', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-})
+import { currencyPEN } from '../../lib/clientStages'
 
 // Hand-drawn sparkline (no charting library, per project convention) —
 // normalizes the last few monthly revenue points into a 240x56 viewBox.
@@ -60,7 +56,7 @@ export default function FinanceBlock({ latestRevenueAmount, revenueChangePct, re
         <>
           <div className="mt-3 flex items-baseline gap-3">
             <span className="text-[32px] font-semibold text-[#F5F5F5]">
-              {currencyFormatter.format(latestRevenueAmount)}
+              {currencyPEN.format(latestRevenueAmount)}
             </span>
             {revenueChangePct !== null && (
               <span

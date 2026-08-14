@@ -155,3 +155,73 @@ export function CloseIcon(props) {
     </svg>
   )
 }
+
+export function KanbanIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
+      <rect x="3.5" y="4" width="5" height="16" rx="1.5" />
+      <rect x="9.5" y="4" width="5" height="10" rx="1.5" />
+      <rect x="15.5" y="4" width="5" height="13" rx="1.5" />
+    </svg>
+  )
+}
+
+export function ListViewIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
+      <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+    </svg>
+  )
+}
+
+export function EditIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M4 20h4L18.5 9.5a2 2 0 0 0-4-4L4 16v4Z" />
+      <path d="M14 6l4 4" />
+    </svg>
+  )
+}
+
+export function UploadIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
+      <path d="M12 15V4M8 8l4-4 4 4" />
+      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
+  )
+}
+
+export function FileIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 18} height={props.size ?? 18} {...base} className={props.className} style={props.style}>
+      <path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+    </svg>
+  )
+}
+
+export function DownloadIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M12 4v11M8 11l4 4 4-4" />
+      <path d="M4 19h16" />
+    </svg>
+  )
+}
+
+export function ArrowRightIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M4 12h16M13 5l7 7-7 7" />
+    </svg>
+  )
+}
+
+export function ArrowLeftIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M20 12H4M11 5l-7 7 7 7" />
+    </svg>
+  )
+}

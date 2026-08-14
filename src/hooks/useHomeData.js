@@ -1,40 +1,33 @@
 import { useEffect, useState } from 'react'
 import {
   subscribeClients,
-  subscribeInterventions,
   subscribeTasksForUser,
   subscribeDecisions,
   subscribeMeetings,
-  subscribeRevenue,
 } from '../lib/firestore'
 
 // Shapes expected on each collection (beyond what's in firestore.js):
-//   clients:       { name, status: 'active' | 'inactive' }
-//   interventions: { clientId, status: 'active' | 'completed', weekNumber, totalWeeks }
-//   tasks:         { assignedTo, title, dueDate: Timestamp, status }
-//   decisions:     { title, decidedAt: Timestamp }
-//   meetings:      { title, startsAt: Timestamp }
-//   revenue:       { month: 'YYYY-MM', amount: number } — one doc per month
+//   clients:   { name, stage, pago1: {amount, status, date}, pago2: {...},
+//                interventionWeek, interventionTotalWeeks }
+//   tasks:     { assignedTo, title, dueDate: Timestamp, status }
+//   decisions: { title, decidedAt: Timestamp }
+//   meetings:  { title, startsAt: Timestamp }
 export function useHomeData(userId) {
   const [clients, setClients] = useState([])
-  const [interventions, setInterventions] = useState([])
   const [tasks, setTasks] = useState([])
   const [decisions, setDecisions] = useState([])
   const [meetings, setMeetings] = useState([])
-  const [revenue, setRevenue] = useState([])
 
   useEffect(() => subscribeClients(setClients), [])
-  useEffect(() => subscribeInterventions(setInterventions), [])
   useEffect(() => subscribeDecisions(setDecisions), [])
   useEffect(() => subscribeMeetings(setMeetings), [])
-  useEffect(() => subscribeRevenue(setRevenue), [])
   useEffect(() => {
     if (!userId) return
     return subscribeTasksForUser(userId, setTasks)
   }, [userId])
 
-  const activeClients = clients.filter((c) => c.status === 'active')
-  const activeInterventions = interventions.filter((i) => i.status === 'active')
+  const activeSPs = clients.filter((c) => c.stage === 'intervencion_activa')
+  const pipelineSPCs = clients.filter((c) => c.stage !== 'intervencion_activa')
 
   const startOfToday = new Date()
   startOfToday.setHours(0, 0, 0, 0)
@@ -45,12 +38,13 @@ export function useHomeData(userId) {
     return due && due >= startOfToday && due <= endOfToday
   })
 
-  const clientNameById = Object.fromEntries(clients.map((c) => [c.id, c.name]))
-  const interventionRows = activeInterventions.map((i) => ({
-    client: clientNameById[i.clientId] || 'Cliente',
-    week: i.weekNumber,
-    totalWeeks: i.totalWeeks,
-    progress: i.totalWeeks ? Math.round((i.weekNumber / i.totalWeeks) * 100) : 0,
+  const interventionRows = activeSPs.map((c) => ({
+    client: c.name,
+    week: c.interventionWeek || 1,
+    totalWeeks: c.interventionTotalWeeks || 1,
+    progress: c.interventionTotalWeeks
+      ? Math.round(((c.interventionWeek || 1) / c.interventionTotalWeeks) * 100)
+      : 0,
   }))
 
   const now = new Date()
@@ -62,22 +56,37 @@ export function useHomeData(userId) {
     .filter((d) => d.decidedAt?.toDate)
     .sort((a, b) => b.decidedAt.toDate() - a.decidedAt.toDate())[0]
 
-  const latestRevenue = revenue[revenue.length - 1]
-  const previousRevenue = revenue[revenue.length - 2]
+  // Revenue is derived from real payment records (pago1/pago2 across all
+  // clients) rather than a hand-entered monthly total — one source of truth
+  // shared with the Clientes module's Pagos tab. See CLAUDE.md §8.
+  const monthTotals = new Map()
+  for (const client of clients) {
+    for (const key of ['pago1', 'pago2']) {
+      const payment = client[key]
+      if (payment?.status !== 'Recibido' || !payment.date || !payment.amount) continue
+      const monthKey = payment.date.slice(0, 7)
+      monthTotals.set(monthKey, (monthTotals.get(monthKey) || 0) + payment.amount)
+    }
+  }
+  const revenueSeries = [...monthTotals.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, amount]) => ({ month, amount }))
+  const latestRevenueEntry = revenueSeries[revenueSeries.length - 1]
+  const previousRevenueEntry = revenueSeries[revenueSeries.length - 2]
   const revenueChangePct =
-    latestRevenue && previousRevenue?.amount
-      ? ((latestRevenue.amount - previousRevenue.amount) / previousRevenue.amount) * 100
+    latestRevenueEntry && previousRevenueEntry?.amount
+      ? ((latestRevenueEntry.amount - previousRevenueEntry.amount) / previousRevenueEntry.amount) * 100
       : null
 
   return {
-    activeClientsCount: activeClients.length,
-    activeInterventionsCount: activeInterventions.length,
+    activeSPCount: activeSPs.length,
+    pipelineSPCCount: pipelineSPCs.length,
     tasksTodayCount: tasksToday.length,
     interventions: interventionRows,
     upcomingMeeting,
     latestDecision,
-    revenueSeries: revenue.slice(-6),
-    latestRevenueAmount: latestRevenue?.amount,
+    revenueSeries: revenueSeries.slice(-6),
+    latestRevenueAmount: latestRevenueEntry?.amount,
     revenueChangePct,
   }
 }

@@ -6,11 +6,11 @@ Invite-only. Dark, glass-surfaced, quiet by design ("something Apple would ship 
 
 ## Status
 
-Phases 1 and 2 are done (Splash/Login/Welcome, and the shell + Home screen). See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
+Phases 1–2 (Splash/Login/Welcome, shell + Home) and the Clientes module (SPC→SP pipeline CRM) are done and live. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
 
 ## Stack
 
-React 19 + Vite + Tailwind CSS v4 + Framer Motion + Firebase (Auth now, Firestore planned). No UI component libraries — every control is hand-built.
+React 19 + Vite + Tailwind CSS v4 + Framer Motion + Firebase (Auth + Firestore, both live). No UI component libraries — every control is hand-built.
 
 ## Running it
 
@@ -25,7 +25,7 @@ Open the printed `localhost` URL. Vite will pick a free port (usually 5173, some
 
 ### Firebase config
 
-Real project credentials live in `.env` (gitignored). Copy `.env.example` if you ever need to recreate it — the values are already filled in for the live `ador-os` Firebase project (Authentication → Email/Password + Google are enabled; Firestore is **not** yet enabled).
+Real project credentials live in `.env` (gitignored). Copy `.env.example` if you ever need to recreate it — the values are already filled in for the live `ador-os` Firebase project (Authentication: Email/Password only; Firestore: enabled, `nam5` region; Storage: **not yet enabled**, needed for real file uploads in Clientes → Documentos).
 
 ## Project structure
 
@@ -33,17 +33,21 @@ Real project credentials live in `.env` (gitignored). Copy `.env.example` if you
 src/
   App.jsx                 Top-level state machine: Splash → Login → Welcome → AppShell
   firebase.js              Firebase init, guarded so missing config degrades to "logged out" instead of crashing
-  index.css                Design tokens: .ador-glass, .ador-grain, .ador-skeleton, keyframes
+  index.css                Design tokens: .ador-glass, .ador-grain, .ador-modal-surface, .ador-btn-primary, .ador-skeleton, keyframes
   components/
     SplashScreen.jsx, LoginScreen.jsx, WelcomeScreen.jsx, Logo.jsx, LoadingRing.jsx   Phase 1 screens
     icons.jsx               Hand-drawn line icon set (no icon library)
-    shell/                  TopBar, Sidebar, AppShell, ModulePlaceholder, NotificationCenter, ProfileMenu
-    home/                   HomeScreen + its 6 blocks (Greeting, Metrics, Interventions, MeetingDecision, Activity, QuickLinks)
+    shell/                  TopBar, Sidebar, AppShell, ModulePlaceholder, NotificationCenter, ProfileMenu, ProfileModal, SettingsModal
+    home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks)
+    clientes/                Clientes module — ClientesModule, KanbanBoard/Column/Card, ListView, ClientDetailPanel + tabs/, NewClientModal
   hooks/
     useAuth.js               Firebase auth wrapper
+    useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
+    useClientNotifications.js Bell notifications ("sin contacto +7 días") — lives outside useHomeData since TopBar needs it everywhere
     useWelcomeScreen.js       localStorage-driven "show Welcome once per day/block" logic
   lib/
-    firestore.js             Collection schema + subscribe hooks (defined, not yet wired to UI)
+    firestore.js             Collection schema + CRUD + subscribe hooks
+    clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers
     user.js                  Shared user-name helpers
 ```
 
