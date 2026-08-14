@@ -62,7 +62,7 @@ These came from an explicit design discussion — worth preserving as a pattern,
 
 ## Known issues / gotchas
 
-- **No git repository yet.** User explicitly deferred this to "Phase 2" and Phase 2 is now done — this is overdue. See memory file `project_ador_os_git_setup.md` in the user's Claude memory directory for the agreed plan (local git init + private GitHub repo, one browser auth step).
+- **Git + GitHub done (2026-08-13).** Local repo initialized, initial commit made, pushed to private GitHub repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` tracks `origin/main`.
 - **Firestore is not enabled** in the Firebase console. `lib/firestore.js` defines the full collection schema (`users`, `clients`, `interventions`, `tasks`, `decisions`, `meetings`, `notifications`) and subscribe hooks, but none of it has been tested against a real database, and nothing in the UI calls it yet.
 - **ProfileMenu's "Mi Perfil" and "Configuración" items don't do anything** — only "Cerrar Sesión" is wired (to real Firebase `signOut`).
 - **Dev server port varies.** Claude's own preview tooling often occupies 5173, so the user's own `npm run dev` sometimes lands on 5174/5180/etc. Not a bug.
@@ -71,10 +71,9 @@ These came from an explicit design discussion — worth preserving as a pattern,
 ## Next recommended steps (in priority order, as discussed with the user)
 
 1. **Enable Firestore + wire real data.** This is the highest-impact next step — most of Home's visual polish (shimmer skeletons, pulse dots) is currently reacting to the *absence* of data; seeing it react to real data is the next real milestone.
-2. **Set up git + a private GitHub repo.** Was deferred twice already; do it before more work piles up unbacked-up.
-3. **Build out one real module end-to-end** — user's stated preference is **Clientes** (core to the CRM concept), rather than spreading effort thin across all 10 placeholder modules at once.
-4. **Deploy to Firebase Hosting** (same project, free tier) so the other two founders can access it without the user's laptop running a dev server.
-5. Minor: wire "Mi Perfil" / "Configuración" in `ProfileMenu.jsx` to something real once there's a profile/settings surface to link to.
+2. **Build out one real module end-to-end** — user's stated preference is **Clientes** (core to the CRM concept), rather than spreading effort thin across all 10 placeholder modules at once.
+3. **Deploy to Firebase Hosting** (same project, free tier) so the other two founders can access it without the user's laptop running a dev server.
+4. Minor: wire "Mi Perfil" / "Configuración" in `ProfileMenu.jsx` to something real once there's a profile/settings surface to link to.
 
 ## Other context that only exists in conversation history (not in any file)
 

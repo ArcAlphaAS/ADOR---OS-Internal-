@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-07-09. This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-08-13. This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -49,13 +49,13 @@ Last updated: 2026-07-09. This is the living status snapshot — update the chec
 | Firebase Firestore | **Not enabled** |
 | Firebase Hosting | Not set up |
 | `.env` (Firebase config) | Present locally, gitignored |
-| Git repository | **Does not exist** — deferred twice, now overdue |
-| GitHub | N/A (no git repo yet) |
+| Git repository | ✅ Initialized, initial commit made 2026-08-13 |
+| GitHub | ✅ Private repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` pushed and tracked |
 
 ## Open blockers
 
-None hard-blocking — everything above is "not started," not "stuck." The two things worth doing before more work piles up: **git init** (no backup of any of this exists outside this machine) and **enabling Firestore** (Home screen can't show real data until it does).
+None hard-blocking — everything above is "not started," not "stuck." Next thing worth doing: **enabling Firestore** (Home screen can't show real data until it does).
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version, in order: Firestore + real data → git/GitHub → build out the Clientes module → deploy to Firebase Hosting.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version, in order: Firestore + real data → build out the Clientes module → deploy to Firebase Hosting.
