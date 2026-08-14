@@ -3,8 +3,10 @@ import { motion } from 'framer-motion'
 import { updateClient, registerPayment } from '../../../lib/firestore'
 import { PAGO1_PERCENT, PAGO2_PERCENT, currencyPEN } from '../../../lib/clientStages'
 import { CheckCircleIcon } from '../../icons'
+import { useToast } from '../../../hooks/useToast'
 
 function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
+  const showToast = useToast()
   const payment = client[paymentKey] || {}
   const received = payment.status === 'Recibido'
   const amount = client.montoAcordado ? (client.montoAcordado * percent) / 100 : payment.amount || 0
@@ -42,7 +44,10 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
           ) : (
             <button
               type="button"
-              onClick={() => registerPayment(client, paymentKey, amount, actorName)}
+              onClick={async () => {
+                await registerPayment(client, paymentKey, amount, actorName)
+                showToast(`${label} registrado como recibido.`)
+              }}
               className="ador-btn-primary rounded-full px-4 py-1.5 text-[12px] font-medium"
             >
               Marcar recibido

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { subscribeClientDocuments, addDocumentMeta } from '../../../lib/firestore'
 import { UploadIcon, FileIcon, DownloadIcon } from '../../icons'
+import { useToast } from '../../../hooks/useToast'
 
 const ACCEPTED = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 
@@ -13,6 +14,7 @@ function formatDate(value) {
 export default function DocumentosTab({ client, actorName }) {
   const [documents, setDocuments] = useState([])
   const [dragOver, setDragOver] = useState(false)
+  const showToast = useToast()
 
   useEffect(() => subscribeClientDocuments(client.id, setDocuments), [client.id])
 
@@ -20,6 +22,9 @@ export default function DocumentosTab({ client, actorName }) {
     Array.from(files).forEach((file) => {
       addDocumentMeta(client.id, { name: file.name, type: file.type || 'archivo', size: file.size }, actorName)
     })
+    showToast(
+      files.length > 1 ? `${files.length} archivos registrados correctamente.` : 'Archivo registrado correctamente.'
+    )
   }
 
   return (

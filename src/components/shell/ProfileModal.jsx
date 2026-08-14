@@ -4,11 +4,13 @@ import { motion } from 'framer-motion'
 import { getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { resizeImageToDataUrl } from '../../lib/image'
 import Avatar from './Avatar'
+import { useToast } from '../../hooks/useToast'
 
 const inputClass =
   'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
 
 export default function ProfileModal({ user, onClose, onSave }) {
+  const showToast = useToast()
   const [name, setName] = useState(user?.displayName || '')
   const [birthday, setBirthday] = useState('')
   const [photoDataUrl, setPhotoDataUrl] = useState(null)
@@ -54,7 +56,10 @@ export default function ProfileModal({ user, onClose, onSave }) {
     setError('')
     try {
       await onSave(trimmed)
-      await saveUserProfile(user.uid, { birthday: birthday || null, photoDataUrl: photoDataUrl || null })
+      if (user.uid !== 'preview') {
+        await saveUserProfile(user.uid, { birthday: birthday || null, photoDataUrl: photoDataUrl || null })
+      }
+      showToast('Perfil actualizado correctamente.')
       onClose()
     } catch {
       setError('No pudimos guardar los cambios.')

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '../../lib/firestore'
 import { STAGES } from '../../lib/clientStages'
+import { useToast } from '../../hooks/useToast'
 
 const labelClass = 'mb-1.5 block font-medium text-[#444444]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -46,6 +47,7 @@ export default function NewClientModal({ users, actorName, onClose, onCreated })
   const [step, setStep] = useState(1)
   const [form, setForm] = useState(INITIAL)
   const [creating, setCreating] = useState(false)
+  const showToast = useToast()
 
   const canAdvance =
     (step === 1 && form.name.trim()) ||
@@ -75,6 +77,7 @@ export default function NewClientModal({ users, actorName, onClose, onCreated })
         },
         actorName
       )
+      showToast(`${form.name.trim()} fue creado correctamente.`)
       onCreated(id)
     } finally {
       setCreating(false)
