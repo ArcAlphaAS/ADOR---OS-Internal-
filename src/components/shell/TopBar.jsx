@@ -9,6 +9,7 @@ import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
 import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
+import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
@@ -214,7 +215,9 @@ export default function TopBar({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
-  const notifications = useClientNotifications()
+  const clientNotifications = useClientNotifications()
+  const taskNotifications = useTaskNotifications(user?.uid)
+  const notifications = [...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
