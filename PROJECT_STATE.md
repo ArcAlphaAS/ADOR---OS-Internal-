@@ -36,7 +36,6 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 **Not built yet**
 - [ ] No module besides Inicio has real content (Workspace, Objetivos, Calendario, Clientes, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
 - [ ] "Mi Perfil" / "Configuración" menu items do nothing
-- [ ] No `allowedEmails` Firestore-based access whitelist yet — currently anyone with a Firebase Auth account created by the admin can sign in and read/write all data; a per-email allowlist enforced in security rules is the next hardening step
 
 ## Infrastructure status
 
@@ -45,7 +44,7 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 | Node.js | Portable install at `~/.local/node`, on `PATH` via `~/.zshrc` |
 | Firebase project (`ador-os`) | Created |
 | Firebase Authentication | Enabled — **Email/Password only**. Google OAuth was enabled then removed 2026-08-14 (self-serve sign-in let any Google account in; invite-only model needs admin-provisioned accounts instead) |
-| Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region, production-mode rules: `allow read, write: if request.auth != null` |
+| Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region. Rules require `request.auth != null` AND the user's email to have a document in `allowedEmails/{email}` — access control enforced at the data layer, not just the login screen. All 3 founder emails added as of 2026-08-14 |
 | Deployment | ✅ Vercel — `ador-os-internal.vercel.app`, auto-deploys on push to `main`. Firebase Hosting not used (redundant with Vercel) |
 | `.env` (Firebase config) | Present locally, gitignored. Same values set as Environment Variables in Vercel project settings |
 | Git repository | ✅ Initialized, initial commit made 2026-08-13 |
@@ -53,8 +52,8 @@ Last updated: 2026-08-14. This is the living status snapshot — update the chec
 
 ## Open blockers
 
-None hard-blocking. Worth doing soon: harden access control with a Firestore `allowedEmails` whitelist (see "Not built yet" above) so account creation stays fully admin-controlled at the data layer, not just at the login screen.
+None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version, in order: `allowedEmails` access whitelist → build out the Clientes module → provision teammate accounts via Firebase Console.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: build out the Clientes module end-to-end (highest-value next milestone now that the platform itself is operational for daily use).

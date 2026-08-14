@@ -63,17 +63,17 @@ These came from an explicit design discussion — worth preserving as a pattern,
 ## Known issues / gotchas
 
 - **Git + GitHub done (2026-08-13).** Local repo initialized, initial commit made, pushed to private GitHub repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` tracks `origin/main`.
-- **Firestore is not enabled** in the Firebase console. `lib/firestore.js` defines the full collection schema (`users`, `clients`, `interventions`, `tasks`, `decisions`, `meetings`, `notifications`) and subscribe hooks, but none of it has been tested against a real database, and nothing in the UI calls it yet.
+- **Firestore enabled and wired (2026-08-13/14).** `nam5` region. `useHomeData.js` subscribes Home to live `clients`/`interventions`/`tasks`/`decisions`/`meetings` data via the hooks in `lib/firestore.js`. Security rules require `request.auth != null` AND an `allowedEmails/{email}` document to exist for the signed-in user's email — access control is enforced at the data layer, not just the login screen. The 3 founder emails are the only entries in `allowedEmails` as of 2026-08-14.
+- **Google OAuth removed (2026-08-14).** Self-serve Google sign-in auto-created a Firebase Auth account for any Google account — didn't fit the invite-only model. Login is now email/password only; accounts are created by the admin in Firebase Console → Authentication → Users, one at a time, with a temp password the teammate resets on first login.
+- **Deployed to Vercel (2026-08-14).** Live at `ador-os-internal.vercel.app`, connected to the GitHub repo, auto-deploys on push to `main`. Firebase Hosting was considered but skipped as redundant — Firebase Auth/Firestore don't care what host serves the static build, and the user already manages other projects on Vercel. The `?preview=1` dev-only auth bypass in `App.jsx` is gated behind `import.meta.env.DEV` so it cannot activate in the production build.
 - **ProfileMenu's "Mi Perfil" and "Configuración" items don't do anything** — only "Cerrar Sesión" is wired (to real Firebase `signOut`).
 - **Dev server port varies.** Claude's own preview tooling often occupies 5173, so the user's own `npm run dev` sometimes lands on 5174/5180/etc. Not a bug.
 - **Claude's own screenshot preview tool has an intermittent quirk** (unrelated to this codebase): after a custom `preview_resize` call combined with a full-page `window.location.href` navigation, screenshots sometimes render the page squished into a small corner even though `window.innerWidth` correctly reports the resized value. Workaround: stop and restart the preview server, or trust `getBoundingClientRect()`/computed-style measurements over the screenshot when this happens.
 
 ## Next recommended steps (in priority order, as discussed with the user)
 
-1. **Enable Firestore + wire real data.** This is the highest-impact next step — most of Home's visual polish (shimmer skeletons, pulse dots) is currently reacting to the *absence* of data; seeing it react to real data is the next real milestone.
-2. **Build out one real module end-to-end** — user's stated preference is **Clientes** (core to the CRM concept), rather than spreading effort thin across all 10 placeholder modules at once.
-3. **Deploy to Firebase Hosting** (same project, free tier) so the other two founders can access it without the user's laptop running a dev server.
-4. Minor: wire "Mi Perfil" / "Configuración" in `ProfileMenu.jsx` to something real once there's a profile/settings surface to link to.
+1. **Build out one real module end-to-end** — user's stated preference is **Clientes** (core to the CRM concept), rather than spreading effort thin across all 10 placeholder modules at once. This is now the highest-value next step: auth, data layer, and deployment are all done, so Clientes is the next real milestone.
+2. Minor: wire "Mi Perfil" / "Configuración" in `ProfileMenu.jsx` to something real once there's a profile/settings surface to link to.
 
 ## Other context that only exists in conversation history (not in any file)
 
