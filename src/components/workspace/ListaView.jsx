@@ -13,7 +13,7 @@ import TaskRow from './TaskRow'
 // "create a project first."
 const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Vence', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
 function LayerIndicator({ week, totalWeeks }) {
   const active = currentLayer(week, totalWeeks)

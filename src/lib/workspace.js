@@ -84,4 +84,5 @@ export function withTimeout(promise, ms = 8000) {
 // line up — a CSS grid template rather than an HTML <table> so column
 // widths are explicit and predictable instead of shrinking/overflowing
 // based on content (which is what was clipping the Estado column).
-export const TASK_ROW_GRID = '28px minmax(0,1fr) 96px 92px 76px 104px'
+// checkbox · tarea · descripción · asignado · prioridad · estimación · estado
+export const TASK_ROW_GRID = '28px minmax(140px,1.3fr) minmax(120px,1fr) 92px 88px 120px 104px'

@@ -7,10 +7,8 @@ import AvatarStack from './AvatarStack'
 import CellPopover from './CellPopover'
 import { CheckCircleIcon } from '../icons'
 
-function formatDueDate(task) {
-  const due = task.dueDate?.toDate?.()
-  if (!due) return null
-  return due.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+function formatShort(date) {
+  return date.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
 // Click-to-open dropdown for a pill-style field (Estado/Prioridad) — stops
@@ -63,42 +61,111 @@ function PillCell({ options, value, meta, onChange, emptyLabel }) {
   )
 }
 
-function DueDateCell({ task, onUpdate }) {
-  const [editing, setEditing] = useState(false)
+// "Estimación" — start and due date together, matching Timeline's own
+// startDate/dueDate fields (see TimelineView.jsx) so a duration set here is
+// the exact same duration that draws as a bar there. A due-date-only task
+// still shows just its due date; adding a start date is optional.
+function EstimationCell({ task, onUpdate }) {
+  const [open, setOpen] = useState(false)
+  const [rect, setRect] = useState(null)
+  const triggerRef = useRef(null)
   const due = task.dueDate?.toDate?.()
-  const dueLabel = formatDueDate(task)
+  const start = task.startDate?.toDate?.()
   const overdue = isOverdue(task)
   const dueToday = isDueToday(task)
 
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        type="date"
-        defaultValue={due ? due.toISOString().slice(0, 10) : ''}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => {
-          onUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })
-          setEditing(false)
+  const label = due ? (start ? `${formatShort(start)} – ${formatShort(due)}` : formatShort(due)) : null
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setRect(triggerRef.current.getBoundingClientRect())
+          setOpen(true)
         }}
-        onBlur={() => setEditing(false)}
-        className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-1.5 py-1 text-[11px] text-[#F5F5F5] outline-none"
-      />
-    )
+        className="w-fit truncate text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
+        style={{ color: label ? (overdue ? '#EF5350' : dueToday ? '#FFC107' : '#888888') : '#444444' }}
+      >
+        {label || 'Agregar fecha'}
+      </button>
+
+      {open && (
+        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={210}>
+          <div className="flex flex-col gap-2 p-1">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Inicio</span>
+              <input
+                type="date"
+                defaultValue={start ? start.toISOString().slice(0, 10) : ''}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => onUpdate({ startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
+                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Fin</span>
+              <input
+                type="date"
+                defaultValue={due ? due.toISOString().slice(0, 10) : ''}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => onUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
+                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
+              />
+            </label>
+          </div>
+        </CellPopover>
+      )}
+    </div>
+  )
+}
+
+function DescriptionCell({ task, onUpdate }) {
+  const [open, setOpen] = useState(false)
+  const [rect, setRect] = useState(null)
+  const [draft, setDraft] = useState(task.description || '')
+  const triggerRef = useRef(null)
+
+  const save = () => {
+    if (draft !== (task.description || '')) onUpdate({ description: draft.trim() })
+    setOpen(false)
   }
 
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation()
-        setEditing(true)
-      }}
-      className="w-fit text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
-      style={{ color: dueLabel ? (overdue ? '#EF5350' : dueToday ? '#FFC107' : '#888888') : '#444444' }}
-    >
-      {dueLabel || 'Agregar fecha'}
-    </button>
+    <div>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setDraft(task.description || '')
+          setRect(triggerRef.current.getBoundingClientRect())
+          setOpen(true)
+        }}
+        className="w-full truncate text-left text-[13px] transition-opacity duration-150 hover:opacity-80"
+        style={{ color: task.description ? '#888888' : '#444444' }}
+      >
+        {task.description || 'Agregar descripción'}
+      </button>
+
+      {open && (
+        <CellPopover anchorRect={rect} onClose={save} width={260}>
+          <div className="p-1">
+            <textarea
+              autoFocus
+              rows={3}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder="Agregar descripción..."
+              className="w-full resize-none rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-2 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+            />
+          </div>
+        </CellPopover>
+      )}
+    </div>
   )
 }
 
@@ -194,6 +261,8 @@ export default function TaskRow({ task, userById, users, onOpen }) {
         {task.title}
       </motion.span>
 
+      <DescriptionCell task={task} onUpdate={applyUpdate} />
+
       <AssigneeCell task={task} userById={userById} users={users} onUpdate={applyUpdate} />
 
       <PillCell
@@ -204,7 +273,7 @@ export default function TaskRow({ task, userById, users, onOpen }) {
         onChange={(id) => applyUpdate({ priority: id })}
       />
 
-      <DueDateCell task={task} onUpdate={applyUpdate} />
+      <EstimationCell task={task} onUpdate={applyUpdate} />
 
       <PillCell
         options={STATUSES}

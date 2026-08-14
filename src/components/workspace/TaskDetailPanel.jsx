@@ -104,6 +104,21 @@ export default function TaskDetailPanel({ task, workstream, users, userById, onC
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Descripción
+            </span>
+            <textarea
+              defaultValue={task.description || ''}
+              onBlur={(e) => {
+                if (e.target.value !== (task.description || '')) updateTask(task.id, { description: e.target.value.trim() })
+              }}
+              rows={3}
+              placeholder="Sin descripción"
+              className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/[0.2]"
+            />
+          </div>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
               Estado
             </span>
             <PillToggle options={STATUSES} value={task.status} onChange={(id) => updateTask(task.id, { status: id })} />
