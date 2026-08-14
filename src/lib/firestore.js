@@ -27,8 +27,15 @@ import { app, isFirebaseConfigured } from '../firebase'
 //                                    collections — see CLAUDE.md §7/§8 for why.
 //     /clients/{clientId}/history/{eventId}    timeline entries
 //     /clients/{clientId}/documents/{docId}    uploaded-file metadata
-//   /tasks/{taskId}                 references assignedTo (userId)
-//   /decisions/{decisionId}         references clientId
+//   /proyectosInternos/{id}          Workspace's internal-work container —
+//                                    Intervenciones are NOT stored here or
+//                                    anywhere else; they're derived live from
+//                                    clients where stage === 'intervencion_activa'
+//                                    (see lib/workspace.js header for why)
+//   /tasks/{taskId}                 references workstreamId ('client:{id}' or
+//                                    'proyecto:{id}', see lib/workspace.js),
+//                                    assignedTo (array of userIds)
+//   /decisions/{decisionId}         references clientId or proyectoId (optional)
 //   /meetings/{meetingId}           references clientId
 //   /notifications/{notificationId} references userId
 export const COLLECTIONS = {
@@ -38,6 +45,10 @@ export const COLLECTIONS = {
   decisions: 'decisions',
   meetings: 'meetings',
   notifications: 'notifications',
+  expenses: 'expenses',
+  incomes: 'incomes',
+  settings: 'settings',
+  proyectosInternos: 'proyectosInternos',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -63,8 +74,67 @@ export function subscribeClients(onData) {
   return subscribeToCollection(COLLECTIONS.clients, [orderBy('createdAt', 'desc')], onData)
 }
 
+// `assignedTo` is an array of userIds (a task can have up to a few
+// Asociados on it) — array-contains matches Home's "Tareas Hoy" against it.
 export function subscribeTasksForUser(userId, onData) {
-  return subscribeToCollection(COLLECTIONS.tasks, [where('assignedTo', '==', userId)], onData)
+  return subscribeToCollection(COLLECTIONS.tasks, [where('assignedTo', 'array-contains', userId)], onData)
+}
+
+// Workspace's shared board — every task across the 3 founders, not just the
+// signed-in user's own (that's what subscribeTasksForUser is for, used by
+// Home's "Tareas Hoy").
+export function subscribeAllTasks(onData) {
+  return subscribeToCollection(COLLECTIONS.tasks, [], onData)
+}
+
+export function createTask(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.tasks), {
+    ...data,
+    status: 'por_hacer',
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateTask(taskId, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.tasks, taskId), data)
+}
+
+export function toggleTaskComplete(task) {
+  return updateTask(task.id, { status: task.status === 'completado' ? 'por_hacer' : 'completado' })
+}
+
+export function deleteTask(taskId) {
+  if (!db) return Promise.resolve()
+  return deleteDoc(doc(db, COLLECTIONS.tasks, taskId))
+}
+
+// ---- Workspace: Proyectos Internos ----
+// Intervenciones deliberately have no equivalent create/update/delete here —
+// they're derived from Clientes, never authored directly in Workspace.
+
+export function subscribeProyectosInternos(onData) {
+  return subscribeToCollection(COLLECTIONS.proyectosInternos, [orderBy('createdAt', 'desc')], onData)
+}
+
+export function createProyectoInterno(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.proyectosInternos), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function createDecision(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.decisions), {
+    ...data,
+    registeredBy: actorName,
+    decidedAt: serverTimestamp(),
+  })
 }
 
 export function subscribeDecisions(onData) {
@@ -231,4 +301,51 @@ export async function registerPayment(client, key, amount, actorName) {
       description: 'Intervención Pagada — ambos pagos recibidos',
     })
   }
+}
+
+// ---- Finanzas ----
+// Automatic income (SP payments marked Recibido) is derived from `clients`
+// directly — see useFinanceData.js — so `incomes` here only holds manual
+// entries (income not tied to a client payment record).
+
+export function subscribeExpenses(onData) {
+  return subscribeToCollection(COLLECTIONS.expenses, [orderBy('date', 'desc')], onData)
+}
+
+export function addExpense(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.expenses), {
+    ...data,
+    registeredBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function subscribeManualIncomes(onData) {
+  return subscribeToCollection(COLLECTIONS.incomes, [orderBy('date', 'desc')], onData)
+}
+
+export function addManualIncome(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.incomes), {
+    ...data,
+    registeredBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+// Single shared doc rather than a collection — one quarterly target at a
+// time, editable inline from the Finanzas dashboard.
+export function subscribeFinanceSettings(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.settings, 'finanzas'),
+    (snap) => onData(snap.exists() ? snap.data() : {}),
+    (error) => console.error('Firestore subscription to finance settings failed:', error.message)
+  )
+}
+
+export function setQuarterlyTarget(amount) {
+  if (!db) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.settings, 'finanzas'), { quarterlyTarget: amount }, { merge: true })
 }

@@ -40,14 +40,21 @@ src/
     shell/                  TopBar, Sidebar, AppShell, ModulePlaceholder, NotificationCenter, ProfileMenu, ProfileModal, SettingsModal
     home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks)
     clientes/                Clientes module — ClientesModule, KanbanBoard/Column/Card, ListView, ClientDetailPanel + tabs/, NewClientModal
+    finanzas/                Finanzas module — FinanzasModule (68/32 layout), MetricCards, FinanceChart (hand-drawn SVG bar chart), MovimientosTable, QuarterlyGoalCard, CategoryBreakdownCard, NextPaymentCard, AddIncomeModal, AddExpenseModal
+    workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView, KanbanView, TaskRow, TaskDetailPanel, DecisionesPanel, WorkspaceSidebar, AvatarStack, NewProyectoModal, RegisterDecisionModal
   hooks/
     useAuth.js               Firebase auth wrapper
     useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
+    useFinanceData.js         Finanzas' live-data hook — derives hero numbers/chart/breakdowns from clients + expenses + incomes
+    useWorkspaceData.js       Workspace's live-data hook — derives Intervenciones from clients (never stored) + Proyectos Internos + tasks, grouped
+    useCountUp.js             0→value count-up animation used by Finanzas hero numbers
     useClientNotifications.js Bell notifications ("sin contacto +7 días") — lives outside useHomeData since TopBar needs it everywhere
     useWelcomeScreen.js       localStorage-driven "show Welcome once per day/block" logic
   lib/
     firestore.js             Collection schema + CRUD + subscribe hooks
     clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers
+    finance.js                Expense categories, quarter-key helpers, ADOR vocabulary for Finanzas
+    workspace.js              Task priorities/statuses, ADOR's 7-layer methodology, workstream id helpers
     user.js                  Shared user-name helpers
 ```
 

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookIcon, UsersIcon, MessageIcon, GlobeIcon, ContactsIcon, SparkleIcon } from '../icons'
+import { CalendarIcon, BookIcon, UsersIcon, MessageIcon, GlobeIcon, ContactsIcon, SparkleIcon } from '../icons'
 
 const NAV_ITEMS = [
+  { id: 'calendario', label: 'Calendario', Icon: CalendarIcon },
   { id: 'conocimiento', label: 'Conocimiento', Icon: BookIcon },
   { id: 'comunidad', label: 'Comunidad', Icon: UsersIcon },
   { id: 'chat', label: 'Chat', Icon: MessageIcon },

@@ -9,7 +9,9 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 | Phase 1 — Splash, Login, Welcome | ✅ Done |
 | Phase 2 — Shell + Home | ✅ Done |
 | Phase 3 — Clientes module | ✅ Done (2026-08-14) |
-| Phase 3 — remaining modules (Workspace, Objetivos, Calendario, Finanzas, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
+| Phase 3 — Finanzas module | ✅ Done (2026-08-14) |
+| Phase 3 — Workspace module (Lista + Kanban; Timeline deferred) | ✅ Done (2026-08-14) |
+| Phase 3 — remaining modules (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
 
 ## What's actually built
 
@@ -48,9 +50,32 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 - [x] Living-system connections verified end-to-end: SPC→SP conversion updates Home's "SP Activos" + Intervenciones Activas; payments marked Recibido update Home's Resumen Financiero; stale SPCs (+7 días sin avance) surface in the notification bell
 - [x] Self-registering `users/{uid}` directory (App.jsx, on login) — populates "Asociado responsable" pickers without a Firebase Admin SDK backend
 
+**Phase 3 — Finanzas module (2026-08-14)**
+- [x] Asymmetric dashboard layout (68% left / 32% right, per direct user reference)
+- [x] Hero numbers (Ingresos del mes, Gastos del mes, Utilidad Neta) — no cards, typography only, count-up animation, delta pill vs. previous month
+- [x] Hand-drawn SVG area+line chart, last 6 months, Ingresos/Gastos/Ambos toggle, hover tooltip, active-month highlight band. Built hand-drawn (no Recharts/Chart.js) to match the project's existing "no charting library" convention (see `FinanceBlock.jsx`'s Sparkline) instead of the literal prompt suggestion — consistent with "no UI component libraries" project-wide
+- [x] Últimos Ingresos / Últimos Gastos — merges real SP payments (`clients/{id}.pago1`/`pago2` marked Recibido) with manual entries; "Ver todos" expands the list in place rather than linking to a page that doesn't exist yet
+- [x] Meta del Trimestre — editable target (pencil icon, inline input), animated progress bar, stored in `settings/finanzas`
+- [x] Gastos por Categoría — current-month breakdown across 6 fixed categories (Salarios, Operaciones, Herramientas, Marketing, Desplazamientos, Otros)
+- [x] Registrar — "+ Ingreso Manual" and "+ Gasto" modals, both wired to Firestore (`incomes`, `expenses` collections)
+- [x] Gasto's "Comprobante" field is metadata-only (name/type/size), same pattern and same reason as Clientes → Documentos — Firebase Storage isn't enabled yet
+- [x] Living-system connection verified: reads the same `clients/{id}.pago1`/`pago2` fields Clientes and Home already use — no parallel manually-entered revenue ledger introduced
+- [ ] **Action needed:** verify in Firebase Console that the existing Firestore security rules (auth + `allowedEmails` check) cover the new `expenses`, `incomes`, and `settings` collections — they were added to `lib/firestore.js` but this repo has no local `firestore.rules` file to edit (rules are managed live in console, per existing project setup)
+
+**Phase 3 — Workspace module (2026-08-14)**
+- [x] Two kinds of work: Intervenciones (one per active SP, derived live from `clients` — never stored, see CLAUDE.md §10) and Proyectos Internos (new `proyectosInternos` collection, created manually by any Asociado)
+- [x] Lista view — grouped by workstream, collapsible, progress bar + completion %, 7-layer indicator row for Intervenciones (computed from `interventionWeek`/`interventionTotalWeeks`, no new field), inline "+ Agregar tarea" (no modal)
+- [x] Kanban view — 4 status columns (Por Hacer / En Progreso / Completado / Bloqueado), hand-built Framer Motion drag-and-drop reusing Clientes' rect hit-test pattern
+- [x] Task Detail Panel — slide-in 440px, editable title/status/priority/due date/multi-assignee, delete with a second confirming click (no native browser `confirm()`)
+- [x] Decisiones panel — fixed right rail, last 3 decisions, "+ Registrar Decisión" (new `createDecision()` — decisions collection existed for reads only before this). Shows up in Home's "Última Decisión" automatically, same collection
+- [x] Tasks schema changed: `workstreamId`, `assignedTo` (now an array), `priority`, and a 4-state `status` (`por_hacer`/`en_progreso`/`completado`/`bloqueado`) replacing the old 2-state one — `TasksTodayBlock.jsx`/`useHomeData.js` updated to match
+- [ ] **Not built (deliberate scope cut):** Timeline view (week/month Gantt-style) — see CLAUDE.md §10 for reasoning. View toggle currently only shows Lista/Kanban
+- [ ] **Action needed:** same Firestore-rules check as Finanzas (§9) — `proyectosInternos` needs to be covered by the console rules before real writes succeed
+
 **Not built yet**
-- [ ] No module besides Inicio and Clientes has real content (Workspace, Objetivos, Calendario, Finanzas, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
-- [ ] Documentos tab (Ficha panel) only stores file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
+- [ ] No module besides Inicio, Clientes, Finanzas, and Workspace has real content (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
+- [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
+- [ ] Workspace Timeline view (see above)
 
 ## Infrastructure status
 
@@ -71,4 +96,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: enable Firebase Storage for real Documentos uploads, then build a dedicated Finanzas module (quarterly/annual rollups, expenses — reading from the same `clients/{id}.pago1`/`pago2` records Clientes already writes, not a separate ledger).
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision). Workspace's Timeline view is a good candidate for the next Workspace pass once Lista/Kanban get real daily use.

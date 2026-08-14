@@ -49,7 +49,7 @@ export function useHomeData(userId) {
       title: t.title,
       clientName: clientNameById[t.clientId],
       dueDate: t.dueDate.toDate(),
-      status: t.status || 'pendiente',
+      status: t.status || 'por_hacer',
     }))
     .sort((a, b) => a.dueDate - b.dueDate)
 

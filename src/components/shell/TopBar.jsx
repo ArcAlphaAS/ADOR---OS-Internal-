@@ -23,8 +23,8 @@ const PRIMARY_MODULES = [
   { id: 'inicio', label: 'Inicio' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'objetivos', label: 'Objetivos' },
-  { id: 'calendario', label: 'Calendario' },
   { id: 'clientes', label: 'Clientes' },
+  { id: 'finanzas', label: 'Finanzas' },
 ]
 
 // First name + first surname only, ignoring any middle names.

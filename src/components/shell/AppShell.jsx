@@ -5,6 +5,8 @@ import TopBar from './TopBar'
 import ModulePlaceholder from './ModulePlaceholder'
 import HomeScreen from '../home/HomeScreen'
 import ClientesModule from '../clientes/ClientesModule'
+import FinanzasModule from '../finanzas/FinanzasModule'
+import WorkspaceModule from '../workspace/WorkspaceModule'
 
 const MODULE_LABELS = {
   inicio: 'Inicio',
@@ -12,6 +14,7 @@ const MODULE_LABELS = {
   objetivos: 'Objetivos',
   calendario: 'Calendario',
   clientes: 'Clientes',
+  finanzas: 'Finanzas',
   conocimiento: 'Conocimiento',
   comunidad: 'Comunidad',
   chat: 'Chat',
@@ -47,8 +50,12 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           <AnimatePresence mode="wait">
             {activeModule === 'inicio' ? (
               <HomeScreen key="inicio" user={user} onNavigate={setActiveModule} />
+            ) : activeModule === 'workspace' ? (
+              <WorkspaceModule key="workspace" user={user} />
             ) : activeModule === 'clientes' ? (
               <ClientesModule key="clientes" user={user} />
+            ) : activeModule === 'finanzas' ? (
+              <FinanzasModule key="finanzas" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}

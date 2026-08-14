@@ -1,8 +1,10 @@
 const timeFormatter = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' })
 
 const STATUS_STYLE = {
-  completada: { label: 'Completada', color: '#1E5FAD' },
-  pendiente: { label: 'Pendiente', color: '#888888' },
+  por_hacer: { label: 'Por Hacer', color: '#888888' },
+  en_progreso: { label: 'En Progreso', color: '#1E5FAD' },
+  completado: { label: 'Completado', color: '#4CAF50' },
+  bloqueado: { label: 'Bloqueado', color: '#EF5350' },
 }
 
 export default function TasksTodayBlock({ tasks = [] }) {
@@ -44,7 +46,7 @@ export default function TasksTodayBlock({ tasks = [] }) {
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {tasks.map((task) => {
-                const status = STATUS_STYLE[task.status] || STATUS_STYLE.pendiente
+                const status = STATUS_STYLE[task.status] || STATUS_STYLE.por_hacer
                 return (
                   <tr key={task.id}>
                     <td className="py-3 pr-4 text-[13px] text-[#F5F5F5]">{task.title}</td>
