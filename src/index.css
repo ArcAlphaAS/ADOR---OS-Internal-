@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0a0a0a;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f5f5;
+  -webkit-box-shadow: 0 0 0px 1000px #1a1a1a inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+@keyframes ador-drift {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translate(2%, -2%) scale(1.08);
+  }
+}
+
+@keyframes ador-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ador-spin-dot {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ador-grain {
+  position: relative;
+}
+
+.ador-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Standard frosted+noisy glass recipe used on every card/surface in the shell. */
+.ador-glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes ador-shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
+/* Signals "waiting for data" rather than "nothing here" — used in place of
+   flat placeholder dashes wherever a metric has no value yet. */
+.ador-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 250% 100%;
+  animation: ador-shimmer 2.6s ease-in-out infinite;
+}
