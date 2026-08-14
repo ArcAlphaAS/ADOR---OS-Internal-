@@ -104,85 +104,80 @@ function SearchToggle() {
   )
 }
 
-// The avatar's real click/hover target is a portaled clone anchored to this
-// invisible spacer's screen position — see the note in Sidebar.jsx about why
-// floating elements can't live inside the shrink-wrapped topbar directly.
+// The hover-reveal pill lives in normal flex flow (not portaled) so that
+// its growth pushes the search/bell icons to the left instead of covering
+// them — this container is a plain flex row, not a shrink-wrapped rounded-full
+// capsule, so it doesn't hit the width-leak bug described in Sidebar.jsx.
+// Only the click-to-open ProfileMenu dropdown is portaled, since it needs to
+// float above everything at a viewport-anchored position.
 function ProfileTrigger({ user, profileOpen, onToggle, onClose, onSignOut }) {
-  const spacerRef = useRef(null)
+  const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
   const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
+    if (!profileOpen) return
     const measure = () => {
-      if (spacerRef.current) setRect(spacerRef.current.getBoundingClientRect())
+      if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect())
     }
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [])
+  }, [profileOpen])
 
   const name = shortFullName(user)
   const role = 'Fundador'
 
   return (
     <>
-      <div ref={spacerRef} style={{ width: 32, height: 32 }} />
+      <motion.div
+        ref={triggerRef}
+        layout
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={onToggle}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="ador-glass ador-grain flex cursor-pointer items-center overflow-hidden rounded-full"
+        style={{ height: 32 }}
+      >
+        <AnimatePresence initial={false}>
+          {hovered && !profileOpen && (
+            <motion.span
+              key="name"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-1.5 whitespace-nowrap pl-3"
+            >
+              <span className="text-[13px] font-medium text-[#F5F5F5]">{name}</span>
+              <span className="text-[11px] text-[#888888]">{role}</span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <Avatar user={user} size={32} />
+      </motion.div>
 
       {rect &&
         createPortal(
-          <>
-            <motion.div
-              layout
-              onMouseEnter={() => setHovered(true)}
-              onMouseLeave={() => setHovered(false)}
-              onClick={onToggle}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="ador-glass ador-grain flex cursor-pointer items-center overflow-hidden rounded-full"
-              style={{
-                position: 'fixed',
-                top: rect.top,
-                right: window.innerWidth - rect.right,
-                height: rect.height,
-                zIndex: 45,
-              }}
-            >
-              <AnimatePresence initial={false}>
-                {hovered && !profileOpen && (
-                  <motion.span
-                    key="name"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 whitespace-nowrap pl-3"
-                  >
-                    <span className="text-[13px] font-medium text-[#F5F5F5]">{name}</span>
-                    <span className="text-[11px] text-[#888888]">{role}</span>
-                  </motion.span>
+          <AnimatePresence>
+            {profileOpen && (
+              <>
+                {createPortal(
+                  <div className="fixed inset-0 z-40" onClick={onClose} />,
+                  document.body
                 )}
-              </AnimatePresence>
-              <Avatar user={user} size={32} />
-            </motion.div>
-
-            <AnimatePresence>
-              {profileOpen && (
-                <>
-                  {createPortal(
-                    <div className="fixed inset-0 z-40" onClick={onClose} />,
-                    document.body
-                  )}
-                  <ProfileMenu
-                    user={user}
-                    name={name}
-                    role={role}
-                    anchorRect={rect}
-                    onClose={onClose}
-                    onSignOut={onSignOut}
-                  />
-                </>
-              )}
-            </AnimatePresence>
-          </>,
+                <ProfileMenu
+                  user={user}
+                  name={name}
+                  role={role}
+                  anchorRect={rect}
+                  onClose={onClose}
+                  onSignOut={onSignOut}
+                />
+              </>
+            )}
+          </AnimatePresence>,
           document.body
         )}
     </>
