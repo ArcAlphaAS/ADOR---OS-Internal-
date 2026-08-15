@@ -27,7 +27,7 @@ Open the printed `localhost` URL. Vite will pick a free port (usually 5173, some
 
 Real project credentials live in `.env` (gitignored). Copy `.env.example` if you ever need to recreate it — the values are already filled in for the live `ador-os` Firebase project (Authentication: Email/Password only; Firestore: enabled, `nam5` region; Storage: **not yet enabled**, needed for real file uploads in Clientes → Documentos and Finanzas → Comprobante).
 
-**Before real (non-preview) writes will succeed on newer collections**, double-check the Firestore rules in console cover: `expenses`, `incomes`, `settings` (now also `cashBalance` and `counters.clientSeq`), `proyectosInternos`, `objetivos`, `experimentos`, and the `tasks/{id}/history` subcollection — **confirmed still missing as of 2026-08-15 night**, do this first — see PROJECT_STATE.md's "Action needed" items.
+Firestore rules use a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule (confirmed 2026-08-15), so every collection — new or future — is covered automatically; no per-collection rule edits are needed. If a real write ever fails with `permission-denied`, check whether you're on the dev-only `?preview=1` mock session (no real auth, fails by design) or whether the signed-in email is missing from `allowedEmails`.
 
 ## Project structure
 
