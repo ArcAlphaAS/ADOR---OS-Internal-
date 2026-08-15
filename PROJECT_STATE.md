@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-08-14 (evening). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-08-14 (night). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -21,10 +21,10 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 - [x] Welcome — time-of-day greeting, shows once/day or on post-13:00 return, localStorage-driven
 
 **Phase 2 — Shell**
-- [x] Top bar — centered pill-tab nav (Inicio, Workspace, Objetivos, Calendario, Clientes), no background of its own
-- [x] Sidebar — floating capsule (Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA)
+- [x] Top bar — centered pill-tab nav (Inicio, Workspace, Objetivos, Clientes, Finanzas), no background of its own
+- [x] Sidebar — floating capsule (Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) — Calendario moved here from the top bar 2026-08-14
 - [x] Search icon → expands to input (non-functional placeholder, real UI)
-- [x] Notification bell → dropdown (empty-state only, no real notifications)
+- [x] Notification bell → dropdown, now with real live notifications: SPCs sin contacto +7 días (Clientes) and overdue/due-today tasks assigned to the signed-in user (Workspace)
 - [x] Profile avatar → hover reveals name/role (smooth push-reflow animation, no overlap), click opens compact dropdown (Mi Perfil / Configuración / Cerrar Sesión — all three wired)
 - [x] Mi Perfil modal — edit and save display name (Firebase `updateProfile`)
 - [x] Configuración modal — change password via reset email
@@ -62,20 +62,32 @@ Last updated: 2026-08-14 (evening). This is the living status snapshot — updat
 - [x] Living-system connection verified: reads the same `clients/{id}.pago1`/`pago2` fields Clientes and Home already use — no parallel manually-entered revenue ledger introduced
 - [ ] **Action needed:** verify in Firebase Console that the existing Firestore security rules (auth + `allowedEmails` check) cover the new `expenses`, `incomes`, and `settings` collections — they were added to `lib/firestore.js` but this repo has no local `firestore.rules` file to edit (rules are managed live in console, per existing project setup)
 
-**Phase 3 — Workspace module (2026-08-14)**
+**Phase 3 — Workspace module (2026-08-14, built across several follow-up passes same day/night)**
 - [x] Two kinds of work: Intervenciones (one per active SP, derived live from `clients` — never stored, see CLAUDE.md §10) and Proyectos Internos (new `proyectosInternos` collection, created manually by any Asociado)
-- [x] Lista view — grouped by workstream, collapsible, progress bar + completion %, 7-layer indicator row for Intervenciones (computed from `interventionWeek`/`interventionTotalWeeks`, no new field), inline "+ Agregar tarea" (no modal)
+- [x] Lista view — grouped by workstream in real `.ador-glass` cards (type badge, progress bar), each group a CSS Grid table (`TASK_ROW_GRID`, not an HTML `<table>` — see CLAUDE.md §10 for why) with columns **Tarea / Descripción / Asignado / Prioridad / Estimación / Estado**, all independently inline-editable via small popovers (`CellPopover.jsx`, `TaskCells.jsx`). Column headers always render, even with zero tasks. 7-layer indicator row for Intervenciones (computed from `interventionWeek`/`interventionTotalWeeks`, no new field)
+- [x] "+ Agregar tarea" is a full draft row — Descripción/Asignado/Prioridad/Estimación can all be set *before* the task is created, reusing the exact same cell components as real rows (local draft state until Enter-on-title saves everything at once)
+- [x] Empty Workspace (zero Intervenciones + zero Proyectos) shows a synthetic "General" group instead of a blank message — first task added through it auto-provisions a real `proyectosInternos` doc
 - [x] Kanban view — 4 status columns (Por Hacer / En Progreso / Completado / Bloqueado), hand-built Framer Motion drag-and-drop reusing Clientes' rect hit-test pattern
-- [x] Task Detail Panel — slide-in 440px, editable title/status/priority/due date/multi-assignee, delete with a second confirming click (no native browser `confirm()`)
+- [x] Timeline view — pixel-mapped date axis, "Hoy" line, rounded date-bounded bars, diamond milestones for due-date-only tasks. **5 zoom levels** (Día/Semana/Mes/Trimestre/Año), each controlling pixel scale, default window, and tick granularity; auto-scrolls to center "Hoy" on range change. Tasks carry an optional `startDate` (set via the Estimación cell or Task Detail Panel) to give them real duration
+- [x] "Mis tareas" — sidebar toggle filtering all three views to tasks assigned to the signed-in user, independent of the workstream selector, with a live open-task count badge
+- [x] Task Detail Panel — slide-in 440px, editable title/descripción/status/priority/start+due date/multi-assignee, delete with a second confirming click (no native browser `confirm()`), read-only **Historial** section at the bottom
+- [x] Per-task activity history — `tasks/{id}/history` subcollection (same shape as Clientes'), auto-logged (no manual entry) from every edit surface via `applyTaskUpdate()` — Lista's cells, the Task Detail Panel, and Kanban drag-and-drop all funnel through it
+- [x] Overdue/due-today tasks assigned to the signed-in user now surface in the top bar bell (`useTaskNotifications.js`), alongside the existing "SPC sin contacto" alerts
 - [x] Decisiones panel — fixed right rail, last 3 decisions, "+ Registrar Decisión" (new `createDecision()` — decisions collection existed for reads only before this). Shows up in Home's "Última Decisión" automatically, same collection
-- [x] Tasks schema changed: `workstreamId`, `assignedTo` (now an array), `priority`, and a 4-state `status` (`por_hacer`/`en_progreso`/`completado`/`bloqueado`) replacing the old 2-state one — `TasksTodayBlock.jsx`/`useHomeData.js` updated to match
-- [x] Timeline view — added same day from a reference image. Pixel-mapped date axis, "Hoy" line, rounded date-bounded bars, diamond milestones for tasks with only a due date. Tasks got an optional `startDate` field (Task Detail Panel) to give them real duration
+- [x] Tasks schema: `workstreamId`, `description`, `assignedTo` (array), `priority`, `startDate`/`dueDate`, and a 4-state `status` (`por_hacer`/`en_progreso`/`completado`/`bloqueado`) — `TasksTodayBlock.jsx`/`useHomeData.js` updated to match the 4-state vocabulary
+- [x] Every write (create/update) now shows a toast on failure and times out after 8s instead of hanging silently forever — found and fixed after a report of "+ Agregar tarea no funciona" that turned out to be a write with no valid auth token never resolving
 - [x] **Bug fixed while building Timeline:** `.ador-grain`'s `position: relative` was unlayered CSS silently beating Tailwind's layered `.fixed` utility, breaking every panel combining the two (Task Detail Panel, and pre-existing `ClientDetailPanel` in Clientes) — panels rendered off-screen instead of sliding in. Fixed in `index.css` via `@layer components`; see CLAUDE.md §10. Worth a quick manual check next time Clientes → Ficha is touched
-- [ ] **Action needed:** same Firestore-rules check as Finanzas (§9) — `proyectosInternos` needs to be covered by the console rules before real writes succeed
+- [ ] **Action needed:** same Firestore-rules check as Finanzas (§9) — `proyectosInternos` and the `history` subcollection under `tasks` need to be covered by the console rules before real writes succeed for real (non-preview) accounts
 
 **Not built yet**
 - [ ] No module besides Inicio, Clientes, Finanzas, and Workspace has real content (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
+
+**Scoped but not started (2026-08-14 evening conversation) — direction agreed, nothing built yet:**
+- **Chat** — basic real-time messaging (channels + DMs) is realistic and cheap to build reusing existing Firestore-subscription patterns; full Slack/Teams parity (threads, reactions, search, calls) is explicitly out of scope. User confirmed: later, not now.
+- **Comunidad** — internal-only (just the 3 founders/asociados, not SPs). Leaning toward a lightweight "team pulse" (short wins/announcement posts + simple reactions) rather than a literal LinkedIn-style feed, since a feed format needs an audience size this team doesn't have. Must stay clearly distinct from Home's "Actividad Reciente" (automatic/system) and Workspace's "Decisiones" (formal/strategic) — Comunidad is the human/informal one. User confirmed: later, not now.
+- **Noticias** — official/formal company announcements (newsroom style: "ADOR cierra partnership con X"), authored by the team, not scraped from external sources — explicitly *not* an external news-API integration. Distinct from Comunidad by tone (formal headline vs. casual post), not by audience. User confirmed: later, not now.
+- **ADOR IA** — direction still being worked out. Agreed starting point: a "pregúntale a tus datos" interface (chat-styled UI, keyword-matched answers computed from real Finanzas/Clientes/Workspace data — zero API cost) as the guaranteed-free baseline. User then asked for real Alfred-from-Batman-style conversational personality, which keyword-matching can't deliver convincingly — recommended pairing it with a genuinely free-tier LLM (e.g. Gemini API's free tier) for real conversational wit without a bill, vs. a scripted-fallback hybrid if zero external API is a hard requirement. **Not yet decided which of these two paths to take** — pick this up next session before starting to build.
 
 ## Infrastructure status
 
@@ -96,4 +108,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision).
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`, and `tasks/{id}/history`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision). Chat/Comunidad/Noticias/ADOR IA all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked. If ADOR IA does get picked up next, resolve the free-tier-LLM-vs-scripted-hybrid decision with the user first.
