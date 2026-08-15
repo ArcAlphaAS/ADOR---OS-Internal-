@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeDecisions, getUserProfile, saveUserProfile } from '../../lib/firestore'
+import { computeWorkload } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, TimelineIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import ListaView from './ListaView'
@@ -22,7 +23,7 @@ const VIEWS = [
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
 ]
 
-export default function WorkspaceModule({ user }) {
+export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
   const { workstreams, tasksByWorkstream, tasks, users, userById } = useWorkspaceData()
   const [decisions, setDecisions] = useState([])
   const [view, setView] = useState('lista')
@@ -31,15 +32,25 @@ export default function WorkspaceModule({ user }) {
   const [openTaskId, setOpenTaskId] = useState(null)
   const [showNewProyecto, setShowNewProyecto] = useState(false)
   const [showRegisterDecision, setShowRegisterDecision] = useState(false)
+  const [decisionesCollapsed, setDecisionesCollapsed] = useState(false)
 
   const actorName = actorNameFor(user)
 
   useEffect(() => subscribeDecisions(setDecisions), [])
 
+  // Opens straight to a task's detail panel when arriving from a
+  // global-search result (see AppShell.jsx's `focus` state / SearchResults.jsx).
+  useEffect(() => {
+    if (!focusTaskId) return
+    setOpenTaskId(focusTaskId)
+    onFocusHandled?.()
+  }, [focusTaskId, onFocusHandled])
+
   useEffect(() => {
     if (!user?.uid) return
     getUserProfile(user.uid).then((profile) => {
       if (profile?.workspaceView) setView(profile.workspaceView)
+      if (typeof profile?.decisionesCollapsed === 'boolean') setDecisionesCollapsed(profile.decisionesCollapsed)
     })
   }, [user?.uid])
 
@@ -48,10 +59,17 @@ export default function WorkspaceModule({ user }) {
     if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { workspaceView: next })
   }
 
+  const toggleDecisionesCollapsed = () => {
+    const next = !decisionesCollapsed
+    setDecisionesCollapsed(next)
+    if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { decisionesCollapsed: next })
+  }
+
   const workstreamById = Object.fromEntries(workstreams.map((w) => [w.id, w]))
 
   const isMine = (t) => (t.assignedTo || []).includes(user?.uid)
   const myTaskCount = tasks.filter((t) => isMine(t) && t.status !== 'completado').length
+  const workload = computeWorkload(tasks, users)
 
   const byWorkstream = selectedWorkstreamId ? workstreams.filter((w) => w.id === selectedWorkstreamId) : workstreams
   const visibleTasks = tasks.filter((t) => (!selectedWorkstreamId || t.workstreamId === selectedWorkstreamId) && (!onlyMine || isMine(t)))
@@ -86,6 +104,7 @@ export default function WorkspaceModule({ user }) {
         onlyMine={onlyMine}
         onToggleOnlyMine={toggleOnlyMine}
         myTaskCount={myTaskCount}
+        workload={workload}
       />
 
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
@@ -154,7 +173,12 @@ export default function WorkspaceModule({ user }) {
         </AnimatePresence>
       </div>
 
-      <DecisionesPanel decisions={decisions} onRegister={() => setShowRegisterDecision(true)} />
+      <DecisionesPanel
+        decisions={decisions}
+        onRegister={() => setShowRegisterDecision(true)}
+        collapsed={decisionesCollapsed}
+        onToggleCollapse={toggleDecisionesCollapsed}
+      />
 
       <AnimatePresence>
         {openTask && (

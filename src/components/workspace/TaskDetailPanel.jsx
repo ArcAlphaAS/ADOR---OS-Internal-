@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { applyTaskUpdate, deleteTask, subscribeTaskHistory } from '../../lib/firestore'
+import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos } from '../../lib/firestore'
 import { STATUSES, PRIORITIES } from '../../lib/workspace'
+import { quarterKey } from '../../lib/finance'
 import { CloseIcon } from '../icons'
 import AvatarStack from './AvatarStack'
 
@@ -43,11 +44,15 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [history, setHistory] = useState([])
+  const [objetivos, setObjetivos] = useState([])
 
   useEffect(() => {
     if (!task?.id) return
     return subscribeTaskHistory(task.id, setHistory)
   }, [task?.id])
+
+  useEffect(() => subscribeObjetivos(setObjetivos), [])
+  const currentQuarterObjetivos = objetivos.filter((o) => o.quarter === quarterKey())
 
   if (!task) return null
 
@@ -91,9 +96,10 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 440, opacity: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="ador-modal-surface ador-grain fixed right-0 top-0 z-50 flex h-full w-[440px] flex-col overflow-y-auto"
+        className="fixed right-0 top-0 z-50 h-full w-[440px]"
         onClick={(e) => e.stopPropagation()}
       >
+      <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto">
         <div className="flex items-start justify-between px-7 pt-7">
           <span className="font-medium text-[#444444]" style={labelStyle}>
             {workstream?.name}
@@ -143,6 +149,25 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
               Prioridad
             </span>
             <PillToggle options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
+          </div>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Objetivo vinculado
+            </span>
+            <select
+              value={task.objetivoId || ''}
+              onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })}
+              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+            >
+              <option value="">Ninguno</option>
+              {currentQuarterObjetivos.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-[#444444]">Conecta esta tarea al Objetivo que está empujando esta semana.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -232,6 +257,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             {confirmingDelete ? 'Confirmar eliminación' : 'Eliminar tarea'}
           </button>
         </div>
+      </div>
       </motion.div>
     </AnimatePresence>,
     document.body

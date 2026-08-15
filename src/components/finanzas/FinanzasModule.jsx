@@ -5,6 +5,7 @@ import MetricCards from './MetricCards'
 import FinanceChart from './FinanceChart'
 import MovimientosTable from './MovimientosTable'
 import QuarterlyGoalCard from './QuarterlyGoalCard'
+import RunwayCard from './RunwayCard'
 import CategoryBreakdownCard from './CategoryBreakdownCard'
 import NextPaymentCard from './NextPaymentCard'
 import AddIncomeModal from './AddIncomeModal'
@@ -66,6 +67,12 @@ export default function FinanzasModule({ user }) {
 
         <div className="flex w-[32%] flex-col gap-5">
           <QuarterlyGoalCard quarterKey={data.quarterKey} target={data.quarterlyTarget} recaudado={data.recaudadoTrimestre} />
+          <RunwayCard
+            cashBalance={data.cashBalance}
+            monthlyBurnRate={data.monthlyBurnRate}
+            projectedIn30={data.projectedIn30}
+            projectedIn60={data.projectedIn60}
+          />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
           <NextPaymentCard payment={data.nextPayment} />
         </div>

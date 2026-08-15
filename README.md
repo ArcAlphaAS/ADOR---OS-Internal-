@@ -6,7 +6,7 @@ Invite-only. Dark, glass-surfaced, quiet by design ("something Apple would ship 
 
 ## Status
 
-Phases 1–2 (Splash/Login/Welcome, shell + Home) and three Phase 3 modules — Clientes (SPC→SP pipeline CRM), Finanzas (financial dashboard), and Workspace (Lista/Kanban/Timeline task board) — are done and live. Objetivos, Calendario (deferred — using Google Calendar for now), Conocimiento, Comunidad, Chat, News, Directorio, and ADOR IA are still placeholders. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
+Phases 1–2 (Splash/Login/Welcome, shell + Home) and four Phase 3 modules — Clientes (SPC→SP pipeline CRM), Finanzas (financial dashboard), Workspace (Lista/Kanban/Timeline task board), and Objetivos (quarterly goals board) — are done and live. Calendario (deferred — using Google Calendar for now), Conocimiento, Comunidad, Chat, News, Directorio, and ADOR IA are still placeholders. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
 
 ## Stack
 
@@ -27,7 +27,7 @@ Open the printed `localhost` URL. Vite will pick a free port (usually 5173, some
 
 Real project credentials live in `.env` (gitignored). Copy `.env.example` if you ever need to recreate it — the values are already filled in for the live `ador-os` Firebase project (Authentication: Email/Password only; Firestore: enabled, `nam5` region; Storage: **not yet enabled**, needed for real file uploads in Clientes → Documentos and Finanzas → Comprobante).
 
-**Before real (non-preview) writes will succeed on newer collections**, double-check the Firestore rules in console cover: `expenses`, `incomes`, `settings`, `proyectosInternos`, and the `tasks/{id}/history` subcollection — see PROJECT_STATE.md's "Action needed" items.
+**Before real (non-preview) writes will succeed on newer collections**, double-check the Firestore rules in console cover: `expenses`, `incomes`, `settings` (now also `cashBalance` and `counters.clientSeq`), `proyectosInternos`, `objetivos`, `experimentos`, and the `tasks/{id}/history` subcollection — **confirmed still missing as of 2026-08-15 night**, do this first — see PROJECT_STATE.md's "Action needed" items.
 
 ## Project structure
 
@@ -43,21 +43,26 @@ src/
     home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks)
     clientes/                Clientes module — ClientesModule, KanbanBoard/Column/Card, ListView, ClientDetailPanel + tabs/, NewClientModal
     finanzas/                Finanzas module — FinanzasModule (68/32 layout), MetricCards, FinanceChart (hand-drawn SVG bar chart), MovimientosTable, QuarterlyGoalCard, CategoryBreakdownCard, NextPaymentCard, AddIncomeModal, AddExpenseModal
-    workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView (grid-based table + inline "+ Agregar tarea" draft row), KanbanView, TimelineView (5 zoom levels), TaskRow, TaskCells (shared PillCell/EstimationCell/DescriptionCell/AssigneeCell), CellPopover (portaled floating menu), TaskDetailPanel (incl. Historial), DecisionesPanel, WorkspaceSidebar (incl. "Mis tareas"), AvatarStack, NewProyectoModal, RegisterDecisionModal
+    workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView (grid-based table + inline "+ Agregar tarea" draft row), KanbanView, TimelineView (5 zoom levels), TaskRow, TaskCells (shared PillCell/EstimationCell/DescriptionCell/AssigneeCell), CellPopover (portaled floating menu), TaskDetailPanel (incl. Historial), DecisionesPanel (collapsible), WorkspaceSidebar (incl. "Mis tareas" + "Carga del equipo" workload panel), AvatarStack, NewProyectoModal, RegisterDecisionModal
+    objetivos/               Objetivos module — ObjetivosModule (cabecera/panel/rail lateral shell), NorthStarHero, ObjetivoCard (kpi progress bar / milestone checkbox), NewObjetivoModal, CheckinModal, IniciativasPanel (Focus Board — linked Workspace tasks), ExperimentosPanel (validation log)
   hooks/
     useAuth.js               Firebase auth wrapper
     useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
-    useFinanceData.js         Finanzas' live-data hook — derives hero numbers/chart/breakdowns from clients + expenses + incomes
+    useFinanceData.js         Finanzas' live-data hook — derives hero numbers/chart/breakdowns/runway projection from clients + expenses + incomes + settings
     useWorkspaceData.js       Workspace's live-data hook — derives Intervenciones from clients (never stored) + Proyectos Internos + tasks, grouped
+    useObjetivosData.js       Objetivos' live-data hook — resolves each goal's currentValue from clients/tasks/useFinanceData (never hand-entered except `metric: 'custom'`) and each objetivo's openLinkedTasks (Workspace tasks tagged via objetivoId)
+    useGlobalSearch.js        Top bar search — filters the same live clients/tasks/decisions subscriptions other modules already hold
+    useTodaysBirthdays.js     Team-wide "who's celebrating today" — reads users/{uid}.birthday
     useCountUp.js             0→value count-up animation used by Finanzas hero numbers
     useClientNotifications.js Bell notifications ("sin contacto +7 días") — lives outside useHomeData since TopBar needs it everywhere
     useTaskNotifications.js   Bell notifications for overdue/due-today tasks assigned to the signed-in user — same "lives outside any one module" reasoning
     useWelcomeScreen.js       localStorage-driven "show Welcome once per day/block" logic
   lib/
     firestore.js             Collection schema + CRUD + subscribe hooks
-    clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers
+    clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers, LOST_REASONS
     finance.js                Expense categories, quarter-key helpers, ADOR vocabulary for Finanzas
-    workspace.js              Task priorities/statuses/grid template, ADOR's 7-layer methodology, workstream id helpers, describeTaskChange() (history log copy), withTimeout() (write-hang safeguard)
+    workspace.js              Task priorities/statuses/grid template, ADOR's 7-layer methodology, workstream id helpers, describeTaskChange() (history log copy), withTimeout() (write-hang safeguard), computeWorkload()
+    objetivos.js              Objetivo metric definitions (live vs. custom), type vocabulary, confidence + experiment status palettes
     user.js                  Shared user-name helpers
 ```
 

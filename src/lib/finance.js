@@ -31,6 +31,13 @@ export function isInQuarter(dateStr, key) {
   return quarterKey(date) === key
 }
 
+export function daysLeftInQuarter(date = new Date()) {
+  const q = quarterOf(date)
+  const quarterEndMonth = q * 3 // 0-indexed month right after the quarter's last month
+  const end = new Date(date.getFullYear(), quarterEndMonth, 0, 23, 59, 59)
+  return Math.max(0, Math.ceil((end - date) / 86400000))
+}
+
 export function monthLabel(monthKey) {
   const [year, month] = monthKey.split('-').map(Number)
   const date = new Date(year, month - 1, 1)

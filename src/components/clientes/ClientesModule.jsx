@@ -4,6 +4,7 @@ import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, move
 import { KanbanIcon, ListViewIcon } from '../icons'
 import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
+import LostClientsView from './LostClientsView'
 import ClientDetailPanel from './ClientDetailPanel'
 import NewClientModal from './NewClientModal'
 
@@ -11,7 +12,7 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
-export default function ClientesModule({ user }) {
+export default function ClientesModule({ user, focusClientId, onFocusHandled }) {
   const [clients, setClients] = useState([])
   const [users, setUsers] = useState([])
   const [view, setView] = useState('kanban')
@@ -24,6 +25,14 @@ export default function ClientesModule({ user }) {
 
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeUsers(setUsers), [])
+
+  // Opens straight to a client's Ficha when arriving from a global-search
+  // result (see AppShell.jsx's `focus` state / SearchResults.jsx).
+  useEffect(() => {
+    if (!focusClientId) return
+    setSelectedClientId(focusClientId)
+    onFocusHandled?.()
+  }, [focusClientId, onFocusHandled])
 
   useEffect(() => {
     if (!user?.uid) return
@@ -52,6 +61,8 @@ export default function ClientesModule({ user }) {
   }
 
   const selectedClient = clients.find((c) => c.id === selectedClientId) || null
+  const activeClients = clients.filter((c) => !c.lost)
+  const lostClients = clients.filter((c) => c.lost)
 
   return (
     <motion.div
@@ -64,8 +75,9 @@ export default function ClientesModule({ user }) {
         <div>
           <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Clientes</h1>
           <p className="mt-1 text-[13px] text-[#888888]">
-            {clients.filter((c) => c.stage !== 'intervencion_activa').length} SPC en pipeline ·{' '}
-            {clients.filter((c) => c.stage === 'intervencion_activa').length} SP activos
+            {activeClients.filter((c) => c.stage !== 'intervencion_activa').length} SPC en pipeline ·{' '}
+            {activeClients.filter((c) => c.stage === 'intervencion_activa').length} SP activos
+            {lostClients.length > 0 && ` · ${lostClients.length} perdidos`}
           </p>
         </div>
 
@@ -91,6 +103,20 @@ export default function ClientesModule({ user }) {
             </button>
           </div>
 
+          {lostClients.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setView(view === 'perdidos' ? 'kanban' : 'perdidos')}
+              className="rounded-full px-3.5 py-2 text-[12px] font-medium transition-colors duration-150"
+              style={{
+                background: view === 'perdidos' ? 'rgba(224,82,82,0.12)' : 'transparent',
+                color: view === 'perdidos' ? '#E05252' : '#666666',
+              }}
+            >
+              Perdidos ({lostClients.length})
+            </button>
+          )}
+
           <motion.button
             type="button"
             whileHover={{ scale: 1.02 }}
@@ -105,13 +131,15 @@ export default function ClientesModule({ user }) {
 
       {view === 'kanban' ? (
         <KanbanBoard
-          clients={clients}
+          clients={activeClients}
           onOpenClient={(c) => setSelectedClientId(c.id)}
           onDropStage={(client, stage) => moveClientStage(client, stage, actorName)}
           justConvertedId={justConvertedId}
         />
+      ) : view === 'list' ? (
+        <ListView clients={activeClients} users={users} onOpenClient={(c) => setSelectedClientId(c.id)} actorName={actorName} />
       ) : (
-        <ListView clients={clients} users={users} onOpenClient={(c) => setSelectedClientId(c.id)} actorName={actorName} />
+        <LostClientsView clients={lostClients} onOpenClient={(c) => setSelectedClientId(c.id)} actorName={actorName} />
       )}
 
       <ClientDetailPanel client={selectedClient} actorName={actorName} onClose={() => setSelectedClientId(null)} />

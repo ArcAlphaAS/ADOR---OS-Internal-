@@ -133,6 +133,31 @@ export function useFinanceData() {
   })
   const nextPayment = pendingPayments[0] || null
 
+  // Forward-looking, unlike every other Finanzas number — those are all
+  // this-month/this-quarter actuals. Burn rate is the average of the last 3
+  // completed months (excluding the current, still-in-progress one) since a
+  // partial current month would understate it. Expected inflows only count
+  // pending payments that already have a target date — undated ones can't
+  // be placed on a 30/60-day timeline.
+  const last3MonthKeys = monthKeys.slice(-4, -1)
+  const monthlyBurnRate = last3MonthKeys.length
+    ? last3MonthKeys.reduce((sum, key) => sum + (expenseByMonth.get(key) || 0), 0) / last3MonthKeys.length
+    : gastosDelMes
+  const dailyBurnRate = monthlyBurnRate / 30
+
+  const in30 = new Date(now)
+  in30.setDate(now.getDate() + 30)
+  const in60 = new Date(now)
+  in60.setDate(now.getDate() + 60)
+  const sumPendingBy = (cutoff) =>
+    pendingPayments
+      .filter((p) => p.date && new Date(`${p.date}T00:00:00`) <= cutoff)
+      .reduce((sum, p) => sum + p.amount, 0)
+
+  const cashBalance = settings.cashBalance || 0
+  const projectedIn30 = cashBalance + sumPendingBy(in30) - dailyBurnRate * 30
+  const projectedIn60 = cashBalance + sumPendingBy(in60) - dailyBurnRate * 60
+
   return {
     ingresosDelMes,
     gastosDelMes,
@@ -147,5 +172,9 @@ export function useFinanceData() {
     recaudadoTrimestre,
     nextPayment,
     clients,
+    cashBalance,
+    monthlyBurnRate,
+    projectedIn30,
+    projectedIn60,
   }
 }

@@ -17,7 +17,7 @@ export default function CellPopover({ anchorRect, onClose, children, width = 180
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.12 }}
-        className="ador-glass ador-grain fixed z-50 overflow-hidden rounded-xl p-1.5"
+        className="fixed z-50"
         style={{
           top: anchorRect.bottom + 6,
           left: Math.min(anchorRect.left, window.innerWidth - width - 12),
@@ -25,7 +25,7 @@ export default function CellPopover({ anchorRect, onClose, children, width = 180
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        <div className="ador-glass ador-grain overflow-hidden rounded-xl p-1.5">{children}</div>
       </motion.div>
     </>,
     document.body

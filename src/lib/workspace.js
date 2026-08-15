@@ -77,6 +77,37 @@ export function isDueToday(task) {
   return due.toDateString() === now.toDateString()
 }
 
+function isDueThisWeek(task) {
+  const due = task.dueDate?.toDate?.()
+  if (!due) return false
+  const now = new Date()
+  const weekEnd = new Date(now)
+  weekEnd.setDate(now.getDate() + (7 - now.getDay()))
+  weekEnd.setHours(23, 59, 59, 999)
+  return due <= weekEnd && task.status !== 'completado'
+}
+
+// One row per user with an open (non-completado) task assigned to them —
+// "esta semana" counts overdue + due-within-this-week tasks specifically,
+// since that's the number that actually predicts who's about to be
+// overloaded, not just who has the most tasks parked far in the future.
+// Sorted by dueThisWeek desc so the person closest to overloaded leads.
+export function computeWorkload(tasks, users) {
+  const openTasks = tasks.filter((t) => t.status !== 'completado')
+  return users
+    .map((u) => {
+      const assigned = openTasks.filter((t) => (t.assignedTo || []).includes(u.id))
+      return {
+        userId: u.id,
+        displayName: u.displayName || u.email || 'Sin nombre',
+        openCount: assigned.length,
+        dueThisWeekCount: assigned.filter(isDueThisWeek).length,
+      }
+    })
+    .filter((row) => row.openCount > 0)
+    .sort((a, b) => b.dueThisWeekCount - a.dueThisWeekCount || b.openCount - a.openCount)
+}
+
 export function workstreamId(kind, id) {
   return kind === 'intervencion' ? `client:${id}` : `proyecto:${id}`
 }

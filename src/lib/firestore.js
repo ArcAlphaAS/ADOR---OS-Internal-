@@ -13,6 +13,8 @@ import {
   deleteDoc,
   getDocs,
   serverTimestamp,
+  runTransaction,
+  writeBatch,
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange } from './workspace'
@@ -50,6 +52,8 @@ export const COLLECTIONS = {
   incomes: 'incomes',
   settings: 'settings',
   proyectosInternos: 'proyectosInternos',
+  objetivos: 'objetivos',
+  experimentos: 'experimentos',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -223,10 +227,32 @@ export function subscribeUserProfile(userId, onData) {
 
 // ---- Clientes (SPC/SP) ----
 
-export function createClient(data, actorName) {
+// Human-readable sequential ID (e.g. "ADR-0007"), separate from the
+// Firestore doc id (a long random string, never shown in the UI). Uses a
+// transaction on a single shared counter doc — settings/counters — same
+// "one shared doc" pattern as settings/finanzas (CLAUDE.md §9), rather than
+// deriving a code from the doc id, so codes stay short and strictly
+// sequential even under concurrent creates. The prefix is "ADR" (the firm),
+// not "SPC", since the code is assigned once at creation and must stay
+// valid after a client converts from SPC to SP.
+async function getNextClientCode() {
+  const counterRef = doc(db, COLLECTIONS.settings, 'counters')
+  const next = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef)
+    const current = snap.exists() ? snap.data().clientSeq || 0 : 0
+    const value = current + 1
+    tx.set(counterRef, { clientSeq: value }, { merge: true })
+    return value
+  })
+  return `ADR-${String(next).padStart(4, '0')}`
+}
+
+export async function createClient(data, actorName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const code = await getNextClientCode()
   return addDoc(collection(db, COLLECTIONS.clients), {
     ...data,
+    code,
     stageEnteredAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   }).then(async (ref) => {
@@ -271,6 +297,26 @@ export async function moveClientStage(client, newStageId, actorName) {
       meta: { from: client.stage, to: newStageId },
     })
   }
+}
+
+// Lost is a flag on top of whatever stage the client froze at, not a STAGES
+// entry — see lib/clientStages.js for why. The client keeps its `stage` so
+// restoring it (a real correction, e.g. "se marcó por error") drops it back
+// exactly where the pipeline left off, no data lost.
+export async function markClientLost(client, reason, actorName) {
+  await updateClient(client.id, { lost: true, lostReason: reason, lostAt: serverTimestamp() })
+  await addHistoryEvent(client.id, {
+    type: 'lost',
+    description: `Marcado como perdido por ${actorName} — ${reason}`,
+  })
+}
+
+export async function restoreClient(client, actorName) {
+  await updateClient(client.id, { lost: false, lostReason: null, lostAt: null })
+  await addHistoryEvent(client.id, {
+    type: 'restored',
+    description: `Restaurado al pipeline por ${actorName}`,
+  })
 }
 
 export function subscribeClientHistory(clientId, onData) {
@@ -385,4 +431,106 @@ export function subscribeFinanceSettings(onData) {
 export function setQuarterlyTarget(amount) {
   if (!db) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.settings, 'finanzas'), { quarterlyTarget: amount }, { merge: true })
+}
+
+// Manually entered starting point for the runway projection (RunwayCard) —
+// there's no bank-balance integration, so this is the one figure a founder
+// has to type in themselves, same "one shared doc, edited inline" pattern
+// as quarterlyTarget.
+export function setCashBalance(amount) {
+  if (!db) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.settings, 'finanzas'), { cashBalance: amount }, { merge: true })
+}
+
+// ---- Objetivos ----
+// One flat collection, no per-quarter subcollections — the module filters
+// client-side by `quarter` (a quarterKey string, see lib/finance.js), same
+// "just filter the small live subscription" approach used everywhere else
+// in this app rather than adding server-side query constraints for a
+// 3-founder-scale dataset.
+
+export function subscribeObjetivos(onData) {
+  return subscribeToCollection(COLLECTIONS.objetivos, [], onData)
+}
+
+export function createObjetivo(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.objetivos), {
+    ...data,
+    completed: false,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateObjetivo(id, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.objetivos, id), data)
+}
+
+export function deleteObjetivo(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.objetivos, id))
+}
+
+// Only one objetivo can be the North Star at a time — a batch flips the
+// previous holder off (if any) and the new one on atomically, so the UI
+// never briefly shows two (or zero) starred objetivos mid-write.
+export function setNorthStar(objetivoId, previousNorthStarId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  if (previousNorthStarId && previousNorthStarId !== objetivoId) {
+    batch.update(doc(db, COLLECTIONS.objetivos, previousNorthStarId), { isNorthStar: false })
+  }
+  batch.update(doc(db, COLLECTIONS.objetivos, objetivoId), { isNorthStar: true })
+  return batch.commit()
+}
+
+// The Friday 3-minute sync — deliberately just the *latest* state on the
+// objetivo doc, no history subcollection yet (same "one target at a time"
+// precedent as Finanzas' quarterlyTarget — add real history if it's ever
+// needed). `progressValue` only applies to type:'kpi' objetivos with
+// metric:'custom' (the only manually-tracked number in this module).
+export function submitCheckin(objetivoId, { confidence, blocker, progressValue }, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const patch = {
+    confidence,
+    blocker: blocker || null,
+    lastCheckinAt: serverTimestamp(),
+    lastCheckinBy: actorName,
+  }
+  if (progressValue !== undefined) patch.currentValue = progressValue
+  return updateDoc(doc(db, COLLECTIONS.objetivos, objetivoId), patch)
+}
+
+// ---- Experimentos (validation log) ----
+// A separate flat collection, not a subcollection of objetivos — an
+// experiment's `objetivoId` link is optional (some bets aren't tied to a
+// specific KR yet), so nesting it under one objetivo doc wouldn't fit every
+// case. Same "small live subscription, filter client-side" approach as
+// objetivos itself.
+
+export function subscribeExperimentos(onData) {
+  return subscribeToCollection(COLLECTIONS.experimentos, [], onData)
+}
+
+export function createExperimento(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.experimentos), {
+    ...data,
+    status: 'pendiente',
+    result: null,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateExperimento(id, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.experimentos, id), data)
+}
+
+export function deleteExperimento(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.experimentos, id))
 }

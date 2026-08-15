@@ -2,7 +2,7 @@ import { CalendarIcon, CheckCircleIcon } from '../icons'
 
 function InfoCard({ Icon, iconColor, title, content }) {
   return (
-    <div className="ador-glass ador-grain rounded-2xl px-6 py-5">
+    <div className="ador-glass ador-grain ador-card-hover rounded-2xl px-6 py-5">
       <div className="flex items-center gap-2">
         <Icon size={16} style={{ color: iconColor, animation: 'ador-pulse 3s ease-in-out infinite' }} />
         <span

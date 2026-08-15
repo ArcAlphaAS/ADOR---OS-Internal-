@@ -99,8 +99,8 @@ export default function NewClientModal({ users, actorName, onClose, onCreated })
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="ador-modal-surface ador-grain w-[440px] rounded-[28px] p-8"
       >
+        <div className="ador-modal-surface ador-grain w-[440px] rounded-[28px] p-8">
         <div className="flex items-center justify-between">
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Nuevo SPC</h2>
           <span className="text-[12px] text-[#888888]">Paso {step} de 3</span>
@@ -252,6 +252,7 @@ export default function NewClientModal({ users, actorName, onClose, onCreated })
               {creating ? 'Creando…' : 'Crear SPC'}
             </motion.button>
           )}
+        </div>
         </div>
       </motion.div>
     </motion.div>,

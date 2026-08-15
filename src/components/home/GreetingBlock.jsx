@@ -49,7 +49,7 @@ export default function GreetingBlock({ name }) {
   }, [])
 
   return (
-    <div className="pb-0 pt-16">
+    <div>
       <h1
         className="font-semibold tracking-[-0.02em]"
         style={{

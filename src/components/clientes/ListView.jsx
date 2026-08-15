@@ -174,6 +174,7 @@ export default function ListView({ clients, users, onOpenClient, actorName }) {
           <thead>
             <tr className="border-b border-white/[0.06]">
               {[
+                ['code', 'ID'],
                 ['name', 'Organización'],
                 ['type', 'Tipo'],
                 ['stage', 'Etapa'],
@@ -199,7 +200,7 @@ export default function ListView({ clients, users, onOpenClient, actorName }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-5 py-10 text-center text-[13px] font-light text-[#444444]">
+                <td colSpan={10} className="px-5 py-10 text-center text-[13px] font-light text-[#444444]">
                   Sin SPC/SP que coincidan con los filtros
                 </td>
               </tr>
@@ -214,6 +215,11 @@ export default function ListView({ clients, users, onOpenClient, actorName }) {
                     onClick={() => onOpenClient(client)}
                     className="group cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.03]"
                   >
+                    <td className="px-5 py-3">
+                      <span className="font-mono text-[11px] tracking-[0.03em] text-[#666666]">
+                        {client.code || '—'}
+                      </span>
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[12px] font-medium text-[#F5F5F5]">

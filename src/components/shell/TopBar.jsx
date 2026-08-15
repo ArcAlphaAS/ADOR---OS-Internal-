@@ -7,10 +7,13 @@ import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
+import SearchResults from './SearchResults'
 import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
+import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
+import { useGlobalSearch } from '../../hooks/useGlobalSearch'
 
 // Shared easing for the top-bar's layout reflows (search opening, profile
 // pill expanding) — a symmetric ease-in-out curve reads as smoother/more
@@ -63,8 +66,38 @@ function PillTabs({ activeModule, onNavigate }) {
   )
 }
 
-function SearchToggle() {
+function SearchToggle({ onNavigate }) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [rect, setRect] = useState(null)
+  const inputRef = useRef(null)
+  const results = useGlobalSearch(query)
+
+  const close = () => {
+    setOpen(false)
+    setQuery('')
+  }
+
+  const openSearch = () => {
+    setOpen(true)
+    requestAnimationFrame(() => {
+      if (inputRef.current) setRect(inputRef.current.getBoundingClientRect())
+    })
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const measure = () => {
+      if (inputRef.current) setRect(inputRef.current.getBoundingClientRect())
+    }
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [open])
+
+  const goTo = (moduleId, focus) => {
+    onNavigate(moduleId, focus)
+    close()
+  }
 
   return (
     <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center">
@@ -72,26 +105,39 @@ function SearchToggle() {
         {open && (
           <motion.input
             key="search-input"
+            ref={inputRef}
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 200, opacity: 1 }}
+            animate={{ width: 220, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={REFLOW_TRANSITION}
             autoFocus
             type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar en ADOR OS..."
-            disabled
-            onBlur={() => setOpen(false)}
+            onBlur={close}
+            onKeyDown={(e) => e.key === 'Escape' && close()}
             className="ador-glass mr-2 rounded-full px-4 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
           />
         )}
       </AnimatePresence>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : openSearch())}
         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
       >
         <SearchIcon size={16} />
       </button>
+
+      {open && query.trim() && (
+        <SearchResults
+          results={results}
+          anchorRect={rect}
+          onSelectClient={(id) => goTo('clientes', { type: 'client', id })}
+          onSelectTask={(id) => goTo('workspace', { type: 'task', id })}
+          onSelectDecision={() => goTo('workspace', null)}
+        />
+      )}
     </motion.div>
   )
 }
@@ -215,9 +261,14 @@ export default function TopBar({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
+  const birthdays = useTodaysBirthdays()
+  const birthdayNotifications = birthdays.map((b) => ({
+    text: b.uid === user?.uid ? 'Hoy es tu cumpleaños — feliz día' : `Hoy es el cumpleaños de ${b.displayName}`,
+    time: 'Hoy',
+  }))
   const clientNotifications = useClientNotifications()
   const taskNotifications = useTaskNotifications(user?.uid)
-  const notifications = [...taskNotifications, ...clientNotifications]
+  const notifications = [...birthdayNotifications, ...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
@@ -264,7 +315,7 @@ export default function TopBar({
       </div>
 
       <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
-        <SearchToggle />
+        <SearchToggle onNavigate={onNavigate} />
 
         <motion.div layout="position" transition={REFLOW_TRANSITION} className="relative">
           <button

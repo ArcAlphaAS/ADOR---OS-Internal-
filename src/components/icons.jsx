@@ -235,3 +235,15 @@ export function ArrowLeftIcon(props) {
     </svg>
   )
 }
+
+export function GiftIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="3.5" y="10" width="17" height="10.5" rx="1.8" />
+      <path d="M3.5 14.5h17" />
+      <path d="M12 10v10.5" />
+      <path d="M12 10c-1.6 0-3-1.05-3-3.1S9.9 4 11.3 4c1.4 0 1.9 1.6 0.7 3.2C10.8 8.8 9.4 10 8 10" />
+      <path d="M12 10c1.6 0 3-1.05 3-3.1S14.1 4 12.7 4c-1.4 0-1.9 1.6-0.7 3.2C13.2 8.8 14.6 10 16 10" />
+    </svg>
+  )
+}

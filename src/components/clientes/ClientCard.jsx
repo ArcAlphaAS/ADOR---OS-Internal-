@@ -35,17 +35,20 @@ export default function ClientCard({ client, onOpen, onDropStage, resolveDropSta
       transition={justConverted ? { duration: 1.4, ease: 'easeOut' } : { duration: 0.15 }}
       className="ador-glass ador-grain relative cursor-pointer rounded-xl p-4"
     >
-      <span
-        className="font-medium"
-        style={{
-          fontSize: 10,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: type === 'SP' ? '#1E5FAD' : '#888888',
-        }}
-      >
-        {type}
-      </span>
+      <div className="flex items-center justify-between">
+        <span
+          className="font-medium"
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: type === 'SP' ? '#1E5FAD' : '#888888',
+          }}
+        >
+          {type}
+        </span>
+        {client.code && <span className="font-mono text-[10px] text-[#444444]">{client.code}</span>}
+      </div>
       <div className="mt-1.5 text-[14px] font-semibold text-[#F5F5F5]">{client.name}</div>
       {client.contactName && (
         <div className="mt-0.5 text-[12px] text-[#888888]">

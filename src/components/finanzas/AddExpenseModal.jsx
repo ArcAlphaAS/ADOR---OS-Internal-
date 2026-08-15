@@ -59,8 +59,8 @@ export default function AddExpenseModal({ actorName, onClose }) {
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="ador-modal-surface ador-grain w-[420px] rounded-[28px] p-8"
       >
+        <div className="ador-modal-surface ador-grain w-[420px] rounded-[28px] p-8">
         <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Nuevo Gasto</h2>
 
         <div className="mt-6 flex flex-col gap-4">
@@ -166,6 +166,7 @@ export default function AddExpenseModal({ actorName, onClose }) {
           >
             Registrar Gasto
           </button>
+        </div>
         </div>
       </motion.div>
     </motion.div>,

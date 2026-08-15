@@ -33,6 +33,36 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Thin, translucent scrollbar matching the dark glass aesthetic — replaces
+   the default OS scrollbar (thick, opaque gray) that clashed with every
+   surface it crossed. Applied globally via `*` since scroll containers
+   (module content, Ficha panels, Task Detail, dropdown lists) are spread
+   across many components rather than one shared wrapper. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
 @keyframes ador-drift {
   0%,
   100% {
@@ -111,6 +141,21 @@ input:-webkit-autofill:focus {
   backdrop-filter: blur(32px) saturate(160%);
   -webkit-backdrop-filter: blur(32px) saturate(160%);
   box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Richer hover state for static (non-floating) .ador-glass cards, e.g.
+   Home's blocks. Deliberately avoids `transform`/`scale` — combining a
+   transform with backdrop-filter on the same element is the exact Chromium
+   bug documented on NotificationCenter.jsx that silently drops the blur
+   compositing, so this only touches background/border/shadow instead. */
+.ador-card-hover {
+  transition: background-color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.ador-card-hover:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(30, 95, 173, 0.15);
 }
 
 /* Flat "liquid glass" primary button — a frosted pill with a solid-leaning

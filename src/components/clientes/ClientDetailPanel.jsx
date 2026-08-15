@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloseIcon } from '../icons'
-import { clientType } from '../../lib/clientStages'
+import { clientType, LOST_REASONS } from '../../lib/clientStages'
+import { markClientLost, restoreClient } from '../../lib/firestore'
 import GeneralTab from './tabs/GeneralTab'
 import PagosTab from './tabs/PagosTab'
 import DocumentosTab from './tabs/DocumentosTab'
@@ -14,6 +15,64 @@ const TABS = [
   { id: 'documentos', label: 'Documentos' },
   { id: 'historial', label: 'Historial' },
 ]
+
+function LostControl({ client, actorName }) {
+  const [pickingReason, setPickingReason] = useState(false)
+
+  if (client.lost) {
+    return (
+      <div className="mx-7 mt-4 flex items-center justify-between rounded-xl border border-[#E05252]/30 bg-[#E05252]/10 px-4 py-2.5">
+        <span className="text-[12px] font-medium text-[#E05252]">Perdido — {client.lostReason}</span>
+        <button
+          type="button"
+          onClick={() => restoreClient(client, actorName)}
+          className="text-[12px] font-medium text-[#888888] hover:text-[#F5F5F5]"
+        >
+          Restaurar
+        </button>
+      </div>
+    )
+  }
+
+  if (pickingReason) {
+    return (
+      <div className="mx-7 mt-4 flex flex-wrap items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2.5">
+        {LOST_REASONS.map((reason) => (
+          <button
+            key={reason}
+            type="button"
+            onClick={() => {
+              markClientLost(client, reason, actorName)
+              setPickingReason(false)
+            }}
+            className="rounded-full border border-white/[0.1] px-2.5 py-1 text-[11px] text-[#888888] transition-colors duration-150 hover:border-[#E05252]/40 hover:text-[#E05252]"
+          >
+            {reason}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setPickingReason(false)}
+          className="ml-auto text-[11px] text-[#444444] hover:text-[#888888]"
+        >
+          Cancelar
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-7 mt-4">
+      <button
+        type="button"
+        onClick={() => setPickingReason(true)}
+        className="text-[12px] text-[#444444] transition-colors duration-150 hover:text-[#E05252]"
+      >
+        Marcar como perdido
+      </button>
+    </div>
+  )
+}
 
 export default function ClientDetailPanel({ client, actorName, onClose }) {
   const [activeTab, setActiveTab] = useState('general')
@@ -37,22 +96,28 @@ export default function ClientDetailPanel({ client, actorName, onClose }) {
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 480, opacity: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="ador-modal-surface ador-grain fixed right-0 top-0 z-50 flex h-full w-[480px] flex-col"
+        className="fixed right-0 top-0 z-50 h-full w-[480px]"
         onClick={(e) => e.stopPropagation()}
       >
+      <div className="ador-modal-surface ador-grain flex h-full flex-col">
         <div className="flex items-start justify-between px-7 pt-7">
           <div>
-            <span
-              className="font-medium"
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: type === 'SP' ? '#1E5FAD' : '#888888',
-              }}
-            >
-              {type}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="font-medium"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: type === 'SP' ? '#1E5FAD' : '#888888',
+                }}
+              >
+                {type}
+              </span>
+              {client.code && (
+                <span className="font-mono text-[10px] tracking-[0.04em] text-[#444444]">{client.code}</span>
+              )}
+            </div>
             <h2 className="mt-1 text-[20px] font-semibold text-[#F5F5F5]">{client.name}</h2>
           </div>
           <button
@@ -63,6 +128,8 @@ export default function ClientDetailPanel({ client, actorName, onClose }) {
             <CloseIcon size={16} />
           </button>
         </div>
+
+        {(type !== 'SP' || client.lost) && <LostControl client={client} actorName={actorName} />}
 
         <div className="mt-5 flex gap-1 px-7">
           {TABS.map((tab) => (
@@ -93,6 +160,7 @@ export default function ClientDetailPanel({ client, actorName, onClose }) {
           {activeTab === 'documentos' && <DocumentosTab client={client} actorName={actorName} />}
           {activeTab === 'historial' && <HistorialTab client={client} actorName={actorName} />}
         </div>
+      </div>
       </motion.div>
     </AnimatePresence>,
     document.body

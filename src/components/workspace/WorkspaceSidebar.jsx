@@ -23,7 +23,48 @@ function NavItem({ label, sublabel, active, accentColor, onClick, disabled }) {
   )
 }
 
-export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, onNewProyecto, onlyMine, onToggleOnlyMine, myTaskCount }) {
+// At-a-glance workload balance across all 3 associates — "who's about to be
+// overloaded this week" wasn't visible anywhere before; "Mis tareas" only
+// shows your own load, never how it compares to your two teammates'.
+function WorkloadRow({ row, maxCount }) {
+  const overloaded = row.dueThisWeekCount >= 5
+  const pct = maxCount ? Math.round((row.openCount / maxCount) * 100) : 0
+  return (
+    <div className="flex flex-col gap-1 px-3 py-1.5">
+      <div className="flex items-center justify-between">
+        <span className="truncate text-[12px]" style={{ color: overloaded ? '#E05252' : '#888888' }}>
+          {row.displayName.split(' ')[0]}
+        </span>
+        <span className="flex-shrink-0 text-[11px]" style={{ color: overloaded ? '#E05252' : '#444444' }}>
+          {row.dueThisWeekCount > 0 ? `${row.dueThisWeekCount} esta sem.` : `${row.openCount} abiertas`}
+        </span>
+      </div>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: overloaded ? '#E05252' : '#1E5FAD' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function WorkloadPanel({ workload }) {
+  if (workload.length === 0) return null
+  const maxCount = Math.max(...workload.map((r) => r.openCount))
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-white/[0.06] pt-4">
+      <span className="px-3 pb-1 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        Carga del equipo
+      </span>
+      {workload.map((row) => (
+        <WorkloadRow key={row.userId} row={row} maxCount={maxCount} />
+      ))}
+    </div>
+  )
+}
+
+export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, onNewProyecto, onlyMine, onToggleOnlyMine, myTaskCount, workload = [] }) {
   const intervenciones = workstreams.filter((w) => w.kind === 'intervencion')
   const proyectos = workstreams.filter((w) => w.kind === 'proyecto_interno')
 
@@ -85,6 +126,8 @@ export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, on
       </div>
 
       <NavItem label="+ Nueva Intervención" disabled />
+
+      <WorkloadPanel workload={workload} />
     </div>
   )
 }

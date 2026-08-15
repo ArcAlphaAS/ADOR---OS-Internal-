@@ -24,6 +24,15 @@ export function clientType(stageId) {
 
 export const INTERACTION_TYPES = ['Llamada', 'Reunión', 'Lectura', 'Email', 'WhatsApp']
 
+// "Perdido" is deliberately not a STAGES entry — the 7 stages above are a
+// forward-only pipeline (Kanban columns, "move to next" arrows) and a lost
+// SPC isn't the "next step" from anywhere. Instead a client can carry
+// `lost: true` on top of whatever stage it froze at, same pattern as
+// pago1/pago2 living on the client doc rather than a parallel collection
+// (CLAUDE.md §8). Fixed reasons, not free text, since the set is small and
+// known — same rationale as Finanzas' EXPENSE_CATEGORIES.
+export const LOST_REASONS = ['Presupuesto', 'Timing', 'Eligió otra opción', 'Sin respuesta', 'Otro']
+
 export function daysSince(date) {
   if (!date) return null
   const ms = Date.now() - date.getTime()

@@ -4,8 +4,8 @@ function MetricCard({ label, value, onClick }) {
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`ador-glass ador-grain w-full appearance-none rounded-2xl px-6 py-5 text-left font-sans transition-colors duration-150 ${
-        onClick ? 'cursor-pointer hover:bg-white/[0.06]' : ''
+      className={`ador-glass ador-grain ador-card-hover w-full appearance-none rounded-2xl px-6 py-5 text-left font-sans ${
+        onClick ? 'cursor-pointer' : ''
       }`}
     >
       <span

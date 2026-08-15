@@ -23,7 +23,7 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
 
 export default function InterventionsBlock({ interventions = [] }) {
   return (
-    <div className="ador-glass ador-grain rounded-[20px] px-7 py-6">
+    <div className="ador-glass ador-grain ador-card-hover rounded-[20px] px-7 py-6">
       <div className="flex items-center gap-2">
         <span
           className="font-medium text-[#444444]"

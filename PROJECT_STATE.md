@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-08-14 (night). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-08-15 (night). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -8,10 +8,11 @@ Last updated: 2026-08-14 (night). This is the living status snapshot — update 
 |---|---|
 | Phase 1 — Splash, Login, Welcome | ✅ Done |
 | Phase 2 — Shell + Home | ✅ Done |
-| Phase 3 — Clientes module | ✅ Done (2026-08-14) |
-| Phase 3 — Finanzas module | ✅ Done (2026-08-14) |
-| Phase 3 — Workspace module (Lista + Kanban + Timeline) | ✅ Done (2026-08-14) |
-| Phase 3 — remaining modules (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
+| Phase 3 — Clientes module | ✅ Done (2026-08-14, extended 2026-08-15) |
+| Phase 3 — Finanzas module | ✅ Done (2026-08-14, extended 2026-08-15) |
+| Phase 3 — Workspace module (Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15) |
+| Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
+| Phase 3 — remaining modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) | ⬜ Not started |
 
 ## What's actually built
 
@@ -79,8 +80,34 @@ Last updated: 2026-08-14 (night). This is the living status snapshot — update 
 - [x] **Bug fixed while building Timeline:** `.ador-grain`'s `position: relative` was unlayered CSS silently beating Tailwind's layered `.fixed` utility, breaking every panel combining the two (Task Detail Panel, and pre-existing `ClientDetailPanel` in Clientes) — panels rendered off-screen instead of sliding in. Fixed in `index.css` via `@layer components`; see CLAUDE.md §10. Worth a quick manual check next time Clientes → Ficha is touched
 - [ ] **Action needed:** same Firestore-rules check as Finanzas (§9) — `proyectosInternos` and the `history` subcollection under `tasks` need to be covered by the console rules before real writes succeed for real (non-preview) accounts
 
+**Phase 3 — Objetivos module (2026-08-15) — new**
+- [x] Flat goals board for the current quarter (no per-quarter history browsing yet — same "one target at a time" precedent as Finanzas' Meta del Trimestre). Two objetivo types: `kpi` (numeric, progress bar) and `milestone` (checkbox, no number)
+- [x] KPI metrics are **live-derived**, never hand-entered, same rule as every other cross-module number in this app: `revenue_quarter` (reuses `useFinanceData`'s `recaudadoTrimestre`), `sp_activos`/`spc_pipeline` (from `clients`), `tasks_completadas` (tasks with `status==='completado'` created this quarter). A `custom` metric type is the escape hatch for goals with no matching collection (e.g. "Contratar un cuarto asociado") — its `currentValue` is the only manually-edited number anywhere in this module, pencil-edit inline like Finanzas' target
+- [x] New collection `objetivos/{id}` — see `lib/objetivos.js` for metric definitions, `hooks/useObjetivosData.js` for the live-value resolution, `components/objetivos/`
+- [x] **Redesigned same day** from a detailed OKR-style spec, adapted to ADOR's 3-founder scale — see CLAUDE.md §12 for the full reasoning on what was kept vs. changed vs. skipped. Added: ★ North Star Metric (any kpi objetivo can be promoted, shown as a hero card via `setNorthStar()`), quarter countdown, free-text "Foco" grouping (`FOCO_SUGGESTIONS`, not a fixed department taxonomy), single `ownerId` per objetivo (avatar), a 3-field weekly confidence check-in (`submitCheckin()` — verde/amarillo/rojo + bloqueo + progreso, latest-state-only, no history yet), and `tasks/{id}.objetivoId` linking Workspace tasks to the objetivo they're moving (editable from Task Detail Panel, live count shown on the card)
+- [x] **Layout restructured same day (third pass) after user feedback** — see CLAUDE.md §14. North Star hero is now its own always-visible header section (real empty state instead of disappearing when unset), and the board is now a 3-part shell: cabecera → panel de Objetivos (main) → 320px rail lateral with `IniciativasPanel.jsx` (Focus Board — real linked Workspace tasks, read-only) and `ExperimentosPanel.jsx` (the previously-deferred experiment/validation log — new `experimentos` collection, hypothesis/result/status, optionally linked to an objetivo)
+- [x] **Bug fixed same pass:** every write in this module (create, check-in, pencil-edit, ★ toggle, milestone checkbox, delete, experiment CRUD) was silently swallowing errors — no `catch`, so a Firestore-rules rejection looked exactly like a broken button. Fixed with the same `withTimeout` + toast pattern already used in Workspace (§10). This is how the missing-rules gap below was actually confirmed live, not just flagged in the abstract
+- [ ] **Action needed:** verify Firestore rules cover the new `objetivos` and `experimentos` collections — confirmed still missing as of tonight (a real create attempt surfaced "Missing or insufficient permissions" once error handling was fixed enough to show it)
+
+**Clientes — extended 2026-08-15**
+- [x] Sequential human-readable IDs (`ADR-0001`, `ADR-0002`, ...) assigned at creation via an atomic Firestore transaction on `settings/counters.clientSeq` — separate from the Firestore doc id, shown in List view, Kanban cards, and the Ficha header. Prefix is "ADR" (the firm), not "SPC", since the code must stay valid after SPC→SP conversion. Existing clients created before this change have no `code` and show "—"; ask before backfilling
+- [x] "Perdido" (lost) is a flag on top of whatever `stage` the client froze at (`lost`, `lostReason`, `lostAt`), not an 8th pipeline stage — the 7 STAGES entries are a forward-only Kanban/next-arrow pipeline and lost isn't "the next step" from anywhere. Marked/restored from the Ficha panel (`ClientDetailPanel.jsx`'s `LostControl`), fixed reason list (`LOST_REASONS` in `clientStages.js`). Lost clients drop out of Kanban/List automatically; a "Perdidos (N)" toggle in `ClientesModule.jsx` shows them in a flat restorable list (`LostClientsView.jsx`)
+
+**Workspace — extended 2026-08-15**
+- [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
+- [x] "Carga del equipo" workload panel in the sidebar — per-associate count of open (non-completado) tasks, highlighting anyone with 5+ tasks due this week in red. `computeWorkload()` in `lib/workspace.js`. First cross-teammate visibility Workspace has had; "Mis tareas" only ever showed your own load
+
+**Finanzas — extended 2026-08-15**
+- [x] "Proyección de Caja" (`RunwayCard.jsx`) — the one forward-looking card on an otherwise all-actuals dashboard. `cashBalance` is manually entered (no bank integration exists) via the same pencil-edit-inline pattern as Meta del Trimestre, stored at `settings/finanzas.cashBalance`. Projects 30/60-day cash by combining that balance with the average burn rate of the last 3 *completed* months and any dated pending SP payments — never invents a parallel forecast source
+
+**Top bar — extended 2026-08-15**
+- [x] Global search is real now (`useGlobalSearch.js`, `SearchResults.jsx`) — searches clients/tasks/decisions across their live subscriptions (no server-side text index; fine at 3-founder scale) and clicking a result navigates to the right module *and* opens that record's detail panel via a new `focus` state lifted to `AppShell.jsx` (`focusClientId`/`focusTaskId` props consumed by `ClientesModule`/`WorkspaceModule`, cleared via `onFocusHandled`)
+- [x] Team-wide birthday banner + notification (`BirthdayBanner.jsx` on Home, `useTodaysBirthdays.js`) — reads the `users/{uid}.birthday` field `ProfileModal.jsx` already captured but never used until now
+
+**Bug fixed broadly, 2026-08-15: Chromium drops `backdrop-filter` blur when the same element also has a `transform`.** Discovered on `NotificationCenter.jsx` (Framer Motion's `animate={{y,scale}}` leaves an inline `transform` even at rest, which is enough to trigger it — not just mid-animation) and turned out to be present in **13 files**: every portaled dropdown/popover/modal/slide-in-panel that combined a `.ador-glass`/`.ador-modal-surface` class with a Framer Motion transform on the *same* element. Fixed everywhere by splitting the transform-animated wrapper from the backdrop-filter surface into two nested elements — see the comment on `NotificationCenter.jsx` for the full explanation. Also reverted an overcorrection: dropdowns/menus (`ProfileMenu`, `NotificationCenter`, Sidebar tooltip, `CellPopover`) must stay on `.ador-glass` (translucent, ~5% tint) — `.ador-modal-surface` (~88% opaque) was tried first and made them read as solid black instead of frosted glass; modals/slide-in panels correctly keep `.ador-modal-surface`, that distinction was already correct before this bug hunt.
+
 **Not built yet**
-- [ ] No module besides Inicio, Clientes, Finanzas, and Workspace has real content (Objetivos, Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all show placeholder)
+- [ ] Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA all still show placeholder
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
 **Scoped but not started (2026-08-14 evening conversation) — direction agreed, nothing built yet:**
@@ -108,4 +135,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover the new Finanzas + Workspace collections (`expenses`, `incomes`, `settings`, `proyectosInternos`, and `tasks/{id}/history`), then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision). Chat/Comunidad/Noticias/ADOR IA all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked. If ADOR IA does get picked up next, resolve the free-tier-LLM-vs-scripted-hybrid decision with the user first.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: verify Firestore rules cover **all** collections/fields added since Firestore setup — `expenses`, `incomes`, `settings` (now also holding `cashBalance` and `counters.clientSeq`), `proyectosInternos`, `tasks/{id}/history`, and `objetivos`/`experimentos` — **confirmed still broken tonight** (real write attempt on `objetivos` returned a permissions error), do this first — then enable Firebase Storage for real Documentos/Comprobante uploads. Calendario is intentionally deferred — Google Calendar covers it for now (2026-08-14 decision). Chat/Comunidad/Noticias/ADOR IA all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked. If ADOR IA does get picked up next, resolve the free-tier-LLM-vs-scripted-hybrid decision with the user first.
