@@ -4,6 +4,7 @@ import { useHomeData } from '../../hooks/useHomeData'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import BirthdayBanner from './BirthdayBanner'
 import GreetingBlock from './GreetingBlock'
+import WeeklySummaryCard from './WeeklySummaryCard'
 import MetricsBlock from './MetricsBlock'
 import FinanceBlock from './FinanceBlock'
 import TasksTodayBlock from './TasksTodayBlock'
@@ -54,6 +55,10 @@ export default function HomeScreen({ user, onNavigate }) {
       </motion.div>
       <motion.div variants={itemVariants}>
         <GreetingBlock name={firstName(user)} />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <WeeklySummaryCard />
       </motion.div>
 
       {/* Two-column "sections" layout (per reference dashboard shared by user,

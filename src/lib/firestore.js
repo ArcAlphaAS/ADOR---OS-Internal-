@@ -112,9 +112,10 @@ export function updateTask(taskId, data) {
 
 export function toggleTaskComplete(task, actorName) {
   const completing = task.status !== 'completado'
-  return updateTask(task.id, { status: completing ? 'completado' : 'por_hacer' }).then(() =>
-    addTaskHistoryEvent(task.id, `${completing ? 'Marcada como completada' : 'Reabierta'} por ${actorName}`)
-  )
+  return updateTask(task.id, {
+    status: completing ? 'completado' : 'por_hacer',
+    completedAt: completing ? serverTimestamp() : null,
+  }).then(() => addTaskHistoryEvent(task.id, `${completing ? 'Marcada como completada' : 'Reabierta'} por ${actorName}`))
 }
 
 export function deleteTask(taskId) {
@@ -148,8 +149,14 @@ export function addTaskHistoryEvent(taskId, description) {
 // drag-and-drop) routes through this instead of calling updateTask directly,
 // so every change — no matter which surface it came from — leaves the same
 // activity trail.
+// `completedAt` rides alongside any status change routed through here
+// (Lista's status pill, Task Detail Panel, Kanban drag-and-drop) so
+// "tasks completed this week" (see lib/weeklySummary.js) has a real
+// timestamp to filter on instead of guessing from `createdAt`.
 export function applyTaskUpdate(taskId, data, actorName) {
-  return updateTask(taskId, data).then(() => addTaskHistoryEvent(taskId, `${describeTaskChange(data)} — ${actorName}`))
+  const patch = { ...data }
+  if ('status' in data) patch.completedAt = data.status === 'completado' ? serverTimestamp() : null
+  return updateTask(taskId, patch).then(() => addTaskHistoryEvent(taskId, `${describeTaskChange(data)} — ${actorName}`))
 }
 
 // ---- Workspace: Proyectos Internos ----

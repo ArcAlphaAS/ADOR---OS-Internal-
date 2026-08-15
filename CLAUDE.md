@@ -188,6 +188,20 @@ The user's follow-up feedback on §12's redesign: the North Star hero needs to b
 
 **Empty-state redesign, quick-start presets.** The bare "Sin objetivos definidos" text was replaced with a proper empty state (pulsing `TargetIcon` in a glass circle, headline, explanatory subtext, prominent CTA) plus three one-click presets (`QUICK_START_PRESETS` in `ObjetivosModule.jsx`) that seed `NewObjetivoModal` via a new `preset` prop — "Ingresos del trimestre," "SP Activos," "Un hito del trimestre" — so a first-time board doesn't require discovering the type toggle or typing a metric name from scratch. Nothing is created until the user actually saves the form; the preset only pre-fills fields.
 
+### 15. Resumen Semanal on Home (2026-08-15) — built after "que tenga lógica, comprensión" feedback
+
+The user asked what else would help run the company operationally, then specifically asked for a weekly summary with real reasoning behind it, not just numbers restated. Lives at `lib/weeklySummary.js` (pure logic) + `hooks/useWeeklySummary.js` (data aggregation) + `components/home/WeeklySummaryCard.jsx`/`WeeklySummaryPanel.jsx` (UI) — a card on Home, click opens a slide-in panel (same portal/transform-split pattern as ClientDetailPanel).
+
+**The "lógica" is a deterministic rule-based synthesizer, not an LLM call.** `buildWeeklyNarrative()` in `lib/weeklySummary.js` takes the week's raw aggregates and produces two things: (1) per-section prose lines that name specific entities ("Bloqueados: Cerrar el trimestre con caja positiva" — the actual objetivo title, not "1 objetivo bloqueado"), and (2) a prioritized TL;DR that picks the 1–2 most urgent signals (blocked objetivos first, then at-risk/warning signals — a stale client, an overloaded teammate, a revenue drop ≥20%), falling back to "Semana tranquila" when nothing warrants attention. This is genuinely the requested "comprensión" — synthesis and prioritization, not a fancier list.
+
+**The one piece of real quantitative reasoning: North Star pace comparison.** `quarterElapsedPct()` computes what fraction of the current quarter has elapsed by calendar date; the summary compares that against the North Star objetivo's own progress percentage and says "al ritmo esperado" or "por debajo del ritmo esperado" accordingly (flagging a TL;DR warning if it's more than 15 points behind). This is the one place in the app that answers "are we on track," not just "what's the number" — everywhere else (Finanzas' Meta del Trimestre, Objetivos' cards) shows raw progress with no pace context.
+
+**Monday–Sunday week, not a rolling 7 days.** `weekRange()` matches how the team already thinks about "esta semana" elsewhere (the Friday check-in, the workload panel's "due this week" count) — a rolling window would disagree with those by a few days depending on what day you open the summary.
+
+**New field: `tasks/{id}.completedAt`.** Tasks previously only had `createdAt`, so "tasks completed this week" had no real timestamp to filter on. `toggleTaskComplete` and `applyTaskUpdate` (in `lib/firestore.js`) now set `completedAt: serverTimestamp()` when status becomes `completado` and clear it back to `null` on reopen — every write path that can complete a task (Lista's status pill, Task Detail Panel, Kanban drag-and-drop) already routes through one of these two functions, so no call site needed to change. Tasks completed before this shipped won't retroactively show up in past weeks' counts — expected, not a gap to fix.
+
+**Data sources are entirely reused, nothing new subscribed for its own sake.** Finanzas numbers come from `useFinanceData()`'s existing `movements`/`clients`; Objetivos confidence/North Star from `useObjetivosData()`; Workspace overdue/workload from `lib/workspace.js`'s existing `isOverdue()`/`computeWorkload()`. The only genuinely new derived data is the week-boundary filtering itself.
+
 ## "Psychology of software" polish already applied (Phase 2)
 
 These came from an explicit design discussion — worth preserving as a pattern, not just one-off features:

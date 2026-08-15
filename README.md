@@ -40,7 +40,7 @@ src/
     SplashScreen.jsx, LoginScreen.jsx, WelcomeScreen.jsx, Logo.jsx, LoadingRing.jsx   Phase 1 screens
     icons.jsx               Hand-drawn line icon set (no icon library)
     shell/                  TopBar, Sidebar, AppShell, ModulePlaceholder, NotificationCenter, ProfileMenu, ProfileModal, SettingsModal
-    home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks)
+    home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks, BirthdayBanner, WeeklySummaryCard + WeeklySummaryPanel)
     clientes/                Clientes module — ClientesModule, KanbanBoard/Column/Card, ListView, ClientDetailPanel + tabs/, NewClientModal
     finanzas/                Finanzas module — FinanzasModule (68/32 layout), MetricCards, FinanceChart (hand-drawn SVG bar chart), MovimientosTable, QuarterlyGoalCard, CategoryBreakdownCard, NextPaymentCard, AddIncomeModal, AddExpenseModal
     workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView (grid-based table + inline "+ Agregar tarea" draft row), KanbanView, TimelineView (5 zoom levels), TaskRow, TaskCells (shared PillCell/EstimationCell/DescriptionCell/AssigneeCell), CellPopover (portaled floating menu), TaskDetailPanel (incl. Historial), DecisionesPanel (collapsible), WorkspaceSidebar (incl. "Mis tareas" + "Carga del equipo" workload panel), AvatarStack, NewProyectoModal, RegisterDecisionModal
@@ -48,6 +48,7 @@ src/
   hooks/
     useAuth.js               Firebase auth wrapper
     useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
+    useWeeklySummary.js       Home's Resumen Semanal hook — aggregates Finanzas/Objetivos/Workspace/Clientes into one Monday–Sunday synthesis (see lib/weeklySummary.js for the narrative logic)
     useFinanceData.js         Finanzas' live-data hook — derives hero numbers/chart/breakdowns/runway projection from clients + expenses + incomes + settings
     useWorkspaceData.js       Workspace's live-data hook — derives Intervenciones from clients (never stored) + Proyectos Internos + tasks, grouped
     useObjetivosData.js       Objetivos' live-data hook — resolves each goal's currentValue from clients/tasks/useFinanceData (never hand-entered except `metric: 'custom'`) and each objetivo's openLinkedTasks (Workspace tasks tagged via objetivoId)
@@ -59,6 +60,7 @@ src/
     useWelcomeScreen.js       localStorage-driven "show Welcome once per day/block" logic
   lib/
     firestore.js             Collection schema + CRUD + subscribe hooks
+    weeklySummary.js          Resumen Semanal's narrative logic — week-range math, quarter-pace comparison, buildWeeklyNarrative() (rule-based synthesis, no LLM)
     clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers, LOST_REASONS
     finance.js                Expense categories, quarter-key helpers, ADOR vocabulary for Finanzas
     workspace.js              Task priorities/statuses/grid template, ADOR's 7-layer methodology, workstream id helpers, describeTaskChange() (history log copy), withTimeout() (write-hang safeguard), computeWorkload()
