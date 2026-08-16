@@ -93,10 +93,6 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
             OS
           </span>
         </div>
-        <p className="mt-3 text-center text-[13px] font-normal text-[#888888]">
-          El sistema nervioso de ADOR
-        </p>
-
         <div className="my-8 h-px bg-white/[0.06]" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
