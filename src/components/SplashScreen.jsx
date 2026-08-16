@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from './Logo'
-import LoadingRing from './LoadingRing'
+import AdorMark from './AdorMark'
 
 const LOGO_DURATION = 0.8
 const RING_DELAY = 0.5
@@ -55,7 +55,7 @@ export default function SplashScreen({ onFinish }) {
         transition={{ duration: 0.5, delay: RING_DELAY, ease: 'easeOut' }}
         className="mt-8"
       >
-        <LoadingRing size={26} dotSize={4} />
+        <AdorMark size={26} />
       </motion.div>
 
       <motion.p

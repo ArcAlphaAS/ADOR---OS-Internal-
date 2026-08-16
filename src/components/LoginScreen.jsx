@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from './Logo'
-import LoadingRing from './LoadingRing'
+import AdorMark from './AdorMark'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -85,7 +85,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
         }}
       >
         <div className="flex justify-center">
-          <LoadingRing size={22} dotSize={3} color="#888888" />
+          <AdorMark size={22} />
         </div>
         <div className="mt-5 flex items-baseline justify-center gap-[7px]">
           <Logo size={22} />
