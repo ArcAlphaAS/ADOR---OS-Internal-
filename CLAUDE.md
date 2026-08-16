@@ -10,7 +10,7 @@ The user (Ángel) is new to both Claude Code and web development. Explain the "w
 
 ## Current status
 
-See `PROJECT_STATE.md` for the up-to-date checklist of what's built vs. pending — that file is the living status snapshot and gets updated more often than this one. Short version (as of 2026-08-15): Phases 1–2 (shell + Home) and four Phase 3 modules (Clientes, Finanzas, Workspace, Objetivos) are done and live; Firestore/Auth/deployment are all set up. Calendario, Conocimiento, Comunidad, Chat, News, Directorio, and ADOR IA are still placeholders.
+See `PROJECT_STATE.md` for the up-to-date checklist of what's built vs. pending — that file is the living status snapshot and gets updated more often than this one. Short version (as of 2026-08-16): Phases 1–2 (shell + Home) and five Phase 3 modules (Clientes, Finanzas, Workspace, Objetivos, ADOR IA) are done and live; Firestore/Auth/deployment are all set up. ADOR IA responds via a local, zero-cost rule-based engine by deliberate user choice, not Gemini — see §17 (§16 describes the Gemini path, which exists in the codebase but isn't what's running). Calendario, Conocimiento, Comunidad, Chat, News, and Directorio are still placeholders.
 
 ## Architecture decisions worth knowing before touching this code
 
@@ -202,6 +202,37 @@ The user asked what else would help run the company operationally, then specific
 
 **Data sources are entirely reused, nothing new subscribed for its own sake.** Finanzas numbers come from `useFinanceData()`'s existing `movements`/`clients`; Objetivos confidence/North Star from `useObjetivosData()`; Workspace overdue/workload from `lib/workspace.js`'s existing `isOverdue()`/`computeWorkload()`. The only genuinely new derived data is the week-boundary filtering itself.
 
+### 16. ADOR IA (2026-08-15) — real Gemini chat, and the project's first backend code
+
+The direction question flagged since §12 ("keyword-matched, zero-cost baseline" vs. "pair with a free-tier LLM for real personality") was resolved by the user: real LLM. Lives at `src/components/adoria/`, wired into `AppShell.jsx`'s existing `ador-ia` placeholder slot.
+
+**This required the project's first server-side code — `api/ador-ia.js`, a Vercel serverless function — and that wasn't optional.** Every other piece of ADOR OS talks to Firebase directly from the browser because Firebase Auth/Firestore are designed for that (client SDK + security rules do the enforcement). A raw API key for a third-party service like Gemini has no equivalent client-side protection: a Vite `VITE_`-prefixed env var compiles straight into the shipped JS bundle, so a `VITE_GEMINI_API_KEY` would be readable by anyone who opens devtools on the deployed site. The serverless function exists specifically to hold `GEMINI_API_KEY` (no `VITE_` prefix, so Vite never bundles it) server-side and proxy the request — the browser posts a message to `/api/ador-ia`, never to Gemini directly.
+
+**Model is `gemini-2.5-flash`** (confirmed via web search at build time — Google's free-tier model lineup changes over the years, so if this ever starts erroring, check the current free-tier model name at ai.google.dev before assuming the code broke).
+
+**Context, not fine-tuning or RAG — same "live-derived, never a stale snapshot" rule as every other cross-module number in this app.** `useAdorIAContext.js` calls the exact same hooks Finanzas/Objetivos/Workspace/Clientes already use (`useFinanceData`, `useObjetivosData`, `subscribeAllTasks`, `subscribeClients`) and `lib/adorIA.js`'s `buildAdorIAContext()` formats the result as a compact, labeled plain-text block (not JSON — reads more naturally as part of a system prompt and costs fewer tokens). This block is re-sent as part of the `systemInstruction` on every single message, so the assistant is always answering from the current state of the business, not a conversation-start snapshot. The system prompt (`ADOR_IA_SYSTEM_PROMPT`) explicitly forbids inventing numbers outside that block — a confidently wrong figure from an "assistant" is worse than "I don't have that data" for a firm handling client-sensitive financials.
+
+**Persona is "trusted chief of staff," not a literal Alfred-from-Batman impression** — the user referenced Alfred as a tone anchor (formal, dry wit, unfailingly competent) during the original scoping conversation, but the system prompt describes those traits rather than claiming to *be* the (trademarked) character.
+
+**Known, accepted limitation: no auth check on the endpoint itself.** `api/ador-ia.js` doesn't verify a Firebase ID token — it trusts that the deployed URL isn't public knowledge, the same posture as the rest of this invite-only tool (no public marketing, no search-indexed pages). If this were ever a real concern, the fix is verifying the client's Firebase ID token server-side (needs `firebase-admin` + a service account, deliberately skipped for v1 scope). The actual exposure today is narrow: someone could burn the free daily quota (1,500 req/day) if they somehow found the URL, not leak data — the endpoint never touches Firestore, it only relays whatever text the client already chose to send.
+
+**Conversation state is ephemeral by design** — messages live in `AdorIAModule.jsx`'s local React state only, no Firestore persistence, resets on page reload. Matches this project's repeated "don't build for a hypothetical" pattern; add a `conversations` collection later if the team actually wants to resume threads.
+
+**Verification note for future sessions:** local `npm run dev` (plain Vite, no `vercel dev`) cannot execute `/api/*` serverless functions at all — a request to `/api/ador-ia` there returns Vite's non-JSON fallback, which `AdorIAModule.jsx` catches and surfaces as an explicit "you're in local dev" error rather than a cryptic parse failure. This is expected, not a bug: real end-to-end testing only happens on the deployed Vercel site, once `GEMINI_API_KEY` is set there.
+
+### 17. ADOR IA pivoted to a local rule-based engine (2026-08-16) — §16 above describes code that exists but isn't what's running
+
+The morning after §16 shipped, the user got as far as opening the Gemini API key screen in Google AI Studio (a key already existed: "Default Gemini API Key", Free tier, project `gen-lang-client-0925730709`) and stopped short of adding it to Vercel — the stated reason was fear of an unexpected charge to their card. This was walked through carefully: a Free-tier key has no billing account attached, and Google structurally cannot charge without one being explicitly linked through a separate, deliberate flow (confirmed the mechanism, offered to have the user verify directly in Cloud Console's Billing screen). The user still said no. **This is a standing preference, not a one-time hesitation to re-litigate** — don't re-pitch connecting Gemini in a future session unless the user brings it up first.
+
+Given that, the user asked for ADOR IA to still feel as close to "real AI" as possible without any external call. What got built instead, entirely in `lib/adorIA.js` and `AdorIAModule.jsx`, without touching `api/ador-ia.js` or the system prompt (both left intact, ready to reactivate):
+
+- **`answerLocally(question, data, userName, lastTopic)` replaced the Gemini fetch call entirely** — `AdorIAModule.jsx`'s `send()` no longer calls `/api/ador-ia`; it calls this function directly and gets a reply in the same render tick (with a small artificial `setTimeout` delay so it doesn't feel suspiciously instant). Zero network calls, zero cost, works identically in local dev and production — which also incidentally fixes the "local dev can't run serverless functions" limitation from §16, since there's no serverless function in the live path anymore.
+- **`computeSignals(data)` is the actual "reasoning" layer** — cross-references objetivos bloqueados, North Star pace vs. `quarterElapsedPct()` (imported from `lib/weeklySummary.js` rather than reimplemented, so ADOR IA's opinion of what's urgent can never disagree with the Resumen Semanal card's), team overload, overdue tasks, stale clients, and cash runway into one ranked list. This is what powers two new cross-module questions — "¿cómo estamos?" and "¿qué debería priorizar?" — that synthesize across all four modules instead of answering one topic in isolation, which is the main thing that makes this feel like more than a keyword-matched FAQ bot.
+- **Conversational memory, in-session only.** `answerLocally()` returns `{ text, topic }`; `AdorIAModule.jsx` threads `topic` through a `lastTopicRef` so a short/pronoun-only follow-up ("¿por qué?", "y eso", "detalla", "explica") resolves against whatever was just discussed (`isFollowUp()`) instead of falling into the generic "no tengo ese dato" fallback — the thing that most broke the "conversation" illusion before this. Each signal also carries a `reason` string specifically for "¿por qué?" follow-ups, so asking why something matters doesn't just repeat the same fact back.
+- **Alfred-toned phrasing pools (`pick()` helper)** on openers/closers so repeated questions don't read as copy-pasted template output — this was a direct, explicit request ("que sea como Alfred, sofisticado"), not an incidental style choice.
+- **Message cap at 50** (`MAX_MESSAGES` in `AdorIAModule.jsx`) — raised by the user asking how to prevent the chat from "sobrecargándose" with heavy use. Since there's no external API anymore, there was never a cost/rate-limit risk to address (explained this directly) — the only real concern left was unbounded in-memory growth over a very long session. Oldest messages quietly drop past the cap; the first time it triggers, a one-time subtle gray line appears above the thread explaining what happened, so it never reads as a bug to whoever notices the thread doesn't scroll back further.
+- **If the user ever changes their mind on Gemini:** the fastest path back is restoring `AdorIAModule.jsx`'s `send()` to `fetch('/api/ador-ia', ...)` (see git history around 2026-08-15 for the exact previous version) — `api/ador-ia.js` and `ADOR_IA_SYSTEM_PROMPT` were never touched by this pivot.
+
 ## "Psychology of software" polish already applied (Phase 2)
 
 These came from an explicit design discussion — worth preserving as a pattern, not just one-off features:
@@ -226,9 +257,11 @@ These came from an explicit design discussion — worth preserving as a pattern,
 
 ## Next recommended steps (in priority order, as discussed with the user)
 
-1. **Enable Firebase Storage** so Clientes → Documentos and Finanzas → Comprobante can do real file uploads instead of metadata-only records. Same console-enable pattern already walked through for Firestore. (Firestore rules coverage — previously listed here — is a closed non-issue as of 2026-08-15; see the note above.)
-2. Build out the remaining placeholder modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) as they become priorities. Calendario is explicitly deferred — the team is using Google Calendar for now (2026-08-14 decision), no urgency to replace it.
+1. **Enable Firebase Storage** so Clientes → Documentos and Finanzas → Comprobante can do real file uploads instead of metadata-only records. Same console-enable pattern already walked through for Firestore. User deliberately deferred this on 2026-08-15 ("not necessary right now") — don't push on it unprompted.
+2. Build out the remaining placeholder modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio) as they become priorities. Calendario is explicitly deferred — the team is using Google Calendar for now (2026-08-14 decision), no urgency to replace it.
 3. **Existing clients created before 2026-08-15 have no `code` field** (shown as "—" in the list). Ask the user before writing a backfill script — see §13.
+
+Note: connecting `GEMINI_API_KEY` in Vercel is **not** on this list anymore — ADOR IA runs on a local rule-based engine by explicit user choice (see §17). Don't propose adding the key unless the user raises it first.
 
 ## Other context that only exists in conversation history (not in any file)
 

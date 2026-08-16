@@ -6,7 +6,7 @@ Invite-only. Dark, glass-surfaced, quiet by design ("something Apple would ship 
 
 ## Status
 
-Phases 1–2 (Splash/Login/Welcome, shell + Home) and four Phase 3 modules — Clientes (SPC→SP pipeline CRM), Finanzas (financial dashboard), Workspace (Lista/Kanban/Timeline task board), and Objetivos (quarterly goals board) — are done and live. Calendario (deferred — using Google Calendar for now), Conocimiento, Comunidad, Chat, News, Directorio, and ADOR IA are still placeholders. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
+Phases 1–2 (Splash/Login/Welcome, shell + Home) and five Phase 3 modules — Clientes (SPC→SP pipeline CRM), Finanzas (financial dashboard), Workspace (Lista/Kanban/Timeline task board), Objetivos (quarterly goals board), and ADOR IA (Gemini-powered chat over ADOR's live data) — are done and live. Calendario (deferred — using Google Calendar for now), Conocimiento, Comunidad, Chat, News, and Directorio are still placeholders. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
 
 ## Stack
 
@@ -29,9 +29,15 @@ Real project credentials live in `.env` (gitignored). Copy `.env.example` if you
 
 Firestore rules use a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule (confirmed 2026-08-15), so every collection — new or future — is covered automatically; no per-collection rule edits are needed. If a real write ever fails with `permission-denied`, check whether you're on the dev-only `?preview=1` mock session (no real auth, fails by design) or whether the signed-in email is missing from `allowedEmails`.
 
+### ADOR IA (Gemini)
+
+The only server-side code in this repo is `api/ador-ia.js`, a Vercel serverless function that proxies chat requests to Gemini's free tier (`gemini-2.5-flash`). It needs a `GEMINI_API_KEY` set in **Vercel's** Environment Variables (Settings → Environment Variables) — get a free key at [aistudio.google.com](https://aistudio.google.com), no card required. **Do not** prefix it with `VITE_` — that would compile the key straight into the shipped client bundle, where anyone can read it from devtools; `GEMINI_API_KEY` (no prefix) stays server-side, read only inside `api/ador-ia.js`. Local `npm run dev` (plain Vite) can't run this function at all — `AdorIAModule.jsx` will show a clear in-UI error there by design; the chat only works on the deployed Vercel site once the key is set.
+
 ## Project structure
 
 ```
+api/
+  ador-ia.js               Vercel serverless function — proxies chat to Gemini, keeps GEMINI_API_KEY server-side only (see "ADOR IA (Gemini)" above)
 src/
   App.jsx                 Top-level state machine: Splash → Login → Welcome → AppShell
   firebase.js              Firebase init, guarded so missing config degrades to "logged out" instead of crashing
@@ -45,6 +51,7 @@ src/
     finanzas/                Finanzas module — FinanzasModule (68/32 layout), MetricCards, FinanceChart (hand-drawn SVG bar chart), MovimientosTable, QuarterlyGoalCard, CategoryBreakdownCard, NextPaymentCard, AddIncomeModal, AddExpenseModal
     workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView (grid-based table + inline "+ Agregar tarea" draft row), KanbanView, TimelineView (5 zoom levels), TaskRow, TaskCells (shared PillCell/EstimationCell/DescriptionCell/AssigneeCell), CellPopover (portaled floating menu), TaskDetailPanel (incl. Historial), DecisionesPanel (collapsible), WorkspaceSidebar (incl. "Mis tareas" + "Carga del equipo" workload panel), AvatarStack, NewProyectoModal, RegisterDecisionModal
     objetivos/               Objetivos module — ObjetivosModule (cabecera/panel/rail lateral shell), NorthStarHero, ObjetivoCard (kpi progress bar / milestone checkbox), NewObjetivoModal, CheckinModal, IniciativasPanel (Focus Board — linked Workspace tasks), ExperimentosPanel (validation log)
+    adoria/                  ADOR IA module — AdorIAModule (chat UI, calls api/ador-ia.js)
   hooks/
     useAuth.js               Firebase auth wrapper
     useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
@@ -53,6 +60,7 @@ src/
     useWorkspaceData.js       Workspace's live-data hook — derives Intervenciones from clients (never stored) + Proyectos Internos + tasks, grouped
     useObjetivosData.js       Objetivos' live-data hook — resolves each goal's currentValue from clients/tasks/useFinanceData (never hand-entered except `metric: 'custom'`) and each objetivo's openLinkedTasks (Workspace tasks tagged via objetivoId)
     useGlobalSearch.js        Top bar search — filters the same live clients/tasks/decisions subscriptions other modules already hold
+    useAdorIAContext.js       Builds the live data snapshot sent to Gemini as context — reuses useFinanceData/useObjetivosData plus the same tasks/clients subscriptions other modules already hold, no independent data-fetching of its own
     useTodaysBirthdays.js     Team-wide "who's celebrating today" — reads users/{uid}.birthday
     useCountUp.js             0→value count-up animation used by Finanzas hero numbers
     useClientNotifications.js Bell notifications ("sin contacto +7 días") — lives outside useHomeData since TopBar needs it everywhere
@@ -65,6 +73,7 @@ src/
     finance.js                Expense categories, quarter-key helpers, ADOR vocabulary for Finanzas
     workspace.js              Task priorities/statuses/grid template, ADOR's 7-layer methodology, workstream id helpers, describeTaskChange() (history log copy), withTimeout() (write-hang safeguard), computeWorkload()
     objetivos.js              Objetivo metric definitions (live vs. custom), type vocabulary, confidence + experiment status palettes
+    adorIA.js                 ADOR IA's system prompt (persona + "never invent numbers" rule) and buildAdorIAContext() — formats the live data snapshot as plain labeled text for Gemini
     user.js                  Shared user-name helpers
 ```
 

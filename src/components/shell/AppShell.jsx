@@ -8,6 +8,7 @@ import ClientesModule from '../clientes/ClientesModule'
 import FinanzasModule from '../finanzas/FinanzasModule'
 import WorkspaceModule from '../workspace/WorkspaceModule'
 import ObjetivosModule from '../objetivos/ObjetivosModule'
+import AdorIAModule from '../adoria/AdorIAModule'
 
 const MODULE_LABELS = {
   inicio: 'Inicio',
@@ -78,6 +79,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
               <FinanzasModule key="finanzas" user={user} />
             ) : activeModule === 'objetivos' ? (
               <ObjetivosModule key="objetivos" user={user} />
+            ) : activeModule === 'ador-ia' ? (
+              <AdorIAModule key="ador-ia" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}
