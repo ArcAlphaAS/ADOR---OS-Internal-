@@ -85,7 +85,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
         }}
       >
         <div className="flex justify-center">
-          <AdorMark size={22} />
+          <AdorMark size={22} color="#888888" />
         </div>
         <div className="mt-5 flex items-baseline justify-center gap-[7px]">
           <Logo size={22} />
