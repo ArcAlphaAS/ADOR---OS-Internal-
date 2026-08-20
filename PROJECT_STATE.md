@@ -14,6 +14,7 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — remaining modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio) | ⬜ Not started |
+| "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
 
@@ -123,6 +124,14 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [x] **Message cap:** `messages` state is capped at 50 (`MAX_MESSAGES` in `AdorIAModule.jsx`) so a very long session can't grow memory/render unbounded; once the cap is first hit, a one-time subtle line appears above the thread ("Mostrando los últimos 50 mensajes...") so it never reads as a bug.
 - [ ] **If the user ever wants real generative answers:** `api/ador-ia.js` and `ADOR_IA_SYSTEM_PROMPT` are untouched and ready — just add `GEMINI_API_KEY` in Vercel and swap `AdorIAModule.jsx`'s `send()` back to calling `/api/ador-ia` (git history from 2026-08-15 has the exact previous wiring). Not needed unless the user changes their mind on the billing concern above.
 - [ ] **Known limitation, accepted for v1 (applies if/when Gemini path is reactivated):** `api/ador-ia.js` has no Firebase Auth verification of its own — it trusts the endpoint URL isn't public knowledge, same tradeoff as the rest of this invite-only tool.
+
+**"Conoce ADOR OS" (2026-08-16) — first-login walkthrough, not called a "tutorial" per user's explicit request**
+- [x] `OnboardingTour.jsx` (`src/components/onboarding/`) — full-screen slide carousel, one slide per module (Inicio/Workspace/Objetivos/Clientes/Finanzas/ADOR IA), modeled on Apple's post-setup "Hello" screens rather than spotlight coach marks anchored to live UI (avoids the fragility CLAUDE.md §1 already flags for anchored floating elements)
+- [x] Shows automatically once per account on first login — gated by `users/{uid}.onboardingSeenAt` (Firestore, not localStorage, so it's per-account not per-device), written via `markOnboardingSeen()` in `lib/firestore.js` when the tour closes (Omitir or finishing the last slide, both count)
+- [x] Re-openable any time from **Configuración → "Conoce ADOR OS"** — `AppShell.jsx` owns a local `showOnboarding` boolean that both the first-login effect and the Settings button can set to `true`
+- [x] Skipped entirely for the `?preview=1` mock user (no Firestore write attempted), same rule as every other write touching shared collections
+- [x] **Real bug found and fixed during testing:** the slide crossfade originally used `AnimatePresence mode="wait"`, which silently froze after ~2 transitions — the `index` state kept advancing (dots and the Comenzar/Siguiente button label were correct) but the mounted slide content stayed stuck on an old slide. Replaced with a plain key-remount `motion.div` (no `AnimatePresence`) — loses the exit fade-out, keeps the enter fade-in, and has no equivalent failure mode. If a future slide-based UI in this app reaches for `AnimatePresence mode="wait"` for rapid sequential transitions, test clicking through fast before trusting it.
+- [x] Added `WalletIcon` to `icons.jsx` — Finanzas had no dedicated icon anywhere in the app until this
 
 **Bug fixed broadly, 2026-08-15: Chromium drops `backdrop-filter` blur when the same element also has a `transform`.** Discovered on `NotificationCenter.jsx` (Framer Motion's `animate={{y,scale}}` leaves an inline `transform` even at rest, which is enough to trigger it — not just mid-animation) and turned out to be present in **13 files**: every portaled dropdown/popover/modal/slide-in-panel that combined a `.ador-glass`/`.ador-modal-surface` class with a Framer Motion transform on the *same* element. Fixed everywhere by splitting the transform-animated wrapper from the backdrop-filter surface into two nested elements — see the comment on `NotificationCenter.jsx` for the full explanation. Also reverted an overcorrection: dropdowns/menus (`ProfileMenu`, `NotificationCenter`, Sidebar tooltip, `CellPopover`) must stay on `.ador-glass` (translucent, ~5% tint) — `.ador-modal-surface` (~88% opaque) was tried first and made them read as solid black instead of frosted glass; modals/slide-in panels correctly keep `.ador-modal-surface`, that distinction was already correct before this bug hunt.
 
