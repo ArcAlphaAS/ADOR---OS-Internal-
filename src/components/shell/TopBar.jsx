@@ -254,6 +254,7 @@ export default function TopBar({
   onResetPassword,
   activeModule,
   onNavigate,
+  onShowOnboarding,
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
@@ -369,6 +370,7 @@ export default function TopBar({
             user={user}
             onClose={() => setActiveModal(null)}
             onResetPassword={onResetPassword}
+            onShowOnboarding={onShowOnboarding}
           />
         )}
       </AnimatePresence>

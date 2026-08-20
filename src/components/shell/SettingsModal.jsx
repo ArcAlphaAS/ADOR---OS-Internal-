@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 
-export default function SettingsModal({ user, onClose, onResetPassword }) {
+export default function SettingsModal({ user, onClose, onResetPassword, onShowOnboarding }) {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
@@ -42,7 +42,19 @@ export default function SettingsModal({ user, onClose, onResetPassword }) {
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Configuración</h2>
           <p className="mt-1 text-[13px] text-[#888888]">{user?.email}</p>
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                onShowOnboarding()
+              }}
+              className="ador-glass w-full rounded-xl px-4 py-3 text-left transition-colors duration-150 hover:bg-white/[0.06]"
+            >
+              <span className="block text-[13px] font-medium text-[#F5F5F5]">Conoce ADOR OS</span>
+              <span className="mt-0.5 block text-[12px] text-[#888888]">Un repaso rápido de cada módulo</span>
+            </button>
+
             <button
               type="button"
               onClick={handleResetPassword}
@@ -55,8 +67,8 @@ export default function SettingsModal({ user, onClose, onResetPassword }) {
               </span>
             </button>
 
-            {status && <p className="mt-3 px-1 text-[12px] text-[#888888]">{status}</p>}
-            {error && <p className="mt-3 px-1 text-[12px] text-[#888888]">{error}</p>}
+            {status && <p className="mt-1 px-1 text-[12px] text-[#888888]">{status}</p>}
+            {error && <p className="mt-1 px-1 text-[12px] text-[#888888]">{error}</p>}
           </div>
 
           <div className="mt-6 flex justify-end">

@@ -236,6 +236,15 @@ export function ArrowLeftIcon(props) {
   )
 }
 
+export function WalletIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12a2.5 2.5 0 0 1 2.5 2.5v9A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-9Z" />
+      <path d="M14.5 12.5h4.5v3h-4.5a1.5 1.5 0 0 1 0-3Z" />
+    </svg>
+  )
+}
+
 export function GiftIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>

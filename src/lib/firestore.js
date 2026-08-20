@@ -215,6 +215,15 @@ export function saveUserProfile(userId, data) {
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
 }
 
+// Gates the "Conoce ADOR OS" first-login walkthrough — stored on the same
+// profile doc (not localStorage) so it's per-account, not per-device: once
+// seen on one machine, a new session on another doesn't show it again.
+// Re-running it from Configuración just re-opens the overlay locally and
+// writes this again on close, which is harmless (idempotent).
+export function markOnboardingSeen(userId) {
+  return saveUserProfile(userId, { onboardingSeenAt: serverTimestamp() })
+}
+
 // There's no Firebase Admin SDK wired in (no backend), so we can't list
 // every Auth user from the client. Instead each founder's own session
 // self-registers a lightweight directory entry on login (see App.jsx) —

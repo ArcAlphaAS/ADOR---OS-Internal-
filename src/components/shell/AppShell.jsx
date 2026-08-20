@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
@@ -9,6 +9,8 @@ import FinanzasModule from '../finanzas/FinanzasModule'
 import WorkspaceModule from '../workspace/WorkspaceModule'
 import ObjetivosModule from '../objetivos/ObjetivosModule'
 import AdorIAModule from '../adoria/AdorIAModule'
+import OnboardingTour from '../onboarding/OnboardingTour'
+import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 
 const MODULE_LABELS = {
   inicio: 'Inicio',
@@ -31,10 +33,31 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // a specific client/task's detail panel once its module mounts — cleared
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).
   const [focus, setFocus] = useState(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const navigateTo = (moduleId, focusTarget = null) => {
     setActiveModule(moduleId)
     setFocus(focusTarget)
+  }
+
+  // First-login gate lives on the profile doc (not localStorage) so it's
+  // per-account, not per-device — see markOnboardingSeen in lib/firestore.js.
+  // Skipped for the ?preview=1 mock user, same rule as every other write
+  // that touches shared collections (CLAUDE.md §8).
+  useEffect(() => {
+    if (!user?.uid || user.uid === 'preview') return
+    let cancelled = false
+    getUserProfile(user.uid).then((profile) => {
+      if (!cancelled && !profile?.onboardingSeenAt) setShowOnboarding(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.uid])
+
+  const finishOnboarding = () => {
+    setShowOnboarding(false)
+    if (user?.uid && user.uid !== 'preview') markOnboardingSeen(user.uid)
   }
 
   return (
@@ -52,6 +75,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         onResetPassword={onResetPassword}
         activeModule={activeModule}
         onNavigate={navigateTo}
+        onShowOnboarding={() => setShowOnboarding(true)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -87,6 +111,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           </AnimatePresence>
         </main>
       </div>
+
+      <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
     </div>
   )
 }
