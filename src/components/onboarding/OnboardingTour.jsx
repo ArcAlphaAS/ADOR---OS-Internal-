@@ -11,6 +11,12 @@ import { HomeIcon, KanbanIcon, TargetIcon, ContactsIcon, WalletIcon, SparkleIcon
 // dependency on where any button happens to sit on screen — so it can't
 // break if the layout changes later (see CLAUDE.md's portal-positioning
 // gotcha for why anchored floating UI is the fragile choice here).
+// Screenshots are real captures of the app itself (public/onboarding/*.jpg,
+// taken via Playwright against the ?preview=1 mock account — see git history
+// for the capture script) — showing its actual empty state on purpose. A new
+// founder's first real session looks exactly like this, so the walkthrough
+// doubles as "here's where you'll create your first X" rather than a staged
+// screenshot that wouldn't match what they see next.
 const SLIDES = [
   {
     mark: true,
@@ -19,31 +25,37 @@ const SLIDES = [
   },
   {
     icon: HomeIcon,
+    image: '/onboarding/inicio.jpg',
     title: 'Inicio',
     description: 'El primer vistazo del día: ingresos, intervenciones activas, tareas pendientes y el Resumen Semanal — una lectura sintetizada de cómo va la empresa, no solo números sueltos.',
   },
   {
     icon: KanbanIcon,
+    image: '/onboarding/workspace.jpg',
     title: 'Workspace',
     description: 'Donde vive el trabajo real: tareas de cada Intervención y Proyecto Interno, en Lista, Kanban o Timeline. Asigna, prioriza y da seguimiento sin salir del módulo.',
   },
   {
     icon: TargetIcon,
+    image: '/onboarding/objetivos.jpg',
     title: 'Objetivos',
     description: 'Las metas del trimestre, con una Métrica Norte destacada arriba. Cada objetivo tiene dueño, check-ins semanales y las tareas que realmente lo mueven.',
   },
   {
     icon: ContactsIcon,
+    image: '/onboarding/clientes.jpg',
     title: 'Clientes',
     description: 'El pipeline completo, de Strategic Partner Candidate a Strategic Partner activo. Pagos, progreso de intervención y documentos, todo en la ficha de cada uno.',
   },
   {
     icon: WalletIcon,
+    image: '/onboarding/finanzas.jpg',
     title: 'Finanzas',
     description: 'Ingresos, gastos, meta trimestral y proyección de caja — leídos directamente de los pagos registrados en Clientes, nunca cifras cargadas a mano por separado.',
   },
   {
     icon: SparkleIcon,
+    image: '/onboarding/ador-ia.jpg',
     title: 'ADOR IA',
     description: 'Pregúntale por el estado real de la empresa — ingresos, objetivos, carga del equipo, clientes sin contacto — y te da una lectura priorizada, no solo los números.',
   },
@@ -116,7 +128,9 @@ export default function OnboardingTour({ onFinish }) {
         <CloseIcon size={13} />
       </button>
 
-      <div className="flex w-full max-w-[440px] flex-col items-center px-8 text-center">
+      <div
+        className={`flex w-full flex-col items-center px-8 text-center transition-[max-width] duration-300 ${slide.image ? 'max-w-[620px]' : 'max-w-[440px]'}`}
+      >
         {/* Plain key-remount crossfade, not AnimatePresence — mode="wait"
             here would queue exit/enter transitions and, after a couple of
             rapid slide changes, could leave the old slide's content stuck
@@ -130,16 +144,41 @@ export default function OnboardingTour({ onFinish }) {
           initial={{ opacity: 0, x: direction * 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="flex flex-col items-center"
+          className="flex w-full flex-col items-center"
         >
-          <div
-            className="flex h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
-          >
-            {slide.mark ? <AdorMark size={26} /> : <Icon size={26} className="text-[#1E5FAD]" />}
+          {slide.image ? (
+            <div
+              className="w-full overflow-hidden rounded-2xl border border-white/[0.08]"
+              style={{ boxShadow: '0 24px 60px -20px rgba(0,0,0,0.6)' }}
+            >
+              <div className="flex items-center gap-1.5 bg-white/[0.03] px-3 py-2">
+                <span className="h-2 w-2 rounded-full bg-white/[0.12]" />
+                <span className="h-2 w-2 rounded-full bg-white/[0.12]" />
+                <span className="h-2 w-2 rounded-full bg-white/[0.12]" />
+              </div>
+              <img src={slide.image} alt={`Vista de ${slide.title}`} className="block w-full" />
+            </div>
+          ) : (
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
+            >
+              <AdorMark size={26} />
+            </div>
+          )}
+
+          <div className="mt-6 flex items-center gap-2">
+            {Icon && (
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#1E5FAD]"
+                style={{ backgroundColor: 'rgba(30,95,173,0.12)' }}
+              >
+                <Icon size={15} />
+              </span>
+            )}
+            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{slide.title}</h1>
           </div>
-          <h1 className="mt-6 text-[22px] font-semibold text-[#F5F5F5]">{slide.title}</h1>
-          <p className="mt-3 text-[14px] font-light leading-relaxed text-[#888888]">{slide.description}</p>
+          <p className="mt-3 max-w-[440px] text-[14px] font-light leading-relaxed text-[#888888]">{slide.description}</p>
         </motion.div>
 
         <div className="mt-10 flex items-center gap-2">
