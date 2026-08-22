@@ -17,6 +17,14 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   const [users, setUsers] = useState([])
   const [view, setView] = useState('kanban')
   const [selectedClientId, setSelectedClientId] = useState(null)
+  // Captured from the clicked card's own rect (ClientCard.jsx) so the Ficha
+  // panel can visually grow from where you clicked instead of always
+  // sliding in from the fixed right edge — the "spatial" feel from the
+  // 2026-08-21 design note (Linear/Notion/Figma: things expand from where
+  // you interacted with them, not from nowhere). Null for entry points that
+  // don't have a clicked element (global search, List/Perdidos rows for
+  // now), which just falls back to the plain slide-in in ClientDetailPanel.
+  const [originRect, setOriginRect] = useState(null)
   const [showNewModal, setShowNewModal] = useState(false)
   const [justConvertedId, setJustConvertedId] = useState(null)
   const prevStagesRef = useRef({})
@@ -31,6 +39,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   useEffect(() => {
     if (!focusClientId) return
     setSelectedClientId(focusClientId)
+    setOriginRect(null)
     onFocusHandled?.()
   }, [focusClientId, onFocusHandled])
 
@@ -132,17 +141,40 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
       {view === 'kanban' ? (
         <KanbanBoard
           clients={activeClients}
-          onOpenClient={(c) => setSelectedClientId(c.id)}
+          onOpenClient={(c, rect) => {
+            setSelectedClientId(c.id)
+            setOriginRect(rect || null)
+          }}
           onDropStage={(client, stage) => moveClientStage(client, stage, actorName)}
           justConvertedId={justConvertedId}
         />
       ) : view === 'list' ? (
-        <ListView clients={activeClients} users={users} onOpenClient={(c) => setSelectedClientId(c.id)} actorName={actorName} />
+        <ListView
+          clients={activeClients}
+          users={users}
+          onOpenClient={(c) => {
+            setSelectedClientId(c.id)
+            setOriginRect(null)
+          }}
+          actorName={actorName}
+        />
       ) : (
-        <LostClientsView clients={lostClients} onOpenClient={(c) => setSelectedClientId(c.id)} actorName={actorName} />
+        <LostClientsView
+          clients={lostClients}
+          onOpenClient={(c) => {
+            setSelectedClientId(c.id)
+            setOriginRect(null)
+          }}
+          actorName={actorName}
+        />
       )}
 
-      <ClientDetailPanel client={selectedClient} actorName={actorName} onClose={() => setSelectedClientId(null)} />
+      <ClientDetailPanel
+        client={selectedClient}
+        actorName={actorName}
+        originRect={originRect}
+        onClose={() => setSelectedClientId(null)}
+      />
 
       {showNewModal && (
         <NewClientModal

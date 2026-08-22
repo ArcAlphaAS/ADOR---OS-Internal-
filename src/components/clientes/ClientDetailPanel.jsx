@@ -74,11 +74,33 @@ function LostControl({ client, actorName }) {
   )
 }
 
-export default function ClientDetailPanel({ client, actorName, onClose }) {
+const PANEL_WIDTH = 480
+
+// When the panel was opened from a clicked card (originRect), it should
+// visually grow out of that card's position instead of always sliding in
+// from the fixed right edge — see the `originRect` comment in
+// ClientesModule.jsx. Computed as a translate+scale offset from the panel's
+// natural resting rect (right:0, full height) so the scaled-down panel's
+// top-left corner lands exactly on the card's top-left corner.
+function originTransform(originRect) {
+  if (!originRect || typeof window === 'undefined') return null
+  const finalX = window.innerWidth - PANEL_WIDTH
+  const finalY = 0
+  const finalHeight = window.innerHeight
+  return {
+    x: originRect.left - finalX,
+    y: originRect.top - finalY,
+    scaleX: originRect.width / PANEL_WIDTH,
+    scaleY: originRect.height / finalHeight,
+  }
+}
+
+export default function ClientDetailPanel({ client, actorName, originRect, onClose }) {
   const [activeTab, setActiveTab] = useState('general')
 
   if (!client) return null
   const type = clientType(client.stage)
+  const origin = originTransform(originRect)
 
   return createPortal(
     <AnimatePresence>
@@ -92,11 +114,12 @@ export default function ClientDetailPanel({ client, actorName, onClose }) {
       />
       <motion.div
         key={client.id}
-        initial={{ x: 480, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 480, opacity: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="fixed right-0 top-0 z-50 h-full w-[480px]"
+        initial={origin ? { x: origin.x, y: origin.y, scaleX: origin.scaleX, scaleY: origin.scaleY, opacity: 0 } : { x: 480, opacity: 0 }}
+        animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
+        exit={origin ? { x: origin.x, y: origin.y, scaleX: origin.scaleX, scaleY: origin.scaleY, opacity: 0 } : { x: 480, opacity: 0 }}
+        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+        style={{ transformOrigin: '0 0', width: PANEL_WIDTH }}
+        className="fixed right-0 top-0 z-50 h-full"
         onClick={(e) => e.stopPropagation()}
       >
       <div className="ador-modal-surface ador-grain flex h-full flex-col">

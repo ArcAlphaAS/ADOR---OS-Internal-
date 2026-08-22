@@ -19,7 +19,7 @@ export default function ClientCard({ client, onOpen, onDropStage, resolveDropSta
         const targetStage = resolveDropStage(info.point.x, info.point.y)
         if (targetStage && targetStage !== client.stage) onDropStage(client, targetStage)
       }}
-      onClick={() => onOpen(client)}
+      onClick={(e) => onOpen(client, e.currentTarget.getBoundingClientRect())}
       initial={justConverted ? { boxShadow: '0 0 0px rgba(30,95,173,0)' } : false}
       animate={
         justConverted
