@@ -48,22 +48,45 @@ export default function FinancialHealthCard({
   const overdueColor = overdueCount === 0 ? GREEN : overdueCount <= 1 ? AMBER : RED
   const overdueValue = overdueCount === 0 ? currencyPEN.format(0) : currencyPEN.format(overdueAmount)
 
+  // Worst-of-four, so the header dot/border reads as "does anything here
+  // need attention" at a glance — GRAY only when every signal still lacks
+  // data (nothing to warn about yet, not literally "healthy").
+  const signalColors = [runwayColor, margenColor, concColor, overdueColor]
+  const overallColor = signalColors.includes(RED)
+    ? RED
+    : signalColors.includes(AMBER)
+      ? AMBER
+      : signalColors.includes(GREEN)
+        ? GREEN
+        : GRAY
+
   return (
-    <div className="ador-glass ador-grain flex divide-x divide-white/[0.06] overflow-hidden rounded-[18px]">
-      <Tile label="Runway" value={runwayValue} sub={runwayMonths == null ? 'Registra tu caja' : 'a la quema actual'} color={runwayColor} />
-      <Tile label="Margen neto" value={margenValue} sub="ingresos vs. gastos, este mes" color={margenColor} />
-      <Tile
-        label="Concentración"
-        value={concValue}
-        sub={topClientName ? `en ${topClientName}` : 'sin ingresos recientes'}
-        color={concColor}
-      />
-      <Tile
-        label="Cobros vencidos"
-        value={overdueValue}
-        sub={overdueCount === 0 ? 'al día' : `${overdueCount} pago${overdueCount === 1 ? '' : 's'} atrasado${overdueCount === 1 ? '' : 's'}`}
-        color={overdueColor}
-      />
+    <div
+      className="ador-glass ador-grain overflow-hidden rounded-[18px]"
+      style={{ borderLeft: `3px solid ${overallColor}` }}
+    >
+      <div className="flex items-center gap-2 px-5 pt-4">
+        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: overallColor }} />
+        <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Salud Financiera
+        </span>
+      </div>
+      <div className="flex divide-x divide-white/[0.06]">
+        <Tile label="Runway" value={runwayValue} sub={runwayMonths == null ? 'Registra tu caja' : 'a la quema actual'} color={runwayColor} />
+        <Tile label="Margen neto" value={margenValue} sub="ingresos vs. gastos, este mes" color={margenColor} />
+        <Tile
+          label="Concentración"
+          value={concValue}
+          sub={topClientName ? `en ${topClientName}` : 'sin ingresos recientes'}
+          color={concColor}
+        />
+        <Tile
+          label="Cobros vencidos"
+          value={overdueValue}
+          sub={overdueCount === 0 ? 'al día' : `${overdueCount} pago${overdueCount === 1 ? '' : 's'} atrasado${overdueCount === 1 ? '' : 's'}`}
+          color={overdueColor}
+        />
+      </div>
     </div>
   )
 }
