@@ -143,12 +143,7 @@ export function buildWeeklyNarrative(data) {
       ? 'Semana tranquila — sin bloqueos ni vencidos pendientes.'
       : ordered.slice(0, 2).map((h) => h.text).join('; ') + '.'
 
-  // Drives WeeklySummaryCard's hero color/glow on Home — so the one card
-  // that actually synthesizes the week gets a visual weight matching its
-  // importance, instead of reading as just another same-toned glass box.
-  const level = highlights.some((h) => h.level === 'urgent') ? 'urgent' : highlights.some((h) => h.level === 'warn') ? 'warn' : 'calm'
-
-  return { tldr: tldr.charAt(0).toUpperCase() + tldr.slice(1), level, sections, birthdaysThisWeek }
+  return { tldr: tldr.charAt(0).toUpperCase() + tldr.slice(1), sections, birthdaysThisWeek }
 }
 
 export function inWeek(date, range) {
