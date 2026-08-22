@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { clientType, daysSince, urgencyColor, paymentStatusLabel } from '../../lib/clientStages'
 
@@ -7,6 +8,15 @@ export default function ClientCard({ client, onOpen, onDropStage, resolveDropSta
   const payment = paymentStatusLabel(client)
   const showPayment = client.pago1?.status === 'Recibido' || client.pago2?.status === 'Recibido'
 
+  // Framer Motion's `drag` and the browser's native `click` both fire on
+  // release — but measured directly (console logging the actual sequence),
+  // the order here is dragStart → click → dragEnd, not dragEnd → click as
+  // it'd be reasonable to assume. So the flag has to go up in onDragStart
+  // (before any movement threshold, but a real drag always starts with one)
+  // and come back down in onDragEnd, not the other way around — this is
+  // what makes dragging a card never open it, same as Trello.
+  const didDragRef = useRef(false)
+
   return (
     <motion.div
       layout
@@ -15,11 +25,22 @@ export default function ClientCard({ client, onOpen, onDropStage, resolveDropSta
       dragSnapToOrigin
       dragMomentum={false}
       whileDrag={{ scale: 1.04, boxShadow: '0 20px 40px -12px rgba(0,0,0,0.6)', zIndex: 20 }}
+      onDragStart={() => {
+        didDragRef.current = true
+      }}
       onDragEnd={(_, info) => {
         const targetStage = resolveDropStage(info.point.x, info.point.y)
         if (targetStage && targetStage !== client.stage) onDropStage(client, targetStage)
+        // Cleared a tick later, not synchronously — the native click for
+        // this same release can still be in flight right after dragEnd.
+        setTimeout(() => {
+          didDragRef.current = false
+        }, 0)
       }}
-      onClick={(e) => onOpen(client, e.currentTarget.getBoundingClientRect())}
+      onClick={(e) => {
+        if (didDragRef.current) return
+        onOpen(client, e.currentTarget.getBoundingClientRect())
+      }}
       initial={justConverted ? { boxShadow: '0 0 0px rgba(30,95,173,0)' } : false}
       animate={
         justConverted
