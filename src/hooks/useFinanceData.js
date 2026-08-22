@@ -158,6 +158,42 @@ export function useFinanceData() {
   const projectedIn30 = cashBalance + sumPendingBy(in30) - dailyBurnRate * 30
   const projectedIn60 = cashBalance + sumPendingBy(in60) - dailyBurnRate * 60
 
+  // Salud Financiera — four signals no other card on this dashboard surfaces
+  // on its own, chosen because each answers a different "is the business
+  // actually okay" question rather than restating a number shown elsewhere:
+  //
+  // 1. Runway in months (not just a 30/60-day cash projection) — the
+  //    single most-asked founder question, "cuánto tiempo nos queda."
+  const runwayMonths = cashBalance && monthlyBurnRate > 0 ? cashBalance / monthlyBurnRate : null
+
+  // 2. Net margin — revenue growing means nothing if it's not profitable;
+  //    this is the one figure that answers that directly.
+  const margenNetoPct = ingresosDelMes > 0 ? (utilidadNeta / ingresosDelMes) * 100 : null
+
+  // 3. Revenue concentration — a consulting firm this size can look
+  //    "healthy" on total revenue while quietly depending on one client for
+  //    most of it. Grouped over the trailing 3 months (not just this month,
+  //    which could be skewed by a single payment landing on a given date).
+  const last3Keys = monthKeys.slice(-3)
+  const recentIncomes = allIncomes.filter((e) => last3Keys.includes(e.date.slice(0, 7)))
+  const totalRecentIncome = recentIncomes.reduce((sum, e) => sum + e.amount, 0)
+  const byClient = new Map()
+  for (const e of recentIncomes) {
+    const key = e.source === 'client' ? e.name : e.clientName || 'Otros ingresos'
+    byClient.set(key, (byClient.get(key) || 0) + e.amount)
+  }
+  let topClient = null
+  for (const [name, amount] of byClient) {
+    if (!topClient || amount > topClient.amount) topClient = { name, amount }
+  }
+  const topClientConcentrationPct = topClient && totalRecentIncome > 0 ? (topClient.amount / totalRecentIncome) * 100 : null
+
+  // 4. Overdue collections — "próximo cobro" (NextPaymentCard) only shows
+  //    what's coming; this flags payments whose own date has already passed
+  //    without being marked Recibido, which is a distinct, more urgent signal.
+  const overduePayments = pendingPayments.filter((p) => p.date && new Date(`${p.date}T00:00:00`) < now)
+  const overdueAmount = overduePayments.reduce((sum, p) => sum + p.amount, 0)
+
   return {
     ingresosDelMes,
     gastosDelMes,
@@ -176,5 +212,11 @@ export function useFinanceData() {
     monthlyBurnRate,
     projectedIn30,
     projectedIn60,
+    runwayMonths,
+    margenNetoPct,
+    topClientConcentrationPct,
+    topClientName: topClient?.name || null,
+    overdueAmount,
+    overdueCount: overduePayments.length,
   }
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFinanceData } from '../../hooks/useFinanceData'
 import MetricCards from './MetricCards'
+import FinancialHealthCard from './FinancialHealthCard'
 import FinanceChart from './FinanceChart'
 import MovimientosTable from './MovimientosTable'
 import QuarterlyGoalCard from './QuarterlyGoalCard'
@@ -52,7 +53,16 @@ export default function FinanzasModule({ user }) {
         </div>
       </div>
 
-      <div className="flex gap-6">
+      <FinancialHealthCard
+        runwayMonths={data.runwayMonths}
+        margenNetoPct={data.margenNetoPct}
+        topClientConcentrationPct={data.topClientConcentrationPct}
+        topClientName={data.topClientName}
+        overdueAmount={data.overdueAmount}
+        overdueCount={data.overdueCount}
+      />
+
+      <div className="mt-6 flex gap-6">
         <div className="flex w-[68%] flex-col gap-6">
           <MetricCards
             ingresosDelMes={data.ingresosDelMes}
