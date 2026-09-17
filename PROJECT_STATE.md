@@ -10,11 +10,10 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 | Phase 2 — Shell + Home | ✅ Done |
 | Phase 3 — Clientes module | ✅ Done (2026-08-14, extended 2026-08-15) |
 | Phase 3 — Finanzas module | ✅ Done (2026-08-14, extended 2026-08-15) |
-| Phase 3 — Workspace module (Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15) |
+| Phase 3 — Workspace module (Lista + Kanban + Timeline + Notas) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16) |
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
-| Phase 3 — remaining modules (Calendario, Comunidad, Chat, News, Directorio) | ⬜ Not started |
-| Phase 3 — Conocimiento (quick-capture notebook, rule-based categorization) | ✅ Done (2026-09-16) |
+| Phase 3 — remaining modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio) | ⬜ Not started |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -137,10 +136,11 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 
 **Bug fixed broadly, 2026-08-15: Chromium drops `backdrop-filter` blur when the same element also has a `transform`.** Discovered on `NotificationCenter.jsx` (Framer Motion's `animate={{y,scale}}` leaves an inline `transform` even at rest, which is enough to trigger it — not just mid-animation) and turned out to be present in **13 files**: every portaled dropdown/popover/modal/slide-in-panel that combined a `.ador-glass`/`.ador-modal-surface` class with a Framer Motion transform on the *same* element. Fixed everywhere by splitting the transform-animated wrapper from the backdrop-filter surface into two nested elements — see the comment on `NotificationCenter.jsx` for the full explanation. Also reverted an overcorrection: dropdowns/menus (`ProfileMenu`, `NotificationCenter`, Sidebar tooltip, `CellPopover`) must stay on `.ador-glass` (translucent, ~5% tint) — `.ador-modal-surface` (~88% opaque) was tried first and made them read as solid black instead of frosted glass; modals/slide-in panels correctly keep `.ador-modal-surface`, that distinction was already correct before this bug hunt.
 
-**Conocimiento (2026-09-16) — quick-capture notebook, replaces the placeholder**
+**Workspace → Notas tab (2026-09-16) — quick-capture notebook**
 - [x] User asked for a digital replacement for jotting things down on paper that "understands and categorizes" instead of requiring manual filing — same live-AI-suggestion ambition raised for ADOR IA (§16/§17 in CLAUDE.md), and the user again confirmed (twice, in this same conversation) they're not comfortable connecting Gemini even with the billing mechanism explained. Built as the honest zero-cost equivalent instead of blocking on that decision.
 - [x] `GlobalCapture.jsx` — a floating "+" button mounted once in `AppShell.jsx` (not per-module), always reachable regardless of which screen is open. Saves immediately via `createNote()`; `lib/notes.js`'s `suggestCategory()` (keyword rules — tarea/gasto/ingreso/objetivo/cliente/nota, same family as ADOR IA's local engine, §17) never blocks the save, it's just a hint attached after the fact.
-- [x] `ConocimientoModule.jsx` (`src/components/conocimiento/`) — lists notes split into Sin revisar/Revisadas, each with its suggested category as a colored chip and a manual "Revisada" (archive) action.
+- [x] **Initially built as its own "Conocimiento" module, then moved into Workspace as a 4th view (`NotasView.jsx`, alongside Lista/Kanban/Timeline) the same day** — the user clarified Conocimiento should stay reserved for a real future document/knowledge-base module ("mejor que Notion"), and these are personal/daily jottings that belong next to the team's task views instead. `ConocimientoModule.jsx` was deleted; the `conocimiento` sidebar item is back to the plain placeholder.
+- [x] Lists notes split into Sin revisar/Revisadas, each with its suggested category as a colored chip and a manual "Revisada" (archive) action.
 - [ ] **Deliberately scoped down:** "+ Crear tarea" is the only conversion actually wired end-to-end (reuses Workspace's find-or-create "General" Proyecto Interno pattern from `ListaView.jsx`, via new `findOrCreateGeneralProyecto()` in `lib/firestore.js`). Gasto/Objetivo/Cliente suggestions are informational only — no conversion modal yet. Build these as their own follow-up when there's a concrete need, not preemptively (this project's standing rule).
 - [x] New Firestore collection `notes` — already covered by the existing blanket security rule (§15 note in CLAUDE.md), no console change needed.
 
