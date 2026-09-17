@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import Logo from '../Logo'
 import { SearchIcon, BellIcon, ChevronDownIcon } from '../icons'
 import NotificationCenter from './NotificationCenter'
 import ProfileMenu from './ProfileMenu'
@@ -304,8 +303,8 @@ export default function TopBar({
       className="relative z-40 grid w-full flex-shrink-0 grid-cols-3 items-center px-5"
       style={{ height: 64, backgroundColor: '#0A0A0A' }}
     >
-      <div className="flex items-baseline gap-[6px] justify-self-start">
-        <Logo size={13} />
+      <div className="flex items-center gap-[6px] justify-self-start">
+        <img src="/logo.svg" alt="ADOR" style={{ height: 18 }} />
         <span className="font-semibold text-[#F5F5F5]" style={{ fontSize: 13, letterSpacing: '0.3em' }}>
           OS
         </span>
