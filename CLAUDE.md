@@ -345,6 +345,20 @@ Direct follow-up ("elevalo, apple, producitivdad IOS") asking specifically for t
 
 **Verification note:** a stale `ReferenceError: UsersIcon is not defined` kept appearing in the browser console's error log across multiple full page reloads while verifying this, even though the UI rendered correctly every time (icon badges visible, no crash) and the Vite dev server itself reported zero compile errors. Treated as a leftover console log-history entry from mid-edit HMR, not a live bug — confirmed by the app never actually breaking. If this resurfaces and the UI *does* look broken next time, don't assume it's the same false alarm — recheck the actual import.
 
+### 24. "Salud" pill and a scrubber-dot progress bar on Lista's workstream headers (2026-09-17)
+
+The user shared two reference images — a dark widget with a clear "X of Y tasks done" progress bar with a scrubber dot, and a light project-pipeline table with colored "Schedule Health"/"Budget Health" pill columns — and asked which pieces were worth pulling in, explicitly flagging to be careful about it at the design level rather than copying either literally. Per this project's established pattern (§9's "adopted the reference's shapes, not its literal colors"), extracted the underlying ideas rather than the light theme or the orange accent.
+
+**New `workstreamHealth(tasks)` in `lib/workspace.js`** — a colored pill ("En tiempo" green / "Atrasado" red) shown in `ListaView.jsx`'s `WorkstreamGroup` header, next to the existing Intervención/Proyecto Interno badge. Computed the same way every other cross-module status in this app is (§7 and everywhere since): live, from real data, never a manually-set field. It's `true` the moment the group has any open task past its due date, `null` when the group has zero tasks (no badge shown at all, rather than a meaningless "on track" default).
+
+**Replaced the old "0/1 · 0%" progress text with "1 de 1 completadas"** — plainer, matches the widget reference's clarity ("1 OF 5 TASKS DONE") better than the compact-but-cryptic fraction-and-percent format.
+
+**Added a scrubber dot to the workstream progress bar** (a small circle riding at the fill's edge, ringed in the page's near-black to read as "cut into" the bar) — the one purely visual borrow from the widget reference, since it's what makes a flat fill bar read as "a position on a track" instead of just a percentage.
+
+**Removed a real, previously-unnoticed bug found while doing this: the "En curso" badge under an expanded Intervención was a hardcoded string, not a real status** — it always said "En curso" regardless of whether the Intervención was actually on track or badly behind. Deleted it; the new Salud pill in the header carries the real, live status now, so there's no longer a fake status sitting a few pixels below a true one.
+
+**Verification note:** no real overdue tasks existed in the signed-in account at review time, so the "Atrasado" (red) branch couldn't be visually confirmed against live data — verified instead by calling `workstreamHealth()` directly from the browser console with constructed task objects (overdue, future-dated, and completed-but-overdue combinations), confirming all four branches return the expected label/color/null. If this is touched again, prefer visual confirmation with a real overdue task when one exists.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 1. **Enable Firebase Storage** so Clientes → Documentos and Finanzas → Comprobante can do real file uploads instead of metadata-only records. Same console-enable pattern already walked through for Firestore. User deliberately deferred this on 2026-08-15 ("not necessary right now") — don't push on it unprompted.

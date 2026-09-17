@@ -10,6 +10,7 @@ import {
   PRIORITIES,
   STATUSES,
   priorityMeta,
+  workstreamHealth,
 } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
@@ -181,6 +182,9 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
   const accent = workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
+  // Real, live-derived status pill (never a manually-set field) — see
+  // workstreamHealth's own comment for the reference this was adapted from.
+  const health = workstreamHealth(tasks)
 
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
@@ -201,7 +205,7 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
           <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
           {tasks.length > 0 && (
             <span className="flex-shrink-0 whitespace-nowrap text-[12px] text-[#444444]">
-              {completedCount}/{tasks.length} · {pct}%
+              {completedCount} de {tasks.length} completadas
             </span>
           )}
           <span
@@ -216,6 +220,17 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
           >
             {workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto Interno'}
           </span>
+          {/* Salud del proyecto — adapted from a project-pipeline reference
+              the user shared (colored Schedule/Budget Health columns), but
+              computed live from real overdue tasks rather than a manual
+              status field, matching this project's "never a hand-entered
+              cross-module signal" rule (§7 in CLAUDE.md and everywhere else). */}
+          {health && (
+            <span className="flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 font-medium" style={{ fontSize: 10, color: health.color, background: `${health.color}1A` }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: health.color }} />
+              {health.label}
+            </span>
+          )}
         </button>
         {workstream.kind === 'intervencion' && (
           <span className="flex-shrink-0 text-[11px] text-[#888888]">
@@ -225,8 +240,16 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
       </div>
 
       {tasks.length > 0 && (
-        <div className="h-[2px] w-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="relative h-[3px] w-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: accent }} />
+          {/* The small scrubber dot at the progress edge is the one detail
+              borrowed directly from the widget reference — it's what turns a
+              flat fill bar into something that reads as "a position on a
+              track," not just a percentage. */}
+          <span
+            className="absolute top-1/2 h-2.5 w-2.5 rounded-full border-2 border-[#0A0A0A]"
+            style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)', background: accent }}
+          />
         </div>
       )}
 
@@ -239,12 +262,13 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="overflow-hidden"
           >
+            {/* The "En curso" badge that used to sit here was a hardcoded
+                string, never actually reflecting whether the Intervención
+                was on track — the real, live status now lives in the header
+                as the Salud pill above. Kept just the layer indicator. */}
             {workstream.kind === 'intervencion' && (
               <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3.5">
                 <LayerIndicator week={workstream.interventionWeek} totalWeeks={workstream.interventionTotalWeeks} />
-                <span className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: 'rgba(30,95,173,0.15)', color: '#1E5FAD' }}>
-                  En curso
-                </span>
               </div>
             )}
 

@@ -73,6 +73,17 @@ export function isPendingFor(task, uid) {
   return (task.pendingConfirmations || []).includes(uid)
 }
 
+// A workstream's "salud" (health) pill — inspired by a project-pipeline
+// reference the user shared (colored Schedule/Budget Health columns), but
+// derived from real task data instead of a manually-set status field: any
+// open overdue task in the group means "Atrasado," otherwise "En tiempo."
+// Reuses computeWorkload's isOverdue rather than inventing a second signal.
+export function workstreamHealth(tasks) {
+  if (tasks.length === 0) return null
+  const hasOverdue = tasks.some((t) => t.status !== 'completado' && isOverdue(t))
+  return hasOverdue ? { label: 'Atrasado', color: '#EF5350' } : { label: 'En tiempo', color: '#4CAF50' }
+}
+
 export function isOverdue(task) {
   const due = task.dueDate?.toDate?.()
   return Boolean(due && task.status !== 'completado' && due < new Date())

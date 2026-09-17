@@ -118,6 +118,9 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [x] Sidebar polish: unified active-state color language between Personal and team nav items, framed the Intervenciones-empty note, thinner tinted workload bars. See CLAUDE.md §22
 - [x] iOS-productivity pass: the view switcher (Hoy/Lista/Kanban/Timeline) is now a real sliding segmented control (Motion `layoutId`), Reminders-style circular icon badges on Hoy's sections and the sidebar's Personal/Todo rows, and a spring "pop" on the task checkbox when completing something. See CLAUDE.md §23
 
+**Workspace — "Salud" pill + scrubber-dot progress bar on Lista headers (2026-09-17)**
+- [x] `workstreamHealth()` in `lib/workspace.js` — a live, real-data "En tiempo"/"Atrasado" pill on each `WorkstreamGroup` header, adapted from a project-pipeline reference the user shared. Progress text simplified to "X de Y completadas"; the thin progress bar gained a scrubber dot at the fill edge. Removed a real bug found along the way: the "En curso" badge under an expanded Intervención was a hardcoded string, never reflecting real status. See CLAUDE.md §24
+
 **Workspace — extended 2026-08-15**
 - [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
 - [x] "Carga del equipo" workload panel in the sidebar — per-associate count of open (non-completado) tasks, highlighting anyone with 5+ tasks due this week in red. `computeWorkload()` in `lib/workspace.js`. First cross-teammate visibility Workspace has had; "Mis tareas" only ever showed your own load
