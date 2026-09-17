@@ -185,19 +185,27 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <div className="flex items-center gap-3 border-l-2 px-5 py-3.5" style={{ borderColor: accent }}>
-        <button type="button" onClick={() => setCollapsed((v) => !v)} className="flex flex-1 items-center gap-3 text-left">
+        <button type="button" onClick={() => setCollapsed((v) => !v)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <ChevronDownIcon
             size={14}
+            className="flex-shrink-0"
             style={{ color: '#444444', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
           />
-          <span className="text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
+          {/* min-w-0 + truncate is the element that gives ground when the row
+              runs out of space — without it, flexbox's default min-width:auto
+              on this span forces the fixed-size badge/progress siblings below
+              to wrap mid-word instead (confirmed via getBoundingClientRect at
+              narrow widths: the badge wraps to "PROYECTO"/"INTERNO" the moment
+              the progress stat is also present). The title is the one thing
+              here that's fine to ellipsize; the badge and stat never should. */}
+          <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
           {tasks.length > 0 && (
-            <span className="text-[12px] text-[#444444]">
+            <span className="flex-shrink-0 whitespace-nowrap text-[12px] text-[#444444]">
               {completedCount}/{tasks.length} · {pct}%
             </span>
           )}
           <span
-            className="rounded-full px-2 py-0.5 font-medium"
+            className="flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 font-medium"
             style={{
               fontSize: 10,
               letterSpacing: '0.05em',

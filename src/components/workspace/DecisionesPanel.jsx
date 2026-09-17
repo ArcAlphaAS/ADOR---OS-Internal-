@@ -17,30 +17,44 @@ export default function DecisionesPanel({ decisions, onRegister, collapsed, onTo
     .sort((a, b) => b.decidedAt.toDate() - a.decidedAt.toDate())
     .slice(0, 6)
 
+  // The collapsed rail used to be two bare icons floating with no visible
+  // boundary — functional, but read as orphaned/half-broken rather than
+  // deliberately minimal (confirmed via direct review: nothing here signals
+  // "this is the Decisiones module, just collapsed" without hovering first).
+  // Wrapping the icon+count in the same .ador-glass card treatment every
+  // other grouped surface in this app uses gives it a real edge to sit
+  // inside, and a rotated "DECISIONES" label makes it identifiable at a
+  // glance even at 56px wide.
   if (collapsed) {
     return (
-      <div className="flex h-full w-14 flex-shrink-0 flex-col items-center gap-4 border-l border-white/[0.06] py-6">
+      <div className="flex h-full w-14 flex-shrink-0 flex-col items-center gap-3 border-l border-white/[0.06] py-6">
         <button
           type="button"
           onClick={onToggleCollapse}
           title="Mostrar Decisiones"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
         >
           <ArrowLeftIcon size={14} />
         </button>
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="ador-glass ador-grain flex flex-1 flex-col items-center gap-3 rounded-2xl px-1.5 py-4">
           <CheckCircleIcon size={16} style={{ color: '#B8860B' }} />
           {decisions.length > 0 && (
             <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-medium text-[#888888]">
               {decisions.length}
             </span>
           )}
+          <span
+            className="mt-1 font-medium text-[#444444]"
+            style={{ fontSize: 9, letterSpacing: '0.1em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+          >
+            DECISIONES
+          </span>
         </div>
         <button
           type="button"
           onClick={onRegister}
           title="Registrar Decisión"
-          className="mt-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors duration-150 hover:bg-[#1E5FAD]/10"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors duration-150 hover:bg-[#1E5FAD]/10"
           style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
         >
           +
