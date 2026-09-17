@@ -15,7 +15,7 @@ export default function DecisionesPanel({ decisions, onRegister, collapsed, onTo
   const latest = [...decisions]
     .filter((d) => d.decidedAt?.toDate)
     .sort((a, b) => b.decidedAt.toDate() - a.decidedAt.toDate())
-    .slice(0, 3)
+    .slice(0, 6)
 
   if (collapsed) {
     return (
@@ -56,18 +56,21 @@ export default function DecisionesPanel({ decisions, onRegister, collapsed, onTo
       transition={{ duration: 0.2 }}
       className="flex h-full w-[280px] flex-shrink-0 flex-col border-l border-white/[0.06] px-5 py-6"
     >
-      <div className="flex items-center justify-between">
-        <span
-          className="font-medium text-[#444444]"
-          style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Decisiones
-        </span>
+      <div className="flex items-start justify-between">
+        <div>
+          <span
+            className="font-medium text-[#444444]"
+            style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+          >
+            Decisiones de Dirección
+          </span>
+          <p className="mt-1 text-[11px] text-[#444444]">Registro compartido — visible para todo el equipo, no solo para quien la anotó.</p>
+        </div>
         <button
           type="button"
           onClick={onToggleCollapse}
           title="Achicar"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
         >
           <ArrowRightIcon size={12} />
         </button>

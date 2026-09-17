@@ -64,68 +64,104 @@ function WorkloadPanel({ workload }) {
   )
 }
 
-export default function WorkspaceSidebar({ workstreams, selectedId, onSelect, onNewProyecto, onlyMine, onToggleOnlyMine, myTaskCount, workload = [] }) {
+// Compact pill-style toggle shared by "Hoy" and "Personal" — both are
+// cross-workstream personal filters, distinct from "Equipo" (a selected
+// Intervención/Proyecto below). Visually identical, just parameterized by
+// color so the two don't read as the same thing at a glance.
+function FilterToggle({ label, active, count, color, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-150"
+      style={{ background: active ? `${color}29` : 'transparent' }}
+    >
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium" style={{ color: active ? color : '#F5F5F5' }}>
+        {label}
+      </span>
+      {count > 0 && (
+        <span
+          className="flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+          style={{ background: active ? `${color}40` : 'rgba(255,255,255,0.08)', color: active ? color : '#888888' }}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// Restructured 2026-09-16 per direct user feedback: the flat "Mis tareas +
+// workstream list" didn't distinguish "tareas del día," "tareas personales,"
+// and "tareas de equipo" the way the user actually thinks about their work.
+// Now three explicit sections — Hoy (due today, mine), Personal (everything
+// assigned to me, any workstream), Equipo (Intervenciones + Proyectos
+// Internos, the team-shared work) — each its own filter, mutually exclusive,
+// wired in WorkspaceModule.jsx.
+export default function WorkspaceSidebar({
+  workstreams,
+  selectedId,
+  onSelect,
+  onNewProyecto,
+  onlyMine,
+  onToggleOnlyMine,
+  myTaskCount,
+  todayOnly,
+  onToggleToday,
+  myTodayCount,
+  workload = [],
+}) {
   const intervenciones = workstreams.filter((w) => w.kind === 'intervencion')
   const proyectos = workstreams.filter((w) => w.kind === 'proyecto_interno')
 
   return (
     <div className="flex h-full w-[200px] flex-shrink-0 flex-col gap-4 border-r border-white/[0.06] px-3 py-6">
-      <button
-        type="button"
-        onClick={onToggleOnlyMine}
-        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-150"
-        style={{ background: onlyMine ? 'rgba(30,95,173,0.16)' : 'transparent' }}
-      >
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium" style={{ color: onlyMine ? '#1E5FAD' : '#F5F5F5' }}>
-          Mis tareas
-        </span>
-        {myTaskCount > 0 && (
-          <span
-            className="flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            style={{ background: onlyMine ? 'rgba(30,95,173,0.25)' : 'rgba(255,255,255,0.08)', color: onlyMine ? '#1E5FAD' : '#888888' }}
-          >
-            {myTaskCount}
-          </span>
-        )}
-      </button>
-
-      <NavItem label="Todo" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
-
-      {intervenciones.length > 0 && (
-        <div className="flex flex-col gap-0.5">
-          <span className="px-3 pb-1 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Intervenciones
-          </span>
-          {intervenciones.map((w) => (
-            <NavItem
-              key={w.id}
-              label={w.name}
-              sublabel={`Semana ${w.interventionWeek} de ${w.interventionTotalWeeks}`}
-              accentColor="#1E5FAD"
-              active={selectedId === w.id}
-              onClick={() => onSelect(w.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-0.5">
-        <span className="px-3 pb-1 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Proyectos Internos
-        </span>
-        {proyectos.map((w) => (
-          <NavItem key={w.id} label={w.name} accentColor="#B8860B" active={selectedId === w.id} onClick={() => onSelect(w.id)} />
-        ))}
-        <button
-          type="button"
-          onClick={onNewProyecto}
-          className="mt-1 rounded-xl px-3 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#F5F5F5]"
-        >
-          + Nuevo Proyecto Interno
-        </button>
+      <div className="flex flex-col gap-1">
+        <FilterToggle label="Hoy" active={todayOnly} count={myTodayCount} color="#B8860B" onClick={onToggleToday} />
+        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
       </div>
 
-      <NavItem label="+ Nueva Intervención" disabled />
+      <div className="h-px bg-white/[0.06]" />
+
+      <div className="flex flex-col gap-3">
+        <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Equipo
+        </span>
+
+        <NavItem label="Todo" active={!onlyMine && !todayOnly && selectedId === null} onClick={() => onSelect(null)} />
+
+        {intervenciones.length > 0 && (
+          <div className="flex flex-col gap-0.5">
+            <span className="px-3 pb-1 text-[11px] text-[#444444]">Intervenciones</span>
+            {intervenciones.map((w) => (
+              <NavItem
+                key={w.id}
+                label={w.name}
+                sublabel={`Semana ${w.interventionWeek} de ${w.interventionTotalWeeks}`}
+                accentColor="#1E5FAD"
+                active={selectedId === w.id}
+                onClick={() => onSelect(w.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-0.5">
+          <span className="px-3 pb-1 text-[11px] text-[#444444]">Proyectos Internos</span>
+          {proyectos.map((w) => (
+            <NavItem key={w.id} label={w.name} accentColor="#B8860B" active={selectedId === w.id} onClick={() => onSelect(w.id)} />
+          ))}
+          <button
+            type="button"
+            onClick={onNewProyecto}
+            className="mt-1 rounded-xl px-3 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#F5F5F5]"
+          >
+            + Nuevo Proyecto Interno
+          </button>
+        </div>
+
+        <NavItem label="+ Nueva Intervención" disabled />
+      </div>
 
       <WorkloadPanel workload={workload} />
     </div>
