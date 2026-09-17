@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
-import { subscribeDecisions, getUserProfile, saveUserProfile } from '../../lib/firestore'
+import { subscribeDecisions, subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { computeWorkload, isDueToday, isOverdue } from '../../lib/workspace'
-import { KanbanIcon, ListViewIcon, TimelineIcon, NoteIcon, CalendarIcon } from '../icons'
+import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import HoyView from './HoyView'
 import ListaView from './ListaView'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
-import NotasView from './NotasView'
 import TaskDetailPanel from './TaskDetailPanel'
 import DecisionesPanel from './DecisionesPanel'
 import NewProyectoModal from './NewProyectoModal'
@@ -23,29 +22,28 @@ function actorNameFor(user) {
 // (Sunsama/Akiflow's "today first" model over Linear's backlog-triage one).
 // Every tab now carries a text label, not just an icon, after direct
 // feedback that an icon-only switcher didn't read as self-explanatory to a
-// non-technical founder opening this for the first time.
+// non-technical founder opening this for the first time. Notas used to be
+// its own tab here — folded into Hoy the same day (see HoyView.jsx) after
+// feedback that a separate personal-notebook tab felt redundant with a
+// personal-today tab; there's only one "your day" screen now.
 const VIEWS = [
   { id: 'hoy', label: 'Hoy', Icon: CalendarIcon },
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
-  { id: 'notas', label: 'Notas', Icon: NoteIcon },
 ]
 
 const HEADER_COPY = {
   hoy: {
     title: () => 'Hoy',
-    subtitle: () => 'Lo vencido y lo que vence hoy, asignado a ti — antes de mirar cualquier otra cosa.',
-  },
-  notas: {
-    title: () => 'Notas',
-    subtitle: () => 'Tareas personales, ideas, lo del día — tu cuaderno, no el tablero formal del equipo.',
+    subtitle: () => 'Lo vencido, lo que vence hoy, y lo que anotes — tu único punto de partida del día.',
   },
 }
 
 export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
   const { workstreams, tasksByWorkstream, tasks, users, userById } = useWorkspaceData()
   const [decisions, setDecisions] = useState([])
+  const [notes, setNotes] = useState([])
   const [view, setView] = useState('hoy')
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
   const [onlyMine, setOnlyMine] = useState(false)
@@ -57,6 +55,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
   const actorName = actorNameFor(user)
 
   useEffect(() => subscribeDecisions(setDecisions), [])
+  useEffect(() => subscribeNotes(setNotes), [])
 
   // Opens straight to a task's detail panel when arriving from a
   // global-search result (see AppShell.jsx's `focus` state / SearchResults.jsx).
@@ -69,7 +68,9 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
   useEffect(() => {
     if (!user?.uid) return
     getUserProfile(user.uid).then((profile) => {
-      if (profile?.workspaceView) setView(profile.workspaceView)
+      // Falls back to 'hoy' for anyone whose stored preference is the now-
+      // removed 'notas' tab (folded into Hoy — see VIEWS above).
+      if (profile?.workspaceView && VIEWS.some((v) => v.id === profile.workspaceView)) setView(profile.workspaceView)
       if (typeof profile?.decisionesCollapsed === 'boolean') setDecisionesCollapsed(profile.decisionesCollapsed)
     })
   }, [user?.uid])
@@ -131,7 +132,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="flex h-full"
     >
-      {view !== 'hoy' && view !== 'notas' && (
+      {view !== 'hoy' && (
         <WorkspaceSidebar
           workstreams={workstreams}
           selectedId={selectedWorkstreamId}
@@ -178,6 +179,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
           {view === 'hoy' ? (
             <motion.div key="hoy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <HoyView
+                user={user}
                 tasks={tasks}
                 userId={user?.uid}
                 userById={userById}
@@ -185,11 +187,8 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 workstreamById={workstreamById}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
                 actorName={actorName}
+                notes={notes}
               />
-            </motion.div>
-          ) : view === 'notas' ? (
-            <motion.div key="notas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <NotasView actorName={actorName} />
             </motion.div>
           ) : onlyMine && visibleWorkstreams.length === 0 ? (
             <motion.div key="empty-filter" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>

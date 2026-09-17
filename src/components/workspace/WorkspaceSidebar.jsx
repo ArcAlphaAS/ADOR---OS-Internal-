@@ -112,7 +112,12 @@ export default function WorkspaceSidebar({
 
   return (
     <div className="flex h-full w-[200px] flex-shrink-0 flex-col gap-4 border-r border-white/[0.06] px-3 py-6">
-      <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
+      <div className="flex flex-col gap-2">
+        <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Mi trabajo
+        </span>
+        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
+      </div>
 
       <div className="h-px bg-white/[0.06]" />
 
