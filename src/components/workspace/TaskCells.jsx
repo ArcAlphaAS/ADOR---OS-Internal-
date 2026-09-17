@@ -166,7 +166,7 @@ export function DescriptionCell({ description, onChange }) {
   )
 }
 
-export function AssigneeCell({ assignedTo = [], userById, users = [], onChange }) {
+export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds = [], onChange }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
@@ -188,7 +188,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], onChange }
         }}
         className="flex items-center transition-opacity duration-150 hover:opacity-80"
       >
-        <AvatarStack userIds={assignedTo} userById={userById} size={22} />
+        <AvatarStack userIds={assignedTo} userById={userById} pendingIds={pendingIds} size={22} />
       </button>
 
       {open && (
@@ -209,6 +209,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], onChange }
                   className="h-3.5 w-3.5 accent-[#1E5FAD]"
                 />
                 <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
+                {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
               </label>
             ))
           )}

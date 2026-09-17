@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { isOverdue, isDueToday } from '../../lib/workspace'
+import { isOverdue, isDueToday, isPendingFor, PRIORITIES, priorityMeta, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
-import { createNote, updateNote, deleteNote } from '../../lib/firestore'
+import { createNote, updateNote, deleteNote, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
+import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
 
 // The landing screen for Workspace — added 2026-09-16 after direct feedback
@@ -16,22 +17,61 @@ import TaskRow from './TaskRow'
 // Folded Notas into this view the same day, right after — direct feedback
 // that a separate "Notas" tab felt redundant with "Hoy": both were already
 // "your personal daily space," just split across two clicks. Capturing and
-// triaging now happen on the same screen: type-and-Enter at the top saves a
-// note (still via GlobalCapture.jsx's floating "+" from anywhere else in the
-// app — this is just the second, in-place entry point), pending notes sit
-// right above the task sections. Reviewed/archived notes are intentionally
-// not shown here — they're done, and Hoy is about what still needs you.
+// triaging now happen on the same screen. Reviewed/archived notes are
+// intentionally not shown here — they're done, and Hoy is about what still
+// needs you.
+//
+// Gained a real "Mis Pendientes" section + inline add the same week, after
+// the user asked for a place to see "lo que tengo pendiente" and add to it
+// himself, separate from Vencidas/Para hoy (which are strictly date-driven).
+// A task assigned to someone *other* than yourself here goes through
+// AssignmentConfirmGate.jsx's blocking accept/reject popup before it counts
+// as theirs — see lib/firestore.js's createTask/applyTaskUpdate and CLAUDE.md
+// §20 for the full mechanism.
 
-function NoteCard({ note, onArchive, onDelete }) {
+function NoteCard({ note, actorName, onArchive, onDelete }) {
+  const [converting, setConverting] = useState(false)
+  const showToast = useToast()
   const meta = CATEGORIES[note.category] || CATEGORIES.nota
+
+  const convertToTask = async () => {
+    setConverting(true)
+    try {
+      const proyectoId = await findOrCreateGeneralProyecto(actorName)
+      await createTask(
+        { title: note.text, workstreamId: buildWorkstreamId('proyecto', proyectoId), status: 'por_hacer', priority: 'media', assignedTo: [] },
+        actorName
+      )
+      await updateNote(note.id, { status: 'archivada', category: 'tarea' })
+      showToast('Tarea creada en General')
+    } catch (error) {
+      showToast(`No se pudo crear la tarea: ${error.message}`)
+    } finally {
+      setConverting(false)
+    }
+  }
+
   return (
     <div className="ador-glass ador-grain flex items-start justify-between gap-3 rounded-xl px-4 py-3">
       <div className="min-w-0 flex-1">
         <p className="text-[13px] leading-relaxed text-[#F5F5F5]">{note.text}</p>
-        <span className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: `${meta.color}1F`, color: meta.color }}>
-          {meta.label}
-          {meta.module ? ` → ${meta.module}` : ''}
-        </span>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: `${meta.color}1F`, color: meta.color }}>
+            {meta.label}
+            {meta.module ? ` → ${meta.module}` : ''}
+          </span>
+          {note.category === 'tarea' && (
+            <button
+              type="button"
+              onClick={convertToTask}
+              disabled={converting}
+              className="whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10 disabled:opacity-50"
+              style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+            >
+              {converting ? 'Creando…' : '+ Crear tarea'}
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex flex-shrink-0 items-center gap-1">
         <button
@@ -93,33 +133,6 @@ function QuickCapture({ user, actorName }) {
   )
 }
 
-function Section({ title, color, tasks, userById, users, onOpenTask, actorName, workstreamById }) {
-  if (tasks.length === 0) return null
-  return (
-    <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-      <div className="flex items-center gap-2 border-l-2 px-5 py-3.5" style={{ borderColor: color }}>
-        <span className="text-[14px] font-semibold" style={{ color }}>
-          {title}
-        </span>
-        <span className="text-[12px] text-[#444444]">{tasks.length}</span>
-      </div>
-      <div className="flex flex-col divide-y divide-white/[0.04] px-3 pb-3">
-        {tasks.map((task) => (
-          <HoyTaskRow
-            key={task.id}
-            task={task}
-            userById={userById}
-            users={users}
-            onOpen={onOpenTask}
-            actorName={actorName}
-            workstream={workstreamById[task.workstreamId]}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // Same row the team views use (same inline-editable cells), with a small
 // workstream tag layered above the title — Hoy mixes tasks from every
 // Intervención/Proyecto, so without it a task reads with no context about
@@ -137,29 +150,145 @@ function HoyTaskRow({ task, workstream, ...rest }) {
   )
 }
 
-function EmptyDay() {
+function Section({ title, color, tasks, userById, users, onOpenTask, actorUserId, actorName, workstreamById, children }) {
+  if (tasks.length === 0 && !children) return null
   return (
-    <div className="flex flex-col items-center gap-3 py-20">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: 'rgba(76,175,80,0.1)' }}>
-        <span className="h-2 w-2 rounded-full bg-[#4CAF50]" style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }} />
+    <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
+      <div className="flex items-center gap-2 border-l-2 px-5 py-3.5" style={{ borderColor: color }}>
+        <span className="text-[14px] font-semibold" style={{ color }}>
+          {title}
+        </span>
+        {tasks.length > 0 && <span className="text-[12px] text-[#444444]">{tasks.length}</span>}
       </div>
-      <p className="text-[14px] font-light text-[#F5F5F5]">Nada vencido, nada para hoy.</p>
-      <p className="text-[13px] text-[#444444]">Buen momento para adelantar algo de esta semana, o revisar el tablero del equipo.</p>
+      <div className="flex flex-col divide-y divide-white/[0.04] px-3 pb-3">
+        {tasks.map((task) => (
+          <HoyTaskRow
+            key={task.id}
+            task={task}
+            userById={userById}
+            users={users}
+            onOpen={onOpenTask}
+            actorUserId={actorUserId}
+            actorName={actorName}
+            workstream={workstreamById[task.workstreamId]}
+          />
+        ))}
+        {children}
+      </div>
     </div>
   )
 }
 
-export default function HoyView({ user, tasks, userId, userById, users, workstreamById, onOpenTask, actorName, notes = [] }) {
+// Personal quick-add for "Mis Pendientes" — deliberately trimmed down from
+// Lista's InlineAddTask (no descripción/estado toggle): title, an optional
+// due date, and who's on it. Defaults to just yourself; adding anyone else
+// routes them through the same pendingConfirmations mechanism as every
+// other assignment in the app — this isn't a lesser, private task, it's a
+// real one that happens to have been created from Hoy instead of Lista.
+function AddPendiente({ actorUserId, actorName, userById, users }) {
+  const [adding, setAdding] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState('')
+  const [assignedTo, setAssignedTo] = useState(actorUserId ? [actorUserId] : [])
+  const [priority, setPriority] = useState('media')
+  const [dueDate, setDueDate] = useState(null)
   const showToast = useToast()
-  const mine = tasks.filter((t) => (t.assignedTo || []).includes(userId) && t.status !== 'completado')
+
+  const reset = () => {
+    setTitle('')
+    setAssignedTo(actorUserId ? [actorUserId] : [])
+    setPriority('media')
+    setDueDate(null)
+    setAdding(false)
+  }
+
+  const submit = async () => {
+    if (!title.trim() || saving) return
+    setSaving(true)
+    try {
+      const proyectoId = await findOrCreateGeneralProyecto(actorName)
+      await createTask(
+        {
+          title: title.trim(),
+          description: '',
+          workstreamId: buildWorkstreamId('proyecto', proyectoId),
+          assignedTo,
+          priority,
+          startDate: null,
+          dueDate,
+        },
+        actorName,
+        actorUserId
+      )
+      reset()
+    } catch (error) {
+      showToast(`No se pudo crear el pendiente: ${error.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!adding) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
+      >
+        <span className="text-[15px] leading-none">+</span> Agregar pendiente
+      </button>
+    )
+  }
+
+  return (
+    <div
+      className="grid items-center gap-3 rounded-lg px-2 py-2"
+      style={{ gridTemplateColumns: '1fr 88px 120px auto' }}
+      onKeyDown={(e) => e.key === 'Escape' && reset()}
+    >
+      <input
+        autoFocus
+        type="text"
+        disabled={saving}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+        placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
+      />
+      <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
+      <EstimationCell startDate={null} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={() => {}} onChangeDue={setDueDate} />
+      <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
+    </div>
+  )
+}
+
+// A small reassurance line, not a full-page empty state — "Mis Pendientes"
+// below always has something actionable (at minimum, its own "+ Agregar
+// pendiente" row), so the page is never fully dead the way the old
+// Vencidas/Para-hoy-only version could be.
+function NadaUrgente() {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl px-1 py-1">
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#4CAF50]" style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }} />
+      <p className="text-[13px] text-[#444444]">Nada vencido, nada para hoy.</p>
+    </div>
+  )
+}
+
+export default function HoyView({ user, tasks, userId, userById, users, workstreamById, onOpenTask, actorUserId, actorName, notes = [] }) {
+  const showToast = useToast()
+
+  // Excludes anything still pending your own confirmation — see
+  // lib/workspace.js's isPendingFor. It doesn't count as yours yet.
+  const mine = tasks.filter((t) => (t.assignedTo || []).includes(userId) && !isPendingFor(t, userId) && t.status !== 'completado')
   const vencidas = mine.filter(isOverdue)
   const hoy = mine.filter((t) => isDueToday(t) && !isOverdue(t))
+  const pendientes = mine.filter((t) => !isOverdue(t) && !isDueToday(t))
   const pendingNotes = notes.filter((n) => n.status !== 'archivada')
 
   const archiveNote = (id) => updateNote(id, { status: 'archivada' }).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const deleteNoteById = (id) => deleteNote(id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
-
-  const allEmpty = vencidas.length === 0 && hoy.length === 0 && pendingNotes.length === 0
 
   return (
     <div className="flex flex-col gap-5">
@@ -168,19 +297,30 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
       {pendingNotes.length > 0 && (
         <div className="flex flex-col gap-2">
           {pendingNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onArchive={archiveNote} onDelete={deleteNoteById} />
+            <NoteCard key={note.id} note={note} actorName={actorName} onArchive={archiveNote} onDelete={deleteNoteById} />
           ))}
         </div>
       )}
 
-      {allEmpty ? (
-        <EmptyDay />
-      ) : (
-        <>
-          <Section title="Vencidas" color="#EF5350" tasks={vencidas} userById={userById} users={users} onOpenTask={onOpenTask} actorName={actorName} workstreamById={workstreamById} />
-          <Section title="Para hoy" color="#1E5FAD" tasks={hoy} userById={userById} users={users} onOpenTask={onOpenTask} actorName={actorName} workstreamById={workstreamById} />
-        </>
-      )}
+      {vencidas.length === 0 && hoy.length === 0 && <NadaUrgente />}
+
+      <Section title="Vencidas" color="#EF5350" tasks={vencidas} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
+      <Section title="Para hoy" color="#1E5FAD" tasks={hoy} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
+      <Section
+        title="Mis Pendientes"
+        color="#888888"
+        tasks={pendientes}
+        userById={userById}
+        users={users}
+        onOpenTask={onOpenTask}
+        actorUserId={actorUserId}
+        actorName={actorName}
+        workstreamById={workstreamById}
+      >
+        <div className="pt-1">
+          <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} />
+        </div>
+      </Section>
     </div>
   )
 }

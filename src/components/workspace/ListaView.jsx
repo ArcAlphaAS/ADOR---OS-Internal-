@@ -86,7 +86,8 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
       await withTimeout(
         createTask(
           { ...draft, title: draft.title.trim(), description: draft.description.trim(), workstreamId: targetWorkstreamId },
-          actorName
+          actorName,
+          actorUserId
         )
       )
       setDraft(emptyDraft(actorUserId))
@@ -250,7 +251,15 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
 
                 <div className="flex flex-col divide-y divide-white/[0.04]">
                   {tasks.map((task) => (
-                    <TaskRow key={task.id} task={task} userById={userById} users={users} onOpen={onOpenTask} actorName={actorName} />
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      userById={userById}
+                      users={users}
+                      onOpen={onOpenTask}
+                      actorUserId={actorUserId}
+                      actorName={actorName}
+                    />
                   ))}
                 </div>
 

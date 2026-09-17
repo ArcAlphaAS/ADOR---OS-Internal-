@@ -102,6 +102,13 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [x] Sidebar simplified — the old "Hoy" filter toggle was removed (promoted to its own tab); "Personal" stays as the team-view filter, now under its own "Mi trabajo" header for symmetry with "Equipo". Sidebar hides entirely on Hoy (already a fully personal screen)
 - [x] Dead "+ Nueva Intervención" disabled button removed, replaced with an explanatory line shown only when there are zero Intervenciones
 
+**Workspace — assignment confirmation + "Mis Pendientes" (2026-09-16, same-day follow-up)**
+- [x] Assigning a task to someone other than yourself now requires their confirmation — `tasks/{id}.pendingConfirmations` (subset of `assignedTo`), populated by `createTask`/`applyTaskUpdate` in `lib/firestore.js`. A pending task doesn't count as "yours" anywhere (Hoy, Personal filter, the bell, Home's Tareas Hoy, the workload panel) until accepted
+- [x] `AssignmentConfirmGate.jsx` — new, mounted once in `AppShell.jsx` — shows a blocking popup (no close button, no backdrop-dismiss) naming who assigned the task and a "habla con {nombre}" hint, with Aceptar/Rechazar. See CLAUDE.md §20 for the full mechanism and why "comunícate" is just a text hint (Chat is still a placeholder module)
+- [x] Pending assignments get a small amber ring on the avatar (`AvatarStack.jsx`) and a "pendiente" tag in the assignee picker, visible to the whole team on Lista/Kanban
+- [x] **Mis Pendientes** — a third section in `HoyView.jsx` (alongside Vencidas/Para hoy): everything open and assigned to you with no date or a future date, with an always-visible inline "+ Agregar pendiente" row so there's always a way to add something, even from an empty board
+- [x] Restored the "+ Crear tarea" note→task conversion that was accidentally dropped when Notas got folded into Hoy (§19) — real regression, not intentional
+
 **Workspace — extended 2026-08-15**
 - [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
 - [x] "Carga del equipo" workload panel in the sidebar — per-associate count of open (non-completado) tasks, highlighting anyone with 5+ tasks due this week in red. `computeWorkload()` in `lib/workspace.js`. First cross-teammate visibility Workspace has had; "Mis tareas" only ever showed your own load

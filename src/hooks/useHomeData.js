@@ -5,6 +5,7 @@ import {
   subscribeDecisions,
   subscribeMeetings,
 } from '../lib/firestore'
+import { isPendingFor } from '../lib/workspace'
 
 // Shapes expected on each collection (beyond what's in firestore.js):
 //   clients:   { name, stage, pago1: {amount, status, date}, pago2: {...},
@@ -41,7 +42,7 @@ export function useHomeData(userId) {
   endOfToday.setHours(23, 59, 59, 999)
   const tasksToday = tasks.filter((t) => {
     const due = t.dueDate?.toDate?.()
-    return due && due >= startOfToday && due <= endOfToday
+    return due && due >= startOfToday && due <= endOfToday && !isPendingFor(t, userId)
   })
   const tasksTodayRows = tasksToday
     .map((t) => ({

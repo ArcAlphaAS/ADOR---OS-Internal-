@@ -5,7 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
 import { CheckCircleIcon } from '../icons'
 
-export default function TaskRow({ task, userById, users, onOpen, actorName }) {
+export default function TaskRow({ task, userById, users, onOpen, actorUserId, actorName }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
 
@@ -17,7 +17,7 @@ export default function TaskRow({ task, userById, users, onOpen, actorName }) {
   // also leaves an activity-log entry, so every edit surface writes the same
   // trail (see Historial in the Task Detail Panel).
   const applyUpdate = (data) => {
-    withTimeout(applyTaskUpdate(task.id, data, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
+    withTimeout(applyTaskUpdate(task, data, actorUserId, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
   }
 
   return (
@@ -52,6 +52,7 @@ export default function TaskRow({ task, userById, users, onOpen, actorName }) {
         assignedTo={task.assignedTo || []}
         userById={userById}
         users={users}
+        pendingIds={task.pendingConfirmations || []}
         onChange={(next) => applyUpdate({ assignedTo: next })}
       />
 

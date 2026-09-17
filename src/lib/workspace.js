@@ -65,6 +65,14 @@ export function currentLayer(interventionWeek, interventionTotalWeeks) {
   return Math.min(LAYERS.length, Math.max(1, Math.ceil((week / total) * LAYERS.length)))
 }
 
+// A task assigned to `uid` that they haven't accepted yet (see
+// AssignmentConfirmGate.jsx) doesn't count as "theirs" for personal views —
+// Hoy, the Personal filter, and the notification bell all exclude it until
+// resolved, so nothing nags someone about a task before they've agreed to it.
+export function isPendingFor(task, uid) {
+  return (task.pendingConfirmations || []).includes(uid)
+}
+
 export function isOverdue(task) {
   const due = task.dueDate?.toDate?.()
   return Boolean(due && task.status !== 'completado' && due < new Date())
@@ -96,7 +104,7 @@ export function computeWorkload(tasks, users) {
   const openTasks = tasks.filter((t) => t.status !== 'completado')
   return users
     .map((u) => {
-      const assigned = openTasks.filter((t) => (t.assignedTo || []).includes(u.id))
+      const assigned = openTasks.filter((t) => (t.assignedTo || []).includes(u.id) && !isPendingFor(t, u.id))
       return {
         userId: u.id,
         displayName: u.displayName || u.email || 'Sin nombre',

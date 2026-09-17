@@ -40,7 +40,7 @@ function PillToggle({ options, value, onChange }) {
   )
 }
 
-export default function TaskDetailPanel({ task, workstream, users, userById, actorName, onClose }) {
+export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose }) {
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [history, setHistory] = useState([])
@@ -60,7 +60,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
   const startValue = task.startDate?.toDate?.() ? task.startDate.toDate().toISOString().slice(0, 10) : ''
   const assignedTo = task.assignedTo || []
 
-  const applyUpdate = (data) => applyTaskUpdate(task.id, data, actorName)
+  const applyUpdate = (data) => applyTaskUpdate(task, data, actorUserId, actorName)
 
   const saveTitle = () => {
     if (title.trim() && title.trim() !== task.title) applyUpdate({ title: title.trim() })
@@ -209,7 +209,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
               <span className="font-medium text-[#444444]" style={labelStyle}>
                 Asignado a
               </span>
-              <AvatarStack userIds={assignedTo} userById={userById} size={22} />
+              <AvatarStack userIds={assignedTo} userById={userById} pendingIds={task.pendingConfirmations || []} size={22} />
             </div>
             <div className="flex flex-col gap-1.5">
               {users.map((u) => (
@@ -221,6 +221,11 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                     className="h-3.5 w-3.5 accent-[#1E5FAD]"
                   />
                   <span className="text-[13px] text-[#F5F5F5]">{u.displayName || u.email}</span>
+                  {(task.pendingConfirmations || []).includes(u.id) && (
+                    <span className="ml-auto text-[11px]" style={{ color: '#B8860B' }}>
+                      pendiente de confirmar
+                    </span>
+                  )}
                 </label>
               ))}
             </div>

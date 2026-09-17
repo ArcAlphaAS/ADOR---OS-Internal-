@@ -86,6 +86,13 @@ export function subscribeTasksForUser(userId, onData) {
   return subscribeToCollection(COLLECTIONS.tasks, [where('assignedTo', 'array-contains', userId)], onData)
 }
 
+// Tasks someone else assigned to `userId` that they haven't accepted or
+// rejected yet — powers AssignmentConfirmGate.jsx's blocking popup. See
+// applyTaskUpdate/createTask for how pendingConfirmations gets populated.
+export function subscribeAssignedPending(userId, onData) {
+  return subscribeToCollection(COLLECTIONS.tasks, [where('pendingConfirmations', 'array-contains', userId)], onData)
+}
+
 // Workspace's shared board — every task across the 3 founders, not just the
 // signed-in user's own (that's what subscribeTasksForUser is for, used by
 // Home's "Tareas Hoy").
@@ -93,10 +100,19 @@ export function subscribeAllTasks(onData) {
   return subscribeToCollection(COLLECTIONS.tasks, [], onData)
 }
 
-export function createTask(data, actorName) {
+// `actorUserId` (optional — omitted by any call site that doesn't yet know
+// it) is only used to figure out which of `data.assignedTo` are *other*
+// people, so they land in `pendingConfirmations` and need to accept before
+// the task counts as theirs — see AssignmentConfirmGate.jsx and CLAUDE.md
+// §20. Assigning yourself never needs confirmation.
+export function createTask(data, actorName, actorUserId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const assignedTo = data.assignedTo || []
+  const pendingConfirmations = actorUserId ? assignedTo.filter((uid) => uid !== actorUserId) : []
   return addDoc(collection(db, COLLECTIONS.tasks), {
     ...data,
+    pendingConfirmations,
+    lastAssignedBy: pendingConfirmations.length > 0 ? actorName : null,
     status: 'por_hacer',
     createdBy: actorName,
     createdAt: serverTimestamp(),
@@ -154,10 +170,38 @@ export function addTaskHistoryEvent(taskId, description) {
 // (Lista's status pill, Task Detail Panel, Kanban drag-and-drop) so
 // "tasks completed this week" (see lib/weeklySummary.js) has a real
 // timestamp to filter on instead of guessing from `createdAt`.
-export function applyTaskUpdate(taskId, data, actorName) {
+//
+// Takes the full `task` (not just its id) because assigning a *new* person
+// needs to diff against the task's current `assignedTo` to know who's
+// actually new — only newly-added people (never the actor themselves) go
+// into `pendingConfirmations`, existing assignees already confirmed stay
+// confirmed. See createTask's pendingConfirmations comment / CLAUDE.md §20.
+export function applyTaskUpdate(task, data, actorUserId, actorName) {
   const patch = { ...data }
   if ('status' in data) patch.completedAt = data.status === 'completado' ? serverTimestamp() : null
-  return updateTask(taskId, patch).then(() => addTaskHistoryEvent(taskId, `${describeTaskChange(data)} — ${actorName}`))
+  if ('assignedTo' in data) {
+    const prevAssigned = task.assignedTo || []
+    const prevPending = task.pendingConfirmations || []
+    const newlyAdded = data.assignedTo.filter((uid) => !prevAssigned.includes(uid) && uid !== actorUserId)
+    patch.pendingConfirmations = Array.from(new Set([...prevPending.filter((uid) => data.assignedTo.includes(uid)), ...newlyAdded]))
+    if (newlyAdded.length > 0) patch.lastAssignedBy = actorName
+  }
+  return updateTask(task.id, patch).then(() => addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`))
+}
+
+// The Accept/Reject response to AssignmentConfirmGate.jsx's blocking popup.
+// Accepting only clears `userId` out of pendingConfirmations — they stay in
+// `assignedTo`. Rejecting removes them from both, so the task goes back to
+// reading as "not theirs" everywhere (Hoy, Personal, the team board's
+// avatar stack) without deleting the task itself.
+export function respondToAssignment(task, userId, accept, actorName) {
+  const pendingConfirmations = (task.pendingConfirmations || []).filter((uid) => uid !== userId)
+  const patch = accept
+    ? { pendingConfirmations }
+    : { pendingConfirmations, assignedTo: (task.assignedTo || []).filter((uid) => uid !== userId) }
+  return updateTask(task.id, patch).then(() =>
+    addTaskHistoryEvent(task.id, accept ? `${actorName} confirmó la asignación` : `${actorName} rechazó la asignación`)
+  )
 }
 
 // ---- Workspace: Proyectos Internos ----

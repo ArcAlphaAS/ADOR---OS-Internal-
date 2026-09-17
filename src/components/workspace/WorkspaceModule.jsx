@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeDecisions, subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/firestore'
-import { computeWorkload, isDueToday, isOverdue } from '../../lib/workspace'
+import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import HoyView from './HoyView'
@@ -88,7 +88,10 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
 
   const workstreamById = Object.fromEntries(workstreams.map((w) => [w.id, w]))
 
-  const isMine = (t) => (t.assignedTo || []).includes(user?.uid)
+  // A task pending your own confirmation (see AssignmentConfirmGate.jsx)
+  // doesn't count as "yours" yet anywhere in Workspace — it's excluded from
+  // Personal counts/filters and Hoy until you accept or reject it.
+  const isMine = (t) => (t.assignedTo || []).includes(user?.uid) && !isPendingFor(t, user?.uid)
   const myTaskCount = tasks.filter((t) => isMine(t) && t.status !== 'completado').length
   const myUrgentCount = tasks.filter((t) => isMine(t) && t.status !== 'completado' && (isOverdue(t) || isDueToday(t))).length
   const workload = computeWorkload(tasks, users)
@@ -186,6 +189,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 users={users}
                 workstreamById={workstreamById}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
+                actorUserId={user?.uid}
                 actorName={actorName}
                 notes={notes}
               />
@@ -216,6 +220,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 workstreamById={workstreamById}
                 userById={userById}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
+                actorUserId={user?.uid}
                 actorName={actorName}
               />
             </motion.div>
@@ -245,6 +250,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
             workstream={workstreamById[openTask.workstreamId]}
             users={users}
             userById={userById}
+            actorUserId={user?.uid}
             actorName={actorName}
             onClose={() => setOpenTaskId(null)}
           />

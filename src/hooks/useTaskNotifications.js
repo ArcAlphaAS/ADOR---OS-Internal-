@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeTasksForUser, subscribeClients, subscribeProyectosInternos } from '../lib/firestore'
-import { isOverdue, isDueToday, workstreamId } from '../lib/workspace'
+import { isOverdue, isDueToday, isPendingFor, workstreamId } from '../lib/workspace'
 
 // Overdue / due-today tasks assigned to the signed-in user, surfaced in the
 // top bar bell — same pattern as useClientNotifications' "sin contacto +7
@@ -24,7 +24,7 @@ export function useTaskNotifications(userId) {
   }
 
   const flagged = tasks
-    .filter((t) => t.status !== 'completado' && (isOverdue(t) || isDueToday(t)))
+    .filter((t) => t.status !== 'completado' && !isPendingFor(t, userId) && (isOverdue(t) || isDueToday(t)))
     .map((t) => {
       const due = t.dueDate.toDate()
       const overdue = isOverdue(t)

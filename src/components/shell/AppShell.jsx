@@ -11,6 +11,7 @@ import ObjetivosModule from '../objetivos/ObjetivosModule'
 import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
+import AssignmentConfirmGate from './AssignmentConfirmGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 
 function actorNameFor(user) {
@@ -120,6 +121,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
 
       <GlobalCapture user={user} actorName={actorNameFor(user)} />
+      <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
     </div>
   )
 }
