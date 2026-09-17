@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-08-15 (night). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-17. This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -10,7 +10,7 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 | Phase 2 — Shell + Home | ✅ Done |
 | Phase 3 — Clientes module | ✅ Done (2026-08-14, extended 2026-08-15) |
 | Phase 3 — Finanzas module | ✅ Done (2026-08-14, extended 2026-08-15) |
-| Phase 3 — Workspace module (Hoy + Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16) |
+| Phase 3 — Workspace module (Hoy + Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16, 2026-09-17) |
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — remaining modules (Calendario, Conocimiento, Comunidad, Chat, News, Directorio) | ⬜ Not started |
@@ -173,9 +173,9 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [ ] **Deliberately scoped down:** "+ Crear tarea" is the only conversion actually wired end-to-end (reuses Workspace's find-or-create "General" Proyecto Interno pattern from `ListaView.jsx`, via new `findOrCreateGeneralProyecto()` in `lib/firestore.js`). Gasto/Objetivo/Cliente suggestions are informational only — no conversion modal yet. Build these as their own follow-up when there's a concrete need, not preemptively (this project's standing rule).
 - [x] New Firestore collection `notes` — already covered by the existing blanket security rule (§15 note in CLAUDE.md), no console change needed.
 
-**Workspace sidebar redesign + Decisiones reframe (2026-09-16, same day)**
-- [x] User feedback: the old "Mis tareas" + flat workstream list didn't distinguish tareas del día / tareas personales / tareas de equipo the way they actually think about their work. `WorkspaceSidebar.jsx` restructured into three sections: **Hoy** (due today, mine — new `todayOnly` filter in `WorkspaceModule.jsx`, using the existing `isDueToday()` helper), **Personal** (renamed from "Mis tareas," same `onlyMine` filter, unchanged logic), **Equipo** (Intervenciones + Proyectos Internos, structurally the same as before, now under an explicit group label — this is where "un proyecto grande" lives). All three filters are mutually exclusive, same one-at-a-time model the app already used.
-- [x] `DecisionesPanel.jsx` renamed to "Decisiones de Dirección" with an explicit "Registro compartido — visible para todo el equipo" subtitle, and now shows the latest 6 instead of 3. It was already a shared Firestore collection (not siloed per user) — the fix was framing/copy, not the data model.
+**Workspace sidebar redesign + Decisiones reframe (2026-09-16, same day) — the "Hoy" toggle described below was superseded hours later, see CLAUDE.md §19**
+- [ ] ~~`WorkspaceSidebar.jsx` restructured into three sections: **Hoy** (due today, mine — `todayOnly` filter), **Personal**, **Equipo**~~ — superseded the same day: "Hoy" was promoted out of the sidebar entirely into its own top-level tab/landing view (`HoyView.jsx`), and the sidebar itself went through three more names for its team-scope item since (Todo → Panorama → Trabajo → **Grupo**, §25). Left here for history only — current sidebar structure is documented at the top of the Workspace entries above.
+- [x] `DecisionesPanel.jsx` renamed to "Decisiones de Dirección" with an explicit "Registro compartido — visible para todo el equipo" subtitle, and now shows the latest 6 instead of 3. It was already a shared Firestore collection (not siloed per user) — the fix was framing/copy, not the data model. **This part shipped and is still current.**
 - [ ] **Not done, flagged as a possible follow-up:** Decisiones is still a side-panel with only the latest few, not a full searchable log/history view. Revisit if the team wants to browse past decisions, not just see the newest ones.
 
 **Not built yet**
