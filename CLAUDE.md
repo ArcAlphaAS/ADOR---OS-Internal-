@@ -359,9 +359,9 @@ The user shared two reference images — a dark widget with a clear "X of Y task
 
 **Verification note:** no real overdue tasks existed in the signed-in account at review time, so the "Atrasado" (red) branch couldn't be visually confirmed against live data — verified instead by calling `workstreamHealth()` directly from the browser console with constructed task objects (overdue, future-dated, and completed-but-overdue combinations), confirming all four branches return the expected label/color/null. If this is touched again, prefer visual confirmation with a real overdue task when one exists.
 
-### 25. Sidebar's "Todo" renamed to "Panorama" (2026-09-17)
+### 25. Sidebar's "Todo" renamed twice — landed on "Trabajo" (2026-09-17)
 
-Direct feedback: "Todo" (Spanish for "everything") reads too easily as the English "to-do" in a task-management app — genuinely ambiguous, not a style nit. Renamed to "Panorama" in `WorkspaceSidebar.jsx` (the unfiltered, everything-the-team-has view under Equipo) — one word, no icon-library glyph change needed (kept `BriefcaseIcon`), no other copy referenced the old label anywhere else in the app.
+Direct feedback: "Todo" (Spanish for "everything") reads too easily as the English "to-do" in a task-management app — genuinely ambiguous, not a style nit. First renamed to "Panorama"; immediate follow-up feedback said that didn't read as "this is the team's work" clearly enough either. Landed on **"Trabajo"** — one word, sits naturally under the existing "EQUIPO" section header, and doesn't collide with "Proyectos Internos" right below it. Deliberately not "Proyectos" — an Intervención is never called a "proyecto" in ADOR's own vocabulary (§8: SPC/SP terminology), so that label would have mislabeled half of what this view actually shows (Intervenciones + Proyectos Internos combined), not just been imprecise. No icon-library glyph change needed (kept `BriefcaseIcon`); no other copy in the app referenced any of the old labels.
 
 ## Next recommended steps (in priority order, as discussed with the user)
 
