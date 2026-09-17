@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import Logo from './Logo'
 import AdorMark from './AdorMark'
 
-const LOGO_DURATION = 0.8
+const LOGO_DURATION = 1.2
 const RING_DELAY = 0.5
 const HINT_DELAY = 1.4
 
@@ -34,20 +33,23 @@ export default function SplashScreen({ onFinish }) {
       animate={{ opacity: dismissing ? 0 : 1, scale: dismissing ? 0.98 : 1 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
-      <motion.div
+      {/* Real logo, not the old "ADOR" text + "OS" placeholder. The glow is
+          just the image's own drop-shadow filter — since drop-shadow renders
+          based on the source's alpha, animating this element's opacity from
+          0→1 makes the glow visibly "breathe in" together with the logo
+          fading in, with no separate glow animation needed. Apple-style:
+          subtle, not dramatic — kept to two soft shadow layers. */}
+      <motion.img
+        src="/logo.svg"
+        alt="ADOR"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: LOGO_DURATION, ease: 'easeOut' }}
-        className="flex items-baseline gap-[9px]"
-      >
-        <Logo size={28} />
-        <span
-          className="font-semibold text-[#F5F5F5]"
-          style={{ fontSize: 28, letterSpacing: '0.2em' }}
-        >
-          OS
-        </span>
-      </motion.div>
+        style={{
+          height: 80,
+          filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.15)) drop-shadow(0 0 60px rgba(255,255,255,0.06))',
+        }}
+      />
 
       <motion.div
         initial={{ opacity: 0 }}

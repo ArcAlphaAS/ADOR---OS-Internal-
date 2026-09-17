@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from './Logo'
-import AdorMark from './AdorMark'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -85,9 +84,9 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
         }}
       >
         <div className="flex justify-center">
-          <AdorMark size={22} color="#888888" />
+          <img src="/logo.svg" alt="ADOR" style={{ height: 36 }} />
         </div>
-        <div className="mt-5 flex items-baseline justify-center gap-[7px]">
+        <div className="mt-4 flex items-baseline justify-center gap-[7px]">
           <Logo size={22} />
           <span className="font-semibold text-[#F5F5F5]" style={{ fontSize: 22, letterSpacing: '0.15em' }}>
             OS
