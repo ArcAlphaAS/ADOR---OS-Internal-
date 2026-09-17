@@ -16,11 +16,16 @@ import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
 
-// Shown instead of a real workstream when the company has none yet — never
-// persisted itself. The first task added through it silently provisions a
-// real "General" Proyecto Interno and attaches the task there, so Workspace
-// is usable from the very first click instead of gating everything behind
-// "create a project first."
+// Shown instead of a real workstream when there's nothing to group by yet —
+// never persisted itself. The first task added through it silently
+// provisions a real "General" Proyecto Interno and attaches the task there,
+// so Workspace is usable from the very first click instead of gating
+// everything behind "create a project first." Reused for the Personal
+// filter's empty state too (label swapped to "Personal" via `emptyLabel`,
+// same "General" storage underneath) — Todo already got this rich table
+// treatment when empty; Personal used to fall back to a bare centered
+// sentence instead, which read as a lesser, half-built version of the same
+// screen. Now both look and behave like the same real system.
 const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
 
 const COLUMN_HEADERS = ['', 'Tarea', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
@@ -281,8 +286,8 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
   )
 }
 
-export default function ListaView({ workstreams, tasksByWorkstream, userById, users, onOpenTask, actorUserId, actorName }) {
-  const visibleGroups = workstreams.length > 0 ? workstreams : [GENERAL_WORKSTREAM]
+export default function ListaView({ workstreams, tasksByWorkstream, userById, users, onOpenTask, actorUserId, actorName, emptyLabel = 'General' }) {
+  const visibleGroups = workstreams.length > 0 ? workstreams : [{ ...GENERAL_WORKSTREAM, name: emptyLabel }]
 
   return (
     <div className="flex flex-col gap-5">

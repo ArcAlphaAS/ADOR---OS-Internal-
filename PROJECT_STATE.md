@@ -109,6 +109,10 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [x] **Mis Pendientes** — a third section in `HoyView.jsx` (alongside Vencidas/Para hoy): everything open and assigned to you with no date or a future date, with an always-visible inline "+ Agregar pendiente" row so there's always a way to add something, even from an empty board
 - [x] Restored the "+ Crear tarea" note→task conversion that was accidentally dropped when Notas got folded into Hoy (§19) — real regression, not intentional
 
+**Workspace — Personal's empty state + one-tap reschedule (2026-09-16, same-day follow-up)**
+- [x] "Personal" with zero tasks now shows the same rich table (`ListaView`'s `GENERAL_WORKSTREAM` fallback, relabeled via a new `emptyLabel` prop) that "Todo" already had, instead of a bare centered sentence — same "+ Agregar tarea" affordance either way. See CLAUDE.md §21
+- [x] Overdue tasks in Hoy's Vencidas section get a one-click "→ Hoy" reschedule pill, plus a "Mover todas a hoy" bulk button in the section header once there's more than one — same `applyTaskUpdate` write path as everywhere else, just a shortcut around the date popover
+
 **Workspace — extended 2026-08-15**
 - [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
 - [x] "Carga del equipo" workload panel in the sidebar — per-associate count of open (non-completado) tasks, highlighting anyone with 5+ tasks due this week in red. `computeWorkload()` in `lib/workspace.js`. First cross-teammate visibility Workspace has had; "Mis tareas" only ever showed your own load

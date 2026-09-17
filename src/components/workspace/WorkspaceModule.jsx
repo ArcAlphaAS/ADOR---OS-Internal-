@@ -194,13 +194,6 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 notes={notes}
               />
             </motion.div>
-          ) : onlyMine && visibleWorkstreams.length === 0 ? (
-            <motion.div key="empty-filter" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <div className="flex flex-col items-center gap-3 py-24">
-                <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
-                <p className="text-[14px] font-light text-[#444444]">Sin tareas asignadas a ti — todo al día.</p>
-              </div>
-            </motion.div>
           ) : view === 'lista' ? (
             <motion.div key="lista" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <ListaView
@@ -211,6 +204,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 onOpenTask={(t) => setOpenTaskId(t.id)}
                 actorUserId={user?.uid}
                 actorName={actorName}
+                emptyLabel={onlyMine ? 'Personal' : 'General'}
               />
             </motion.div>
           ) : view === 'kanban' ? (

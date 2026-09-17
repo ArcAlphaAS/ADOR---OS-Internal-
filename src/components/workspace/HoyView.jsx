@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { isOverdue, isDueToday, isPendingFor, PRIORITIES, priorityMeta, workstreamId as buildWorkstreamId } from '../../lib/workspace'
+import { isOverdue, isDueToday, isPendingFor, withTimeout, PRIORITIES, priorityMeta, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
-import { createNote, updateNote, deleteNote, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
@@ -136,29 +136,49 @@ function QuickCapture({ user, actorName }) {
 // Same row the team views use (same inline-editable cells), with a small
 // workstream tag layered above the title — Hoy mixes tasks from every
 // Intervención/Proyecto, so without it a task reads with no context about
-// which piece of work it belongs to.
-function HoyTaskRow({ task, workstream, ...rest }) {
+// which piece of work it belongs to. `onReschedule` (Vencidas only) adds a
+// one-click "→ Hoy" pill next to that tag — the "alguna forma de
+// reorganizarlos" the user asked for, Things 3/Reminders-style: reschedule
+// is a single tap, not a trip through the date popover.
+function HoyTaskRow({ task, workstream, onReschedule, ...rest }) {
   return (
     <div className="pt-2.5 first:pt-3">
-      {workstream && (
-        <span className="mb-1 ml-[36px] block w-fit text-[10px] font-medium uppercase tracking-[0.06em]" style={{ color: workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B' }}>
-          {workstream.name}
-        </span>
+      {(workstream || onReschedule) && (
+        <div className="mb-1 ml-[36px] flex items-center gap-2">
+          {workstream && (
+            <span className="w-fit text-[10px] font-medium uppercase tracking-[0.06em]" style={{ color: workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B' }}>
+              {workstream.name}
+            </span>
+          )}
+          {onReschedule && (
+            <button
+              type="button"
+              onClick={() => onReschedule(task)}
+              className="rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
+              style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+            >
+              → Hoy
+            </button>
+          )}
+        </div>
       )}
       <TaskRow task={task} {...rest} />
     </div>
   )
 }
 
-function Section({ title, color, tasks, userById, users, onOpenTask, actorUserId, actorName, workstreamById, children }) {
+function Section({ title, color, tasks, userById, users, onOpenTask, actorUserId, actorName, workstreamById, onReschedule, headerAction, children }) {
   if (tasks.length === 0 && !children) return null
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-      <div className="flex items-center gap-2 border-l-2 px-5 py-3.5" style={{ borderColor: color }}>
-        <span className="text-[14px] font-semibold" style={{ color }}>
-          {title}
-        </span>
-        {tasks.length > 0 && <span className="text-[12px] text-[#444444]">{tasks.length}</span>}
+      <div className="flex items-center justify-between gap-2 border-l-2 px-5 py-3.5" style={{ borderColor: color }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] font-semibold" style={{ color }}>
+            {title}
+          </span>
+          {tasks.length > 0 && <span className="text-[12px] text-[#444444]">{tasks.length}</span>}
+        </div>
+        {headerAction}
       </div>
       <div className="flex flex-col divide-y divide-white/[0.04] px-3 pb-3">
         {tasks.map((task) => (
@@ -171,6 +191,7 @@ function Section({ title, color, tasks, userById, users, onOpenTask, actorUserId
             actorUserId={actorUserId}
             actorName={actorName}
             workstream={workstreamById[task.workstreamId]}
+            onReschedule={onReschedule}
           />
         ))}
         {children}
@@ -290,6 +311,19 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
   const archiveNote = (id) => updateNote(id, { status: 'archivada' }).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const deleteNoteById = (id) => deleteNote(id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
 
+  const today = () => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
+  const rescheduleToday = (task) =>
+    withTimeout(applyTaskUpdate(task, { dueDate: today() }, actorUserId, actorName)).catch((error) =>
+      showToast(`No se pudo reprogramar: ${error.message}`)
+    )
+  const rescheduleAllVencidas = () => {
+    vencidas.forEach((task) => rescheduleToday(task))
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <QuickCapture user={user} actorName={actorName} />
@@ -304,7 +338,30 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
 
       {vencidas.length === 0 && hoy.length === 0 && <NadaUrgente />}
 
-      <Section title="Vencidas" color="#EF5350" tasks={vencidas} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
+      <Section
+        title="Vencidas"
+        color="#EF5350"
+        tasks={vencidas}
+        userById={userById}
+        users={users}
+        onOpenTask={onOpenTask}
+        actorUserId={actorUserId}
+        actorName={actorName}
+        workstreamById={workstreamById}
+        onReschedule={rescheduleToday}
+        headerAction={
+          vencidas.length > 1 && (
+            <button
+              type="button"
+              onClick={rescheduleAllVencidas}
+              className="whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors duration-150 hover:bg-[#EF5350]/10"
+              style={{ borderColor: '#EF5350', color: '#EF5350' }}
+            >
+              Mover todas a hoy
+            </button>
+          )
+        }
+      />
       <Section title="Para hoy" color="#1E5FAD" tasks={hoy} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
       <Section
         title="Mis Pendientes"
