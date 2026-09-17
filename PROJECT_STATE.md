@@ -144,6 +144,11 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [ ] **Deliberately scoped down:** "+ Crear tarea" is the only conversion actually wired end-to-end (reuses Workspace's find-or-create "General" Proyecto Interno pattern from `ListaView.jsx`, via new `findOrCreateGeneralProyecto()` in `lib/firestore.js`). Gasto/Objetivo/Cliente suggestions are informational only — no conversion modal yet. Build these as their own follow-up when there's a concrete need, not preemptively (this project's standing rule).
 - [x] New Firestore collection `notes` — already covered by the existing blanket security rule (§15 note in CLAUDE.md), no console change needed.
 
+**Workspace sidebar redesign + Decisiones reframe (2026-09-16, same day)**
+- [x] User feedback: the old "Mis tareas" + flat workstream list didn't distinguish tareas del día / tareas personales / tareas de equipo the way they actually think about their work. `WorkspaceSidebar.jsx` restructured into three sections: **Hoy** (due today, mine — new `todayOnly` filter in `WorkspaceModule.jsx`, using the existing `isDueToday()` helper), **Personal** (renamed from "Mis tareas," same `onlyMine` filter, unchanged logic), **Equipo** (Intervenciones + Proyectos Internos, structurally the same as before, now under an explicit group label — this is where "un proyecto grande" lives). All three filters are mutually exclusive, same one-at-a-time model the app already used.
+- [x] `DecisionesPanel.jsx` renamed to "Decisiones de Dirección" with an explicit "Registro compartido — visible para todo el equipo" subtitle, and now shows the latest 6 instead of 3. It was already a shared Firestore collection (not siloed per user) — the fix was framing/copy, not the data model.
+- [ ] **Not done, flagged as a possible follow-up:** Decisiones is still a side-panel with only the latest few, not a full searchable log/history view. Revisit if the team wants to browse past decisions, not just see the newest ones.
+
 **Not built yet**
 - [ ] Calendario, Comunidad, Chat, News, Directorio all still show placeholder
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
