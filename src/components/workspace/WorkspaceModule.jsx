@@ -121,7 +121,13 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
 
   const openTask = tasks.find((t) => t.id === openTaskId) || null
   const headerCopy = HEADER_COPY[view]
-  const title = headerCopy ? headerCopy.title() : onlyMine ? 'Personal' : 'Workspace'
+  // Page titles for the Lista/Kanban/Timeline scopes — deliberately not
+  // "Workspace" here (direct feedback: "Workspace" is the whole section's
+  // name, using it again as a page title inside itself said nothing about
+  // whether you're looking at your own work or the team's). "Personal" and
+  // "Grupo" stay as the short sidebar labels; the page title spells out the
+  // same distinction more fully.
+  const title = headerCopy ? headerCopy.title() : onlyMine ? 'Proyectos Individuales' : 'Proyectos Colaborativos'
   const subtitle = headerCopy
     ? headerCopy.subtitle()
     : onlyMine
