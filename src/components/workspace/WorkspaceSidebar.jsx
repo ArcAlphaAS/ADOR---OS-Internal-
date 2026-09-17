@@ -19,14 +19,17 @@ function ListIcon({ Icon, color }) {
 // selected Intervención/Proyecto and a selected Personal/Todo filter now
 // read as the same kind of thing, just with different accent colors,
 // instead of two different "selected" languages sitting in one sidebar.
-// "Trabajo" (the unfiltered "everything the team has" view — Intervenciones
-// + Proyectos Internos combined — no accentColor of its own) went through
-// two names on 2026-09-17: "Todo" read too easily as "to-do," and the next
-// try, "Panorama," didn't read as "this is the team's work" clearly enough
-// per direct follow-up feedback. Deliberately not "Proyectos" either — an
-// Intervención is never called a "proyecto" in ADOR's own vocabulary (§8),
-// so that label would have been inaccurate, not just imprecise. Falls back
-// to a neutral white tint since it has no color of its own to borrow.
+// "Grupo" (the unfiltered "everything the team has" view — Intervenciones +
+// Proyectos Internos combined — no accentColor of its own) is the third name
+// this got on 2026-09-17: "Todo" read too easily as "to-do," "Panorama"
+// didn't read as "this is the team's work" clearly enough, and "Trabajo"
+// still wasn't quite it either. "Grupo" was the user's own suggestion — it
+// also happens to pair cleanly with "Personal" above (Personal vs. Grupo:
+// yours vs. the team's, same one-word register). Deliberately never
+// "Proyectos" — an Intervención is never called a "proyecto" in ADOR's own
+// vocabulary (§8), so that label would have been inaccurate, not just
+// imprecise. Falls back to a neutral white tint since it has no color of
+// its own to borrow.
 function NavItem({ label, sublabel, active, accentColor, Icon, iconColor, onClick, disabled }) {
   const tint = accentColor || '#F5F5F5'
   return (
@@ -161,7 +164,7 @@ export default function WorkspaceSidebar({
           Equipo
         </span>
 
-        <NavItem label="Trabajo" Icon={BriefcaseIcon} iconColor="#888888" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
+        <NavItem label="Grupo" Icon={BriefcaseIcon} iconColor="#888888" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
 
         {intervenciones.length > 0 && (
           <div className="flex flex-col gap-0.5">

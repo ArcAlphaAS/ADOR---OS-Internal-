@@ -120,7 +120,7 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 
 **Workspace — "Salud" pill + scrubber-dot progress bar on Lista headers (2026-09-17)**
 - [x] `workstreamHealth()` in `lib/workspace.js` — a live, real-data "En tiempo"/"Atrasado" pill on each `WorkstreamGroup` header, adapted from a project-pipeline reference the user shared. Progress text simplified to "X de Y completadas"; the thin progress bar gained a scrubber dot at the fill edge. Removed a real bug found along the way: the "En curso" badge under an expanded Intervención was a hardcoded string, never reflecting real status. See CLAUDE.md §24
-- [x] Sidebar's "Todo" nav item renamed twice, landed on **"Trabajo"** — "Todo" read too easily as the English "to-do"; "Panorama" (first try) didn't clearly read as "the team's work" either. See CLAUDE.md §25
+- [x] Sidebar's "Todo" nav item renamed three times, landed on **"Grupo"** (the user's own suggestion) — pairs cleanly with "Personal" above it. "Todo" read too easily as "to-do"; "Panorama" and "Trabajo" (the two tries in between) didn't clearly read as "the team's work" either. See CLAUDE.md §25
 
 **Workspace — extended 2026-08-15**
 - [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
