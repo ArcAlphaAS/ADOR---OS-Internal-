@@ -359,6 +359,10 @@ The user shared two reference images — a dark widget with a clear "X of Y task
 
 **Verification note:** no real overdue tasks existed in the signed-in account at review time, so the "Atrasado" (red) branch couldn't be visually confirmed against live data — verified instead by calling `workstreamHealth()` directly from the browser console with constructed task objects (overdue, future-dated, and completed-but-overdue combinations), confirming all four branches return the expected label/color/null. If this is touched again, prefer visual confirmation with a real overdue task when one exists.
 
+### 25. Sidebar's "Todo" renamed to "Panorama" (2026-09-17)
+
+Direct feedback: "Todo" (Spanish for "everything") reads too easily as the English "to-do" in a task-management app — genuinely ambiguous, not a style nit. Renamed to "Panorama" in `WorkspaceSidebar.jsx` (the unfiltered, everything-the-team-has view under Equipo) — one word, no icon-library glyph change needed (kept `BriefcaseIcon`), no other copy referenced the old label anywhere else in the app.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 1. **Enable Firebase Storage** so Clientes → Documentos and Finanzas → Comprobante can do real file uploads instead of metadata-only records. Same console-enable pattern already walked through for Firestore. User deliberately deferred this on 2026-08-15 ("not necessary right now") — don't push on it unprompted.
