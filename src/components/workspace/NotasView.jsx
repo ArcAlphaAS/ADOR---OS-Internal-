@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { subscribeNotes, updateNote, deleteNote, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { CATEGORIES } from '../../lib/notes'
 import { NoteIcon, CloseIcon, CheckCircleIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 
-function actorNameFor(user) {
-  return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
-}
-
+// The "cuaderno" view inside Workspace — personal/daily jottings that don't
+// belong on the formal Lista/Kanban/Timeline task board (those are the
+// team's structured, workstream-linked tareas). Moved here from a
+// standalone "Conocimiento" module per the user's own correction
+// (2026-09-16): Conocimiento is reserved for a future proper document/
+// knowledge base, not for this. Content-only component, same shape as
+// ListaView/KanbanView/TimelineView — WorkspaceModule owns the page header.
 function formatWhen(date) {
   if (!date) return ''
   return date.toLocaleDateString('es', { day: 'numeric', month: 'short' }) + ' · ' + date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
 }
 
-function NoteCard({ note, actorName, onArchive, onDelete, onConvertedToTask }) {
+function NoteCard({ note, actorName, onArchive, onDelete }) {
   const [converting, setConverting] = useState(false)
   const showToast = useToast()
   const meta = CATEGORIES[note.category] || CATEGORIES.nota
@@ -29,8 +31,7 @@ function NoteCard({ note, actorName, onArchive, onDelete, onConvertedToTask }) {
         actorName
       )
       await updateNote(note.id, { status: 'archivada', category: 'tarea' })
-      onConvertedToTask?.()
-      showToast('Tarea creada en Workspace → General')
+      showToast('Tarea creada en General')
     } catch (error) {
       showToast(`No se pudo crear la tarea: ${error.message}`)
     } finally {
@@ -91,10 +92,9 @@ function NoteCard({ note, actorName, onArchive, onDelete, onConvertedToTask }) {
   )
 }
 
-export default function ConocimientoModule({ user }) {
+export default function NotasView({ actorName }) {
   const [notes, setNotes] = useState([])
   const showToast = useToast()
-  const actorName = actorNameFor(user)
 
   useEffect(() => subscribeNotes(setNotes), [])
 
@@ -117,61 +117,47 @@ export default function ConocimientoModule({ user }) {
     }
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[820px] flex-col gap-8 px-12 pb-16 pt-16"
-    >
-      <div>
-        <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Conocimiento</h1>
-        <p className="mt-1 text-[13px] text-[#888888]">
-          Tu cuaderno digital — anota con el botón "+" desde cualquier pantalla y revisa aquí. Por ahora, "Crear tarea" es la
-          única conversión automática; el resto de sugerencias son solo orientativas.
+  if (notes.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20 text-center">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
+        >
+          <NoteIcon size={24} className="text-[#1E5FAD]" style={{ animation: 'ador-pulse 2.4s ease-in-out infinite' }} />
+        </div>
+        <p className="text-[14px] font-light text-[#888888]">Nada anotado todavía.</p>
+        <p className="max-w-[360px] text-[13px] font-light text-[#444444]">
+          Usa el botón azul "+" abajo a la derecha, en cualquier pantalla, para anotar algo — tareas personales, ideas, lo del
+          día — igual que tomarías tu cuaderno.
         </p>
       </div>
+    )
+  }
 
-      {notes.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 py-20 text-center">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
-          >
-            <NoteIcon size={24} className="text-[#1E5FAD]" style={{ animation: 'ador-pulse 2.4s ease-in-out infinite' }} />
-          </div>
-          <p className="text-[14px] font-light text-[#888888]">Nada anotado todavía.</p>
-          <p className="max-w-[360px] text-[13px] font-light text-[#444444]">
-            Usa el botón azul "+" abajo a la derecha, en cualquier pantalla, para anotar algo — igual que tomarías tu cuaderno.
-          </p>
+  return (
+    <div className="mx-auto flex w-full max-w-[820px] flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Sin revisar ({pendientes.length})
+        </span>
+        {pendientes.length === 0 ? (
+          <p className="text-[13px] font-light text-[#444444]">Todo revisado — nada pendiente.</p>
+        ) : (
+          pendientes.map((note) => <NoteCard key={note.id} note={note} actorName={actorName} onArchive={archive} onDelete={remove} />)
+        )}
+      </div>
+
+      {archivadas.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Revisadas ({archivadas.length})
+          </span>
+          {archivadas.map((note) => (
+            <NoteCard key={note.id} note={note} actorName={actorName} onArchive={archive} onDelete={remove} />
+          ))}
         </div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-3">
-            <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Sin revisar ({pendientes.length})
-            </span>
-            {pendientes.length === 0 ? (
-              <p className="text-[13px] font-light text-[#444444]">Todo revisado — nada pendiente.</p>
-            ) : (
-              pendientes.map((note) => (
-                <NoteCard key={note.id} note={note} actorName={actorName} onArchive={archive} onDelete={remove} />
-              ))
-            )}
-          </div>
-
-          {archivadas.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Revisadas ({archivadas.length})
-              </span>
-              {archivadas.map((note) => (
-                <NoteCard key={note.id} note={note} actorName={actorName} onArchive={archive} onDelete={remove} />
-              ))}
-            </div>
-          )}
-        </>
       )}
-    </motion.div>
+    </div>
   )
 }

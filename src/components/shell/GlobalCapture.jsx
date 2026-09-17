@@ -8,11 +8,13 @@ import { useToast } from '../../hooks/useToast'
 
 // The "always have your notebook open" capture point — a floating button
 // present across the whole shell (mounted once in AppShell, not per-module)
-// so jotting something down never requires first navigating to Conocimiento.
+// so jotting something down never requires first navigating to Workspace.
 // Saves immediately on submit with a locally-guessed category attached;
 // never blocks on categorization being right — that's reviewed/corrected
-// later in Conocimiento. See lib/notes.js for why this is keyword rules,
-// not an LLM call.
+// later in Workspace → Notas (NotasView.jsx). Not Conocimiento — that name
+// is reserved for a future proper document/knowledge-base module, per the
+// user's own correction (2026-09-16). See lib/notes.js for why this is
+// keyword rules, not an LLM call.
 export default function GlobalCapture({ user, actorName }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -38,7 +40,7 @@ export default function GlobalCapture({ user, actorName }) {
       setText('')
       setOpen(false)
       const meta = CATEGORIES[category]
-      showToast(category === 'nota' ? 'Nota guardada en Conocimiento' : `Guardado en Conocimiento — sugerencia: ${meta.label}`)
+      showToast(category === 'nota' ? 'Nota guardada en Workspace → Notas' : `Guardado en Workspace → Notas — sugerencia: ${meta.label}`)
     } catch (error) {
       showToast(`No se pudo guardar: ${error.message}`)
     } finally {

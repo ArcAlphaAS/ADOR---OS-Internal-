@@ -9,7 +9,6 @@ import FinanzasModule from '../finanzas/FinanzasModule'
 import WorkspaceModule from '../workspace/WorkspaceModule'
 import ObjetivosModule from '../objetivos/ObjetivosModule'
 import AdorIAModule from '../adoria/AdorIAModule'
-import ConocimientoModule from '../conocimiento/ConocimientoModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
@@ -111,8 +110,6 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
               <ObjetivosModule key="objetivos" user={user} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
-            ) : activeModule === 'conocimiento' ? (
-              <ConocimientoModule key="conocimiento" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}

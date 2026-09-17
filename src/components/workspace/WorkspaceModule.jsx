@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeDecisions, getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { computeWorkload } from '../../lib/workspace'
-import { KanbanIcon, ListViewIcon, TimelineIcon } from '../icons'
+import { KanbanIcon, ListViewIcon, TimelineIcon, NoteIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import ListaView from './ListaView'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
+import NotasView from './NotasView'
 import TaskDetailPanel from './TaskDetailPanel'
 import DecisionesPanel from './DecisionesPanel'
 import NewProyectoModal from './NewProyectoModal'
@@ -21,6 +22,7 @@ const VIEWS = [
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
+  { id: 'notas', label: 'Notas', Icon: NoteIcon },
 ]
 
 export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
@@ -110,9 +112,15 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{onlyMine ? 'Mis tareas' : 'Workspace'}</h1>
+            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">
+              {view === 'notas' ? 'Notas' : onlyMine ? 'Mis tareas' : 'Workspace'}
+            </h1>
             <p className="text-[13px] text-[#888888]">
-              {onlyMine ? 'Todo lo que tienes pendiente, cruzando Intervenciones y Proyectos Internos.' : 'Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta.'}
+              {view === 'notas'
+                ? 'Tareas personales, ideas, lo del día — tu cuaderno, no el tablero formal del equipo.'
+                : onlyMine
+                  ? 'Todo lo que tienes pendiente, cruzando Intervenciones y Proyectos Internos.'
+                  : 'Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta.'}
             </p>
           </div>
           <div className="ador-glass flex items-center gap-1 rounded-full p-1">
@@ -132,7 +140,11 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
         </div>
 
         <AnimatePresence mode="wait">
-          {onlyMine && visibleWorkstreams.length === 0 ? (
+          {view === 'notas' ? (
+            <motion.div key="notas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <NotasView actorName={actorName} />
+            </motion.div>
+          ) : onlyMine && visibleWorkstreams.length === 0 ? (
             <motion.div key="empty-mine" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div className="flex flex-col items-center gap-3 py-24">
                 <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
