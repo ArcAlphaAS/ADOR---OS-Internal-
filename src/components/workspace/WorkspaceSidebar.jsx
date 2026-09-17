@@ -64,10 +64,12 @@ function WorkloadPanel({ workload }) {
   )
 }
 
-// Compact pill-style toggle shared by "Hoy" and "Personal" — both are
-// cross-workstream personal filters, distinct from "Equipo" (a selected
-// Intervención/Proyecto below). Visually identical, just parameterized by
-// color so the two don't read as the same thing at a glance.
+// "Personal" is a cross-workstream filter (everything assigned to me, any
+// workstream), distinct from "Equipo" (a selected Intervención/Proyecto
+// below). "Hoy" used to live here too as a sibling toggle — moved out to be
+// its own tab in the main view switcher (see WorkspaceModule.jsx/HoyView.jsx,
+// 2026-09-16) since it's the module's actual landing screen now, not one
+// filter among several.
 function FilterToggle({ label, active, count, color, onClick }) {
   return (
     <button
@@ -91,13 +93,10 @@ function FilterToggle({ label, active, count, color, onClick }) {
   )
 }
 
-// Restructured 2026-09-16 per direct user feedback: the flat "Mis tareas +
-// workstream list" didn't distinguish "tareas del día," "tareas personales,"
-// and "tareas de equipo" the way the user actually thinks about their work.
-// Now three explicit sections — Hoy (due today, mine), Personal (everything
-// assigned to me, any workstream), Equipo (Intervenciones + Proyectos
-// Internos, the team-shared work) — each its own filter, mutually exclusive,
-// wired in WorkspaceModule.jsx.
+// Restructured 2026-09-16: "Hoy" moved out to its own tab (see
+// WorkspaceModule.jsx), so this sidebar now only scopes the team views
+// (Lista/Kanban/Timeline) — Personal (everything assigned to me, any
+// workstream) vs. Equipo (a specific Intervención/Proyecto, or all of them).
 export default function WorkspaceSidebar({
   workstreams,
   selectedId,
@@ -106,9 +105,6 @@ export default function WorkspaceSidebar({
   onlyMine,
   onToggleOnlyMine,
   myTaskCount,
-  todayOnly,
-  onToggleToday,
-  myTodayCount,
   workload = [],
 }) {
   const intervenciones = workstreams.filter((w) => w.kind === 'intervencion')
@@ -116,10 +112,7 @@ export default function WorkspaceSidebar({
 
   return (
     <div className="flex h-full w-[200px] flex-shrink-0 flex-col gap-4 border-r border-white/[0.06] px-3 py-6">
-      <div className="flex flex-col gap-1">
-        <FilterToggle label="Hoy" active={todayOnly} count={myTodayCount} color="#B8860B" onClick={onToggleToday} />
-        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
-      </div>
+      <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
 
       <div className="h-px bg-white/[0.06]" />
 
@@ -128,7 +121,7 @@ export default function WorkspaceSidebar({
           Equipo
         </span>
 
-        <NavItem label="Todo" active={!onlyMine && !todayOnly && selectedId === null} onClick={() => onSelect(null)} />
+        <NavItem label="Todo" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
 
         {intervenciones.length > 0 && (
           <div className="flex flex-col gap-0.5">
@@ -160,7 +153,11 @@ export default function WorkspaceSidebar({
           </button>
         </div>
 
-        <NavItem label="+ Nueva Intervención" disabled />
+        {intervenciones.length === 0 && (
+          <p className="px-3 text-[11px] leading-relaxed text-[#444444]">
+            Las Intervenciones aparecen aquí solas cuando un SPC pasa a Intervención Activa en Clientes.
+          </p>
+        )}
       </div>
 
       <WorkloadPanel workload={workload} />

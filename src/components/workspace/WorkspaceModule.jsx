@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeDecisions, getUserProfile, saveUserProfile } from '../../lib/firestore'
-import { computeWorkload, isDueToday } from '../../lib/workspace'
-import { KanbanIcon, ListViewIcon, TimelineIcon, NoteIcon } from '../icons'
+import { computeWorkload, isDueToday, isOverdue } from '../../lib/workspace'
+import { KanbanIcon, ListViewIcon, TimelineIcon, NoteIcon, CalendarIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
+import HoyView from './HoyView'
 import ListaView from './ListaView'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
@@ -18,20 +19,36 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
+// "Hoy" leads the list on purpose — see HoyView.jsx for the reasoning
+// (Sunsama/Akiflow's "today first" model over Linear's backlog-triage one).
+// Every tab now carries a text label, not just an icon, after direct
+// feedback that an icon-only switcher didn't read as self-explanatory to a
+// non-technical founder opening this for the first time.
 const VIEWS = [
+  { id: 'hoy', label: 'Hoy', Icon: CalendarIcon },
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
   { id: 'notas', label: 'Notas', Icon: NoteIcon },
 ]
 
+const HEADER_COPY = {
+  hoy: {
+    title: () => 'Hoy',
+    subtitle: () => 'Lo vencido y lo que vence hoy, asignado a ti — antes de mirar cualquier otra cosa.',
+  },
+  notas: {
+    title: () => 'Notas',
+    subtitle: () => 'Tareas personales, ideas, lo del día — tu cuaderno, no el tablero formal del equipo.',
+  },
+}
+
 export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
   const { workstreams, tasksByWorkstream, tasks, users, userById } = useWorkspaceData()
   const [decisions, setDecisions] = useState([])
-  const [view, setView] = useState('lista')
+  const [view, setView] = useState('hoy')
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
   const [onlyMine, setOnlyMine] = useState(false)
-  const [todayOnly, setTodayOnly] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
   const [showNewProyecto, setShowNewProyecto] = useState(false)
   const [showRegisterDecision, setShowRegisterDecision] = useState(false)
@@ -72,48 +89,40 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
 
   const isMine = (t) => (t.assignedTo || []).includes(user?.uid)
   const myTaskCount = tasks.filter((t) => isMine(t) && t.status !== 'completado').length
-  const myTodayCount = tasks.filter((t) => isMine(t) && isDueToday(t) && t.status !== 'completado').length
+  const myUrgentCount = tasks.filter((t) => isMine(t) && t.status !== 'completado' && (isOverdue(t) || isDueToday(t))).length
   const workload = computeWorkload(tasks, users)
 
-  // "Personal" (onlyMine) and "Hoy" (todayOnly) are both cross-workstream
-  // personal filters — the difference is scope (everything assigned to you
-  // vs. just what's due today) — while a selected workstream is the team/
-  // Equipo scope (Intervenciones + Proyectos Internos). All three are
-  // mutually exclusive, same one-filter-at-a-time model as before; only the
-  // predicate changes based on which is active. See the 2026-09-16 redesign:
-  // the user specifically wanted "tareas del día" separated from "tareas
-  // personales" and from "tareas de equipo," not folded into one toggle.
-  const matchesFilter = (t) => {
-    if (todayOnly) return isMine(t) && isDueToday(t)
-    if (onlyMine) return isMine(t)
-    return true
-  }
-  const filterActive = todayOnly || onlyMine
+  // Equipo scope (Todo / a selected Intervención / Proyecto) and the
+  // Personal filter (everything assigned to me, any workstream) are
+  // mutually exclusive — one active scope at a time, applied only to the
+  // Lista/Kanban/Timeline team views. Hoy (above) is its own always-personal
+  // view and doesn't go through this at all.
+  const matchesFilter = (t) => (onlyMine ? isMine(t) : true)
 
   const byWorkstream = selectedWorkstreamId ? workstreams.filter((w) => w.id === selectedWorkstreamId) : workstreams
   const visibleTasks = tasks.filter((t) => (!selectedWorkstreamId || t.workstreamId === selectedWorkstreamId) && matchesFilter(t))
-  const visibleTasksByWorkstream = filterActive
+  const visibleTasksByWorkstream = onlyMine
     ? new Map([...tasksByWorkstream].map(([id, list]) => [id, list.filter(matchesFilter)]))
     : tasksByWorkstream
-  const visibleWorkstreams = filterActive ? byWorkstream.filter((w) => (visibleTasksByWorkstream.get(w.id) || []).length > 0) : byWorkstream
+  const visibleWorkstreams = onlyMine ? byWorkstream.filter((w) => (visibleTasksByWorkstream.get(w.id) || []).length > 0) : byWorkstream
 
   const selectWorkstream = (id) => {
     setOnlyMine(false)
-    setTodayOnly(false)
     setSelectedWorkstreamId(id)
   }
   const toggleOnlyMine = () => {
     setSelectedWorkstreamId(null)
-    setTodayOnly(false)
     setOnlyMine((v) => !v)
-  }
-  const toggleToday = () => {
-    setSelectedWorkstreamId(null)
-    setOnlyMine(false)
-    setTodayOnly((v) => !v)
   }
 
   const openTask = tasks.find((t) => t.id === openTaskId) || null
+  const headerCopy = HEADER_COPY[view]
+  const title = headerCopy ? headerCopy.title() : onlyMine ? 'Personal' : 'Workspace'
+  const subtitle = headerCopy
+    ? headerCopy.subtitle()
+    : onlyMine
+      ? 'Todo lo asignado a ti, cruzando Intervenciones y Proyectos Internos.'
+      : 'Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta con el equipo.'
 
   return (
     <motion.div
@@ -122,35 +131,24 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="flex h-full"
     >
-      <WorkspaceSidebar
-        workstreams={workstreams}
-        selectedId={selectedWorkstreamId}
-        onSelect={selectWorkstream}
-        onNewProyecto={() => setShowNewProyecto(true)}
-        onlyMine={onlyMine}
-        onToggleOnlyMine={toggleOnlyMine}
-        myTaskCount={myTaskCount}
-        todayOnly={todayOnly}
-        onToggleToday={toggleToday}
-        myTodayCount={myTodayCount}
-        workload={workload}
-      />
+      {view !== 'hoy' && view !== 'notas' && (
+        <WorkspaceSidebar
+          workstreams={workstreams}
+          selectedId={selectedWorkstreamId}
+          onSelect={selectWorkstream}
+          onNewProyecto={() => setShowNewProyecto(true)}
+          onlyMine={onlyMine}
+          onToggleOnlyMine={toggleOnlyMine}
+          myTaskCount={myTaskCount}
+          workload={workload}
+        />
+      )}
 
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">
-              {view === 'notas' ? 'Notas' : todayOnly ? 'Hoy' : onlyMine ? 'Personal' : 'Workspace'}
-            </h1>
-            <p className="text-[13px] text-[#888888]">
-              {view === 'notas'
-                ? 'Tareas personales, ideas, lo del día — tu cuaderno, no el tablero formal del equipo.'
-                : todayOnly
-                  ? 'Lo que vence hoy, asignado a ti — tu enfoque del día.'
-                  : onlyMine
-                    ? 'Todo lo asignado a ti, cruzando Intervenciones y Proyectos Internos.'
-                    : 'Intervenciones y Proyectos Internos — todo lo que ADOR ejecuta con el equipo.'}
-            </p>
+            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
+            <p className="text-[13px] text-[#888888]">{subtitle}</p>
           </div>
           <div className="ador-glass flex items-center gap-1 rounded-full p-1">
             {VIEWS.map((v) => (
@@ -158,28 +156,46 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 key={v.id}
                 type="button"
                 onClick={() => changeView(v.id)}
-                title={v.label}
-                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
+                className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
                 style={{ background: view === v.id ? '#1E5FAD' : 'transparent', color: view === v.id ? '#F5F5F5' : '#888888' }}
               >
-                <v.Icon size={16} />
+                <v.Icon size={14} />
+                {v.label}
+                {v.id === 'hoy' && myUrgentCount > 0 && view !== 'hoy' && (
+                  <span
+                    className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold"
+                    style={{ background: '#EF5350', color: '#F5F5F5' }}
+                  >
+                    {myUrgentCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
         <AnimatePresence mode="wait">
-          {view === 'notas' ? (
+          {view === 'hoy' ? (
+            <motion.div key="hoy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <HoyView
+                tasks={tasks}
+                userId={user?.uid}
+                userById={userById}
+                users={users}
+                workstreamById={workstreamById}
+                onOpenTask={(t) => setOpenTaskId(t.id)}
+                actorName={actorName}
+              />
+            </motion.div>
+          ) : view === 'notas' ? (
             <motion.div key="notas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <NotasView actorName={actorName} />
             </motion.div>
-          ) : filterActive && visibleWorkstreams.length === 0 ? (
+          ) : onlyMine && visibleWorkstreams.length === 0 ? (
             <motion.div key="empty-filter" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div className="flex flex-col items-center gap-3 py-24">
                 <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
-                <p className="text-[14px] font-light text-[#444444]">
-                  {todayOnly ? 'Nada vence hoy — buen momento para adelantar.' : 'Sin tareas asignadas a ti — todo al día.'}
-                </p>
+                <p className="text-[14px] font-light text-[#444444]">Sin tareas asignadas a ti — todo al día.</p>
               </div>
             </motion.div>
           ) : view === 'lista' ? (
