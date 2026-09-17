@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { isOverdue, isDueToday, isPendingFor, withTimeout, PRIORITIES, priorityMeta, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
-import { CloseIcon, CheckCircleIcon } from '../icons'
+import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
@@ -167,12 +167,28 @@ function HoyTaskRow({ task, workstream, onReschedule, ...rest }) {
   )
 }
 
-function Section({ title, color, tasks, userById, users, onOpenTask, actorUserId, actorName, workstreamById, onReschedule, headerAction, children }) {
+// Circular colored icon badges, one per section — the exact signature
+// Apple Reminders uses for its smart lists (Today/Scheduled/All/Flagged
+// each get their own colored circle + glyph). Replaces the plain left
+// border + text label; the badge alone now carries the section's identity.
+function SectionIcon({ Icon, color }) {
+  return (
+    <span
+      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full"
+      style={{ background: color, color: '#F5F5F5' }}
+    >
+      <Icon size={13} />
+    </span>
+  )
+}
+
+function Section({ title, color, Icon, tasks, userById, users, onOpenTask, actorUserId, actorName, workstreamById, onReschedule, headerAction, children }) {
   if (tasks.length === 0 && !children) return null
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-      <div className="flex items-center justify-between gap-2 border-l-2 px-5 py-3.5" style={{ borderColor: color }}>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-5 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <SectionIcon Icon={Icon} color={color} />
           <span className="text-[14px] font-semibold" style={{ color }}>
             {title}
           </span>
@@ -341,6 +357,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
       <Section
         title="Vencidas"
         color="#EF5350"
+        Icon={CalendarIcon}
         tasks={vencidas}
         userById={userById}
         users={users}
@@ -362,10 +379,11 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           )
         }
       />
-      <Section title="Para hoy" color="#1E5FAD" tasks={hoy} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
+      <Section title="Para hoy" color="#1E5FAD" Icon={CalendarIcon} tasks={hoy} userById={userById} users={users} onOpenTask={onOpenTask} actorUserId={actorUserId} actorName={actorName} workstreamById={workstreamById} />
       <Section
         title="Mis Pendientes"
         color="#888888"
+        Icon={ListViewIcon}
         tasks={pendientes}
         userById={userById}
         users={users}

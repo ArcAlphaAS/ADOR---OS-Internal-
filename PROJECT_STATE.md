@@ -113,6 +113,11 @@ Last updated: 2026-08-15 (night). This is the living status snapshot — update 
 - [x] "Personal" with zero tasks now shows the same rich table (`ListaView`'s `GENERAL_WORKSTREAM` fallback, relabeled via a new `emptyLabel` prop) that "Todo" already had, instead of a bare centered sentence — same "+ Agregar tarea" affordance either way. See CLAUDE.md §21
 - [x] Overdue tasks in Hoy's Vencidas section get a one-click "→ Hoy" reschedule pill, plus a "Mover todas a hoy" bulk button in the section header once there's more than one — same `applyTaskUpdate` write path as everywhere else, just a shortcut around the date popover
 
+**Workspace — design review + sidebar polish + iOS-productivity motion pass (2026-09-16, same day)**
+- [x] Design review found and fixed two real layout bugs (badge word-wrap in Lista's group headers, an unframed collapsed Decisiones rail) and retracted one screenshot-artifact false positive. See CLAUDE.md §22
+- [x] Sidebar polish: unified active-state color language between Personal and team nav items, framed the Intervenciones-empty note, thinner tinted workload bars. See CLAUDE.md §22
+- [x] iOS-productivity pass: the view switcher (Hoy/Lista/Kanban/Timeline) is now a real sliding segmented control (Motion `layoutId`), Reminders-style circular icon badges on Hoy's sections and the sidebar's Personal/Todo rows, and a spring "pop" on the task checkbox when completing something. See CLAUDE.md §23
+
 **Workspace — extended 2026-08-15**
 - [x] Decisiones panel is now collapsible (56px icon rail ↔ 280px full panel), so it no longer permanently eats width from the main task table. Preference persists per user (`users/{uid}.decisionesCollapsed`), same pattern as `workspaceView`
 - [x] "Carga del equipo" workload panel in the sidebar — per-associate count of open (non-completado) tasks, highlighting anyone with 5+ tasks due this week in red. `computeWorkload()` in `lib/workspace.js`. First cross-teammate visibility Workspace has had; "Mis tareas" only ever showed your own load

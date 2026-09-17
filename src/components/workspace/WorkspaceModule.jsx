@@ -154,6 +154,10 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
             <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
             <p className="text-[13px] text-[#888888]">{subtitle}</p>
           </div>
+          {/* A real iOS segmented control slides its selection background
+              between segments rather than just recoloring each one —
+              Motion's layoutId does exactly that: the same element "moves"
+              from the old active button to the new one with a spring. */}
           <div className="ador-glass flex items-center gap-1 rounded-full p-1">
             {VIEWS.map((v) => (
               <button
@@ -161,18 +165,28 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 type="button"
                 onClick={() => changeView(v.id)}
                 className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-                style={{ background: view === v.id ? '#1E5FAD' : 'transparent', color: view === v.id ? '#F5F5F5' : '#888888' }}
+                style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
               >
-                <v.Icon size={14} />
-                {v.label}
-                {v.id === 'hoy' && myUrgentCount > 0 && view !== 'hoy' && (
-                  <span
-                    className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold"
-                    style={{ background: '#EF5350', color: '#F5F5F5' }}
-                  >
-                    {myUrgentCount}
-                  </span>
+                {view === v.id && (
+                  <motion.div
+                    layoutId="workspace-view-indicator"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: '#1E5FAD' }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                  />
                 )}
+                <span className="relative flex items-center gap-1.5">
+                  <v.Icon size={14} />
+                  {v.label}
+                  {v.id === 'hoy' && myUrgentCount > 0 && view !== 'hoy' && (
+                    <span
+                      className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold"
+                      style={{ background: '#EF5350', color: '#F5F5F5' }}
+                    >
+                      {myUrgentCount}
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -25,17 +25,45 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
       className="grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
       style={{ gridTemplateColumns: TASK_ROW_GRID }}
     >
-      <button
+      {/* The completion "pop" (spring scale-in on the checkmark, a tactile
+          scale-down on tap) is the single most recognizable Reminders/Things 3
+          signature — checking something off should feel like a small,
+          satisfying physical event, not just a color swap. */}
+      <motion.button
         type="button"
+        whileTap={{ scale: 0.82 }}
         onClick={(e) => {
           e.stopPropagation()
           withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
         }}
-        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-150"
+        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
         style={{ color: completed ? '#4CAF50' : '#444444' }}
       >
-        {completed ? <CheckCircleIcon size={18} /> : <span className="h-[15px] w-[15px] rounded-full border" style={{ borderColor: '#444444' }} />}
-      </button>
+        <AnimatePresence mode="wait" initial={false}>
+          {completed ? (
+            <motion.span
+              key="done"
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+              className="flex items-center justify-center"
+            >
+              <CheckCircleIcon size={18} />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="empty"
+              initial={{ scale: 0.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              className="h-[15px] w-[15px] rounded-full border"
+              style={{ borderColor: '#444444' }}
+            />
+          )}
+        </AnimatePresence>
+      </motion.button>
 
       <motion.span
         onClick={() => onOpen(task)}

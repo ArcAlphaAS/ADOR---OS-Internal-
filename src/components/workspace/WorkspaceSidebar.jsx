@@ -1,3 +1,18 @@
+import { UsersIcon, BriefcaseIcon } from '../icons'
+
+// Reminders-style small circular icon badge — reserved for the "smart
+// list" entries (Personal, Todo) the same way Apple Reminders only badges
+// Today/Scheduled/All/Flagged, not every user-created list. A regular
+// Intervención/Proyecto keeps its plain colored dot below; giving every
+// row its own icon badge would be visual noise at this density.
+function ListIcon({ Icon, color }) {
+  return (
+    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ background: color, color: '#F5F5F5' }}>
+      <Icon size={11} />
+    </span>
+  )
+}
+
 // Active state now shares its visual grammar with FilterToggle below
 // (colored tint + colored label, not a flat white highlight) — the two
 // controls answer the same question ("what's the current scope?"), so a
@@ -6,7 +21,7 @@
 // instead of two different "selected" languages sitting in one sidebar.
 // "Todo" (no accentColor) falls back to a neutral white tint since it has
 // no color of its own to borrow.
-function NavItem({ label, sublabel, active, accentColor, onClick, disabled }) {
+function NavItem({ label, sublabel, active, accentColor, Icon, iconColor, onClick, disabled }) {
   const tint = accentColor || '#F5F5F5'
   return (
     <button
@@ -22,7 +37,11 @@ function NavItem({ label, sublabel, active, accentColor, onClick, disabled }) {
       }}
     >
       <div className="flex w-full items-center gap-2">
-        {accentColor && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: accentColor }} />}
+        {Icon ? (
+          <ListIcon Icon={Icon} color={iconColor || '#888888'} />
+        ) : (
+          accentColor && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: accentColor }} />
+        )}
         <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: active ? tint : '#888888', fontWeight: active ? 500 : 400 }}>
           {label}
         </span>
@@ -79,7 +98,7 @@ function WorkloadPanel({ workload }) {
 // its own tab in the main view switcher (see WorkspaceModule.jsx/HoyView.jsx,
 // 2026-09-16) since it's the module's actual landing screen now, not one
 // filter among several.
-function FilterToggle({ label, active, count, color, onClick }) {
+function FilterToggle({ label, active, count, color, Icon, onClick }) {
   return (
     <button
       type="button"
@@ -87,6 +106,7 @@ function FilterToggle({ label, active, count, color, onClick }) {
       className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-150"
       style={{ background: active ? `${color}29` : 'transparent' }}
     >
+      {Icon && <ListIcon Icon={Icon} color={color} />}
       <span className="min-w-0 flex-1 truncate text-[13px] font-medium" style={{ color: active ? color : '#F5F5F5' }}>
         {label}
       </span>
@@ -125,7 +145,7 @@ export default function WorkspaceSidebar({
         <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Mi trabajo
         </span>
-        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" onClick={onToggleOnlyMine} />
+        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" Icon={UsersIcon} onClick={onToggleOnlyMine} />
       </div>
 
       <div className="h-px bg-white/[0.06]" />
@@ -135,7 +155,7 @@ export default function WorkspaceSidebar({
           Equipo
         </span>
 
-        <NavItem label="Todo" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
+        <NavItem label="Todo" Icon={BriefcaseIcon} iconColor="#888888" active={!onlyMine && selectedId === null} onClick={() => onSelect(null)} />
 
         {intervenciones.length > 0 && (
           <div className="flex flex-col gap-0.5">
