@@ -245,6 +245,24 @@ export function WalletIcon(props) {
   )
 }
 
+export function PlusIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
+export function NoteIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M15 3v5h5" />
+      <path d="M8 12.5h8M8 16.5h5" />
+    </svg>
+  )
+}
+
 export function GiftIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>

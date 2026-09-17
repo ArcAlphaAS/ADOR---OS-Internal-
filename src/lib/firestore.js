@@ -54,6 +54,7 @@ export const COLLECTIONS = {
   proyectosInternos: 'proyectosInternos',
   objetivos: 'objetivos',
   experimentos: 'experimentos',
+  notes: 'notes',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -549,4 +550,49 @@ export function updateExperimento(id, data) {
 export function deleteExperimento(id) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.experimentos, id))
+}
+
+// ---- Conocimiento: quick-capture notes ----
+// The "cuaderno digital" — a fast, always-reachable capture point (global
+// "+" button, see GlobalCapture.jsx) so a fleeting thought never has to wait
+// for the right module to be open. Every note is saved immediately with a
+// locally-guessed `category` (lib/notes.js's suggestCategory — keyword
+// rules, no LLM call, see the 2026-09-16 conversation on why); the note
+// itself is the source of truth until someone actually confirms turning it
+// into a real task/etc., which is a deliberate v1 scope cut — see
+// ConocimientoModule.jsx for which conversions are actually wired up.
+export function subscribeNotes(onData) {
+  return subscribeToCollection(COLLECTIONS.notes, [orderBy('createdAt', 'desc')], onData)
+}
+
+export function createNote(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.notes), {
+    ...data,
+    status: 'pendiente',
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateNote(noteId, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.notes, noteId), data)
+}
+
+export function deleteNote(noteId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.notes, noteId))
+}
+
+// Same find-or-create "General" Proyecto Interno pattern Workspace's
+// InlineAddTask uses (ListaView.jsx) for its synthetic fallback workstream —
+// done here as an explicit lookup since Conocimiento doesn't already have
+// the live proyectosInternos list in hand the way Workspace does.
+export async function findOrCreateGeneralProyecto(actorName) {
+  if (!db) throw new Error('Firestore no configurado')
+  const snap = await getDocs(query(collection(db, COLLECTIONS.proyectosInternos), where('name', '==', 'General')))
+  if (!snap.empty) return snap.docs[0].id
+  const ref = await createProyectoInterno({ name: 'General' }, actorName)
+  return ref.id
 }

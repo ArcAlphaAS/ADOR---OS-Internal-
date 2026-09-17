@@ -9,8 +9,14 @@ import FinanzasModule from '../finanzas/FinanzasModule'
 import WorkspaceModule from '../workspace/WorkspaceModule'
 import ObjetivosModule from '../objetivos/ObjetivosModule'
 import AdorIAModule from '../adoria/AdorIAModule'
+import ConocimientoModule from '../conocimiento/ConocimientoModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
+import GlobalCapture from './GlobalCapture'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
+
+function actorNameFor(user) {
+  return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
+}
 
 const MODULE_LABELS = {
   inicio: 'Inicio',
@@ -105,6 +111,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
               <ObjetivosModule key="objetivos" user={user} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
+            ) : activeModule === 'conocimiento' ? (
+              <ConocimientoModule key="conocimiento" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}
@@ -113,6 +121,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       </div>
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
+
+      <GlobalCapture user={user} actorName={actorNameFor(user)} />
     </div>
   )
 }
