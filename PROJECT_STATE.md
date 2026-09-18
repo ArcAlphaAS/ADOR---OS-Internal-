@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-17 (Calendario live and confirmed working with a real account). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Asignado picker in task cells gained a search field). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -189,6 +189,22 @@ Last updated: 2026-09-17 (Calendario live and confirmed working with a real acco
 - [ ] ~~`WorkspaceSidebar.jsx` restructured into three sections: **Hoy** (due today, mine — `todayOnly` filter), **Personal**, **Equipo**~~ — superseded the same day: "Hoy" was promoted out of the sidebar entirely into its own top-level tab/landing view (`HoyView.jsx`), and the sidebar itself went through three more names for its team-scope item since (Todo → Panorama → Trabajo → **Grupo**, §25). Left here for history only — current sidebar structure is documented at the top of the Workspace entries above.
 - [x] `DecisionesPanel.jsx` renamed to "Decisiones de Dirección" with an explicit "Registro compartido — visible para todo el equipo" subtitle, and now shows the latest 6 instead of 3. It was already a shared Firestore collection (not siloed per user) — the fix was framing/copy, not the data model. **This part shipped and is still current.**
 - [ ] **Not done, flagged as a possible follow-up:** Decisiones is still a side-panel with only the latest few, not a full searchable log/history view. Revisit if the team wants to browse past decisions, not just see the newest ones.
+
+**Workspace — "Personal" redesigned into a real dashboard, `PersonalOverview.jsx` (2026-09-17)**
+- [x] Personal scope (`view === 'lista' && onlyMine`) now renders `PersonalOverview.jsx` instead of the filtered `ListaView` table — stats row (active projects, pending tasks, completed this week), "Mis proyectos" cards (only workstreams with ≥1 of your tasks, progress from your tasks only), a 4-tab task table (Hoy/Próximas/Sin fecha/Completadas), and a right rail (Enfoque actual — reuses `pickFocusTask()`, Progreso semanal donut, Calendario de hoy — its own independent `useGoogleCalendar` instance, Acciones rápidas). Kanban/Timeline still just filter as before, unchanged. Built from a user-shared reference image; see CLAUDE.md §28 for what was trimmed (no per-task duration field, no Plantillas) vs. restored on follow-up (Calendario de hoy, Nueva tarea/Nueva nota actions)
+- [x] "Ver todos →" on Mis proyectos calls `onToggleOnlyMine` to switch to Grupo scope — a real navigation action, not a dead link
+- [x] "Nuevo Proyecto Interno" added to Acciones rápidas (reuses the existing `NewProyectoModal`) — the one action added beyond the reference image, since it's directly relevant to a "my projects" page
+
+**Workspace — unified task table across Hoy, Personal, and Grupo, `ProjectTaskRow.jsx` (2026-09-17, same-day follow-up)**
+- [x] Full inline-editable columns (Tarea/Descripción/Asignado/Prioridad/Estimación/Estado, plus a Proyecto column) are now the standard everywhere a task list appears, not just Grupo/Lista — reverses part of §26's "Hoy is lighter than Lista" simplification per direct user request ("mismo formato para todos"). New shared `ProjectTaskRow.jsx` (`PROJECT_TASK_ROW_GRID` in `lib/workspace.js`) used by both `PersonalOverview.jsx` and `HoyView.jsx`; `TaskRow.jsx`/`TASK_ROW_GRID` stay as-is for Grupo/Lista (a Proyecto column there would repeat the group header)
+- [x] Hoy keeps its own "matices" — the Vencidas/Para hoy/Mis Pendientes/Completado section split, collapse chevrons, and the "→ Hoy" reschedule pill (now inline next to the Proyecto badge) are all unchanged. The old `CompactTaskRow`'s completion-time label was dropped since the Estado column already reads "Completado"
+- [x] Inline add rows (Hoy's "+ Agregar pendiente", Personal's "+ Agregar tarea") both grew to the full field set (título/proyecto/descripción/asignado/prioridad, +fecha on Personal). See CLAUDE.md §29
+
+**Workspace — searchable Asignado picker (2026-09-18)**
+- [x] `AssigneeCell` (`TaskCells.jsx`) — the assignee popover used by Hoy's inline add rows, Personal, and Lista/Grupo's inline editing (`ProjectTaskRow`/`TaskRow`) now shows a search input at the top when there are associates to filter; typing narrows the checklist by name/email live, matching the existing checkbox-toggle behavior. Task Detail Panel's assignee checklist (always-visible, not a hidden dropdown) was left as-is — nothing to search past at 3 founders
+
+**Splash screen — logo simplified (2026-09-18)**
+- [x] Removed the small secondary `AdorMark` that sat below the main logo — one focal mark instead of two, per direct request. Glow brightened from 2 to 3 layered drop-shadows with a noticeably brighter innermost layer so it reads at a glance instead of only on close inspection
 
 **Calendario — read-only Google Calendar reflection (2026-09-17) — new, pending Cloud setup**
 - [x] Per-founder connection (OAuth), personal only — no combined team view, since Google Calendar itself already merges invited events into each person's own calendar. Read-only scope, not read/write — chosen deliberately: full calendar access is a Google "restricted" scope that's a real pain to get out of 7-day Testing-mode token expiry (heavier verification process); read-only is "sensitive," with a much lighter path to a persistent connection later. See CLAUDE.md §27 for the full reasoning

@@ -169,12 +169,17 @@ export function DescriptionCell({ description, onChange }) {
 export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds = [], onChange }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
+  const [query, setQuery] = useState('')
   const triggerRef = useRef(null)
 
   const toggle = (uid) => {
     const next = assignedTo.includes(uid) ? assignedTo.filter((id) => id !== uid) : [...assignedTo, uid]
     onChange(next)
   }
+
+  const filtered = query.trim()
+    ? users.filter((u) => (u.displayName || u.email || '').toLowerCase().includes(query.trim().toLowerCase()))
+    : users
 
   return (
     <div>
@@ -183,6 +188,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
         type="button"
         onClick={(e) => {
           e.stopPropagation()
+          setQuery('')
           setRect(triggerRef.current.getBoundingClientRect())
           setOpen(true)
         }}
@@ -192,27 +198,42 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
       </button>
 
       {open && (
-        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={200}>
-          {users.length === 0 ? (
-            <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin asociados</p>
-          ) : (
-            users.map((u) => (
-              <label
-                key={u.id}
-                className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 hover:bg-white/[0.06]"
+        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={220}>
+          <div className="flex flex-col gap-1">
+            {users.length > 0 && (
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={assignedTo.includes(u.id)}
-                  onChange={() => toggle(u.id)}
-                  className="h-3.5 w-3.5 accent-[#1E5FAD]"
-                />
-                <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
-                {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
-              </label>
-            ))
-          )}
+                placeholder="Buscar asociado..."
+                className="mx-1 mb-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+              />
+            )}
+            {users.length === 0 ? (
+              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin asociados</p>
+            ) : filtered.length === 0 ? (
+              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin resultados</p>
+            ) : (
+              filtered.map((u) => (
+                <label
+                  key={u.id}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 hover:bg-white/[0.06]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={assignedTo.includes(u.id)}
+                    onChange={() => toggle(u.id)}
+                    className="h-3.5 w-3.5 accent-[#1E5FAD]"
+                  />
+                  <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
+                  {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
+                </label>
+              ))
+            )}
+          </div>
         </CellPopover>
       )}
     </div>
