@@ -64,31 +64,49 @@ export function PillCell({ options, value, meta, onChange, emptyLabel }) {
   )
 }
 
-// Workstream ("Proyecto") picker for the draft add-rows in Hoy/Personal —
-// replaces a native <select> with the same CellPopover pattern every other
-// field in this row already uses, so it doesn't read as the one control
-// still wearing the browser's own default styling.
-export function WorkstreamCell({ workstreams = [], value, onChange }) {
+// Workstream ("Proyecto") picker. Two looks share the same popover: the
+// default bordered-button trigger for the draft add-rows in Hoy/Personal
+// (replacing a native <select> so it doesn't read as the one control still
+// wearing the browser's own default styling), and a plain colored-label
+// trigger (`variant="label"`) for existing rows in ProjectTaskRow — those
+// already show the project name as a small uppercase accent-colored label,
+// and swapping in the bordered button there would look like a new field
+// appeared rather than the same one becoming editable.
+export function WorkstreamCell({ workstreams = [], value, onChange, variant = 'button', accentColor }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
 
   const selected = workstreams.find((w) => w.id === value)
 
+  const openMenu = (e) => {
+    e.stopPropagation()
+    setRect(triggerRef.current.getBoundingClientRect())
+    setOpen(true)
+  }
+
   return (
     <div>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setRect(triggerRef.current.getBoundingClientRect())
-          setOpen(true)
-        }}
-        className="w-fit max-w-full truncate rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-left text-[12px] text-[#F5F5F5] transition-opacity duration-150 hover:opacity-80"
-      >
-        {selected ? selected.name : 'General'}
-      </button>
+      {variant === 'label' ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openMenu}
+          className="min-w-0 max-w-full truncate text-left text-[10.5px] font-medium uppercase tracking-[0.05em] transition-opacity duration-150 hover:opacity-80"
+          style={{ color: accentColor }}
+        >
+          {selected ? selected.name : 'General'}
+        </button>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={openMenu}
+          className="w-fit max-w-full truncate rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-left text-[12px] text-[#F5F5F5] transition-opacity duration-150 hover:opacity-80"
+        >
+          {selected ? selected.name : 'General'}
+        </button>
+      )}
 
       {open && (
         <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={200}>

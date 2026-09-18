@@ -276,6 +276,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
                     key={task.id}
                     task={task}
                     workstream={workstreamById[task.workstreamId]}
+                    workstreams={workstreams}
                     userById={userById}
                     users={users}
                     onOpen={onOpenTask}

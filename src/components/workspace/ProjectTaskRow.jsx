@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
-import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, PROJECT_TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
+import { toggleTaskComplete, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, PROJECT_TASK_ROW_GRID, withTimeout, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
+import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { CheckCircleIcon, PlayIcon } from '../icons'
 
 // Same full-column row as TaskRow.jsx (Grupo/Lista), plus a Proyecto
@@ -13,13 +13,22 @@ import { CheckCircleIcon, PlayIcon } from '../icons'
 // leaving the pick entirely automatic); everything else is identical
 // between the two callers on purpose, per direct request that Hoy/
 // Personal/Grupo all read as the same kind of table.
-export default function ProjectTaskRow({ task, workstream, userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus }) {
+export default function ProjectTaskRow({ task, workstream, workstreams = [], userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
   const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
 
   const applyUpdate = (data) => {
     withTimeout(applyTaskUpdate(task, data, actorUserId, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
+  }
+
+  const changeWorkstream = async (id) => {
+    try {
+      const targetId = id || (await findOrCreateGeneralProyecto(actorName).then((pid) => buildWorkstreamId('proyecto', pid)))
+      applyUpdate({ workstreamId: targetId })
+    } catch (error) {
+      showToast(`No se pudo mover la tarea: ${error.message}`)
+    }
   }
 
   return (
@@ -58,9 +67,7 @@ export default function ProjectTaskRow({ task, workstream, userById, users, onOp
       </motion.span>
 
       <div className="flex min-w-0 items-center gap-1.5">
-        <span className="min-w-0 truncate text-[10.5px] font-medium uppercase tracking-[0.05em]" style={{ color: accent }}>
-          {workstream?.name || 'General'}
-        </span>
+        <WorkstreamCell workstreams={workstreams} value={workstream?.id ?? ''} onChange={changeWorkstream} variant="label" accentColor={accent} />
         {onReschedule && (
           <button
             type="button"

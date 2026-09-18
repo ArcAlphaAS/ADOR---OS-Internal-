@@ -40,6 +40,7 @@ export function describeTaskChange(data) {
   if ('priority' in data) return `Prioridad → ${priorityMeta(data.priority).label}`
   if ('assignedTo' in data) return 'Asignados actualizados'
   if ('startDate' in data || 'dueDate' in data) return 'Fechas actualizadas'
+  if ('workstreamId' in data) return 'Proyecto actualizado'
   if ('description' in data) return 'Descripción actualizada'
   if ('title' in data) return 'Título actualizado'
   return 'Tarea actualizada'

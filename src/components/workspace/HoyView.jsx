@@ -355,7 +355,7 @@ function SectionIcon({ Icon, color }) {
 // Collapsible — a small chevron next to the count, matching the reference's
 // "click the header to fold a group" behavior. Defaults open; state is
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
-function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, onReschedule, onFocus, headerAction, children, defaultOpen = true }) {
+function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, workstreams, onReschedule, onFocus, headerAction, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   if (tasks.length === 0 && !children) return null
   return (
@@ -389,6 +389,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
                   key={task.id}
                   task={task}
                   workstream={workstreamById[task.workstreamId]}
+                  workstreams={workstreams}
                   userById={userById}
                   users={users}
                   onOpen={onOpenTask}
@@ -605,6 +606,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           userById={userById}
           users={users}
           workstreamById={workstreamById}
+          workstreams={workstreams}
           onReschedule={rescheduleToday}
           onFocus={(task) => setManualFocusId(task.id)}
           headerAction={
@@ -631,6 +633,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           userById={userById}
           users={users}
           workstreamById={workstreamById}
+          workstreams={workstreams}
           onFocus={(task) => setManualFocusId(task.id)}
         />
         <div ref={pendientesRef}>
@@ -645,6 +648,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
             userById={userById}
             users={users}
             workstreamById={workstreamById}
+            workstreams={workstreams}
             onFocus={(task) => setManualFocusId(task.id)}
           >
             <div className="pt-1">
@@ -664,6 +668,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           userById={userById}
           users={users}
           workstreamById={workstreamById}
+          workstreams={workstreams}
         />
       </div>
 
