@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { eventColor } from '../../lib/googleCalendar'
 
 // Hour-row × day-column grid, shared by Día (1 column) and Semana (7
@@ -99,6 +100,21 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
   const showNowLine = days.some((d) => d.toDateString() === now.toDateString())
   const nowTop = (minutesSinceMidnight(now) / 60) * ROW_HEIGHT
 
+  const internalRef = useRef(null)
+  const containerRef = scrollRef || internalRef
+  const daysKey = days.map((d) => d.toDateString()).join(',')
+
+  // Open scrolled to roughly the current time — same "don't make me scroll
+  // from midnight" behavior Apple/Google Calendar both default to — rather
+  // than always starting at 12 AM. Falls back to a reasonable 8 AM start
+  // for a range that doesn't include today (e.g. paging to a future week).
+  useEffect(() => {
+    if (!containerRef.current) return
+    const target = showNowLine ? Math.max(nowTop - ROW_HEIGHT * 2, 0) : 8 * ROW_HEIGHT
+    containerRef.current.scrollTop = target
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daysKey])
+
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <div className="grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
@@ -110,7 +126,7 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
 
       <AllDayStrip days={days} events={events} />
 
-      <div ref={scrollRef} className="max-h-[640px] overflow-y-auto">
+      <div ref={containerRef} className="max-h-[640px] overflow-y-auto">
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
