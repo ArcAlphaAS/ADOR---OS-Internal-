@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Proyecto is now editable on every existing task row in Hoy/Personal, not just at creation). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Clientes' Kanban/Lista switcher upgraded to the same sliding segmented control Workspace already has). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -96,6 +96,9 @@ Last updated: 2026-09-18 (Proyecto is now editable on every existing task row in
 **Clientes — extended 2026-08-15**
 - [x] Sequential human-readable IDs (`ADR-0001`, `ADR-0002`, ...) assigned at creation via an atomic Firestore transaction on `settings/counters.clientSeq` — separate from the Firestore doc id, shown in List view, Kanban cards, and the Ficha header. Prefix is "ADR" (the firm), not "SPC", since the code must stay valid after SPC→SP conversion. Existing clients created before this change have no `code` and show "—"; ask before backfilling
 - [x] "Perdido" (lost) is a flag on top of whatever `stage` the client froze at (`lost`, `lostReason`, `lostAt`), not an 8th pipeline stage — the 7 STAGES entries are a forward-only Kanban/next-arrow pipeline and lost isn't "the next step" from anywhere. Marked/restored from the Ficha panel (`ClientDetailPanel.jsx`'s `LostControl`), fixed reason list (`LOST_REASONS` in `clientStages.js`). Lost clients drop out of Kanban/List automatically; a "Perdidos (N)" toggle in `ClientesModule.jsx` shows them in a flat restorable list (`LostClientsView.jsx`)
+
+**Clientes — Kanban/Lista switcher upgraded to Workspace's sliding segmented control (2026-09-18)**
+- [x] Direct visual-audit request ("qué mejorarías a nivel visual") surfaced a real, concrete inconsistency: Clientes' view toggle was still icon-only buttons that just recolored on click — the exact pre-polish pattern Workspace's own switcher had before its 2026-09-16 iOS-productivity pass (§23). `ClientesModule.jsx`'s toggle now uses the same `motion.div layoutId` sliding-pill pattern as `WorkspaceModule.jsx`, plus text labels next to the icons. "Perdidos" was deliberately left as its own separate button, not folded into the segmented control — it's a filter toggle over the active pipeline, not a peer view of Kanban/Lista
 
 **Workspace — redesigned around a "Hoy" landing view, Notas folded in (2026-09-16)**
 - [x] Workspace now opens on **Hoy** (`HoyView.jsx`) instead of "Todo" — shows a quick-capture input, any unreviewed notes, then Vencidas + Para hoy for the signed-in user, across all workstreams, with a calm empty state. Researched Linear vs. Sunsama/Akiflow's design philosophies first; picked Sunsama's "daily-planning-first" model as the better fit for a 3-founder team (see CLAUDE.md §19 for the full reasoning)

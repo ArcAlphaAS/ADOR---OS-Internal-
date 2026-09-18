@@ -12,6 +12,11 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
+const CLIENTES_VIEWS = [
+  { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
+  { id: 'list', label: 'Lista', Icon: ListViewIcon },
+]
+
 export default function ClientesModule({ user, focusClientId, onFocusHandled }) {
   const [clients, setClients] = useState([])
   const [users, setUsers] = useState([])
@@ -91,25 +96,34 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Same sliding-indicator segmented control as Workspace's view
+              switcher (WorkspaceModule.jsx) — Motion's layoutId moves one
+              shared pill between buttons instead of each button recoloring
+              on its own, so the two most-used parts of the app share the
+              same "feel" instead of Clientes looking like an earlier era. */}
           <div className="ador-glass flex items-center gap-1 rounded-full p-1">
-            <button
-              type="button"
-              onClick={() => changeView('kanban')}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
-              style={{ background: view === 'kanban' ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === 'kanban' ? '#F5F5F5' : '#888888' }}
-              title="Vista Kanban"
-            >
-              <KanbanIcon size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => changeView('list')}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150"
-              style={{ background: view === 'list' ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === 'list' ? '#F5F5F5' : '#888888' }}
-              title="Vista Lista"
-            >
-              <ListViewIcon size={16} />
-            </button>
+            {CLIENTES_VIEWS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => changeView(v.id)}
+                className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
+                style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
+              >
+                {view === v.id && (
+                  <motion.div
+                    layoutId="clientes-view-indicator"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: '#1E5FAD' }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                  />
+                )}
+                <span className="relative flex items-center gap-1.5">
+                  <v.Icon size={14} />
+                  {v.label}
+                </span>
+              </button>
+            ))}
           </div>
 
           {lostClients.length > 0 && (
