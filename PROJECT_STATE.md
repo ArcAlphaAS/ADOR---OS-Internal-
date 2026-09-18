@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Directorio module built — Personas/Organigrama/Equipos/Roles). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Directorio management restricted to administrators). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -253,6 +253,10 @@ Last updated: 2026-09-18 (Directorio module built — Personas/Organigrama/Equip
 - [x] "+ Añadir persona" — full create/edit modal (`AddPersonModal.jsx`), photo upload reusing ProfileModal's existing `photoDataUrl`/`resizeImageToDataUrl` pattern (no Firebase Storage dependency)
 - [x] New collections `directoryPeople`/`directoryTeams`, deliberately decoupled from `/users/{uid}` (that's one row per real Firebase Auth login; Directorio profiles don't need one) — both covered by the existing blanket Firestore rule automatically
 - [x] Every write wrapped in `withTimeout(...).catch(showToast)` from the start, same defensive pattern Workspace/Objetivos had to retrofit after a silent-failure bug
+
+**Directorio — management restricted to administrators (2026-09-18, same-day follow-up)**
+- [x] Direct request: not just anyone with an ADOR OS login should be able to add themselves as "Dirección." New `isDirectorioAdmin()` (`lib/directorio.js`) reads `users/{uid}.isAdmin`, failing open (missing field = admin) so the 3 founders — whose profiles predate this field — are admins with zero manual Firestore setup. Only an explicit `isAdmin: false`, set by hand in the console (same pattern as `allowedEmails`), opts someone out
+- [x] "+ Añadir persona," every person's edit/delete menu, the person detail panel's edit button, and team create/delete are all hidden for non-admins — everyone with app access can still *view* the whole directory
 
 **Not built yet**
 - [ ] Comunidad, Chat, News all still show placeholder

@@ -7,8 +7,9 @@ import {
   createDirectoryTeam,
   updateDirectoryTeam,
   deleteDirectoryTeam,
+  subscribeUserProfile,
 } from '../../lib/firestore'
-import { statusMeta, groupByArea, areaCounts } from '../../lib/directorio'
+import { statusMeta, groupByArea, areaCounts, isDirectorioAdmin } from '../../lib/directorio'
 import { withTimeout } from '../../lib/workspace'
 import PersonCard from './PersonCard'
 import PersonDetailPanel from './PersonDetailPanel'
@@ -43,7 +44,7 @@ function StatCard({ Icon, value, label }) {
   )
 }
 
-function EquipoRow({ person, onOpen, onEdit, onDelete }) {
+function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
@@ -65,18 +66,20 @@ function EquipoRow({ person, onOpen, onEdit, onDelete }) {
         {meta.label}
       </span>
       <span className="min-w-0 truncate text-[12.5px] text-[#888888]">{person.location || '—'}</span>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setRect(triggerRef.current.getBoundingClientRect())
-          setMenuOpen(true)
-        }}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
-      >
-        <MoreIcon size={14} />
-      </button>
+      {isAdmin && (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setRect(triggerRef.current.getBoundingClientRect())
+            setMenuOpen(true)
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+        >
+          <MoreIcon size={14} />
+        </button>
+      )}
       {menuOpen && (
         <CellPopover anchorRect={rect} onClose={() => setMenuOpen(false)} width={140}>
           <button
@@ -107,7 +110,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete }) {
   )
 }
 
-function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelete }) {
+function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelete, isAdmin }) {
   const q = search.trim().toLowerCase()
   const filtered = q
     ? people.filter((p) => `${p.name} ${p.role} ${p.area}`.toLowerCase().includes(q))
@@ -120,7 +123,9 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
       <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
         <UsersIcon size={20} className="text-[#333333]" />
         <p className="text-[14px] font-medium text-[#888888]">Aún no hay personas en el directorio</p>
-        <p className="text-[13px] text-[#444444]">Usa "+ Añadir persona" para registrar al equipo de ADOR.</p>
+        <p className="text-[13px] text-[#444444]">
+          {isAdmin ? 'Usa "+ Añadir persona" para registrar al equipo de ADOR.' : 'Un administrador todavía no ha registrado al equipo.'}
+        </p>
       </div>
     )
   }
@@ -163,7 +168,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
             </div>
             <div className="flex flex-col divide-y divide-white/[0.04]">
               {equipo.map((p) => (
-                <EquipoRow key={p.id} person={p} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} />
+                <EquipoRow key={p.id} person={p} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} />
               ))}
             </div>
           </div>
@@ -287,8 +292,13 @@ function NewTeamCard({ people, onCreate }) {
   )
 }
 
-function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam }) {
+function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam, isAdmin }) {
   const peopleById = Object.fromEntries(people.map((p) => [p.id, p]))
+
+  if (teams.length === 0 && !isAdmin) {
+    return <p className="px-2 py-16 text-center text-[13px] text-[#444444]">Un administrador todavía no ha creado equipos.</p>
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {teams.map((team) => {
@@ -297,9 +307,11 @@ function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam }) {
           <div key={team.id} className="ador-glass ador-grain flex flex-col gap-3 rounded-2xl p-5">
             <div className="flex items-start justify-between">
               <p className="text-[15px] font-semibold text-[#F5F5F5]">{team.name}</p>
-              <button type="button" onClick={() => onDeleteTeam(team)} className="text-[11px] text-[#666666] hover:text-[#EF5350]">
-                Eliminar
-              </button>
+              {isAdmin && (
+                <button type="button" onClick={() => onDeleteTeam(team)} className="text-[11px] text-[#666666] hover:text-[#EF5350]">
+                  Eliminar
+                </button>
+              )}
             </div>
             <div className="flex flex-shrink-0">
               {members.slice(0, 5).map((m, i) => (
@@ -312,7 +324,7 @@ function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam }) {
           </div>
         )
       })}
-      <NewTeamCard people={people} onCreate={onCreateTeam} />
+      {isAdmin && <NewTeamCard people={people} onCreate={onCreateTeam} />}
     </div>
   )
 }
@@ -411,11 +423,14 @@ export default function DirectorioModule({ user }) {
   const [search, setSearch] = useState('')
   const [selectedPersonId, setSelectedPersonId] = useState(null)
   const [modalPerson, setModalPerson] = useState(undefined) // undefined = closed, null = new, object = editing
+  const [profile, setProfile] = useState(null)
   const showToast = useToast()
   const actorName = actorNameFor(user)
+  const isAdmin = isDirectorioAdmin(profile)
 
   useEffect(() => subscribeDirectoryPeople(setPeople), [])
   useEffect(() => subscribeDirectoryTeams(setTeams), [])
+  useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId) || null
 
@@ -445,15 +460,17 @@ export default function DirectorioModule({ user }) {
             "Las grandes organizaciones son la suma de grandes personas."
             <span className="mt-0.5 block not-italic text-[#444444]">— ADOR</span>
           </p>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => setModalPerson(null)}
-            className="ador-btn-primary flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
-          >
-            <PlusIcon size={14} /> Añadir persona
-          </motion.button>
+          {isAdmin && (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => setModalPerson(null)}
+              className="ador-btn-primary flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
+            >
+              <PlusIcon size={14} /> Añadir persona
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -517,16 +534,23 @@ export default function DirectorioModule({ user }) {
               onOpen={(p) => setSelectedPersonId(p.id)}
               onEdit={setModalPerson}
               onDelete={handleDeletePerson}
+              isAdmin={isAdmin}
             />
           )}
           {tab === 'organigrama' && <OrganigramaTab people={people} />}
-          {tab === 'equipos' && <EquiposTab people={people} teams={teams} onCreateTeam={handleCreateTeam} onDeleteTeam={handleDeleteTeam} />}
+          {tab === 'equipos' && (
+            <EquiposTab people={people} teams={teams} onCreateTeam={handleCreateTeam} onDeleteTeam={handleDeleteTeam} isAdmin={isAdmin} />
+          )}
           {tab === 'roles' && <RolesTab people={people} />}
         </div>
 
         <div className="flex flex-col gap-4">
           {selectedPerson ? (
-            <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPersonId(null)} onEdit={() => setModalPerson(selectedPerson)} />
+            <PersonDetailPanel
+              person={selectedPerson}
+              onClose={() => setSelectedPersonId(null)}
+              onEdit={isAdmin ? () => setModalPerson(selectedPerson) : null}
+            />
           ) : (
             <DefaultSidebar people={people} teams={teams} />
           )}

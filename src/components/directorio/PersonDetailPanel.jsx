@@ -20,9 +20,11 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
           {meta.label}
         </span>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={onEdit} className="flex h-7 w-7 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]">
-            <EditIcon size={14} />
-          </button>
+          {onEdit && (
+            <button type="button" onClick={onEdit} className="flex h-7 w-7 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]">
+              <EditIcon size={14} />
+            </button>
+          )}
           <button type="button" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]">
             <CloseIcon size={14} />
           </button>

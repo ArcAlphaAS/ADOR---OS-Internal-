@@ -38,3 +38,14 @@ export function areaCounts(people) {
   if (directivos.length) result.unshift({ area: 'Dirección', count: directivos.length })
   return result
 }
+
+// Only administrators can manage the Directorio (create/edit/delete people
+// and teams, decide who's "Dirección") — direct user request: not just
+// anyone with an ADOR OS login should be able to self-declare a title.
+// Fails open on a missing `isAdmin` field (undefined, not `false`) so the 3
+// founders — whose profiles predate this field — are admins with no manual
+// Firestore bootstrap step. Only an explicit `isAdmin: false`, set by hand
+// in the console the same way `allowedEmails` already is, opts someone out.
+export function isDirectorioAdmin(profile) {
+  return profile?.isAdmin !== false
+}
