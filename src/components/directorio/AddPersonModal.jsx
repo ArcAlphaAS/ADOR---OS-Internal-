@@ -12,7 +12,7 @@ import { useToast } from '../../hooks/useToast'
 // pattern as every centered modal in the app (CLAUDE.md §11), same
 // photoDataUrl-on-Firestore pattern ProfileModal already uses for avatars
 // (no Firebase Storage dependency, see lib/image.js).
-export default function AddPersonModal({ person, actorName, onClose }) {
+export default function AddPersonModal({ person, users = [], people = [], actorName, onClose }) {
   const showToast = useToast()
   const isEdit = Boolean(person)
   const [name, setName] = useState(person?.name || '')
@@ -27,8 +27,25 @@ export default function AddPersonModal({ person, actorName, onClose }) {
   const [tags, setTags] = useState((person?.tags || []).join(', '))
   const [isDirectivo, setIsDirectivo] = useState(person?.isDirectivo || false)
   const [photoDataUrl, setPhotoDataUrl] = useState(person?.photoDataUrl || null)
+  const [linkedUserId, setLinkedUserId] = useState(person?.linkedUserId || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Real ADOR OS accounts (users/{uid}, self-registered on login) not
+  // already linked to some other Directorio entry — picking one here fills
+  // in name/email instead of retyping what already exists, and stops two
+  // Directorio entries from silently claiming the same real account. The
+  // entry being edited keeps its own link available in the list.
+  const linkableUsers = users.filter((u) => u.id === linkedUserId || !people.some((p) => p.linkedUserId === u.id && p.id !== person?.id))
+
+  const applyLinkedUser = (uid) => {
+    setLinkedUserId(uid)
+    const account = users.find((u) => u.id === uid)
+    if (account) {
+      setName(account.displayName || account.email || '')
+      setEmail(account.email || '')
+    }
+  }
 
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0]
@@ -62,6 +79,7 @@ export default function AddPersonModal({ person, actorName, onClose }) {
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       isDirectivo,
       photoDataUrl: photoDataUrl || null,
+      linkedUserId: linkedUserId || null,
     }
     try {
       if (isEdit) await withTimeout(updateDirectoryPerson(person.id, data))
@@ -108,6 +126,19 @@ export default function AddPersonModal({ person, actorName, onClose }) {
           </div>
 
           <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
+            {linkableUsers.length > 0 && (
+              <div>
+                <label className={labelClass} style={labelStyle}>Vincular con cuenta de ADOR OS (opcional)</label>
+                <select value={linkedUserId} onChange={(e) => applyLinkedUser(e.target.value)} className={inputClass}>
+                  <option value="">— Sin vincular —</option>
+                  {linkableUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.displayName || u.email}</option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-[11px] text-[#444444]">Si ya tiene cuenta en ADOR OS, elígela aquí y se rellenan nombre y correo solos.</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass} style={labelStyle}>Nombre</label>

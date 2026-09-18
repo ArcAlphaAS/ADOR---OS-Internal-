@@ -8,6 +8,7 @@ import {
   updateDirectoryTeam,
   deleteDirectoryTeam,
   subscribeUserProfile,
+  subscribeUsers,
 } from '../../lib/firestore'
 import { statusMeta, groupByArea, areaCounts, isDirectorioAdmin } from '../../lib/directorio'
 import { withTimeout } from '../../lib/workspace'
@@ -419,6 +420,7 @@ function DefaultSidebar({ people, teams }) {
 export default function DirectorioModule({ user }) {
   const [people, setPeople] = useState([])
   const [teams, setTeams] = useState([])
+  const [users, setUsers] = useState([])
   const [tab, setTab] = useState('personas')
   const [search, setSearch] = useState('')
   const [selectedPersonId, setSelectedPersonId] = useState(null)
@@ -429,6 +431,7 @@ export default function DirectorioModule({ user }) {
   const isAdmin = isDirectorioAdmin(profile)
 
   useEffect(() => subscribeDirectoryPeople(setPeople), [])
+  useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribeDirectoryTeams(setTeams), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
@@ -558,7 +561,7 @@ export default function DirectorioModule({ user }) {
       </div>
 
       {modalPerson !== undefined && (
-        <AddPersonModal person={modalPerson} actorName={actorName} onClose={() => setModalPerson(undefined)} />
+        <AddPersonModal person={modalPerson} users={users} people={people} actorName={actorName} onClose={() => setModalPerson(undefined)} />
       )}
     </motion.div>
   )

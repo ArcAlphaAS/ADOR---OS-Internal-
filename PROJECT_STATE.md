@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Directorio management restricted to administrators). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Directorio's "+ Añadir persona" can link an existing ADOR OS account instead of retyping name/email). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -258,6 +258,10 @@ Last updated: 2026-09-18 (Directorio management restricted to administrators). T
 - [x] Direct request: not just anyone with an ADOR OS login should be able to add themselves as "Dirección." New `isDirectorioAdmin()` (`lib/directorio.js`) reads `users/{uid}.isAdmin`, failing open (missing field = admin) so the 3 founders — whose profiles predate this field — are admins with zero manual Firestore setup. Only an explicit `isAdmin: false`, set by hand in the console (same pattern as `allowedEmails`), opts someone out
 - [x] "+ Añadir persona," every person's edit/delete menu, the person detail panel's edit button, and team create/delete are all hidden for non-admins — everyone with app access can still *view* the whole directory
 
+**Directorio — link an existing ADOR OS account instead of retyping (2026-09-18, same-day follow-up)**
+- [x] Real complaint: a founder with an actual ADOR OS login still had to fill out "+ Añadir persona" from scratch as if they were a stranger. `AddPersonModal.jsx` now shows a "Vincular con cuenta de ADOR OS" dropdown (real `users/{uid}` accounts, via `subscribeUsers`) when there's at least one unlinked account — picking one fills in name/email automatically and stores a new `linkedUserId` field on the Directorio person doc
+- [x] An account already linked to one Directorio entry doesn't show up as an option for a second one (except its own entry, when editing) — prevents two entries silently claiming the same real account
+
 **Not built yet**
 - [ ] Comunidad, Chat, News all still show placeholder
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
@@ -266,6 +270,7 @@ Last updated: 2026-09-18 (Directorio management restricted to administrators). T
 - **Chat** — basic real-time messaging (channels + DMs) is realistic and cheap to build reusing existing Firestore-subscription patterns; full Slack/Teams parity (threads, reactions, search, calls) is explicitly out of scope. User confirmed: later, not now.
 - **Comunidad** — internal-only (just the 3 founders/asociados, not SPs). Leaning toward a lightweight "team pulse" (short wins/announcement posts + simple reactions) rather than a literal LinkedIn-style feed, since a feed format needs an audience size this team doesn't have. Must stay clearly distinct from Home's "Actividad Reciente" (automatic/system) and Workspace's "Decisiones" (formal/strategic) — Comunidad is the human/informal one. User confirmed: later, not now.
 - **Noticias** — official/formal company announcements (newsroom style: "ADOR cierra partnership con X"), authored by the team, not scraped from external sources — explicitly *not* an external news-API integration. Distinct from Comunidad by tone (formal headline vs. casual post), not by audience. User confirmed: later, not now.
+- **Mobile access (2026-09-18 conversation)** — direction discussed, nothing built yet. Goal is a lightweight "check status on my phone" experience, not a full mobile work surface — user was explicit that phone use is for glancing/reviewing, not working. Recommended path: a PWA built on the existing web app (not a native React Native/iOS/Android app — too much investment for a 3-founder internal tool), in three independent phases: (1) a responsive layout pass on Inicio (and possibly Workspace's Hoy) so it's actually legible on a phone screen, (2) a web manifest + icon so it's installable to the home screen, (3) real push notifications, which needs a backend piece (same Vercel-serverless-function pattern already used for `api/ador-ia.js`/`api/google-calendar/*`) plus a service worker — works on Android always, on iPhone only once the app is installed via phase 2 (Apple allows PWA push since iOS 16.4). User wants to revisit this later, not now — parked here per their own request, not forgotten.
 
 ## Infrastructure status
 
