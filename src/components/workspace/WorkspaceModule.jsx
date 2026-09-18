@@ -7,6 +7,7 @@ import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import HoyView from './HoyView'
 import ListaView from './ListaView'
+import PersonalOverview from './PersonalOverview'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
 import TaskDetailPanel from './TaskDetailPanel'
@@ -210,16 +211,29 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             </motion.div>
           ) : view === 'lista' ? (
             <motion.div key="lista" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <ListaView
-                workstreams={visibleWorkstreams}
-                tasksByWorkstream={visibleTasksByWorkstream}
-                userById={userById}
-                users={users}
-                onOpenTask={(t) => setOpenTaskId(t.id)}
-                actorUserId={user?.uid}
-                actorName={actorName}
-                emptyLabel={onlyMine ? 'Personal' : 'General'}
-              />
+              {onlyMine ? (
+                <PersonalOverview
+                  user={user}
+                  tasks={tasks}
+                  workstreams={workstreams}
+                  workstreamById={workstreamById}
+                  onOpenTask={(t) => setOpenTaskId(t.id)}
+                  actorUserId={user?.uid}
+                  actorName={actorName}
+                  onToggleOnlyMine={toggleOnlyMine}
+                />
+              ) : (
+                <ListaView
+                  workstreams={visibleWorkstreams}
+                  tasksByWorkstream={visibleTasksByWorkstream}
+                  userById={userById}
+                  users={users}
+                  onOpenTask={(t) => setOpenTaskId(t.id)}
+                  actorUserId={user?.uid}
+                  actorName={actorName}
+                  emptyLabel="General"
+                />
+              )}
             </motion.div>
           ) : view === 'kanban' ? (
             <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
