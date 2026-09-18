@@ -15,7 +15,9 @@ import {
 import { weekRange } from '../../lib/weeklySummary'
 import { applyTaskUpdate, toggleTaskComplete, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
-import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon } from '../icons'
+import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
+import { eventColor } from '../../lib/googleCalendar'
+import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon, PlusIcon, NoteIcon } from '../icons'
 import { PillCell, EstimationCell } from './TaskCells'
 
 // A richer "Personal" landing page, built from a reference image the user
@@ -25,14 +27,22 @@ import { PillCell, EstimationCell } from './TaskCells'
 // swaps it in for ListaView when view==='lista' && onlyMine) — Kanban/
 // Timeline keep filtering as before, unchanged.
 //
-// Deliberately trimmed from the reference in three places, judgment calls
-// made building this rather than re-asked: no per-task duration field (same
-// "don't fabricate what we don't have" rule as everywhere else — Estimación
-// is a date range, not minutes), no "Calendario de hoy" card in the rail
-// (would mean a second independent useGoogleCalendar connection alongside
-// Calendario's own — real fragility risk for a first pass, not worth it
-// yet), and "Acciones rápidas" trimmed to the one action that isn't already
-// one click away via the visible "+ Agregar tarea" row.
+// Deliberately trimmed from the reference in two places, on direct
+// follow-up feedback: no per-task duration field (same "don't fabricate
+// what we don't have" rule as everywhere else — Estimación is a date range,
+// not minutes) and "Plantillas" dropped from Acciones rápidas since no
+// templates feature exists anywhere in this app.
+//
+// "Calendario de hoy" and "Acciones rápidas" (Nueva tarea / Nueva nota)
+// were both cut in the first pass, then added back on direct feedback.
+// "Calendario de hoy" runs its own useGoogleCalendar(user.uid) call — a
+// second independent connection alongside Calendario's own page — accepted
+// as fine since it's read-only and Google's quota is generous; not the
+// fragility risk it first looked like. "Nueva nota" navigates to Workspace
+// → Hoy (via onGoToHoy) since that's where QuickCapture actually lives —
+// there's no way to open GlobalCapture.jsx's floating "+" from outside
+// itself, and duplicating that UI here would be a second capture surface,
+// not a real addition.
 
 const ROW_GRID = '28px minmax(160px,1.4fr) minmax(120px,1fr) 92px 120px 104px'
 
@@ -215,9 +225,10 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
   )
 }
 
-export default function PersonalOverview({ user, tasks, workstreams, workstreamById, onOpenTask, actorUserId, actorName, onToggleOnlyMine }) {
+export default function PersonalOverview({ user, tasks, workstreams, workstreamById, onOpenTask, actorUserId, actorName, onToggleOnlyMine, onGoToHoy, onNavigate }) {
   const [tab, setTab] = useState('hoy')
   const [addingTask, setAddingTask] = useState(false)
+  const { configured: gcalConfigured, status: gcalStatus, events: gcalEvents } = useGoogleCalendar(user?.uid)
 
   const mine = tasks.filter((t) => (t.assignedTo || []).includes(user?.uid) && !isPendingFor(t, user?.uid))
   const openMine = mine.filter((t) => t.status !== 'completado')
@@ -247,6 +258,16 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
   const focusTask = pickFocusTask(vencidas, hoy, [...proximas, ...sinFecha])
   const totalWeek = openMine.length + completedThisWeek.length
   const pctWeek = totalWeek ? Math.round((completedThisWeek.length / totalWeek) * 100) : 0
+
+  const today = new Date()
+  const gcalToday = gcalEvents
+    .filter((e) => new Date(e.start).toDateString() === today.toDateString())
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+
+  const quickNewTask = () => {
+    setTab('hoy')
+    setAddingTask(true)
+  }
 
   return (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
@@ -353,6 +374,54 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
                 {totalWeek} totales · {openMine.length} pendientes · {completedThisWeek.length} completadas
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="ador-glass ador-grain rounded-2xl p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-[#F5F5F5]">Calendario de hoy</span>
+            {onNavigate && (
+              <button type="button" onClick={() => onNavigate('calendario')} className="text-[12px] font-medium text-[#1E5FAD] hover:underline">
+                Ver calendario →
+              </button>
+            )}
+          </div>
+          {!gcalConfigured || gcalStatus === 'disconnected' || gcalStatus === 'needsReconnect' ? (
+            <p className="text-[12px] text-[#666666]">Conecta tu Google Calendar en Calendario para verlo aquí.</p>
+          ) : gcalToday.length === 0 ? (
+            <p className="text-[12px] text-[#666666]">Sin eventos hoy.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-white/[0.05]">
+              {gcalToday.slice(0, 4).map((e) => (
+                <div key={e.id} className="flex items-center gap-2 py-2">
+                  <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(e) }} />
+                  <span className="w-[44px] flex-shrink-0 text-[11px] text-[#888888]">
+                    {e.allDay ? 'Todo el día' : new Date(e.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[12px] text-[#F5F5F5]">{e.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="ador-glass ador-grain rounded-2xl p-3">
+          <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">Acciones rápidas</span>
+          <div className="flex flex-col gap-0.5 pt-1">
+            <button type="button" onClick={quickNewTask} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+                <PlusIcon size={14} />
+              </span>
+              <span className="text-[13px] text-[#F5F5F5]">Nueva tarea</span>
+            </button>
+            {onGoToHoy && (
+              <button type="button" onClick={onGoToHoy} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+                  <NoteIcon size={14} />
+                </span>
+                <span className="text-[13px] text-[#F5F5F5]">Nueva nota</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

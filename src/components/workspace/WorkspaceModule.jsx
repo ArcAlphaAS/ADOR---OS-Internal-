@@ -221,6 +221,8 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                   actorUserId={user?.uid}
                   actorName={actorName}
                   onToggleOnlyMine={toggleOnlyMine}
+                  onGoToHoy={() => changeView('hoy')}
+                  onNavigate={onNavigate}
                 />
               ) : (
                 <ListaView
