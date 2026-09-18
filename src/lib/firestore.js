@@ -55,6 +55,8 @@ export const COLLECTIONS = {
   objetivos: 'objetivos',
   experimentos: 'experimentos',
   notes: 'notes',
+  directoryPeople: 'directoryPeople',
+  directoryTeams: 'directoryTeams',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -639,4 +641,57 @@ export async function findOrCreateGeneralProyecto(actorName) {
   if (!snap.empty) return snap.docs[0].id
   const ref = await createProyectoInterno({ name: 'General' }, actorName)
   return ref.id
+}
+
+// ---- Directorio: people & teams ----
+// Deliberately decoupled from /users/{uid} — that collection is one row per
+// real Firebase Auth account (self-registered on login, see App.jsx), while
+// a Directorio entry is an informational profile for anyone at ADOR,
+// including people who may never get their own ADOR OS login. Photos reuse
+// the same resizeImageToDataUrl → photoDataUrl base64 pattern ProfileModal
+// already established (lib/image.js) — no Firebase Storage dependency.
+export function subscribeDirectoryPeople(onData) {
+  return subscribeToCollection(COLLECTIONS.directoryPeople, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function createDirectoryPerson(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.directoryPeople), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateDirectoryPerson(personId, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.directoryPeople, personId), data)
+}
+
+export function deleteDirectoryPerson(personId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.directoryPeople, personId))
+}
+
+export function subscribeDirectoryTeams(onData) {
+  return subscribeToCollection(COLLECTIONS.directoryTeams, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function createDirectoryTeam(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.directoryTeams), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function updateDirectoryTeam(teamId, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.directoryTeams, teamId), data)
+}
+
+export function deleteDirectoryTeam(teamId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.directoryTeams, teamId))
 }

@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Clientes' Kanban/Lista switcher upgraded to the same sliding segmented control Workspace already has). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Directorio module built — Personas/Organigrama/Equipos/Roles). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -14,7 +14,8 @@ Last updated: 2026-09-18 (Clientes' Kanban/Lista switcher upgraded to the same s
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
-| Phase 3 — remaining modules (Conocimiento, Comunidad, Chat, News, Directorio) | ⬜ Not started |
+| Phase 3 — Directorio (Personas, Organigrama, Equipos, Roles) | ✅ Done (2026-09-18) |
+| Phase 3 — remaining modules (Conocimiento, Comunidad, Chat, News) | ⬜ Not started |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -243,8 +244,18 @@ Last updated: 2026-09-18 (Clientes' Kanban/Lista switcher upgraded to the same s
 - [x] **Google Cloud Console setup done and confirmed live (2026-09-17)** — Calendar API enabled, `calendar.readonly` scope added, OAuth Client ID created, `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set in `.env` + Vercel. Tested end-to-end with a real founder account — connects, shows real upcoming events. The project's OAuth consent screen was already "In production" (leftover from the removed Google Sign-In provider), so the 7-day Testing-mode reconnect concern doesn't apply here — see CLAUDE.md §27 for details and one real bug hit along the way (a dropped character in the pasted Client Secret)
 - [ ] Design pass deferred on purpose — this is a functional first pass (plain agenda list), a more elaborate visual treatment is a deliberate follow-up, not done here
 
+**Directorio — Personas, Organigrama, Equipos, Roles (2026-09-18) — new**
+- [x] Built from two reference images combined per direct instruction — see CLAUDE.md §30 for the full reasoning on what came from which image and what was deliberately cut
+- [x] **Personas tab** — stats row (Personas/Áreas/Equipos/Roles asignados, all live-derived), a "Dirección" section of large cards for `isDirectivo` people only, an "Equipo" table (Nombre/Rol/Área/Estado/Ubicación) for everyone else, a search box, and a right sidebar that defaults to a "Nuestra gente" hero card + live Áreas/Equipos counts + a Cultura quote, swapping to a person's detail panel on click — truncated at "Áreas de responsabilidad" on purpose (no Reporta a/Trabaja con/Proyectos/Objetivos — no real data source for any of those yet)
+- [x] **Organigrama tab** — a static visual hierarchy (Dirección row → área groups below), built from the same people data, no new collection
+- [x] **Equipos tab** — real CRUD on a new `directoryTeams` collection (name + member picker), also what powers the sidebar's live Equipos count
+- [x] **Roles tab** — read-only, people grouped by their existing `role` field
+- [x] "+ Añadir persona" — full create/edit modal (`AddPersonModal.jsx`), photo upload reusing ProfileModal's existing `photoDataUrl`/`resizeImageToDataUrl` pattern (no Firebase Storage dependency)
+- [x] New collections `directoryPeople`/`directoryTeams`, deliberately decoupled from `/users/{uid}` (that's one row per real Firebase Auth login; Directorio profiles don't need one) — both covered by the existing blanket Firestore rule automatically
+- [x] Every write wrapped in `withTimeout(...).catch(showToast)` from the start, same defensive pattern Workspace/Objetivos had to retrofit after a silent-failure bug
+
 **Not built yet**
-- [ ] Comunidad, Chat, News, Directorio all still show placeholder
+- [ ] Comunidad, Chat, News all still show placeholder
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
 **Scoped but not started (2026-08-14 evening conversation) — direction agreed, nothing built yet:**

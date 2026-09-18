@@ -9,6 +9,7 @@ import FinanzasModule from '../finanzas/FinanzasModule'
 import WorkspaceModule from '../workspace/WorkspaceModule'
 import ObjetivosModule from '../objetivos/ObjetivosModule'
 import CalendarioModule from '../calendario/CalendarioModule'
+import DirectorioModule from '../directorio/DirectorioModule'
 import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
@@ -113,6 +114,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
               <ObjetivosModule key="objetivos" user={user} />
             ) : activeModule === 'calendario' ? (
               <CalendarioModule key="calendario" user={user} />
+            ) : activeModule === 'directorio' ? (
+              <DirectorioModule key="directorio" user={user} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (

@@ -299,3 +299,61 @@ export function GiftIcon(props) {
     </svg>
   )
 }
+
+export function MailIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3.5 6.5 12 13l8.5-6.5" />
+    </svg>
+  )
+}
+
+export function PinIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M12 21.5S4.5 14.6 4.5 9.7a7.5 7.5 0 1 1 15 0c0 4.9-7.5 11.8-7.5 11.8Z" />
+      <circle cx="12" cy="9.5" r="2.6" />
+    </svg>
+  )
+}
+
+export function ClockIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  )
+}
+
+export function MoreIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} fill="currentColor" className={props.className} style={props.style}>
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </svg>
+  )
+}
+
+export function FilterIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M4 6h16" />
+      <path d="M7.5 12h9" />
+      <path d="M10.5 18h3" />
+    </svg>
+  )
+}
+
+export function GridIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.4" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.4" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" />
+    </svg>
+  )
+}
