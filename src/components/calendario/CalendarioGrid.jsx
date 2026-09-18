@@ -77,18 +77,21 @@ function AllDayStrip({ days, events }) {
       <div />
       {allDayByDay.map((list, i) => (
         <div key={i} className="flex flex-col gap-1 border-l border-white/[0.05] px-1.5 py-1.5 first:border-l-0">
-          {list.map((e) => (
-            <a
-              key={e.id}
-              href={e.htmlLink}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium text-white"
-              style={{ background: eventColor(e) }}
-            >
-              {e.title}
-            </a>
-          ))}
+          {list.map((e) => {
+            const color = eventColor(e)
+            return (
+              <a
+                key={e.id}
+                href={e.htmlLink}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+                style={{ background: `${color}22`, borderLeft: `2px solid ${color}`, color }}
+              >
+                {e.title}
+              </a>
+            )
+          })}
         </div>
       ))}
     </div>
@@ -139,8 +142,13 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
 
           {days.map((day) => {
             const placed = layoutDay(eventsForDay(events, day))
+            const isToday = day.toDateString() === now.toDateString()
             return (
-              <div key={day.toISOString()} className="relative border-l border-white/[0.05]">
+              <div
+                key={day.toISOString()}
+                className="relative border-l border-white/[0.05]"
+                style={{ background: isToday ? 'rgba(30,95,173,0.035)' : 'transparent' }}
+              >
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />
                 ))}
@@ -148,24 +156,27 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
                   const top = ((e.startMin - START_HOUR * 60) / 60) * ROW_HEIGHT
                   const height = Math.max(((e.endMin - e.startMin) / 60) * ROW_HEIGHT - 2, 18)
                   const width = 100 / e.colCount
+                  const color = eventColor(e)
                   return (
                     <a
                       key={e.id}
                       href={e.htmlLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="absolute overflow-hidden rounded-md px-1.5 py-1 text-[10.5px] font-medium leading-tight text-white shadow-sm transition-opacity duration-150 hover:opacity-90"
+                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-[10.5px] font-medium leading-tight backdrop-blur-sm transition-colors duration-150 hover:brightness-110"
                       style={{
                         top,
                         height,
                         left: `${e.col * width}%`,
                         width: `calc(${width}% - 2px)`,
-                        background: eventColor(e),
+                        background: `${color}22`,
+                        borderLeft: `2.5px solid ${color}`,
+                        color,
                       }}
                     >
                       <span className="block truncate">{e.title}</span>
                       {height > 32 && (
-                        <span className="block truncate text-[9.5px] opacity-80">
+                        <span className="block truncate text-[9.5px] text-[#CCCCCC] opacity-80">
                           {new Date(e.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
                         </span>
                       )}
@@ -177,9 +188,15 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
           })}
 
           {showNowLine && (
-            <div className="pointer-events-none absolute flex items-center" style={{ top: nowTop, left: GUTTER_WIDTH, right: 0 }}>
-              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#EF5350]" style={{ marginLeft: -4 }} />
-              <div className="h-px flex-1 bg-[#EF5350]" />
+            <div className="pointer-events-none absolute flex items-center" style={{ top: nowTop, left: 0, right: 0 }}>
+              <span
+                className="z-10 flex-shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold text-white"
+                style={{ width: GUTTER_WIDTH - 6, textAlign: 'right', background: 'transparent', color: '#EF5350' }}
+              >
+                {now.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#EF5350]" style={{ marginLeft: -1 }} />
+              <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, #EF5350, rgba(239,83,80,0.15))' }} />
             </div>
           )}
         </div>

@@ -47,11 +47,19 @@ export default function MonthGrid({ monthDate, events, onSelectDay }) {
                 {day.getDate()}
               </span>
               <div className="flex flex-col gap-0.5">
-                {dayEvents.slice(0, MAX_VISIBLE).map((e) => (
-                  <span key={e.id} className="truncate rounded px-1 py-[1px] text-[9.5px] font-medium text-white" style={{ background: eventColor(e) }}>
-                    {e.title}
-                  </span>
-                ))}
+                {dayEvents.slice(0, MAX_VISIBLE).map((e) => {
+                  const color = eventColor(e)
+                  return (
+                    <span
+                      key={e.id}
+                      className="flex items-center gap-1 truncate rounded px-1 py-[1px] text-[9.5px] font-medium"
+                      style={{ background: `${color}1F`, color }}
+                    >
+                      <span className="h-1 w-1 flex-shrink-0 rounded-full" style={{ background: color }} />
+                      <span className="truncate">{e.title}</span>
+                    </span>
+                  )
+                })}
                 {dayEvents.length > MAX_VISIBLE && <span className="px-1 text-[9.5px] text-[#666666]">+{dayEvents.length - MAX_VISIBLE} más</span>}
               </div>
             </button>

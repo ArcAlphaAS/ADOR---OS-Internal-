@@ -276,10 +276,18 @@ export default function CalendarioModule({ user }) {
                   key={v.id}
                   type="button"
                   onClick={() => setView(v.id)}
-                  className="rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-                  style={{ background: view === v.id ? '#1E5FAD' : 'transparent', color: view === v.id ? '#F5F5F5' : '#888888' }}
+                  className="relative rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
+                  style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
                 >
-                  {v.label}
+                  {view === v.id && (
+                    <motion.div
+                      layoutId="calendario-view-indicator"
+                      className="absolute inset-0 rounded-full"
+                      style={{ background: '#1E5FAD' }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                    />
+                  )}
+                  <span className="relative">{v.label}</span>
                 </button>
               ))}
             </div>
