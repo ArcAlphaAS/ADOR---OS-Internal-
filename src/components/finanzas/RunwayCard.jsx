@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { currencyPEN } from '../../lib/clientStages'
 import { setCashBalance } from '../../lib/firestore'
-import { EditIcon } from '../icons'
+import { withTimeout } from '../../lib/workspace'
+import { useToast } from '../../hooks/useToast'
+import { EditIcon, PlusIcon } from '../icons'
 
 function ProjectionRow({ label, value, bold }) {
   const negative = value < 0
@@ -46,11 +48,38 @@ function ProjectionBar({ cashBalance, projectedIn30, projectedIn90 }) {
 export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30, projectedIn90, inflowIn30, inflowIn90 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(cashBalance || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const showToast = useToast()
 
-  const save = () => {
-    const amount = Number(draft)
-    if (amount >= 0) setCashBalance(amount)
+  const openEdit = () => {
+    setDraft(cashBalance || '')
+    setError('')
+    setEditing(true)
+  }
+
+  const cancelEdit = () => {
+    setDraft(cashBalance || '')
+    setError('')
     setEditing(false)
+  }
+
+  const save = async () => {
+    const amount = Number(draft)
+    if (draft.toString().trim() === '' || Number.isNaN(amount) || amount < 0) {
+      setError('Ingresa un monto válido.')
+      return
+    }
+    setSaving(true)
+    setError('')
+    try {
+      await withTimeout(setCashBalance(amount))
+      setEditing(false)
+    } catch (err) {
+      showToast(`No se pudo guardar: ${err.message}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -62,13 +91,10 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
         >
           Proyección de Caja
         </span>
-        {!editing && (
+        {!editing && cashBalance > 0 && (
           <button
             type="button"
-            onClick={() => {
-              setDraft(cashBalance || '')
-              setEditing(true)
-            }}
+            onClick={openEdit}
             className="flex h-6 w-6 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
           >
             <EditIcon size={13} />
@@ -77,22 +103,49 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
       </div>
 
       {editing ? (
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            type="number"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && save()}
-            placeholder="Caja actual en banco"
-            className="w-full rounded-lg border border-white/[0.1] bg-[#1A1A1A] px-2.5 py-1.5 text-[16px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-          />
-          <button type="button" onClick={save} className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12px] font-medium">
-            Guardar
-          </button>
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-[#1A1A1A] px-2.5 py-1.5 focus-within:border-white/[0.2]">
+              <span className="text-[14px] text-[#666666]">S/</span>
+              <input
+                type="number"
+                min="0"
+                autoFocus
+                value={draft}
+                disabled={saving}
+                onChange={(e) => {
+                  setDraft(e.target.value)
+                  if (error) setError('')
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') save()
+                  if (e.key === 'Escape') {
+                    e.stopPropagation()
+                    cancelEdit()
+                  }
+                }}
+                placeholder="Caja actual en banco"
+                className="w-full bg-transparent text-[16px] text-[#F5F5F5] outline-none disabled:opacity-50"
+              />
+            </div>
+            <button type="button" onClick={save} disabled={saving} className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12px] font-medium disabled:opacity-60">
+              {saving ? 'Guardando…' : 'Guardar'}
+            </button>
+            <button type="button" onClick={cancelEdit} disabled={saving} className="rounded-lg px-2 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:text-[#F5F5F5] disabled:opacity-50">
+              Cancelar
+            </button>
+          </div>
+          {error && <p className="text-[11.5px] text-[#EF5350]">{error}</p>}
+          <p className="text-[11px] text-[#444444]">Esc para cerrar sin guardar.</p>
         </div>
       ) : !cashBalance ? (
-        <p className="mt-3 text-[13px] font-light text-[#444444]">Sin caja registrada — haz clic en el lápiz</p>
+        <button
+          type="button"
+          onClick={openEdit}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.14] py-3 text-[13px] text-[#666666] transition-colors duration-150 hover:border-white/[0.24] hover:text-[#888888]"
+        >
+          <PlusIcon size={13} /> Registrar caja disponible
+        </button>
       ) : (
         <div className="mt-4 flex items-stretch gap-4">
           <ProjectionBar cashBalance={cashBalance} projectedIn30={projectedIn30} projectedIn90={projectedIn90} />
