@@ -69,3 +69,44 @@ export const currencyPEN = new Intl.NumberFormat('es-PE', {
   currency: 'PEN',
   maximumFractionDigits: 0,
 })
+
+// The amount actually owed right now — only ever one payment is "next" at a
+// time since pago2 stays locked until pago1 is Recibido (see PagosTab.jsx).
+// Returns 0 for a client with nothing pending, never a negative or double count.
+export function pendingPaymentAmount(client) {
+  const monto = client?.montoAcordado || 0
+  if (client?.pago1?.status !== 'Recibido') return Math.round((monto * PAGO1_PERCENT) / 100)
+  if (client?.pago2?.status !== 'Recibido') return Math.round((monto * PAGO2_PERCENT) / 100)
+  return 0
+}
+
+// Real CRM-style funnel health, computed live from the actual client list —
+// never a separately-tracked/manually-entered figure, same rule as every
+// other cross-module number in this app. `conversionRate` only counts
+// clients that reached a terminal state (became SP or were marked lost) —
+// an SPC still mid-pipeline hasn't "failed" yet, so it's excluded rather
+// than counted against the rate. `avgDaysInStage` is a live proxy (current
+// stage age for still-active SPC), not a true historical average — this app
+// doesn't keep a full stage-transition log, so it's the honest number
+// available, not a fabricated more-precise one.
+export function pipelineHealth(clients) {
+  const spCount = clients.filter((c) => !c.lost && c.stage === 'intervencion_activa').length
+  const lostClients = clients.filter((c) => c.lost)
+  const terminal = spCount + lostClients.length
+  const conversionRate = terminal ? Math.round((spCount / terminal) * 100) : null
+
+  const activeSPC = clients.filter((c) => !c.lost && c.stage !== 'intervencion_activa')
+  const stageDays = activeSPC.map((c) => daysSince(c.stageEnteredAt?.toDate?.())).filter((d) => d !== null)
+  const avgDaysInStage = stageDays.length ? Math.round(stageDays.reduce((a, b) => a + b, 0) / stageDays.length) : null
+
+  const lostByReason = new Map()
+  for (const c of lostClients) {
+    const reason = c.lostReason || 'Otro'
+    lostByReason.set(reason, (lostByReason.get(reason) || 0) + 1)
+  }
+  const lostBreakdown = Array.from(lostByReason.entries())
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count)
+
+  return { conversionRate, avgDaysInStage, lostBreakdown, lostTotal: lostClients.length }
+}

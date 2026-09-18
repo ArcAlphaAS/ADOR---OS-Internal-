@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
-import { daysSince, urgencyColor, currencyPEN } from '../../lib/clientStages'
+import { daysSince, urgencyColor, currencyPEN, pendingPaymentAmount, pipelineHealth, stageLabel } from '../../lib/clientStages'
 import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, ArrowRightIcon, CheckCircleIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
@@ -25,6 +25,125 @@ function StatCard({ value, label }) {
     <div className="ador-glass rounded-2xl px-4 py-3.5">
       <p className="text-[18px] font-semibold text-[#F5F5F5]">{value}</p>
       <p className="text-[11px] text-[#666666]">{label}</p>
+    </div>
+  )
+}
+
+// Anything active (SPC or SP) that's gone 14+ days without contact — the
+// same danger threshold `urgencyColor()` already uses everywhere else,
+// promoted into its own panel instead of just a color on a card, since a
+// stalled deal costs real pipeline value if nobody notices in time.
+function RequiereAtencion({ clients, onOpenClient }) {
+  const rows = clients
+    .map((c) => ({ client: c, days: daysSince(c.lastContactAt?.toDate?.() || c.createdAt?.toDate?.()) }))
+    .filter(({ days }) => days !== null && days >= 14)
+    .sort((a, b) => b.days - a.days)
+
+  return (
+    <div className="ador-glass ador-grain rounded-2xl border p-5" style={{ borderColor: rows.length ? 'rgba(224,82,82,0.3)' : 'rgba(255,255,255,0.08)' }}>
+      <div className="flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: rows.length ? '#E05252' : '#4CAF50' }} />
+        <p className="text-[13px] font-semibold text-[#F5F5F5]">Requiere atención</p>
+      </div>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-[12.5px] text-[#444444]">Nada estancado — todo con contacto reciente.</p>
+      ) : (
+        <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+          {rows.map(({ client, days }) => (
+            <button
+              key={client.id}
+              type="button"
+              onClick={() => onOpenClient(client)}
+              className="flex items-center justify-between gap-2 py-2.5 text-left transition-opacity duration-150 hover:opacity-80"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
+                <p className="truncate text-[11.5px] text-[#888888]">{stageLabel(client.stage)}</p>
+              </div>
+              <span className="flex-shrink-0 text-[11px] font-medium text-[#E05252]">{days}d sin contacto</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// SP clients (post-conversion) with a payment still Pendiente — real money
+// at stake, not just pipeline activity. Only ever one amount owed at a time
+// (pago2 stays locked until pago1's Recibido, see PagosTab.jsx), so
+// `pendingPaymentAmount` never double-counts.
+function PorCobrar({ clients, onOpenClient }) {
+  const rows = clients
+    .filter((c) => c.stage === 'intervencion_activa' && pendingPaymentAmount(c) > 0)
+    .map((c) => ({ client: c, amount: pendingPaymentAmount(c), days: daysSince(c.stageEnteredAt?.toDate?.()) }))
+    .sort((a, b) => (b.days ?? -1) - (a.days ?? -1))
+
+  const total = rows.reduce((sum, r) => sum + r.amount, 0)
+
+  return (
+    <div className="ador-glass ador-grain rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-semibold text-[#F5F5F5]">Por cobrar</p>
+        {total > 0 && <span className="text-[12.5px] font-semibold text-[#B8860B]">{currencyPEN.format(total)}</span>}
+      </div>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-[12.5px] text-[#444444]">Sin pagos pendientes.</p>
+      ) : (
+        <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+          {rows.map(({ client, amount, days }) => (
+            <button
+              key={client.id}
+              type="button"
+              onClick={() => onOpenClient(client)}
+              className="flex items-center justify-between gap-2 py-2.5 text-left transition-opacity duration-150 hover:opacity-80"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
+                <p className="truncate text-[11.5px] text-[#888888]">{days !== null ? `${days}d en intervención` : 'Intervención activa'}</p>
+              </div>
+              <span className="flex-shrink-0 text-[12px] font-medium text-[#B8860B]">{currencyPEN.format(amount)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// The funnel-health view a real CRM has and a card list alone can't answer:
+// are we actually converting, where does time go, why do we lose the ones
+// we lose. Every number is live-derived (see pipelineHealth in
+// clientStages.js) — no separate manually-tracked metric.
+function SaludPipeline({ clients }) {
+  const { conversionRate, avgDaysInStage, lostBreakdown, lostTotal } = pipelineHealth(clients)
+
+  return (
+    <div className="ador-glass ador-grain rounded-2xl p-5">
+      <p className="text-[13px] font-semibold text-[#F5F5F5]">Salud del pipeline</p>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[18px] font-semibold text-[#F5F5F5]">{conversionRate !== null ? `${conversionRate}%` : '—'}</p>
+          <p className="text-[11px] text-[#666666]">Conversión SPC → SP</p>
+        </div>
+        <div>
+          <p className="text-[18px] font-semibold text-[#F5F5F5]">{avgDaysInStage !== null ? `${avgDaysInStage}d` : '—'}</p>
+          <p className="text-[11px] text-[#666666]">Promedio en etapa actual</p>
+        </div>
+      </div>
+      {lostTotal > 0 && (
+        <div className="mt-4 border-t border-white/[0.06] pt-3">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.05em] text-[#444444]">Por qué se pierden ({lostTotal})</p>
+          <div className="flex flex-col gap-1.5">
+            {lostBreakdown.map(({ reason, count }) => (
+              <div key={reason} className="flex items-center justify-between text-[12px]">
+                <span className="text-[#888888]">{reason}</span>
+                <span className="text-[#666666]">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -293,15 +412,34 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
             justConvertedId={justConvertedId}
             onAddOpportunity={() => setShowNewModal(true)}
           />
-          <ProximasAcciones
-            clients={spcInPipeline}
-            onOpenClient={(c) => {
-              setSelectedClientId(c.id)
-              setOriginRect(null)
-            }}
-            actorName={actorName}
-            actorUserId={user?.uid}
-          />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <RequiereAtencion
+              clients={activeClients}
+              onOpenClient={(c) => {
+                setSelectedClientId(c.id)
+                setOriginRect(null)
+              }}
+            />
+            <PorCobrar
+              clients={spActivos}
+              onOpenClient={(c) => {
+                setSelectedClientId(c.id)
+                setOriginRect(null)
+              }}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ProximasAcciones
+              clients={spcInPipeline}
+              onOpenClient={(c) => {
+                setSelectedClientId(c.id)
+                setOriginRect(null)
+              }}
+              actorName={actorName}
+              actorUserId={user?.uid}
+            />
+            <SaludPipeline clients={clients} />
+          </div>
         </div>
       ) : view === 'list' ? (
         <ListView

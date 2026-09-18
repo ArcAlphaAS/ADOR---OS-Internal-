@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Clientes' Próximas acciones can create a real Workspace task from a client's next step). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Clientes gained real CRM-grade panels — Requiere atención, Por cobrar, Salud del pipeline). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -112,6 +112,13 @@ Last updated: 2026-09-18 (Clientes' Próximas acciones can create a real Workspa
 - [x] No new Firestore field — this creates a completely normal task, same shape as any other; the only new coupling is the client's name getting folded into the task title at creation time, not a live link
 - [x] Local per-row "✓ Creada" state after a successful create, to avoid an easy accidental double-click — not a durable duplicate-prevention system, a real gap if someone reloads and clicks again, but a reasonable v1 given a founder clicking the same action twice in the same sitting is a minor, low-cost edge case
 - [x] **Verification note:** confirmed the button renders and reads correctly against real client data by temporarily overriding one real client's `nextStep` in local state for the screenshot — deliberately did **not** click "Crear tarea" during this check, since this session's cached real Firestore session (see the note above) meant a real production task could have been created by testing it live
+
+**Clientes — real CRM-grade panels: Requiere atención, Por cobrar, Salud del pipeline (2026-09-18, same-day follow-up)**
+- [x] Direct request: Clientes should genuinely function as a CRM, not just a nicely-styled contact list. New `pendingPaymentAmount()` and `pipelineHealth()` helpers added to `clientStages.js`, fully live-derived from the real `clients` collection — no new manually-tracked figures
+- [x] **Requiere atención** — any active client (SPC or SP) 14+ days without contact (same danger threshold `urgencyColor()` already used as just a text color elsewhere), promoted into its own red-bordered panel instead of only a color hint on a card
+- [x] **Por cobrar** — SP clients with a payment still `Pendiente`, sorted by days in intervención, with a running total. `pendingPaymentAmount()` reads the same `pago1`/`pago2`/`montoAcordado` fields Finanzas and the Ficha's Pagos tab already use — never a second source of truth
+- [x] **Salud del pipeline** — conversión SPC→SP (% of terminal-state clients — became SP or were lost — that converted), promedio de días en la etapa actual (a live proxy, not a true historical average — this app doesn't keep a full stage-transition log), and a "por qué se pierden" breakdown by `lostReason`
+- [x] **Verification note:** verified all four new panels (plus the existing stats row/Próximas acciones) together against a full temporary in-memory client seed — 1 stalled SPC, 1 SP with a pending payment, 2 lost clients with different reasons — since the real Firestore data available in this session had none of those states to check against. Reverted to the real `subscribeClients` call before committing; confirmed the resulting build hash was byte-identical to the pre-debug build
 
 **Clientes — Kanban/Lista switcher upgraded to Workspace's sliding segmented control (2026-09-18)**
 - [x] Direct visual-audit request ("qué mejorarías a nivel visual") surfaced a real, concrete inconsistency: Clientes' view toggle was still icon-only buttons that just recolored on click — the exact pre-polish pattern Workspace's own switcher had before its 2026-09-16 iOS-productivity pass (§23). `ClientesModule.jsx`'s toggle now uses the same `motion.div layoutId` sliding-pill pattern as `WorkspaceModule.jsx`, plus text labels next to the icons. "Perdidos" was deliberately left as its own separate button, not folded into the segmented control — it's a filter toggle over the active pipeline, not a peer view of Kanban/Lista
