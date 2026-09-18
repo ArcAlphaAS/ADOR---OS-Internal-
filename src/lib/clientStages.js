@@ -2,13 +2,13 @@
 // An SPC (Strategic Partner Candidate) moves through the first 6 stages;
 // reaching "Intervención Activa" converts it into an SP (Strategic Partner).
 export const STAGES = [
-  { id: 'generacion', label: 'Generación', type: 'SPC' },
-  { id: 'contacto', label: 'Contacto', type: 'SPC' },
-  { id: 'calificacion', label: 'Calificación', type: 'SPC' },
-  { id: 'lectura', label: 'Lectura', type: 'SPC' },
-  { id: 'propuesta', label: 'Propuesta Comercial', type: 'SPC' },
-  { id: 'cierre', label: 'Cierre', type: 'SPC' },
-  { id: 'intervencion_activa', label: 'Intervención Activa', type: 'SP' },
+  { id: 'generacion', label: 'Generación', type: 'SPC', description: 'Candidatos identificados' },
+  { id: 'contacto', label: 'Contacto', type: 'SPC', description: 'Primer acercamiento' },
+  { id: 'calificacion', label: 'Calificación', type: 'SPC', description: 'Validación de encaje' },
+  { id: 'lectura', label: 'Lectura', type: 'SPC', description: 'Diagnóstico inicial' },
+  { id: 'propuesta', label: 'Propuesta Comercial', type: 'SPC', description: 'Solución y propuesta' },
+  { id: 'cierre', label: 'Cierre', type: 'SPC', description: 'Términos y decisión' },
+  { id: 'intervencion_activa', label: 'Intervención Activa', type: 'SP', description: 'SP en ejecución' },
 ]
 
 export const STAGE_ORDER = STAGES.map((s) => s.id)

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage } from '../../lib/firestore'
-import { KanbanIcon, ListViewIcon } from '../icons'
+import { daysSince, urgencyColor, currencyPEN } from '../../lib/clientStages'
+import { KanbanIcon, ListViewIcon, ArrowRightIcon } from '../icons'
 import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
 import LostClientsView from './LostClientsView'
@@ -13,9 +14,61 @@ function actorNameFor(user) {
 }
 
 const CLIENTES_VIEWS = [
-  { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
+  { id: 'kanban', label: 'Pipeline', Icon: KanbanIcon },
   { id: 'list', label: 'Lista', Icon: ListViewIcon },
 ]
+
+function StatCard({ value, label }) {
+  return (
+    <div className="ador-glass rounded-2xl px-4 py-3.5">
+      <p className="text-[18px] font-semibold text-[#F5F5F5]">{value}</p>
+      <p className="text-[11px] text-[#666666]">{label}</p>
+    </div>
+  )
+}
+
+// Every open SPC's own `nextStep` (already a real, inline-editable field —
+// see ListView.jsx) doubles as "what needs to happen next" across the whole
+// pipeline. Sorted by days since last contact so the most neglected
+// opportunities surface first — no separate "actions" concept invented.
+function ProximasAcciones({ clients, onOpenClient }) {
+  const rows = clients
+    .filter((c) => c.nextStep?.trim())
+    .map((c) => ({ client: c, days: daysSince(c.lastContactAt?.toDate?.() || c.createdAt?.toDate?.()) }))
+    .sort((a, b) => (b.days ?? -1) - (a.days ?? -1))
+    .slice(0, 5)
+
+  return (
+    <div className="ador-glass ador-grain rounded-2xl p-5">
+      <p className="text-[13px] font-semibold text-[#F5F5F5]">Próximas acciones</p>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-[12.5px] text-[#444444]">Sin siguientes pasos pendientes.</p>
+      ) : (
+        <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+          {rows.map(({ client, days }) => (
+            <button
+              key={client.id}
+              type="button"
+              onClick={() => onOpenClient(client)}
+              className="flex items-center gap-2.5 py-2.5 text-left transition-opacity duration-150 hover:opacity-80"
+            >
+              <ArrowRightIcon size={12} className="flex-shrink-0 text-[#666666]" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
+                <p className="truncate text-[11.5px] text-[#888888]">{client.nextStep}</p>
+              </div>
+              {days !== null && (
+                <span className="flex-shrink-0 text-[10.5px]" style={{ color: urgencyColor(days) }}>
+                  {days === 0 ? 'hoy' : `${days}d`}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ClientesModule({ user, focusClientId, onFocusHandled }) {
   const [clients, setClients] = useState([])
@@ -77,6 +130,18 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   const selectedClient = clients.find((c) => c.id === selectedClientId) || null
   const activeClients = clients.filter((c) => !c.lost)
   const lostClients = clients.filter((c) => c.lost)
+
+  // Pipeline stats row — every number here is derived live from the same
+  // `clients` collection everything else in this module reads, never a
+  // separately-tracked figure. "Cerradas (YTD)" is SP conversions whose
+  // `stageEnteredAt` falls in the current calendar year.
+  const spcInPipeline = activeClients.filter((c) => c.stage !== 'intervencion_activa')
+  const spActivos = activeClients.filter((c) => c.stage === 'intervencion_activa')
+  const potencial = spcInPipeline.reduce((sum, c) => sum + (c.montoAcordado || 0), 0)
+  const cerradasYTD = spActivos.filter((c) => {
+    const d = c.stageEnteredAt?.toDate?.()
+    return d && d.getFullYear() === new Date().getFullYear()
+  }).length
 
   return (
     <motion.div
@@ -152,16 +217,36 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         </div>
       </div>
 
+      {view === 'kanban' && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatCard value={spcInPipeline.length} label="Oportunidades" />
+          <StatCard value={currencyPEN.format(potencial)} label="Potencial" />
+          <StatCard value={spActivos.length} label="Activas" />
+          <StatCard value={cerradasYTD} label="Cerradas (YTD)" />
+        </div>
+      )}
+
       {view === 'kanban' ? (
-        <KanbanBoard
-          clients={activeClients}
-          onOpenClient={(c, rect) => {
-            setSelectedClientId(c.id)
-            setOriginRect(rect || null)
-          }}
-          onDropStage={(client, stage) => moveClientStage(client, stage, actorName)}
-          justConvertedId={justConvertedId}
-        />
+        <div className="flex flex-col gap-5">
+          <KanbanBoard
+            clients={activeClients}
+            users={users}
+            onOpenClient={(c, rect) => {
+              setSelectedClientId(c.id)
+              setOriginRect(rect || null)
+            }}
+            onDropStage={(client, stage) => moveClientStage(client, stage, actorName)}
+            justConvertedId={justConvertedId}
+            onAddOpportunity={() => setShowNewModal(true)}
+          />
+          <ProximasAcciones
+            clients={spcInPipeline}
+            onOpenClient={(c) => {
+              setSelectedClientId(c.id)
+              setOriginRect(null)
+            }}
+          />
+        </div>
       ) : view === 'list' ? (
         <ListView
           clients={activeClients}
