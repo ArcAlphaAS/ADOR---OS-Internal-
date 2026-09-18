@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
-import { subscribeDecisions, subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/firestore'
+import { subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
@@ -10,9 +10,7 @@ import ListaView from './ListaView'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
 import TaskDetailPanel from './TaskDetailPanel'
-import DecisionesPanel from './DecisionesPanel'
 import NewProyectoModal from './NewProyectoModal'
-import RegisterDecisionModal from './RegisterDecisionModal'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -40,21 +38,17 @@ const HEADER_COPY = {
   },
 }
 
-export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
+export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onNavigate }) {
   const { workstreams, tasksByWorkstream, tasks, users, userById } = useWorkspaceData()
-  const [decisions, setDecisions] = useState([])
   const [notes, setNotes] = useState([])
   const [view, setView] = useState('hoy')
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
   const [onlyMine, setOnlyMine] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
   const [showNewProyecto, setShowNewProyecto] = useState(false)
-  const [showRegisterDecision, setShowRegisterDecision] = useState(false)
-  const [decisionesCollapsed, setDecisionesCollapsed] = useState(false)
 
   const actorName = actorNameFor(user)
 
-  useEffect(() => subscribeDecisions(setDecisions), [])
   useEffect(() => subscribeNotes(setNotes), [])
 
   // Opens straight to a task's detail panel when arriving from a
@@ -71,19 +65,12 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
       // Falls back to 'hoy' for anyone whose stored preference is the now-
       // removed 'notas' tab (folded into Hoy — see VIEWS above).
       if (profile?.workspaceView && VIEWS.some((v) => v.id === profile.workspaceView)) setView(profile.workspaceView)
-      if (typeof profile?.decisionesCollapsed === 'boolean') setDecisionesCollapsed(profile.decisionesCollapsed)
     })
   }, [user?.uid])
 
   const changeView = (next) => {
     setView(next)
     if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { workspaceView: next })
-  }
-
-  const toggleDecisionesCollapsed = () => {
-    const next = !decisionesCollapsed
-    setDecisionesCollapsed(next)
-    if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { decisionesCollapsed: next })
   }
 
   const workstreamById = Object.fromEntries(workstreams.map((w) => [w.id, w]))
@@ -155,11 +142,17 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
       )}
 
       <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
-            <p className="text-[13px] text-[#888888]">{subtitle}</p>
-          </div>
+        {/* Hoy renders its own richer header (date, rotating quote, live
+            stats — see HoyHeader in HoyView.jsx), so the generic
+            title/subtitle here would just be a redundant second "Hoy"
+            sitting right above it. Every other view still uses it. */}
+        <div className={`mb-6 flex items-center ${view === 'hoy' ? 'justify-end' : 'justify-between'}`}>
+          {view !== 'hoy' && (
+            <div>
+              <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
+              <p className="text-[13px] text-[#888888]">{subtitle}</p>
+            </div>
+          )}
           {/* A real iOS segmented control slides its selection background
               between segments rather than just recoloring each one —
               Motion's layoutId does exactly that: the same element "moves"
@@ -212,6 +205,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
                 actorUserId={user?.uid}
                 actorName={actorName}
                 notes={notes}
+                onNavigate={onNavigate}
               />
             </motion.div>
           ) : view === 'lista' ? (
@@ -250,13 +244,6 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
         </AnimatePresence>
       </div>
 
-      <DecisionesPanel
-        decisions={decisions}
-        onRegister={() => setShowRegisterDecision(true)}
-        collapsed={decisionesCollapsed}
-        onToggleCollapse={toggleDecisionesCollapsed}
-      />
-
       <AnimatePresence>
         {openTask && (
           <TaskDetailPanel
@@ -271,12 +258,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled }) {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showNewProyecto && <NewProyectoModal actorName={actorName} onClose={() => setShowNewProyecto(false)} />}
-        {showRegisterDecision && (
-          <RegisterDecisionModal workstreams={workstreams} actorName={actorName} onClose={() => setShowRegisterDecision(false)} />
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{showNewProyecto && <NewProyectoModal actorName={actorName} onClose={() => setShowNewProyecto(false)} />}</AnimatePresence>
     </motion.div>
   )
 }

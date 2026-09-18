@@ -96,6 +96,46 @@ export function isDueToday(task) {
   return due.toDateString() === now.toDateString()
 }
 
+// Same "was this touched today" check as isDueToday, but against
+// completedAt instead of dueDate — powers Hoy's "Completado hoy" section.
+export function isCompletedToday(task) {
+  const completedAt = task.completedAt?.toDate?.()
+  if (!completedAt) return false
+  return completedAt.toDateString() === new Date().toDateString()
+}
+
+const PRIORITY_RANK = { alta: 0, media: 1, baja: 2 }
+
+// Picks the single most urgent open task for Hoy's "Enfoque actual" card —
+// oldest overdue first, then today's highest-priority, then the highest-
+// priority item in the general backlog. A visual highlight only, no timer
+// state (deliberate scope cut, see HoyView.jsx) — "Iniciar enfoque" just
+// opens this task's detail panel.
+export function pickFocusTask(vencidas, hoy, pendientes) {
+  const byPriority = (a, b) => (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1)
+  if (vencidas.length) return [...vencidas].sort(byPriority)[0]
+  if (hoy.length) return [...hoy].sort(byPriority)[0]
+  if (pendientes.length) return [...pendientes].sort(byPriority)[0]
+  return null
+}
+
+// Seeded by day-of-year (same stable-within-a-day, varies-day-to-day
+// pattern as GreetingBlock's rotating subtext) rather than randomized on
+// every render/reload.
+const HOY_QUOTES = [
+  'Enfócate en lo que mueve la aguja.',
+  'La disciplina construye libertad.',
+  'Lo simple, bien hecho, gana.',
+  'Un paso claro vale más que diez dispersos.',
+  'Hoy es el único día que puedes mover.',
+  'La consistencia compone el resultado.',
+]
+export function dailyQuote(date = new Date()) {
+  const start = new Date(date.getFullYear(), 0, 0)
+  const dayOfYear = Math.floor((date - start) / 86400000)
+  return HOY_QUOTES[dayOfYear % HOY_QUOTES.length]
+}
+
 function isDueThisWeek(task) {
   const due = task.dueDate?.toDate?.()
   if (!due) return false

@@ -146,7 +146,7 @@ function NewExperimentRow({ objetivos, actorName, onDone }) {
 // separate from Objetivos' progress check-ins: a check-in tracks "how is
 // this goal trending," an experiment records "did this specific bet pay
 // off," independent of whether it's linked to a KR. Lateral panel, same
-// slot pattern as IniciativasPanel/Workspace's DecisionesPanel.
+// slot pattern as IniciativasPanel/DecisionesCard.
 export default function ExperimentosPanel({ objetivos, actorName }) {
   const [experimentos, setExperimentos] = useState([])
   const [adding, setAdding] = useState(false)

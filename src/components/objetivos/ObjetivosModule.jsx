@@ -7,6 +7,7 @@ import NewObjetivoModal from './NewObjetivoModal'
 import NorthStarHero from './NorthStarHero'
 import IniciativasPanel from './IniciativasPanel'
 import ExperimentosPanel from './ExperimentosPanel'
+import DecisionesCard from './DecisionesCard'
 import { TargetIcon } from '../icons'
 
 function actorNameFor(user) {
@@ -157,6 +158,7 @@ export default function ObjetivosModule({ user }) {
         <div className="flex flex-col gap-6">
           <IniciativasPanel tasks={openLinkedTasks} />
           <ExperimentosPanel objetivos={objetivos} actorName={actorName} />
+          <DecisionesCard actorName={actorName} />
         </div>
       </div>
 

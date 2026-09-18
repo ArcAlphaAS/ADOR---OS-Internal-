@@ -6,7 +6,7 @@ import Avatar from '../shell/Avatar'
 // parallel task list: every row here is a real Workspace task (tagged via
 // Task Detail Panel's "Objetivo vinculado" field), so there's exactly one
 // place to mark it done. Lives in the lateral rail, same slot pattern as
-// Workspace's DecisionesPanel.
+// DecisionesCard.
 export default function IniciativasPanel({ tasks }) {
   return (
     <div className="ador-glass ador-grain rounded-2xl px-5 py-5">

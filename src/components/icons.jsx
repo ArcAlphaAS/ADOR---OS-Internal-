@@ -263,6 +263,31 @@ export function NoteIcon(props) {
   )
 }
 
+export function FlagIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M6 3v18" />
+      <path d="M6 4.5h11l-2.8 3.5 2.8 3.5H6Z" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M9 5.5 15.5 12 9 18.5" />
+    </svg>
+  )
+}
+
+export function PlayIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} fill="currentColor" stroke="none" className={props.className} style={props.style}>
+      <path d="M7.5 5.2c0-.9 1-1.5 1.8-1L18 10.1c.8.5.8 1.7 0 2.2l-8.7 5.9c-.8.5-1.8-.1-1.8-1V5.2Z" />
+    </svg>
+  )
+}
+
 export function GiftIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>

@@ -97,6 +97,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
                 user={user}
                 focusTaskId={focus?.type === 'task' ? focus.id : null}
                 onFocusHandled={() => setFocus(null)}
+                onNavigate={navigateTo}
               />
             ) : activeModule === 'clientes' ? (
               <ClientesModule
