@@ -99,16 +99,38 @@ export function fetchPrimaryCalendarEmail(accessToken) {
   return callCalendarApi('calendars/primary', accessToken).then((data) => data.id)
 }
 
-export async function fetchUpcomingEvents(accessToken, { days = 14 } = {}) {
-  const timeMin = new Date()
-  const timeMax = new Date(timeMin)
-  timeMax.setDate(timeMax.getDate() + days)
+// Google's own 11 event colors (Calendar API's stable colorId → hex map —
+// these values are documented/well-known, not fetched from colors().get()
+// to avoid an extra round-trip). Coloring the grid by each event's real
+// Google color (falling back to ADOR's own blue for "no override set") is
+// what makes this an honest reflection rather than an invented category
+// system — the same colors the user already sees in Google Calendar itself.
+export const GOOGLE_EVENT_COLORS = {
+  1: '#7986cb', // Lavender
+  2: '#33b679', // Sage
+  3: '#8e24aa', // Grape
+  4: '#e67c73', // Flamingo
+  5: '#f6bf26', // Banana
+  6: '#f4511e', // Tangerine
+  7: '#039be5', // Peacock
+  8: '#616161', // Graphite
+  9: '#3f51b5', // Blueberry
+  10: '#0b8043', // Basil
+  11: '#d50000', // Tomato
+}
+const DEFAULT_EVENT_COLOR = '#1E5FAD'
+
+export function eventColor(event) {
+  return GOOGLE_EVENT_COLORS[event.colorId] || DEFAULT_EVENT_COLOR
+}
+
+export async function fetchEvents(accessToken, { timeMin, timeMax }) {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults: '50',
+    maxResults: '250',
   })
   const data = await callCalendarApi(`calendars/primary/events?${params.toString()}`, accessToken)
   return (data.items || []).map((e) => ({
@@ -118,6 +140,7 @@ export async function fetchUpcomingEvents(accessToken, { days = 14 } = {}) {
     allDay: Boolean(e.start?.date && !e.start?.dateTime),
     start: e.start?.dateTime || e.start?.date,
     end: e.end?.dateTime || e.end?.date,
+    colorId: e.colorId || null,
     htmlLink: e.htmlLink,
   }))
 }

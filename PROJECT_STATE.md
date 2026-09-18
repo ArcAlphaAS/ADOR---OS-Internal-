@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-17 (Calendario built, pending Google Cloud setup). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-17 (Calendario live and confirmed working with a real account). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -13,7 +13,7 @@ Last updated: 2026-09-17 (Calendario built, pending Google Cloud setup). This is
 | Phase 3 — Workspace module (Hoy + Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16, 2026-09-17) |
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
-| Phase 3 — Calendario (read-only Google Calendar reflection) | 🟡 Built, pending Google Cloud Console setup (2026-09-17) |
+| Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
 | Phase 3 — remaining modules (Conocimiento, Comunidad, Chat, News, Directorio) | ⬜ Not started |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
@@ -195,7 +195,7 @@ Last updated: 2026-09-17 (Calendario built, pending Google Cloud setup). This is
 - [x] Two new Vercel serverless functions, `api/google-calendar/exchange.js` and `api/google-calendar/refresh.js` — the only two steps that need the OAuth client secret. Listing events happens directly from the browser against Google's API, no proxy needed
 - [x] `useGoogleCalendar.js` hook + `CalendarioModule.jsx` — connect/disconnect, agenda list grouped by day for the next 14 days, an honest "tu conexión venció, reconecta" state for the expected 7-day Testing-mode expiry (not treated as a generic error)
 - [x] New field `users/{uid}.googleCalendar = {refreshToken, connectedEmail, connectedAt}` — covered by the existing blanket Firestore rule, no console change needed. Access tokens are never persisted, kept in memory only
-- [ ] **Not usable yet** — needs a one-time Google Cloud Console setup (enable Calendar API, configure OAuth consent screen as External/Testing with the 3 founder emails as test users, create a Web app OAuth Client ID) and `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set in `.env` + Vercel. This is the actual next step — see "Next steps" below
+- [x] **Google Cloud Console setup done and confirmed live (2026-09-17)** — Calendar API enabled, `calendar.readonly` scope added, OAuth Client ID created, `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set in `.env` + Vercel. Tested end-to-end with a real founder account — connects, shows real upcoming events. The project's OAuth consent screen was already "In production" (leftover from the removed Google Sign-In provider), so the 7-day Testing-mode reconnect concern doesn't apply here — see CLAUDE.md §27 for details and one real bug hit along the way (a dropped character in the pasted Client Secret)
 - [ ] Design pass deferred on purpose — this is a functional first pass (plain agenda list), a more elaborate visual treatment is a deliberate follow-up, not done here
 
 **Not built yet**
@@ -226,4 +226,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: Firestore rules were confirmed 2026-08-15 to already cover every collection via a blanket rule — that item is closed, no action needed. ADOR IA is done and live on its local rule-based engine (see above) — no Vercel step needed unless the user later decides to connect the already-built Gemini path. **Immediate next step: walk through Google Cloud Console setup for Calendario** (enable Calendar API, configure the OAuth consent screen, create a Web app OAuth Client ID, set `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`) — the code is built and waiting, this is no longer deferred. After that: enable Firebase Storage for real Documentos/Comprobante uploads. Chat/Comunidad/Noticias all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: Firestore rules were confirmed 2026-08-15 to already cover every collection via a blanket rule — that item is closed, no action needed. ADOR IA is done and live on its local rule-based engine (see above) — no Vercel step needed unless the user later decides to connect the already-built Gemini path. Calendario is done and confirmed working live as of 2026-09-17 — also closed. **Next up: enable Firebase Storage** for real Documentos/Comprobante uploads. Chat/Comunidad/Noticias all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked.
