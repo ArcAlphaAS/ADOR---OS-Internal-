@@ -141,9 +141,20 @@ export default function CalendarioGrid({ days, events, scrollRef, energyCurve })
           {/* Hour labels (+ the typical-energy curve, Día view only) */}
           <div className="relative">
             {energyCurve && (
-              <svg className="absolute left-0 top-0" width={gutterWidth} height={totalHeight} viewBox={`0 0 ${gutterWidth} ${totalHeight}`}>
-                <path d={energyPathD(totalHeight, gutterWidth)} fill="none" stroke="#4CAF50" strokeWidth="1.5" strokeLinecap="round" opacity="0.55" />
-              </svg>
+              <>
+                <svg className="absolute left-0 top-0" width={gutterWidth} height={totalHeight} viewBox={`0 0 ${gutterWidth} ${totalHeight}`}>
+                  <path d={energyPathD(totalHeight, gutterWidth)} fill="none" stroke="#4CAF50" strokeWidth="1.5" strokeLinecap="round" opacity="0.55" />
+                </svg>
+                {ENERGY_PEAKS.map((peak, i) => (
+                  <span
+                    key={i}
+                    className="absolute left-0.5 -translate-y-1/2 whitespace-nowrap text-[9px] font-medium text-[#4CAF50]"
+                    style={{ top: ((peak.start + peak.end) / 2) * ROW_HEIGHT }}
+                  >
+                    Pico
+                  </span>
+                ))}
+              </>
             )}
             {HOURS.map((h) => (
               <div key={h} className="absolute right-2 -translate-y-1/2 text-[10px] text-[#444444]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }}>
@@ -162,14 +173,7 @@ export default function CalendarioGrid({ days, events, scrollRef, energyCurve })
                       key={i}
                       className="absolute w-full"
                       style={{ top: peak.start * ROW_HEIGHT, height: (peak.end - peak.start) * ROW_HEIGHT, background: 'rgba(76,175,80,0.06)' }}
-                    >
-                      <span
-                        className="absolute left-1.5 top-1 rounded-full px-2 py-0.5 text-[9.5px] font-medium text-[#4CAF50]"
-                        style={{ background: 'rgba(76,175,80,0.14)' }}
-                      >
-                        Pico de energía
-                      </span>
-                    </div>
+                    />
                   ))}
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />
