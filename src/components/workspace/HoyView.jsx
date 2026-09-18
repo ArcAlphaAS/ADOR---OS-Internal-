@@ -355,7 +355,7 @@ function SectionIcon({ Icon, color }) {
 // Collapsible — a small chevron next to the count, matching the reference's
 // "click the header to fold a group" behavior. Defaults open; state is
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
-function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, onReschedule, headerAction, children, defaultOpen = true }) {
+function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, onReschedule, onFocus, headerAction, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   if (tasks.length === 0 && !children) return null
   return (
@@ -395,6 +395,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
                   actorUserId={actorUserId}
                   actorName={actorName}
                   onReschedule={onReschedule}
+                  onFocus={onFocus}
                 />
               ))}
             </div>
@@ -514,6 +515,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
   const showToast = useToast()
   const [addingPendiente, setAddingPendiente] = useState(false)
   const [focusModeTask, setFocusModeTask] = useState(null)
+  const [manualFocusId, setManualFocusId] = useState(null)
   const noteInputRef = useRef(null)
   const pendientesRef = useRef(null)
 
@@ -526,7 +528,12 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
   const completedToday = tasks.filter((t) => (t.assignedTo || []).includes(userId) && isCompletedToday(t))
   const pendingNotes = notes.filter((n) => n.status !== 'archivada')
 
-  const focusTask = pickFocusTask(vencidas, hoy, pendientes)
+  // A manually-picked task (via each row's "Enfocar" button) takes over
+  // Enfoque Actual until it's completed/reassigned away — at which point it
+  // naturally drops out of `mine` and this falls back to the automatic pick,
+  // no explicit "clear" step needed.
+  const manualFocusTask = manualFocusId ? mine.find((t) => t.id === manualFocusId) : null
+  const focusTask = manualFocusTask || pickFocusTask(vencidas, hoy, pendientes)
 
   const archiveNote = (id) => updateNote(id, { status: 'archivada' }).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const deleteNoteById = (id) => deleteNote(id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
@@ -599,6 +606,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           users={users}
           workstreamById={workstreamById}
           onReschedule={rescheduleToday}
+          onFocus={(task) => setManualFocusId(task.id)}
           headerAction={
             vencidas.length > 1 && (
               <button
@@ -612,9 +620,33 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
             )
           }
         />
-        <Section title="Para hoy" color="#1E5FAD" Icon={CalendarIcon} tasks={hoy} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} userById={userById} users={users} workstreamById={workstreamById} />
+        <Section
+          title="Para hoy"
+          color="#1E5FAD"
+          Icon={CalendarIcon}
+          tasks={hoy}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          onFocus={(task) => setManualFocusId(task.id)}
+        />
         <div ref={pendientesRef}>
-          <Section title="Mis Pendientes" color="#888888" Icon={ListViewIcon} tasks={pendientes} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} userById={userById} users={users} workstreamById={workstreamById}>
+          <Section
+            title="Mis Pendientes"
+            color="#888888"
+            Icon={ListViewIcon}
+            tasks={pendientes}
+            onOpenTask={onOpenTask}
+            actorName={actorName}
+            actorUserId={actorUserId}
+            userById={userById}
+            users={users}
+            workstreamById={workstreamById}
+            onFocus={(task) => setManualFocusId(task.id)}
+          >
             <div className="pt-1">
               <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} workstreams={workstreams} adding={addingPendiente} onOpenChange={setAddingPendiente} />
             </div>

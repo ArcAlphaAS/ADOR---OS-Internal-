@@ -53,16 +53,7 @@ export default function GreetingBlock({ name }) {
   const season = getActiveSeason(now)
 
   return (
-    <div className="relative">
-      {season && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-x-10 -inset-y-20 -z-10"
-          style={{
-            background: `radial-gradient(560px 260px at 10% 35%, ${season.accentColor}26, transparent 72%)`,
-          }}
-        />
-      )}
+    <div>
       <h1
         className="font-semibold tracking-[-0.02em]"
         style={{

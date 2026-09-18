@@ -3,15 +3,17 @@ import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, PROJECT_TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
-import { CheckCircleIcon } from '../icons'
+import { CheckCircleIcon, PlayIcon } from '../icons'
 
 // Same full-column row as TaskRow.jsx (Grupo/Lista), plus a Proyecto
 // column — shared by Personal's task table and Hoy's sections, the two
 // places a task list isn't already grouped by workstream. `onReschedule`
-// is Hoy-only (Vencidas' "→ Hoy" pill); everything else is identical
+// and `onFocus` are Hoy-only (Vencidas' "→ Hoy" pill, and the manual
+// "Enfocar" button that pins a task as Hoy's Enfoque Actual instead of
+// leaving the pick entirely automatic); everything else is identical
 // between the two callers on purpose, per direct request that Hoy/
 // Personal/Grupo all read as the same kind of table.
-export default function ProjectTaskRow({ task, workstream, userById, users, onOpen, actorUserId, actorName, onReschedule }) {
+export default function ProjectTaskRow({ task, workstream, userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
   const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
@@ -71,6 +73,20 @@ export default function ProjectTaskRow({ task, workstream, userById, users, onOp
             style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
           >
             → Hoy
+          </button>
+        )}
+        {onFocus && !completed && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onFocus(task)
+            }}
+            title="Enfocar esta tarea"
+            className="flex flex-shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors duration-150 hover:bg-white/[0.06]"
+            style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#888888' }}
+          >
+            <PlayIcon size={8} /> Enfocar
           </button>
         )}
       </div>
