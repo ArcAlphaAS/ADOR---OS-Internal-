@@ -7,6 +7,14 @@ import { motion } from 'framer-motion'
 // strictly required to dodge the width-leak bug (see CLAUDE.md §1), but it's
 // still the safest way to guarantee the menu never gets clipped by the
 // group's own overflow-x-auto wrapper.
+//
+// Entrance motion matches every other floating menu in the app (see
+// NotificationCenter.jsx). No exit animation on purpose, unlike those — this
+// mounts/unmounts many times per session (every inline cell edit), and
+// CLAUDE.md §10 already documents a real bug from over-animating this exact
+// component (a duplicate-key warning from wrapping it in AnimatePresence for
+// no real benefit, since the parent's own conditional render controls
+// mount/unmount here, not this component's internal state).
 export default function CellPopover({ anchorRect, onClose, children, width = 180 }) {
   if (!anchorRect) return null
 
@@ -14,9 +22,9 @@ export default function CellPopover({ anchorRect, onClose, children, width = 180
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <motion.div
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.12 }}
+        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
         className="fixed z-50"
         style={{
           top: anchorRect.bottom + 6,

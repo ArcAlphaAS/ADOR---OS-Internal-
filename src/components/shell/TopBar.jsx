@@ -129,15 +129,17 @@ function SearchToggle({ onNavigate }) {
         <SearchIcon size={16} />
       </button>
 
-      {open && query.trim() && (
-        <SearchResults
-          results={results}
-          anchorRect={rect}
-          onSelectClient={(id) => goTo('clientes', { type: 'client', id })}
-          onSelectTask={(id) => goTo('workspace', { type: 'task', id })}
-          onSelectDecision={() => goTo('workspace', null)}
-        />
-      )}
+      <AnimatePresence>
+        {open && query.trim() && (
+          <SearchResults
+            results={results}
+            anchorRect={rect}
+            onSelectClient={(id) => goTo('clientes', { type: 'client', id })}
+            onSelectTask={(id) => goTo('workspace', { type: 'task', id })}
+            onSelectDecision={() => goTo('workspace', null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

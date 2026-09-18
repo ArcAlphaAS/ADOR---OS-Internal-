@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { getActiveSeason } from '../../lib/seasons'
 
 function getGreeting(hour, name) {
   if (hour >= 6 && hour < 13) return `Buenos días, ${name}.`
@@ -35,8 +36,9 @@ function dayOfYear(date) {
   return Math.floor((date - start) / 86400000)
 }
 
-function getSubtext(date) {
-  const variants = SUBTEXT_VARIANTS[getBucket(date.getHours())]
+function getSubtext(date, season) {
+  const bucket = getBucket(date.getHours())
+  const variants = season?.phrases?.[bucket] || SUBTEXT_VARIANTS[bucket]
   return variants[dayOfYear(date) % variants.length]
 }
 
@@ -48,8 +50,19 @@ export default function GreetingBlock({ name }) {
     return () => clearInterval(interval)
   }, [])
 
+  const season = getActiveSeason(now)
+
   return (
-    <div>
+    <div className="relative">
+      {season && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-10 -inset-y-20 -z-10"
+          style={{
+            background: `radial-gradient(560px 260px at 10% 35%, ${season.accentColor}26, transparent 72%)`,
+          }}
+        />
+      )}
       <h1
         className="font-semibold tracking-[-0.02em]"
         style={{
@@ -63,7 +76,7 @@ export default function GreetingBlock({ name }) {
         {getGreeting(now.getHours(), name)}
       </h1>
       <p className="mt-2 text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
-      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now, season)}</p>
     </div>
   )
 }

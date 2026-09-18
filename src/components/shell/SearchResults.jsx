@@ -39,10 +39,10 @@ export default function SearchResults({ results, anchorRect, onSelectClient, onS
 
   return createPortal(
     <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-50"
       style={{
         position: 'fixed',
