@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (dropped the seasonal visual accent per direct feedback, kept text-only; added a manual "Enfocar" button on Hoy's task rows). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (seasonal greeting gained a small representative badge — flag/tree/fireworks emoji + label — next to the date). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -215,7 +215,8 @@ Last updated: 2026-09-18 (dropped the seasonal visual accent per direct feedback
 
 **Home — seasonal greeting personalization (2026-09-18, text-only after same-day reversal)**
 - [x] New `lib/seasons.js` — a small hand-maintained calendar (Fiestas Patrias in July, Navidad/Fin de año/Año Nuevo in December, hardcoded to Peru since all 3 founders are Peruvian for now; the file notes where to key off a region setting instead, once that's no longer true) that `GreetingBlock.jsx` checks on every render. Most days return no season; when one's active, the rotating subtext pool (same day-of-year-seeded mechanism already used for the normal morning/afternoon/evening phrases) is swapped for that season's phrases
-- [x] **Reversed same day:** first shipped with a soft radial-gradient color wash behind the greeting text too, but direct follow-up feedback was that any visual accent risked hurting the app's design — pulled it entirely, text-only. `accentColor` fields dropped from every season in `lib/seasons.js` since nothing reads them anymore
+- [x] **Reversed same day:** first shipped with a soft radial-gradient color wash behind the greeting text too, but direct follow-up feedback was that any visual accent risked hurting the app's design — pulled it entirely, text-only.
+- [x] **Re-added, same day, as a small contained badge instead:** the user still wanted "something cool" for festive months, specifically asking for something *representative* of the holiday rather than a generic effect. Each season in `lib/seasons.js` now carries a `badge` (`{emoji, label, color}` — 🇵🇪 "Mes Patrio", 🎄 "Diciembre"/"Nochebuena"/"Navidad", 🎇/🎆 "Fin de Año", 🎉 "Año Nuevo"), rendered as a small pill next to the date in `GreetingBlock.jsx` — background/text tinted only within the pill itself (never a page-wide wash, learning directly from the reversed attempt above), with the emoji breathing via the existing `ador-pulse` keyframe rather than a new animation. Verified visually for both Fiestas Patrias and Navidad by temporarily forcing the date
 
 **Workspace — manual "Enfocar" button on Hoy's task rows (2026-09-18, same-day follow-up)**
 - [x] "Enfoque actual" was purely automatic (most urgent open task by the Vencidas → Para hoy → Mis Pendientes → priority order in `pickFocusTask()`) with no way to pick a different task yourself. Each open row in Vencidas/Para hoy/Mis Pendientes (`ProjectTaskRow.jsx`, via a new optional `onFocus` prop — undefined and hidden in Personal/Grupo, which don't have a Focus card) now has a small "Enfocar" button that pins that task as Enfoque Actual, overriding the automatic pick

@@ -66,7 +66,19 @@ export default function GreetingBlock({ name }) {
       >
         {getGreeting(now.getHours(), name)}
       </h1>
-      <p className="mt-2 text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
+      <div className="mt-2 flex items-center gap-2.5">
+        <p className="text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
+        {season?.badge && (
+          <span
+            title={season.badge.label}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+            style={{ background: `${season.badge.color}1F`, color: season.badge.color }}
+          >
+            <span style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }}>{season.badge.emoji}</span>
+            {season.badge.label}
+          </span>
+        )}
+      </div>
       <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now, season)}</p>
     </div>
   )

@@ -19,6 +19,7 @@ const SEASONS = [
   {
     id: 'fiestas-patrias',
     range: [[7, 1], [7, 31]],
+    badge: { emoji: '🇵🇪', label: 'Mes Patrio', color: '#D91023' },
     phrases: {
       morning: ['Julio, mes patrio — buen día para construir país.', 'Feliz mes de la Patria.'],
       afternoon: ['Mes patrio — sigamos avanzando.', 'Julio, con el Perú de fondo.'],
@@ -28,6 +29,7 @@ const SEASONS = [
   {
     id: 'navidad-anticipo',
     range: [[12, 1], [12, 23]],
+    badge: { emoji: '🎄', label: 'Diciembre', color: '#15803D' },
     phrases: {
       morning: ['Diciembre — cerrando el año con foco.', 'Recta final del año.'],
       afternoon: ['Diciembre avanza — sigamos ejecutando.', 'El año se cierra bien, con trabajo.'],
@@ -37,6 +39,7 @@ const SEASONS = [
   {
     id: 'nochebuena',
     range: [[12, 24], [12, 24]],
+    badge: { emoji: '🎄', label: 'Nochebuena', color: '#15803D' },
     phrases: {
       morning: ['Nochebuena — buen día para cerrar temprano.', 'Hoy es Nochebuena.'],
       afternoon: ['Nochebuena — casi hora de parar.', 'Hoy es un día para cerrar temprano.'],
@@ -46,6 +49,7 @@ const SEASONS = [
   {
     id: 'navidad',
     range: [[12, 25], [12, 25]],
+    badge: { emoji: '🎄', label: 'Navidad', color: '#15803D' },
     phrases: {
       morning: ['Feliz Navidad.', 'Hoy es Navidad — feliz día.'],
       afternoon: ['Feliz Navidad.', 'Que tengas una linda Navidad.'],
@@ -55,6 +59,7 @@ const SEASONS = [
   {
     id: 'fin-de-ano-anticipo',
     range: [[12, 26], [12, 30]],
+    badge: { emoji: '🎇', label: 'Fin de Año', color: '#F59E0B' },
     phrases: {
       morning: ['Últimos días del año.', 'Cerrando el año — casi listos.'],
       afternoon: ['El año casi termina.', 'Últimos días — buen cierre.'],
@@ -64,6 +69,7 @@ const SEASONS = [
   {
     id: 'fin-de-ano',
     range: [[12, 31], [12, 31]],
+    badge: { emoji: '🎆', label: 'Fin de Año', color: '#F59E0B' },
     phrases: {
       morning: ['Último día del año — buen cierre.', 'Hoy termina el año.'],
       afternoon: ['Último día del año.', 'Cerrando el año hoy.'],
@@ -73,6 +79,7 @@ const SEASONS = [
   {
     id: 'ano-nuevo',
     range: [[1, 1], [1, 1]],
+    badge: { emoji: '🎉', label: 'Año Nuevo', color: '#1E5FAD' },
     phrases: {
       morning: ['Feliz año nuevo.', 'Empezamos el año.'],
       afternoon: ['Feliz año nuevo.', 'Primer día del año.'],
