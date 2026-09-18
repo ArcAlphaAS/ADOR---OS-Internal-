@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   isOverdue,
   isDueToday,
@@ -15,7 +17,7 @@ import {
   workstreamId as buildWorkstreamId,
 } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
-import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
@@ -206,7 +208,7 @@ function HoyHeader({ total, completedCount, overdueCount }) {
 // even with nothing urgent — same "a landing screen should never just
 // disappear" rule NorthStarHero.jsx already established (CLAUDE.md §14):
 // a calm positive state here beats the card silently vanishing.
-function FocusCard({ task, workstream, onOpenTask }) {
+function FocusCard({ task, workstream, onStartFocus }) {
   if (!task) {
     return (
       <div className="ador-glass ador-grain flex items-center gap-3 rounded-2xl px-5 py-4">
@@ -243,13 +245,100 @@ function FocusCard({ task, workstream, onOpenTask }) {
       </div>
       <button
         type="button"
-        onClick={() => onOpenTask(task)}
+        onClick={() => onStartFocus(task)}
         className="flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[#F5F5F5] transition-opacity duration-150 hover:opacity-90"
         style={{ background: '#1E5FAD' }}
       >
         <PlayIcon size={12} /> Iniciar enfoque
       </button>
     </div>
+  )
+}
+
+// "Modo enfoque" — a full-screen takeover for the single task "Iniciar
+// enfoque" surfaces, so the click actually changes what's on screen instead
+// of just opening the same detail panel a title-click already reaches.
+// Deliberately not a timer/pomodoro (see FocusCard's comment above and
+// CLAUDE.md §26 — that was scoped out on purpose): this just removes every
+// other distraction from view and gives one clear next action. Follows the
+// same portal + split transform/surface pattern as every other modal in the
+// app (CLAUDE.md §11) — the backdrop owns the transform, the inner div owns
+// .ador-modal-surface's backdrop-filter.
+function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }) {
+  const [completing, setCompleting] = useState(false)
+  const showToast = useToast()
+  if (!task) return null
+  const meta = task.priority ? priorityMeta(task.priority) : null
+
+  const complete = async () => {
+    setCompleting(true)
+    try {
+      await withTimeout(toggleTaskComplete(task, actorName))
+      onClose()
+    } catch (error) {
+      showToast(`No se pudo completar: ${error.message}`)
+    } finally {
+      setCompleting(false)
+    }
+  }
+
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[16px]"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.97 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[520px] px-6"
+      >
+        <div className="ador-modal-surface ador-grain rounded-[28px] px-8 py-10 text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Modo enfoque</p>
+
+          <div className="mt-6 flex flex-col items-center gap-3">
+            {meta && (
+              <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium" style={{ background: `${meta.color}22`, color: meta.color }}>
+                <FlagIcon size={11} /> {meta.label}
+              </span>
+            )}
+            <h2 className="text-[24px] font-semibold leading-tight text-[#F5F5F5]">{task.title}</h2>
+            {workstream && <p className="text-[13px] text-[#888888]">{workstream.name}</p>}
+            {task.description && <p className="mt-2 max-w-[380px] text-[13px] leading-relaxed text-[#888888]">{task.description}</p>}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <motion.button
+              type="button"
+              disabled={completing}
+              onClick={complete}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[14px] font-semibold text-[#F5F5F5] transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+              style={{ background: '#1E5FAD' }}
+            >
+              <CheckCircleIcon size={16} /> {completing ? 'Completando...' : 'Marcar como completada'}
+            </motion.button>
+            <div className="flex items-center gap-4 text-[13px]">
+              <button type="button" onClick={() => onOpenDetail(task)} className="text-[#888888] transition-colors hover:text-[#F5F5F5]">
+                Ver detalles
+              </button>
+              <span className="text-[#333333]">·</span>
+              <button type="button" onClick={onClose} className="text-[#888888] transition-colors hover:text-[#F5F5F5]">
+                Salir del enfoque
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>,
+    document.body
   )
 }
 
@@ -424,6 +513,7 @@ function NadaUrgente() {
 export default function HoyView({ user, tasks, userId, userById, users, workstreams = [], workstreamById, onOpenTask, actorUserId, actorName, notes = [], onNavigate }) {
   const showToast = useToast()
   const [addingPendiente, setAddingPendiente] = useState(false)
+  const [focusModeTask, setFocusModeTask] = useState(null)
   const noteInputRef = useRef(null)
   const pendientesRef = useRef(null)
 
@@ -478,7 +568,22 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           </div>
         )}
 
-        <FocusCard task={focusTask} workstream={focusTask && workstreamById[focusTask.workstreamId]} onOpenTask={onOpenTask} />
+        <FocusCard task={focusTask} workstream={focusTask && workstreamById[focusTask.workstreamId]} onStartFocus={setFocusModeTask} />
+
+        <AnimatePresence>
+          {focusModeTask && (
+            <FocusModeOverlay
+              task={focusModeTask}
+              workstream={workstreamById[focusModeTask.workstreamId]}
+              actorName={actorName}
+              onClose={() => setFocusModeTask(null)}
+              onOpenDetail={(task) => {
+                setFocusModeTask(null)
+                onOpenTask(task)
+              }}
+            />
+          )}
+        </AnimatePresence>
 
         {vencidas.length === 0 && hoy.length === 0 && <NadaUrgente />}
 

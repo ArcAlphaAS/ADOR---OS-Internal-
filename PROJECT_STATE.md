@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (fixed missing Estimación/Estado fields on Workspace's draft task rows, rebuilt Asignado as a real combobox, replaced the native Proyecto `<select>` with a styled picker). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 ("Iniciar enfoque" now opens a real full-screen focus overlay instead of just the detail panel; Estimación relabeled around "Vencimiento"). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -205,6 +205,10 @@ Last updated: 2026-09-18 (fixed missing Estimación/Estado fields on Workspace's
 - [x] **Real bug fixed:** Personal's "+ Agregar tarea" draft row had no Estimación or Estado fields at all (two blank `<span />`s) — impossible to set either before creating a task. Hoy's "+ Agregar pendiente" was missing Estado only. Both now use the same `EstimationCell`/`PillCell` components Grupo/Lista already had, via `lib/workspace.js`'s `STATUSES`/`statusMeta`
 - [x] **Real bug fixed in `lib/firestore.js`:** `createTask()` unconditionally hardcoded `status: 'por_hacer'` *after* spreading the caller's data, so a status picked in a draft row would never have persisted even once the UI field existed. Fixed by making it a default a caller-supplied `status` can override
 - [x] New `WorkstreamCell` (`TaskCells.jsx`) replaces the native `<select>` used for "Proyecto" in both draft rows with a `CellPopover`-based picker — same visual treatment as every other field in the row, instead of the one control still wearing browser-default select styling
+
+**Workspace — real "Modo enfoque" overlay, Estimación relabeled (2026-09-18, same-day follow-up)**
+- [x] "Iniciar enfoque" on Hoy's Enfoque Actual card previously just opened the same Task Detail Panel a title-click already reaches — felt like a no-op. New `FocusModeOverlay` (`HoyView.jsx`) is a full-screen takeover (same portal + split-transform pattern as every modal in the app, CLAUDE.md §11): dims the rest of the page, shows just that task's title/priority/project/description, with "Marcar como completada" as the primary action and "Ver detalles"/"Salir del enfoque" as secondary links. Deliberately still not a timer/pomodoro — confirmed with the user first (see options weighed) — just removes every other distraction from view instead of adding time tracking
+- [x] `EstimationCell` (`TaskCells.jsx`) relabeled around the due date it actually drives: empty-state placeholder is now "Agregar vencimiento" (was "Agregar fecha"), and the popover's fields are reordered/relabeled to "Vencimiento" (primary) and "Inicio (opcional, para Timeline)" (secondary) — was "Inicio"/"Fin" with no indication either was optional or which one drives Vencidas/Para hoy/Mis Pendientes placement
 
 **Splash screen — logo simplified (2026-09-18)**
 - [x] Removed the small secondary `AdorMark` that sat below the main logo — one focal mark instead of two, per direct request. Glow brightened from 2 to 3 layered drop-shadows with a noticeably brighter innermost layer so it reads at a glance instead of only on close inspection

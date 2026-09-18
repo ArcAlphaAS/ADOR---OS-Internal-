@@ -125,10 +125,13 @@ export function WorkstreamCell({ workstreams = [], value, onChange }) {
   )
 }
 
-// "Estimación" — start and due date together, matching Timeline's own
-// startDate/dueDate fields (see TimelineView.jsx) so a duration set here is
-// the exact same duration that draws as a bar there. A due-date-only task
-// still shows just its due date; adding a start date is optional.
+// "Estimación" — a due date ("Vencimiento") drives Vencidas/Para hoy/Mis
+// Pendientes placement everywhere it's read (see isOverdue/isDueToday in
+// lib/workspace.js), with an optional start date on top of it purely for
+// Timeline's duration bars (see TimelineView.jsx). Labeled around the due
+// date since that's what most editing here is actually about — the start
+// date is a secondary, clearly-optional field in the popover, not implied
+// by the trigger's own label.
 export function EstimationCell({ startDate, dueDate, overdue, dueToday, onChangeStart, onChangeDue }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
@@ -149,29 +152,29 @@ export function EstimationCell({ startDate, dueDate, overdue, dueToday, onChange
         className="w-fit truncate text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
         style={{ color: label ? (overdue ? '#EF5350' : dueToday ? '#FFC107' : '#888888') : '#444444' }}
       >
-        {label || 'Agregar fecha'}
+        {label || 'Agregar vencimiento'}
       </button>
 
       {open && (
         <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={210}>
           <div className="flex flex-col gap-2 p-1">
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Inicio</span>
-              <input
-                type="date"
-                defaultValue={startDate ? startDate.toISOString().slice(0, 10) : ''}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => onChangeStart(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
-                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Fin</span>
+              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Vencimiento</span>
               <input
                 type="date"
                 defaultValue={dueDate ? dueDate.toISOString().slice(0, 10) : ''}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => onChangeDue(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
+                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Inicio (opcional, para Timeline)</span>
+              <input
+                type="date"
+                defaultValue={startDate ? startDate.toISOString().slice(0, 10) : ''}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => onChangeStart(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
                 className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
               />
             </label>
