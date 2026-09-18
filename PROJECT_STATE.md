@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Asignado picker in task cells gained a search field). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (fixed missing Estimación/Estado fields on Workspace's draft task rows, rebuilt Asignado as a real combobox, replaced the native Proyecto `<select>` with a styled picker). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -200,8 +200,11 @@ Last updated: 2026-09-18 (Asignado picker in task cells gained a search field). 
 - [x] Hoy keeps its own "matices" — the Vencidas/Para hoy/Mis Pendientes/Completado section split, collapse chevrons, and the "→ Hoy" reschedule pill (now inline next to the Proyecto badge) are all unchanged. The old `CompactTaskRow`'s completion-time label was dropped since the Estado column already reads "Completado"
 - [x] Inline add rows (Hoy's "+ Agregar pendiente", Personal's "+ Agregar tarea") both grew to the full field set (título/proyecto/descripción/asignado/prioridad, +fecha on Personal). See CLAUDE.md §29
 
-**Workspace — searchable Asignado picker (2026-09-18)**
-- [x] `AssigneeCell` (`TaskCells.jsx`) — the assignee popover used by Hoy's inline add rows, Personal, and Lista/Grupo's inline editing (`ProjectTaskRow`/`TaskRow`) now shows a search input at the top when there are associates to filter; typing narrows the checklist by name/email live, matching the existing checkbox-toggle behavior. Task Detail Panel's assignee checklist (always-visible, not a hidden dropdown) was left as-is — nothing to search past at 3 founders
+**Workspace — Asignado rebuilt as a real combobox, draft-row field gaps fixed, Proyecto picker restyled (2026-09-18)**
+- [x] `AssigneeCell` (`TaskCells.jsx`) rebuilt from a checkbox list into a proper combobox, matching Linear/Asana/Notion's multi-person field pattern: selected people show as removable chips above a search input, the list below narrows to unselected matches as you type, and arrow keys + Enter add the highlighted match without closing the popover. Task Detail Panel's assignee checklist (always-visible, not a hidden dropdown) was left as-is — nothing to search past at 3 founders
+- [x] **Real bug fixed:** Personal's "+ Agregar tarea" draft row had no Estimación or Estado fields at all (two blank `<span />`s) — impossible to set either before creating a task. Hoy's "+ Agregar pendiente" was missing Estado only. Both now use the same `EstimationCell`/`PillCell` components Grupo/Lista already had, via `lib/workspace.js`'s `STATUSES`/`statusMeta`
+- [x] **Real bug fixed in `lib/firestore.js`:** `createTask()` unconditionally hardcoded `status: 'por_hacer'` *after* spreading the caller's data, so a status picked in a draft row would never have persisted even once the UI field existed. Fixed by making it a default a caller-supplied `status` can override
+- [x] New `WorkstreamCell` (`TaskCells.jsx`) replaces the native `<select>` used for "Proyecto" in both draft rows with a `CellPopover`-based picker — same visual treatment as every other field in the row, instead of the one control still wearing browser-default select styling
 
 **Splash screen — logo simplified (2026-09-18)**
 - [x] Removed the small secondary `AdorMark` that sat below the main logo — one focal mark instead of two, per direct request. Glow brightened from 2 to 3 layered drop-shadows with a noticeably brighter innermost layer so it reads at a glance instead of only on close inspection

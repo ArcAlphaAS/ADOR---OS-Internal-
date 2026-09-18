@@ -7,6 +7,8 @@ import {
   withTimeout,
   PRIORITIES,
   priorityMeta,
+  STATUSES,
+  statusMeta,
   pickFocusTask,
   dailyQuote,
   PROJECT_TASK_ROW_GRID,
@@ -16,7 +18,7 @@ import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
+import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
 
@@ -327,6 +329,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
   const [workstreamId, setWorkstreamId] = useState('')
   const [assignedTo, setAssignedTo] = useState(actorUserId ? [actorUserId] : [])
   const [priority, setPriority] = useState('media')
+  const [status, setStatus] = useState('por_hacer')
+  const [startDate, setStartDate] = useState(null)
   const [dueDate, setDueDate] = useState(null)
   const showToast = useToast()
 
@@ -336,6 +340,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
     setWorkstreamId('')
     setAssignedTo(actorUserId ? [actorUserId] : [])
     setPriority('media')
+    setStatus('por_hacer')
+    setStartDate(null)
     setDueDate(null)
     onOpenChange(false)
   }
@@ -352,7 +358,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
           workstreamId: targetId,
           assignedTo,
           priority,
-          startDate: null,
+          status,
+          startDate,
           dueDate,
         },
         actorName,
@@ -391,23 +398,12 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
         placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
         className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
-      <select
-        value={workstreamId}
-        onChange={(e) => setWorkstreamId(e.target.value)}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-1.5 py-1.5 text-[11px] text-[#F5F5F5] outline-none"
-      >
-        <option value="">General</option>
-        {workstreams.map((w) => (
-          <option key={w.id} value={w.id}>
-            {w.name}
-          </option>
-        ))}
-      </select>
+      <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <DescriptionCell description={description} onChange={setDescription} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
-      <EstimationCell startDate={null} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={() => {}} onChangeDue={setDueDate} />
-      <span />
+      <EstimationCell startDate={startDate} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={setStartDate} onChangeDue={setDueDate} />
+      <PillCell options={STATUSES} value={status} meta={statusMeta(status)} onChange={setStatus} />
     </div>
   )
 }

@@ -110,10 +110,10 @@ export function createTask(data, actorName, actorUserId) {
   const assignedTo = data.assignedTo || []
   const pendingConfirmations = actorUserId ? assignedTo.filter((uid) => uid !== actorUserId) : []
   return addDoc(collection(db, COLLECTIONS.tasks), {
+    status: 'por_hacer',
     ...data,
     pendingConfirmations,
     lastAssignedBy: pendingConfirmations.length > 0 ? actorName : null,
-    status: 'por_hacer',
     createdBy: actorName,
     createdAt: serverTimestamp(),
   }).then(async (ref) => {

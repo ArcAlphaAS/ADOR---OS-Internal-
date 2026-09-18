@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import AvatarStack from './AvatarStack'
 import CellPopover from './CellPopover'
+import Avatar from '../shell/Avatar'
+import { CloseIcon } from '../icons'
 
 // Shared, presentational cell editors — used by both TaskRow (an existing
 // task, writes straight to Firestore) and ListaView's NewTaskRow (a draft
@@ -54,6 +56,67 @@ export function PillCell({ options, value, meta, onChange, emptyLabel }) {
             >
               <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: opt.color }} />
               {opt.label}
+            </button>
+          ))}
+        </CellPopover>
+      )}
+    </div>
+  )
+}
+
+// Workstream ("Proyecto") picker for the draft add-rows in Hoy/Personal —
+// replaces a native <select> with the same CellPopover pattern every other
+// field in this row already uses, so it doesn't read as the one control
+// still wearing the browser's own default styling.
+export function WorkstreamCell({ workstreams = [], value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const [rect, setRect] = useState(null)
+  const triggerRef = useRef(null)
+
+  const selected = workstreams.find((w) => w.id === value)
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setRect(triggerRef.current.getBoundingClientRect())
+          setOpen(true)
+        }}
+        className="w-fit max-w-full truncate rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-left text-[12px] text-[#F5F5F5] transition-opacity duration-150 hover:opacity-80"
+      >
+        {selected ? selected.name : 'General'}
+      </button>
+
+      {open && (
+        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={200}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onChange('')
+              setOpen(false)
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 hover:bg-white/[0.06]"
+            style={{ color: !value ? '#F5F5F5' : '#888888', fontWeight: !value ? 500 : 400 }}
+          >
+            General
+          </button>
+          {workstreams.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange(w.id)
+                setOpen(false)
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 hover:bg-white/[0.06]"
+              style={{ color: w.id === value ? '#F5F5F5' : '#888888', fontWeight: w.id === value ? 500 : 400 }}
+            >
+              <span className="min-w-0 truncate">{w.name}</span>
             </button>
           ))}
         </CellPopover>
@@ -166,20 +229,34 @@ export function DescriptionCell({ description, onChange }) {
   )
 }
 
+// Combobox-style assignee picker, matching how Linear/Asana/Notion handle a
+// multi-person field: selected people show as removable chips above a
+// search input, the list below narrows to unselected matches as you type,
+// and Enter/click on the top match adds them without closing the popover
+// (so picking 2-3 people is one continuous flow, not repeated open/close).
 export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds = [], onChange }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const [query, setQuery] = useState('')
+  const [highlight, setHighlight] = useState(0)
   const triggerRef = useRef(null)
+  const inputRef = useRef(null)
 
-  const toggle = (uid) => {
-    const next = assignedTo.includes(uid) ? assignedTo.filter((id) => id !== uid) : [...assignedTo, uid]
-    onChange(next)
+  const add = (uid) => {
+    if (!assignedTo.includes(uid)) onChange([...assignedTo, uid])
+    setQuery('')
+    setHighlight(0)
+    inputRef.current?.focus()
   }
 
-  const filtered = query.trim()
-    ? users.filter((u) => (u.displayName || u.email || '').toLowerCase().includes(query.trim().toLowerCase()))
-    : users
+  const remove = (uid) => {
+    onChange(assignedTo.filter((id) => id !== uid))
+  }
+
+  const selectedUsers = assignedTo.map((uid) => userById[uid]).filter(Boolean)
+  const q = query.trim().toLowerCase()
+  const available = users.filter((u) => !assignedTo.includes(u.id))
+  const filtered = q ? available.filter((u) => (u.displayName || u.email || '').toLowerCase().includes(q)) : available
 
   return (
     <div>
@@ -189,6 +266,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
         onClick={(e) => {
           e.stopPropagation()
           setQuery('')
+          setHighlight(0)
           setRect(triggerRef.current.getBoundingClientRect())
           setOpen(true)
         }}
@@ -198,40 +276,80 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
       </button>
 
       {open && (
-        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={220}>
-          <div className="flex flex-col gap-1">
+        <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={230}>
+          <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {selectedUsers.length > 0 && (
+              <div className="flex flex-wrap gap-1 px-1">
+                {selectedUsers.map((u) => (
+                  <span
+                    key={u.id}
+                    className="flex items-center gap-1 rounded-full py-0.5 pl-1 pr-1.5 text-[11px]"
+                    style={{ background: 'rgba(30,95,173,0.15)', color: '#F5F5F5' }}
+                  >
+                    <Avatar displayName={u.displayName} email={u.email} size={16} />
+                    {u.displayName || u.email}
+                    <button
+                      type="button"
+                      onClick={() => remove(u.id)}
+                      className="ml-0.5 flex items-center justify-center rounded-full text-[#888888] hover:text-[#F5F5F5]"
+                    >
+                      <CloseIcon size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             {users.length > 0 && (
               <input
+                ref={inputRef}
                 autoFocus
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                placeholder="Buscar asociado..."
-                className="mx-1 mb-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  setHighlight(0)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setHighlight((h) => Math.max(h - 1, 0))
+                  } else if (e.key === 'Enter' && filtered[highlight]) {
+                    e.preventDefault()
+                    add(filtered[highlight].id)
+                  } else if (e.key === 'Backspace' && !query && selectedUsers.length > 0) {
+                    remove(selectedUsers[selectedUsers.length - 1].id)
+                  }
+                }}
+                placeholder="Escribe un nombre..."
+                className="mx-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50"
               />
             )}
+
             {users.length === 0 ? (
               <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin asociados</p>
             ) : filtered.length === 0 ? (
-              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin resultados</p>
+              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">{available.length === 0 ? 'Todos ya están asignados' : 'Sin resultados'}</p>
             ) : (
-              filtered.map((u) => (
-                <label
-                  key={u.id}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 hover:bg-white/[0.06]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <input
-                    type="checkbox"
-                    checked={assignedTo.includes(u.id)}
-                    onChange={() => toggle(u.id)}
-                    className="h-3.5 w-3.5 accent-[#1E5FAD]"
-                  />
-                  <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
-                  {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
-                </label>
-              ))
+              <div className="max-h-[180px] overflow-y-auto">
+                {filtered.map((u, i) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onMouseEnter={() => setHighlight(i)}
+                    onClick={() => add(u.id)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150"
+                    style={{ background: i === highlight ? 'rgba(255,255,255,0.06)' : 'transparent' }}
+                  >
+                    <Avatar displayName={u.displayName} email={u.email} size={20} />
+                    <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
+                    {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </CellPopover>
