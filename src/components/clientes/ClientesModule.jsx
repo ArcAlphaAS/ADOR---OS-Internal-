@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage } from '../../lib/firestore'
+import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { daysSince, urgencyColor, currencyPEN } from '../../lib/clientStages'
-import { KanbanIcon, ListViewIcon, ArrowRightIcon } from '../icons'
+import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/workspace'
+import { KanbanIcon, ListViewIcon, ArrowRightIcon, CheckCircleIcon } from '../icons'
+import { useToast } from '../../hooks/useToast'
 import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
 import LostClientsView from './LostClientsView'
@@ -31,12 +33,49 @@ function StatCard({ value, label }) {
 // see ListView.jsx) doubles as "what needs to happen next" across the whole
 // pipeline. Sorted by days since last contact so the most neglected
 // opportunities surface first — no separate "actions" concept invented.
-function ProximasAcciones({ clients, onOpenClient }) {
+// "→ Crear tarea" turns that text into a real Workspace task (title
+// prefixed with the client's name so it's self-explanatory once it's living
+// on its own in Hoy/Personal, assigned to the SPC's own associate) instead
+// of leaving it as a note nobody actually works from — direct follow-up
+// request that this panel should help execute, not just display.
+function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
+  const showToast = useToast()
+  const [creatingId, setCreatingId] = useState(null)
+  const [createdIds, setCreatedIds] = useState(new Set())
+
   const rows = clients
     .filter((c) => c.nextStep?.trim())
     .map((c) => ({ client: c, days: daysSince(c.lastContactAt?.toDate?.() || c.createdAt?.toDate?.()) }))
     .sort((a, b) => (b.days ?? -1) - (a.days ?? -1))
     .slice(0, 5)
+
+  const createTaskForClient = async (client) => {
+    setCreatingId(client.id)
+    try {
+      const generalId = await findOrCreateGeneralProyecto(actorName)
+      const assignedTo = client.assignedTo ? [client.assignedTo] : actorUserId ? [actorUserId] : []
+      await withTimeout(
+        createTask(
+          {
+            title: `${client.name}: ${client.nextStep.trim()}`,
+            description: '',
+            workstreamId: buildWorkstreamId('proyecto', generalId),
+            assignedTo,
+            priority: 'media',
+            status: 'por_hacer',
+          },
+          actorName,
+          actorUserId
+        )
+      )
+      setCreatedIds((ids) => new Set(ids).add(client.id))
+      showToast('Tarea creada en Workspace.')
+    } catch (error) {
+      showToast(`No se pudo crear la tarea: ${error.message}`)
+    } finally {
+      setCreatingId(null)
+    }
+  }
 
   return (
     <div className="ador-glass ador-grain rounded-2xl p-5">
@@ -45,25 +84,40 @@ function ProximasAcciones({ clients, onOpenClient }) {
         <p className="mt-3 text-[12.5px] text-[#444444]">Sin siguientes pasos pendientes.</p>
       ) : (
         <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
-          {rows.map(({ client, days }) => (
-            <button
-              key={client.id}
-              type="button"
-              onClick={() => onOpenClient(client)}
-              className="flex items-center gap-2.5 py-2.5 text-left transition-opacity duration-150 hover:opacity-80"
-            >
-              <ArrowRightIcon size={12} className="flex-shrink-0 text-[#666666]" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
-                <p className="truncate text-[11.5px] text-[#888888]">{client.nextStep}</p>
+          {rows.map(({ client, days }) => {
+            const created = createdIds.has(client.id)
+            return (
+              <div key={client.id} className="flex items-center gap-2.5 py-2.5">
+                <button type="button" onClick={() => onOpenClient(client)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition-opacity duration-150 hover:opacity-80">
+                  <ArrowRightIcon size={12} className="flex-shrink-0 text-[#666666]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
+                    <p className="truncate text-[11.5px] text-[#888888]">{client.nextStep}</p>
+                  </div>
+                </button>
+                {days !== null && (
+                  <span className="flex-shrink-0 text-[10.5px]" style={{ color: urgencyColor(days) }}>
+                    {days === 0 ? 'hoy' : `${days}d`}
+                  </span>
+                )}
+                {created ? (
+                  <span className="flex flex-shrink-0 items-center gap-1 text-[10.5px] text-[#4CAF50]">
+                    <CheckCircleIcon size={12} /> Creada
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => createTaskForClient(client)}
+                    disabled={creatingId === client.id}
+                    className="flex-shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10 disabled:opacity-50"
+                    style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+                  >
+                    {creatingId === client.id ? 'Creando…' : '→ Crear tarea'}
+                  </button>
+                )}
               </div>
-              {days !== null && (
-                <span className="flex-shrink-0 text-[10.5px]" style={{ color: urgencyColor(days) }}>
-                  {days === 0 ? 'hoy' : `${days}d`}
-                </span>
-              )}
-            </button>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -245,6 +299,8 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
               setSelectedClientId(c.id)
               setOriginRect(null)
             }}
+            actorName={actorName}
+            actorUserId={user?.uid}
           />
         </div>
       ) : view === 'list' ? (
