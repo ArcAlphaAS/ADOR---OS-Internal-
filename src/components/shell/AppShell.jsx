@@ -109,7 +109,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
                 onFocusHandled={() => setFocus(null)}
               />
             ) : activeModule === 'finanzas' ? (
-              <FinanzasModule key="finanzas" user={user} />
+              <FinanzasModule key="finanzas" user={user} onNavigate={navigateTo} />
             ) : activeModule === 'objetivos' ? (
               <ObjetivosModule key="objetivos" user={user} />
             ) : activeModule === 'calendario' ? (

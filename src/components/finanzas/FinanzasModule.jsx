@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFinanceData } from '../../hooks/useFinanceData'
-import MetricCards from './MetricCards'
+import SituacionActualCard from './SituacionActualCard'
 import FinancialHealthCard from './FinancialHealthCard'
+import RequiereAtencion from './RequiereAtencion'
+import FinanceDetailPanel from './FinanceDetailPanel'
 import FinanceChart from './FinanceChart'
 import MovimientosTable from './MovimientosTable'
 import QuarterlyGoalCard from './QuarterlyGoalCard'
 import RunwayCard from './RunwayCard'
 import CategoryBreakdownCard from './CategoryBreakdownCard'
-import NextPaymentCard from './NextPaymentCard'
 import AddIncomeModal from './AddIncomeModal'
 import AddExpenseModal from './AddExpenseModal'
 
@@ -16,11 +17,18 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
-export default function FinanzasModule({ user }) {
+// Redesigned 2026-09-18 from a detailed functional spec: every important
+// number here should be actionable ("ver → entender → actuar"), not just
+// displayed — Finanzas should read as "así está ADOR, esto está cambiando,
+// esto requiere tu atención," not a generic metrics dashboard. See
+// CLAUDE.md for the full reasoning on what changed and why.
+export default function FinanzasModule({ user, onNavigate }) {
   const data = useFinanceData()
   const [modal, setModal] = useState(null) // null | 'ingreso' | 'gasto'
+  const [detailMode, setDetailMode] = useState(null) // null | 'porCobrar' | 'runway'
 
   const actorName = actorNameFor(user)
+  const currentMonthLabel = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })
 
   return (
     <motion.div
@@ -32,7 +40,7 @@ export default function FinanzasModule({ user }) {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Finanzas</h1>
-          <p className="text-[13px] text-[#888888]">El cerebro financiero de ADOR — solo lo que cambia una decisión.</p>
+          <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -41,52 +49,73 @@ export default function FinanzasModule({ user }) {
             className="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
             style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
           >
-            + Ingreso Manual
+            + Ingreso
           </button>
-          <button
-            type="button"
-            onClick={() => setModal('gasto')}
-            className="ador-btn-primary rounded-full px-4 py-2 text-[13px] font-medium"
-          >
+          <button type="button" onClick={() => setModal('gasto')} className="ador-btn-primary rounded-full px-4 py-2 text-[13px] font-medium">
             + Gasto
           </button>
         </div>
       </div>
 
       <FinancialHealthCard
+        cashBalance={data.cashBalance}
         runwayMonths={data.runwayMonths}
         margenNetoPct={data.margenNetoPct}
-        topClientConcentrationPct={data.topClientConcentrationPct}
-        topClientName={data.topClientName}
-        overdueAmount={data.overdueAmount}
-        overdueCount={data.overdueCount}
+        totalPorCobrar={data.totalPorCobrar}
+        porCobrarClientCount={data.porCobrarClientCount}
+        onOpenPorCobrar={() => setDetailMode('porCobrar')}
+        onOpenRunway={() => setDetailMode('runway')}
       />
 
       <div className="mt-6 flex gap-6">
-        <div className="flex w-[68%] flex-col gap-6">
-          <MetricCards
+        <div className="flex w-[66%] flex-col gap-6">
+          <SituacionActualCard
+            monthLabel={currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}
             ingresosDelMes={data.ingresosDelMes}
             gastosDelMes={data.gastosDelMes}
             utilidadNeta={data.utilidadNeta}
-            ingresosDeltaPct={data.ingresosDeltaPct}
-            gastosDeltaPct={data.gastosDeltaPct}
+            resultDeltaPct={data.resultDeltaPct}
           />
           <FinanceChart series={data.series} />
           <MovimientosTable movements={data.movements} />
         </div>
 
-        <div className="flex w-[32%] flex-col gap-5">
-          <QuarterlyGoalCard quarterKey={data.quarterKey} target={data.quarterlyTarget} recaudado={data.recaudadoTrimestre} />
+        <div className="flex w-[34%] flex-col gap-5">
+          <RequiereAtencion
+            runwayMonths={data.runwayMonths}
+            totalPorCobrar={data.totalPorCobrar}
+            porCobrarClientCount={data.porCobrarClientCount}
+            overdueCount={data.overdueCount}
+            categorySpikes={data.categorySpikes}
+            onOpenRunway={() => setDetailMode('runway')}
+            onOpenPorCobrar={() => setDetailMode('porCobrar')}
+          />
           <RunwayCard
             cashBalance={data.cashBalance}
             monthlyBurnRate={data.monthlyBurnRate}
             projectedIn30={data.projectedIn30}
             projectedIn60={data.projectedIn60}
+            projectedIn90={data.projectedIn90}
           />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
-          <NextPaymentCard payment={data.nextPayment} />
+          <QuarterlyGoalCard quarterKey={data.quarterKey} target={data.quarterlyTarget} recaudado={data.recaudadoTrimestre} />
         </div>
       </div>
+
+      <AnimatePresence>
+        {detailMode && (
+          <FinanceDetailPanel
+            key="finance-detail"
+            mode={detailMode}
+            pendingPayments={data.pendingPayments}
+            categoryTotals={data.categoryTotals}
+            monthlyBurnRate={data.monthlyBurnRate}
+            cashBalance={data.cashBalance}
+            onNavigate={onNavigate}
+            onClose={() => setDetailMode(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {modal === 'ingreso' && (

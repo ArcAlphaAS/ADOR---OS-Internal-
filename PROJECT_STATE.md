@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Clientes gained real CRM-grade panels — Requiere atención, Por cobrar, Salud del pipeline). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-18 (Finanzas redesigned from a detailed functional spec — actionable Salud Financiera, Requiere atención, drill-down panels). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -167,6 +167,17 @@ Last updated: 2026-09-18 (Clientes gained real CRM-grade panels — Requiere ate
 
 **Finanzas — extended 2026-08-15**
 - [x] "Proyección de Caja" (`RunwayCard.jsx`) — the one forward-looking card on an otherwise all-actuals dashboard. `cashBalance` is manually entered (no bank integration exists) via the same pencil-edit-inline pattern as Meta del Trimestre, stored at `settings/finanzas.cashBalance`. Projects 30/60-day cash by combining that balance with the average burn rate of the last 3 *completed* months and any dated pending SP payments — never invents a parallel forecast source
+
+**Finanzas — redesigned from a detailed functional spec (2026-09-18)**
+- [x] Direct feedback: Finanzas needed to be actionable ("ver → entender → actuar"), not a "dashboard bonito" of numbers. Rebuilt around the exact architecture requested: Salud Financiera → Situación actual → Flujo de caja → Requiere atención → Proyección → Movimientos, two-column layout matching the shared reference image
+- [x] **`FinancialHealthCard.jsx` rewritten** — now shows Caja disponible / Runway / Margen / Por cobrar (was Runway/Margen/Concentración/Cobros vencidos), each with an icon, plus a one-word estado (Estable/Atención/Crítico, worst-signal logic). "Por cobrar" and "Runway" are real clickable tiles, not static numbers
+- [x] **New `FinanceDetailPanel.jsx`** — the actionability the spec asked for, built as a slide-in drill-down (same portal pattern as every other detail panel in the app): clicking "Por cobrar" lists every pending payment with a "Ver cliente" link that deep-links into Clientes' Ficha via `onNavigate` (where "Registrar pago" already exists for real — not duplicated here); clicking "Runway" shows burn rate, this month's recurring expense categories, and upcoming pending inflows — "¿qué está consumiendo caja?"
+- [x] **New `RequiereAtencion.jsx`** — real, rule-based alerts computed from live data: runway <3 months, any amount pendiente por cobrar (red if 2+ payments are overdue), and category spend spikes ≥15% vs. last month. Shows a calm green "Sin alertas financieras" when nothing's wrong, never an empty gap
+- [x] **New `SituacionActualCard.jsx`** replaces the old 3-card `MetricCards.jsx` — Ingresos/Gastos/Resultado read together as one unit with a single delta on the result itself, matching the reference's "Resultados del mes" framing
+- [x] **`RunwayCard.jsx`** gained a 90-day projection row and a "Caja proyectada" total line (was 30/60-day only)
+- [x] **New live-derived fields in `useFinanceData.js`:** `totalPorCobrar`/`porCobrarClientCount` (all pending payments, not just overdue), `categoryTotalsPrevMonth`/`categorySpikes` (month-over-month expense category comparison), `resultDeltaPct`, `projectedIn90`/`inflowIn90`, `estadoSalud`. Nothing here is a new manually-entered figure — all derived from data the hook already subscribed to
+- [x] **Retired `MetricCards.jsx` and `NextPaymentCard.jsx`** (deleted, no longer imported anywhere) — superseded by `SituacionActualCard.jsx` and the new "Por cobrar" drill-down respectively. `QuarterlyGoalCard.jsx` (Meta del Trimestre) kept as-is, since it's a distinct feature the new spec didn't address, placed at the bottom of the right column
+- [x] **Verification note:** this session's cached real Firestore session (see the Clientes CRM entry above) meant real financial data rendered through the redesign — confirmed the health bar, Situación actual, Flujo de caja, Requiere atención, and both drill-down panels (Por cobrar, Runway) against real numbers. Accidentally left RunwayCard's cash-balance edit field open mid-verification — reloaded without clicking "Guardar" to avoid writing a test value into the real `settings/finanzas.cashBalance`
 
 **Home — Resumen Semanal added 2026-08-15**
 - [x] A Monday–Sunday synthesis card on Home (`WeeklySummaryCard.jsx`) with a one-line TL;DR, opening a full slide-in panel (`WeeklySummaryPanel.jsx`) on click — Finanzas/Objetivos/Workspace/Clientes sections plus a birthdays-this-week callout. All numbers are live-derived from existing subscriptions (Finanzas' movements, Workspace's tasks/workload, Objetivos' confidence state, Clientes' pipeline) — nothing hand-entered

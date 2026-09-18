@@ -21,7 +21,7 @@ function ProjectionRow({ label, value }) {
 // by hand; the projection combines it with the same burn rate and pending
 // SP payments the rest of the dashboard already computes, not a separate
 // manually-entered forecast.
-export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30, projectedIn60 }) {
+export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30, projectedIn60, projectedIn90 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(cashBalance || '')
 
@@ -78,6 +78,13 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
           <div className="mt-4 flex flex-col gap-2 border-t border-white/[0.06] pt-3">
             <ProjectionRow label="En 30 días" value={projectedIn30} />
             <ProjectionRow label="En 60 días" value={projectedIn60} />
+            <ProjectionRow label="En 90 días" value={projectedIn90} />
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
+            <span className="text-[12px] font-medium text-[#888888]">Caja proyectada</span>
+            <span className="text-[16px] font-semibold" style={{ color: projectedIn90 < 0 ? '#E05252' : '#F5F5F5' }}>
+              {currencyPEN.format(projectedIn90)}
+            </span>
           </div>
         </>
       )}

@@ -357,3 +357,22 @@ export function GridIcon(props) {
     </svg>
   )
 }
+
+export function TrendUpIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M3.5 17 10 10.5l4 4 6.5-6.5" />
+      <path d="M15 8h5.5v5.5" />
+    </svg>
+  )
+}
+
+export function AlertIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M12 3.5 21.5 20h-19L12 3.5Z" />
+      <path d="M12 9.5v4.5" />
+      <circle cx="12" cy="16.8" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}

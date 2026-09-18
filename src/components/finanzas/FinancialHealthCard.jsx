@@ -1,90 +1,91 @@
 import { currencyPEN } from '../../lib/clientStages'
+import { WalletIcon, ClockIcon, TrendUpIcon, FileIcon } from '../icons'
 
-// Four signals, not restatements of numbers shown elsewhere on this
-// dashboard — each answers a distinct "is the business actually okay"
-// question a founder would ask, not just "how much did we make." Traffic-
-// light coloring reuses the same palette Workspace's priority pills already
-// established (#EF5350/#FFC107/#4CAF50) for visual consistency across the app.
 const RED = '#EF5350'
 const AMBER = '#FFC107'
 const GREEN = '#4CAF50'
 const GRAY = '#444444'
 
-function Tile({ label, value, sub, color }) {
+const STATE_COLOR = { Crítico: RED, Atención: AMBER, Estable: GREEN }
+
+function Tile({ Icon, label, value, sub, color, onClick }) {
+  const Comp = onClick ? 'button' : 'div'
   return (
-    <div className="flex flex-1 flex-col gap-1.5 px-5 py-4">
-      <span
-        className="font-medium text-[#444444]"
-        style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-      >
-        {label}
+    <Comp
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className="flex flex-1 items-center gap-3 px-5 py-4 text-left transition-colors duration-150"
+      style={onClick ? { cursor: 'pointer' } : undefined}
+      onMouseEnter={onClick ? (e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)') : undefined}
+      onMouseLeave={onClick ? (e) => (e.currentTarget.style.background = 'transparent') : undefined}
+    >
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-[#888888]">
+        <Icon size={16} />
       </span>
-      <span className="font-semibold" style={{ fontSize: 22, letterSpacing: '-0.01em', color }}>
-        {value}
-      </span>
-      {sub && <span className="text-[11px] text-[#666666]">{sub}</span>}
-    </div>
+      <div className="min-w-0">
+        <span className="block font-medium text-[#444444]" style={{ fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          {label}
+        </span>
+        <span className="block font-semibold" style={{ fontSize: 19, letterSpacing: '-0.01em', color }}>
+          {value}
+        </span>
+        {sub && <span className="text-[11px] text-[#666666]">{sub}</span>}
+      </div>
+    </Comp>
   )
 }
 
+// The header of Finanzas — four real signals (not restatements of numbers
+// shown lower down), matching the reference's own exact set: Caja
+// disponible, Runway, Margen, Por cobrar. "Por cobrar" and "Runway" open a
+// real drill-down (see FinanceDetailPanel.jsx) — direct request that every
+// important number here be actionable, not just visible.
 export default function FinancialHealthCard({
+  cashBalance,
   runwayMonths,
   margenNetoPct,
-  topClientConcentrationPct,
-  topClientName,
-  overdueAmount,
-  overdueCount,
+  totalPorCobrar,
+  porCobrarClientCount,
+  onOpenPorCobrar,
+  onOpenRunway,
 }) {
   const runwayColor = runwayMonths == null ? GRAY : runwayMonths < 2 ? RED : runwayMonths < 4 ? AMBER : GREEN
   const runwayValue = runwayMonths == null ? '—' : `${runwayMonths.toFixed(1)} meses`
 
   const margenColor = margenNetoPct == null ? GRAY : margenNetoPct < 0 ? RED : margenNetoPct < 15 ? AMBER : GREEN
-  const margenValue = margenNetoPct == null ? '—' : `${margenNetoPct >= 0 ? '' : ''}${margenNetoPct.toFixed(0)}%`
+  const margenValue = margenNetoPct == null ? '—' : `${margenNetoPct.toFixed(0)}%`
 
-  const concColor =
-    topClientConcentrationPct == null ? GRAY : topClientConcentrationPct >= 60 ? RED : topClientConcentrationPct >= 40 ? AMBER : GREEN
-  const concValue = topClientConcentrationPct == null ? '—' : `${topClientConcentrationPct.toFixed(0)}%`
+  const porCobrarColor = porCobrarClientCount === 0 ? GREEN : porCobrarClientCount >= 3 ? RED : AMBER
 
-  const overdueColor = overdueCount === 0 ? GREEN : overdueCount <= 1 ? AMBER : RED
-  const overdueValue = overdueCount === 0 ? currencyPEN.format(0) : currencyPEN.format(overdueAmount)
-
-  // Worst-of-four, so the header dot/border reads as "does anything here
-  // need attention" at a glance — GRAY only when every signal still lacks
-  // data (nothing to warn about yet, not literally "healthy").
-  const signalColors = [runwayColor, margenColor, concColor, overdueColor]
-  const overallColor = signalColors.includes(RED)
-    ? RED
-    : signalColors.includes(AMBER)
-      ? AMBER
-      : signalColors.includes(GREEN)
-        ? GREEN
-        : GRAY
+  const signalColors = [runwayColor, margenColor, porCobrarClientCount === 0 ? GREEN : porCobrarColor]
+  const estado = signalColors.includes(RED) ? 'Crítico' : signalColors.includes(AMBER) ? 'Atención' : signalColors.includes(GREEN) ? 'Estable' : null
 
   return (
-    <div
-      className="ador-glass ador-grain overflow-hidden rounded-[18px]"
-      style={{ borderLeft: `3px solid ${overallColor}` }}
-    >
-      <div className="flex items-center gap-2 px-5 pt-4">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: overallColor }} />
-        <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Salud Financiera
-        </span>
+    <div className="ador-glass ador-grain overflow-hidden rounded-[18px]">
+      <div className="flex items-center justify-between px-5 pt-4">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: estado ? STATE_COLOR[estado] : GRAY }} />
+          <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Salud Financiera
+          </span>
+          {estado && (
+            <span className="font-semibold" style={{ fontSize: 11, letterSpacing: '0.04em', color: STATE_COLOR[estado] }}>
+              {estado.toUpperCase()}
+            </span>
+          )}
+        </div>
       </div>
-      <div className="flex divide-x divide-white/[0.06]">
-        <Tile label="Runway" value={runwayValue} sub={runwayMonths == null ? 'Registra tu caja' : 'a la quema actual'} color={runwayColor} />
-        <Tile label="Margen neto" value={margenValue} sub="ingresos vs. gastos, este mes" color={margenColor} />
+      <div className="flex flex-wrap divide-x divide-white/[0.06]">
+        <Tile Icon={WalletIcon} label="Caja disponible" value={cashBalance ? currencyPEN.format(cashBalance) : '—'} sub={cashBalance ? 'saldo registrado' : 'edítalo en Proyección'} color="#F5F5F5" />
+        <Tile Icon={ClockIcon} label="Runway" value={runwayValue} sub="con el gasto promedio actual" color={runwayColor} onClick={onOpenRunway} />
+        <Tile Icon={TrendUpIcon} label="Margen neto" value={margenValue} sub="este mes" color={margenColor} />
         <Tile
-          label="Concentración"
-          value={concValue}
-          sub={topClientName ? `en ${topClientName}` : 'sin ingresos recientes'}
-          color={concColor}
-        />
-        <Tile
-          label="Cobros vencidos"
-          value={overdueValue}
-          sub={overdueCount === 0 ? 'al día' : `${overdueCount} pago${overdueCount === 1 ? '' : 's'} atrasado${overdueCount === 1 ? '' : 's'}`}
-          color={overdueColor}
+          Icon={FileIcon}
+          label="Por cobrar"
+          value={currencyPEN.format(totalPorCobrar)}
+          sub={porCobrarClientCount === 0 ? 'al día' : `${porCobrarClientCount} cliente${porCobrarClientCount === 1 ? '' : 's'}`}
+          color={porCobrarClientCount === 0 ? GREEN : porCobrarColor}
+          onClick={onOpenPorCobrar}
         />
       </div>
     </div>
