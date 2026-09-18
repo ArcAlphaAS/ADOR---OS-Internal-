@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-import { subscribeTasksForUser } from '../../lib/firestore'
 import { isDueToday } from '../../lib/workspace'
 
 // A landing greeting for Calendario, iOS-Home-Screen-widget-ish — per
@@ -16,15 +14,9 @@ function getGreeting(hour, name) {
   return `Buenas noches, ${name}.`
 }
 
-export default function CalendarioGreeting({ user, events }) {
-  const [tasks, setTasks] = useState([])
+export default function CalendarioGreeting({ user, events, tasks }) {
   const name = (user?.displayName || user?.email?.split('@')[0] || 'ahí').trim().split(' ')[0]
   const hour = new Date().getHours()
-
-  useEffect(() => {
-    if (!user?.uid || user.uid === 'preview') return
-    return subscribeTasksForUser(user.uid, setTasks)
-  }, [user?.uid])
 
   const today = new Date()
   const todaysEvents = events.filter((e) => new Date(e.start).toDateString() === today.toDateString())

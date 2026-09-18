@@ -142,6 +142,8 @@ export async function fetchEvents(accessToken, { timeMin, timeMax }) {
     end: e.end?.dateTime || e.end?.date,
     colorId: e.colorId || null,
     htmlLink: e.htmlLink,
+    description: e.description || null,
+    attendees: (e.attendees || []).map((a) => ({ name: a.displayName || a.email, email: a.email, self: Boolean(a.self), organizer: Boolean(a.organizer) })),
     // "Meeting" = has other guests invited, per Google's own attendees list
     // (excluding yourself as organizer) — used by the greeting card's
     // "eventos" vs. "reuniones" split, a real distinction, not a guess.

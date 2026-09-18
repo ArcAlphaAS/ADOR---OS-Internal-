@@ -13,7 +13,11 @@ function buildMonthCells(monthDate) {
   return cells
 }
 
-export default function MonthGrid({ monthDate, events, onSelectDay }) {
+function tasksOn(tasks, day) {
+  return tasks.filter((t) => t.status !== 'completado' && t.dueDate?.toDate?.() && t.dueDate.toDate().toDateString() === day.toDateString())
+}
+
+export default function MonthGrid({ monthDate, events, tasks = [], onSelectDay, onOpenEvent }) {
   const cells = buildMonthCells(monthDate)
   const today = new Date()
 
@@ -33,13 +37,9 @@ export default function MonthGrid({ monthDate, events, onSelectDay }) {
           if (!day) return <div key={i} className="min-h-[104px] border-b border-l border-white/[0.04] first:border-l-0" />
           const isToday = day.toDateString() === today.toDateString()
           const dayEvents = eventsOn(day)
+          const dayTasks = tasksOn(tasks, day)
           return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onSelectDay(day)}
-              className="flex min-h-[104px] flex-col gap-1 border-b border-l border-white/[0.04] p-1.5 text-left transition-colors duration-150 first:border-l-0 hover:bg-white/[0.03]"
-            >
+            <div key={i} role="button" tabIndex={0} onClick={() => onSelectDay(day)} className="flex min-h-[104px] cursor-pointer flex-col gap-1 border-b border-l border-white/[0.04] p-1.5 text-left transition-colors duration-150 first:border-l-0 hover:bg-white/[0.03]">
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
                 style={{ background: isToday ? '#1E5FAD' : 'transparent', color: '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
@@ -50,19 +50,29 @@ export default function MonthGrid({ monthDate, events, onSelectDay }) {
                 {dayEvents.slice(0, MAX_VISIBLE).map((e) => {
                   const color = eventColor(e)
                   return (
-                    <span
+                    <button
                       key={e.id}
-                      className="flex items-center gap-1 truncate rounded px-1 py-[1px] text-[9.5px] font-medium"
+                      type="button"
+                      onClick={(ev) => {
+                        ev.stopPropagation()
+                        onOpenEvent(e)
+                      }}
+                      className="flex w-full items-center gap-1 truncate rounded px-1 py-[1px] text-left text-[9.5px] font-medium"
                       style={{ background: `${color}1F`, color }}
                     >
                       <span className="h-1 w-1 flex-shrink-0 rounded-full" style={{ background: color }} />
                       <span className="truncate">{e.title}</span>
-                    </span>
+                    </button>
                   )
                 })}
                 {dayEvents.length > MAX_VISIBLE && <span className="px-1 text-[9.5px] text-[#666666]">+{dayEvents.length - MAX_VISIBLE} más</span>}
+                {dayTasks.length > 0 && (
+                  <span className="truncate rounded border border-dashed border-white/[0.18] px-1 py-[1px] text-[9.5px] text-[#888888]">
+                    {dayTasks.length} tarea{dayTasks.length === 1 ? '' : 's'}
+                  </span>
+                )}
               </div>
-            </button>
+            </div>
           )
         })}
       </div>

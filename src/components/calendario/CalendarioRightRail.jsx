@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { subscribeTasksForUser, toggleTaskComplete } from '../../lib/firestore'
+import { toggleTaskComplete } from '../../lib/firestore'
 import { isDueToday, withTimeout } from '../../lib/workspace'
 import { eventColor } from '../../lib/googleCalendar'
 import { ArrowRightIcon, ArrowLeftIcon } from '../icons'
@@ -82,7 +82,7 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
   )
 }
 
-export function TodayCard({ events, onOpenDay }) {
+export function TodayCard({ events, onOpenDay, onOpenEvent }) {
   const today = new Date()
   const todays = events
     .filter((e) => new Date(e.start).toDateString() === today.toDateString())
@@ -102,13 +102,13 @@ export function TodayCard({ events, onOpenDay }) {
           <p className="mb-2 text-[11px] text-[#888888]">{todays.length} evento{todays.length === 1 ? '' : 's'}</p>
           <div className="flex flex-col divide-y divide-white/[0.05]">
             {todays.slice(0, 5).map((e) => (
-              <div key={e.id} className="flex items-center gap-2 py-2">
+              <button key={e.id} type="button" onClick={() => onOpenEvent?.(e)} className="flex w-full items-center gap-2 py-2 text-left transition-opacity duration-150 hover:opacity-80">
                 <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(e) }} />
                 <span className="w-[52px] flex-shrink-0 text-[11px] text-[#888888]">
                   {e.allDay ? 'Todo el día' : new Date(e.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-[#F5F5F5]">{e.title}</span>
-              </div>
+              </button>
             ))}
           </div>
         </>
@@ -120,19 +120,13 @@ export function TodayCard({ events, onOpenDay }) {
   )
 }
 
-// Real Workspace tasks due today for the signed-in user — genuinely useful
-// next to a day's meetings, and cheap to wire since subscribeTasksForUser
-// already exists. Checkbox reuses the exact toggleTaskComplete() write
-// every other task checkbox in the app calls.
-export function TasksTodayCard({ userId, actorName }) {
-  const [tasks, setTasks] = useState([])
+// Real Workspace tasks due today for the signed-in user, passed down from
+// CalendarioModule's single subscription (also feeds the grid's task strip
+// and the greeting card, so there's one live source, not three). Checkbox
+// reuses the exact toggleTaskComplete() write every other task checkbox in
+// the app calls.
+export function TasksTodayCard({ tasks, actorName }) {
   const showToast = useToast()
-
-  useEffect(() => {
-    if (!userId || userId === 'preview') return
-    return subscribeTasksForUser(userId, setTasks)
-  }, [userId])
-
   const dueToday = tasks.filter((t) => t.status !== 'completado' && isDueToday(t))
 
   const toggle = (task) => {

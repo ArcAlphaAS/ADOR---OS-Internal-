@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { dailyQuote } from '../../lib/workspace'
 import { eventColor } from '../../lib/googleCalendar'
+import { subscribeTasksForUser } from '../../lib/firestore'
 import { CalendarIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon, PlusIcon } from '../icons'
 import CalendarioGrid from './CalendarioGrid'
 import MonthGrid from './MonthGrid'
 import { MiniMonthCalendar, TodayCard, TasksTodayCard } from './CalendarioRightRail'
 import CalendarioGreeting from './CalendarioGreeting'
+import EventDetailModal from './EventDetailModal'
 
 // A read-only "reflejo" of the signed-in founder's own Google Calendar —
 // per direct user decision, not a combined team view (Google Calendar
@@ -148,7 +150,7 @@ function Skeleton() {
   )
 }
 
-function AgendaView({ events }) {
+function AgendaView({ events, onOpenEvent }) {
   const days = groupByDay(events)
   if (days.length === 0) {
     return (
@@ -168,12 +170,11 @@ function AgendaView({ events }) {
           </div>
           <div className="flex flex-col divide-y divide-white/[0.04] px-3 py-2">
             {items.map((event) => (
-              <a
+              <button
                 key={event.id}
-                href={event.htmlLink}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
+                type="button"
+                onClick={() => onOpenEvent(event)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.035]"
               >
                 <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(event) }} />
                 <div className="min-w-0 flex-1">
@@ -183,7 +184,7 @@ function AgendaView({ events }) {
                 <span className="flex-shrink-0 text-[12px] text-[#888888]">
                   {event.allDay ? 'Todo el día' : `${new Date(event.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })} – ${new Date(event.end).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}`}
                 </span>
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -200,11 +201,22 @@ export default function CalendarioModule({ user }) {
   const { configured, status, connectedEmail, events, error, connect, disconnect, refresh, loadRange } = useGoogleCalendar(user?.uid)
   const [view, setView] = useState('semana')
   const [anchor, setAnchor] = useState(new Date())
+  const [tasks, setTasks] = useState([])
+  const [openEvent, setOpenEvent] = useState(null)
+  const actorName = actorNameFor(user)
 
   useEffect(() => {
     if (status === 'ready' || status === 'loading') loadRange(rangeFor(view, anchor))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, anchor])
+
+  // Owned here, not inside each rail card, so both the grid (tasks shown
+  // alongside events by due date) and the right rail's "Tareas de hoy"
+  // read the exact same live subscription instead of opening two.
+  useEffect(() => {
+    if (!user?.uid || user.uid === 'preview') return
+    return subscribeTasksForUser(user.uid, setTasks)
+  }, [user?.uid])
 
   const goToday = () => setAnchor(new Date())
   const goPrev = () => setAnchor((a) => shiftAnchor(view, a, -1))
@@ -252,7 +264,7 @@ export default function CalendarioModule({ user }) {
         </div>
       </div>
 
-      {connected && <CalendarioGreeting user={user} events={events} />}
+      {connected && <CalendarioGreeting user={user} events={events} tasks={tasks} />}
 
       {connected && (
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -320,22 +332,24 @@ export default function CalendarioModule({ user }) {
             {status === 'loading' ? (
               <Skeleton />
             ) : view === 'semana' ? (
-              <CalendarioGrid days={weekDays} events={events} />
+              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
             ) : view === 'dia' ? (
-              <CalendarioGrid days={[anchor]} events={events} />
+              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
             ) : view === 'mes' ? (
-              <MonthGrid monthDate={anchor} events={events} onSelectDay={openDay} />
+              <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={openDay} onOpenEvent={setOpenEvent} />
             ) : (
-              <AgendaView events={events} />
+              <AgendaView events={events} onOpenEvent={setOpenEvent} />
             )}
           </div>
           <div className="flex flex-col gap-4">
             <MiniMonthCalendar anchorDate={anchor} onSelectDay={openDay} />
-            <TodayCard events={events} onOpenDay={openDay} />
-            <TasksTodayCard userId={user?.uid} actorName={actorNameFor(user)} />
+            <TodayCard events={events} onOpenDay={openDay} onOpenEvent={setOpenEvent} />
+            <TasksTodayCard tasks={tasks} actorName={actorName} />
           </div>
         </div>
       )}
+
+      <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
     </motion.div>
   )
 }

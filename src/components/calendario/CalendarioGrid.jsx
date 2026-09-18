@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { eventColor } from '../../lib/googleCalendar'
+import { toggleTaskComplete } from '../../lib/firestore'
+import { withTimeout } from '../../lib/workspace'
+import { useToast } from '../../hooks/useToast'
+import { CheckCircleIcon } from '../icons'
 
 // Hour-row × day-column grid, shared by Día (1 column) and Semana (7
 // columns) — same component, just a different `days` array. Positions
@@ -69,7 +73,7 @@ function DayHeader({ day, compact }) {
   )
 }
 
-function AllDayStrip({ days, events }) {
+function AllDayStrip({ days, events, onOpenEvent }) {
   const allDayByDay = days.map((d) => eventsForDay(events, d).filter((e) => e.allDay))
   if (!allDayByDay.some((list) => list.length > 0)) return null
   return (
@@ -80,16 +84,15 @@ function AllDayStrip({ days, events }) {
           {list.map((e) => {
             const color = eventColor(e)
             return (
-              <a
+              <button
                 key={e.id}
-                href={e.htmlLink}
-                target="_blank"
-                rel="noreferrer"
-                className="truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+                type="button"
+                onClick={() => onOpenEvent(e)}
+                className="truncate rounded-md px-1.5 py-0.5 text-left text-[10px] font-medium"
                 style={{ background: `${color}22`, borderLeft: `2px solid ${color}`, color }}
               >
                 {e.title}
-              </a>
+              </button>
             )
           })}
         </div>
@@ -98,7 +101,47 @@ function AllDayStrip({ days, events }) {
   )
 }
 
-export default function CalendarioGrid({ days, events, scrollRef }) {
+function tasksForDay(tasks, day) {
+  return tasks.filter((t) => t.status !== 'completado' && t.dueDate?.toDate?.() && t.dueDate.toDate().toDateString() === day.toDateString())
+}
+
+// Workspace tasks have no real time-of-day (Estimación is date-only), so
+// they're never placed at a fabricated hour in the timed grid below —
+// shown instead as a compact strip, honest about being "due this day," not
+// "at this hour." Visually distinct from Google events (dashed border,
+// checkbox) so it never reads as a real calendar entry.
+function TasksStrip({ days, tasks, actorName }) {
+  const showToast = useToast()
+  const byDay = days.map((d) => tasksForDay(tasks, d))
+  if (!byDay.some((list) => list.length > 0)) return null
+
+  const toggle = (task) => {
+    withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+  }
+
+  return (
+    <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
+      <div className="flex items-center justify-end pr-2 text-[9px] text-[#444444]">Tareas</div>
+      {byDay.map((list, i) => (
+        <div key={i} className="flex flex-col gap-1 border-l border-white/[0.05] px-1.5 py-1.5 first:border-l-0">
+          {list.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => toggle(t)}
+              className="flex w-full items-center gap-1 truncate rounded-md border border-dashed border-white/[0.18] px-1.5 py-0.5 text-left text-[10px] font-medium text-[#CCCCCC] transition-colors duration-150 hover:border-white/[0.3]"
+            >
+              <CheckCircleIcon size={9} className="flex-shrink-0 text-[#444444]" />
+              <span className="truncate">{t.title}</span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent }) {
   const now = new Date()
   const showNowLine = days.some((d) => d.toDateString() === now.toDateString())
   const nowTop = (minutesSinceMidnight(now) / 60) * ROW_HEIGHT
@@ -127,7 +170,8 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
         ))}
       </div>
 
-      <AllDayStrip days={days} events={events} />
+      <AllDayStrip days={days} events={events} onOpenEvent={onOpenEvent} />
+      <TasksStrip days={days} tasks={tasks} actorName={actorName} />
 
       <div ref={containerRef} className="max-h-[640px] overflow-y-auto">
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)`, height: HOURS.length * ROW_HEIGHT }}>
@@ -158,12 +202,11 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
                   const width = 100 / e.colCount
                   const color = eventColor(e)
                   return (
-                    <a
+                    <button
                       key={e.id}
-                      href={e.htmlLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-[10.5px] font-medium leading-tight backdrop-blur-sm transition-colors duration-150 hover:brightness-110"
+                      type="button"
+                      onClick={() => onOpenEvent(e)}
+                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-[10.5px] font-medium leading-tight backdrop-blur-sm transition-colors duration-150 hover:brightness-110"
                       style={{
                         top,
                         height,
@@ -180,7 +223,7 @@ export default function CalendarioGrid({ days, events, scrollRef }) {
                           {new Date(e.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
                         </span>
                       )}
-                    </a>
+                    </button>
                   )
                 })}
               </div>
