@@ -311,7 +311,7 @@ export default function CalendarioModule({ user }) {
             ) : view === 'semana' ? (
               <CalendarioGrid days={weekDays} events={events} />
             ) : view === 'dia' ? (
-              <CalendarioGrid days={[anchor]} events={events} />
+              <CalendarioGrid days={[anchor]} events={events} energyCurve />
             ) : view === 'mes' ? (
               <MonthGrid monthDate={anchor} events={events} onSelectDay={openDay} />
             ) : (
