@@ -18,7 +18,7 @@ function getGreeting(hour, name) {
 
 export default function CalendarioGreeting({ user, events }) {
   const [tasks, setTasks] = useState([])
-  const name = user?.displayName || user?.email?.split('@')[0] || 'ahí'
+  const name = (user?.displayName || user?.email?.split('@')[0] || 'ahí').trim().split(' ')[0]
   const hour = new Date().getHours()
 
   useEffect(() => {
