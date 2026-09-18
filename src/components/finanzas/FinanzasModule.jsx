@@ -7,7 +7,7 @@ import RequiereAtencion from './RequiereAtencion'
 import FinanceDetailPanel from './FinanceDetailPanel'
 import FinanceChart from './FinanceChart'
 import MovimientosTable from './MovimientosTable'
-import QuarterlyGoalCard from './QuarterlyGoalCard'
+import MetasCard from './MetasCard'
 import RunwayCard from './RunwayCard'
 import CategoryBreakdownCard from './CategoryBreakdownCard'
 import AddIncomeModal from './AddIncomeModal'
@@ -99,7 +99,14 @@ export default function FinanzasModule({ user, onNavigate }) {
             inflowIn90={data.inflowIn90}
           />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
-          <QuarterlyGoalCard quarterKey={data.quarterKey} target={data.quarterlyTarget} recaudado={data.recaudadoTrimestre} />
+          <MetasCard
+            quarterKey={data.quarterKey}
+            quarterlyTarget={data.quarterlyTarget}
+            recaudadoTrimestre={data.recaudadoTrimestre}
+            annualTarget={data.annualTarget}
+            recaudadoAnual={data.recaudadoAnual}
+            currentYear={data.currentYear}
+          />
         </div>
       </div>
 

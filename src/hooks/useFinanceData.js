@@ -112,6 +112,11 @@ export function useFinanceData() {
     .filter((e) => isInQuarter(e.date, qKey))
     .reduce((sum, e) => sum + e.amount, 0)
 
+  const currentYear = now.getFullYear()
+  const recaudadoAnual = allIncomes
+    .filter((e) => Number(e.date.slice(0, 4)) === currentYear)
+    .reduce((sum, e) => sum + e.amount, 0)
+
   // Nearest unreceived SP payment — "what's coming in next" is a real
   // decision input (who to follow up with), unlike a static promo card.
   const pendingPayments = []
@@ -245,6 +250,9 @@ export function useFinanceData() {
     quarterKey: qKey,
     quarterlyTarget: settings.quarterlyTarget || 0,
     recaudadoTrimestre,
+    annualTarget: settings.annualTarget || 0,
+    recaudadoAnual,
+    currentYear,
     nextPayment,
     pendingPayments,
     totalPorCobrar,

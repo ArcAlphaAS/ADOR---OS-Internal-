@@ -496,6 +496,11 @@ export function setQuarterlyTarget(amount) {
   return setDoc(doc(db, COLLECTIONS.settings, 'finanzas'), { quarterlyTarget: amount }, { merge: true })
 }
 
+export function setAnnualTarget(amount) {
+  if (!db) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.settings, 'finanzas'), { annualTarget: amount }, { merge: true })
+}
+
 // Manually entered starting point for the runway projection (RunwayCard) —
 // there's no bank-balance integration, so this is the one figure a founder
 // has to type in themselves, same "one shared doc, edited inline" pattern
