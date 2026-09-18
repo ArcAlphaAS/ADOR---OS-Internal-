@@ -94,8 +94,9 @@ export default function FinanzasModule({ user, onNavigate }) {
             cashBalance={data.cashBalance}
             monthlyBurnRate={data.monthlyBurnRate}
             projectedIn30={data.projectedIn30}
-            projectedIn60={data.projectedIn60}
             projectedIn90={data.projectedIn90}
+            inflowIn30={data.inflowIn30}
+            inflowIn90={data.inflowIn90}
           />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
           <QuarterlyGoalCard quarterKey={data.quarterKey} target={data.quarterlyTarget} recaudado={data.recaudadoTrimestre} />

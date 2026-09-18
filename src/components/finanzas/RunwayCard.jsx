@@ -3,14 +3,36 @@ import { currencyPEN } from '../../lib/clientStages'
 import { setCashBalance } from '../../lib/firestore'
 import { EditIcon } from '../icons'
 
-function ProjectionRow({ label, value }) {
+function ProjectionRow({ label, value, bold }) {
   const negative = value < 0
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className="text-[14px] font-medium" style={{ color: negative ? '#E05252' : '#F5F5F5' }}>
+      <span className={bold ? 'text-[12.5px] font-medium text-[#888888]' : 'text-[12px] text-[#888888]'}>{label}</span>
+      <span className={bold ? 'text-[16px] font-semibold' : 'text-[14px] font-medium'} style={{ color: negative ? '#E05252' : '#F5F5F5' }}>
         {currencyPEN.format(value)}
       </span>
+    </div>
+  )
+}
+
+// A small stacked bar next to the numbers, matching the reference image —
+// three segments stacked bottom-to-top: caja actual (blue, the base),
+// what the next 30 days add (green, can be a thin sliver or absent if the
+// 30-day delta is flat/negative), and what days 31-90 add on top of that
+// (a lighter blue). Heights are proportional to real projected values, not
+// decorative — clamped at 0 so a negative delta just doesn't grow the bar
+// rather than rendering a broken negative-height segment.
+function ProjectionBar({ cashBalance, projectedIn30, projectedIn90 }) {
+  const total = Math.max(projectedIn90, cashBalance, 1)
+  const baseH = Math.max(0, (cashBalance / total) * 100)
+  const midH = Math.max(0, ((projectedIn30 - cashBalance) / total) * 100)
+  const topH = Math.max(0, ((projectedIn90 - projectedIn30) / total) * 100)
+
+  return (
+    <div className="flex h-[110px] w-6 flex-shrink-0 flex-col-reverse overflow-hidden rounded-md bg-white/[0.04]">
+      <div style={{ height: `${baseH}%`, background: '#1E5FAD' }} />
+      <div style={{ height: `${midH}%`, background: '#4CAF50' }} />
+      <div style={{ height: `${topH}%`, background: '#3A8DE8' }} />
     </div>
   )
 }
@@ -21,7 +43,7 @@ function ProjectionRow({ label, value }) {
 // by hand; the projection combines it with the same burn rate and pending
 // SP payments the rest of the dashboard already computes, not a separate
 // manually-entered forecast.
-export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30, projectedIn60, projectedIn90 }) {
+export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30, projectedIn90, inflowIn30, inflowIn90 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(cashBalance || '')
 
@@ -72,21 +94,17 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
       ) : !cashBalance ? (
         <p className="mt-3 text-[13px] font-light text-[#444444]">Sin caja registrada — haz clic en el lápiz</p>
       ) : (
-        <>
-          <span className="mt-1 block font-semibold text-[24px] text-[#F5F5F5]">{currencyPEN.format(cashBalance)}</span>
-          <p className="mt-0.5 text-[11px] text-[#444444]">Caja actual · quema promedio {currencyPEN.format(monthlyBurnRate)}/mes</p>
-          <div className="mt-4 flex flex-col gap-2 border-t border-white/[0.06] pt-3">
-            <ProjectionRow label="En 30 días" value={projectedIn30} />
-            <ProjectionRow label="En 60 días" value={projectedIn60} />
-            <ProjectionRow label="En 90 días" value={projectedIn90} />
+        <div className="mt-4 flex items-stretch gap-4">
+          <ProjectionBar cashBalance={cashBalance} projectedIn30={projectedIn30} projectedIn90={projectedIn90} />
+          <div className="flex flex-1 flex-col justify-between gap-2.5">
+            <ProjectionRow label="Caja actual" value={cashBalance} />
+            <ProjectionRow label="Próximos 30 días" value={inflowIn30} />
+            <ProjectionRow label="Próximos 90 días" value={inflowIn90} />
+            <div className="border-t border-white/[0.06] pt-2.5">
+              <ProjectionRow label="Caja proyectada" value={projectedIn90} bold />
+            </div>
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
-            <span className="text-[12px] font-medium text-[#888888]">Caja proyectada</span>
-            <span className="text-[16px] font-semibold" style={{ color: projectedIn90 < 0 ? '#E05252' : '#F5F5F5' }}>
-              {currencyPEN.format(projectedIn90)}
-            </span>
-          </div>
-        </>
+        </div>
       )}
     </div>
   )
