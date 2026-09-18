@@ -7,6 +7,7 @@ import { CalendarIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon, PlusIcon } from
 import CalendarioGrid from './CalendarioGrid'
 import MonthGrid from './MonthGrid'
 import { MiniMonthCalendar, TodayCard, TasksTodayCard } from './CalendarioRightRail'
+import CalendarioGreeting from './CalendarioGreeting'
 
 // A read-only "reflejo" of the signed-in founder's own Google Calendar —
 // per direct user decision, not a combined team view (Google Calendar
@@ -250,6 +251,8 @@ export default function CalendarioModule({ user }) {
           </button>
         </div>
       </div>
+
+      {connected && <CalendarioGreeting user={user} events={events} />}
 
       {connected && (
         <div className="flex flex-wrap items-center justify-between gap-3">
