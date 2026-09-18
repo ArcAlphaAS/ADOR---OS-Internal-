@@ -201,6 +201,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 userId={user?.uid}
                 userById={userById}
                 users={users}
+                workstreams={workstreams}
                 workstreamById={workstreamById}
                 onOpenTask={(t) => setOpenTaskId(t.id)}
                 actorUserId={user?.uid}
@@ -217,12 +218,15 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                   tasks={tasks}
                   workstreams={workstreams}
                   workstreamById={workstreamById}
+                  userById={userById}
+                  users={users}
                   onOpenTask={(t) => setOpenTaskId(t.id)}
                   actorUserId={user?.uid}
                   actorName={actorName}
                   onToggleOnlyMine={toggleOnlyMine}
                   onGoToHoy={() => changeView('hoy')}
                   onNavigate={onNavigate}
+                  onNewProyecto={() => setShowNewProyecto(true)}
                 />
               ) : (
                 <ListaView

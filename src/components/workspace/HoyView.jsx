@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   isOverdue,
   isDueToday,
@@ -10,14 +9,16 @@ import {
   priorityMeta,
   pickFocusTask,
   dailyQuote,
+  PROJECT_TASK_ROW_GRID,
   workstreamId as buildWorkstreamId,
 } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
-import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
-import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, ChevronRightIcon, FlagIcon, PlayIcon } from '../icons'
+import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
+import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
+import ProjectTaskRow from './ProjectTaskRow'
 
 // The landing screen for Workspace — added 2026-09-16 after direct feedback
 // that opening on "Todo" (every Intervención/Proyecto) made the module read
@@ -43,17 +44,24 @@ import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } fro
 //
 // Redesigned 2026-09-17 from a reference image the user shared — a header
 // with a rotating daily quote + live stats, a highlighted "Enfoque actual"
-// card, compact checklist-style rows (vs. Lista's full editable grid), a new
-// "Completado hoy" section, and a right rail (mini calendar, day-progress
-// donut, the North Star objetivo reframed as "Objetivo de la semana", and a
-// small functional Quick Actions list). Three things from the reference were
-// explicitly scoped out after discussion: no focus-timer/pomodoro logic
-// behind "Iniciar enfoque" (just opens the highlighted task), no per-task
-// duration-in-minutes field (nothing to derive it from yet), and no keyboard
-// shortcuts on Quick Actions. The existing Vencidas/Para hoy/Mis Pendientes
-// split (a deliberate, previously-debated information architecture — see
-// §19-21) was kept and reskinned rather than collapsed into one generic
-// list, since each bucket answers a genuinely different question.
+// card, a new "Completado hoy" section, and a right rail (mini calendar,
+// day-progress donut, the North Star objetivo reframed as "Objetivo de la
+// semana", and a small functional Quick Actions list). Three things from
+// the reference were explicitly scoped out after discussion: no focus-
+// timer/pomodoro logic behind "Iniciar enfoque" (just opens the highlighted
+// task), no per-task duration-in-minutes field (nothing to derive it from
+// yet), and no keyboard shortcuts on Quick Actions. The existing Vencidas/
+// Para hoy/Mis Pendientes split (a deliberate, previously-debated
+// information architecture — see §19-21) was kept, since each bucket
+// answers a genuinely different question.
+//
+// Rows switched from compact checklist-style (a lighter alternative to
+// Lista's full grid) to the same full-column ProjectTaskRow that Personal
+// and Grupo use — per direct request that all three read as the same kind
+// of table, reversing the earlier "Hoy is lighter than Lista" simplification
+// from the first pass. ProjectTaskRow.jsx is shared with PersonalOverview.jsx
+// (both need a Proyecto column, since neither is grouped by workstream the
+// way Grupo/Lista is).
 
 function NoteCard({ note, actorName, onArchive, onDelete }) {
   const [converting, setConverting] = useState(false)
@@ -243,127 +251,7 @@ function FocusCard({ task, workstream, onOpenTask }) {
   )
 }
 
-// Compact checklist row — deliberately lighter than Lista's full
-// inline-editable grid (TaskRow.jsx): a checkbox, title, a small
-// workstream/reschedule line, and either a priority flag (open tasks) or a
-// completion time (Completado hoy). Editing beyond checking it off happens
-// in the Task Detail Panel, opened by clicking anywhere on the row — a
-// reasonable trade for Hoy's more scannable, checklist-first design; Lista
-// still has full per-cell editing for anyone who needs it.
-function CompactTaskRow({ task, workstream, onOpen, onReschedule, actorName, actorUserId, timeLabel }) {
-  const [busy, setBusy] = useState(false)
-  const showToast = useToast()
-  const completed = task.status === 'completado'
-
-  const toggle = async (e) => {
-    e.stopPropagation()
-    setBusy(true)
-    try {
-      await withTimeout(toggleTaskComplete(task, actorName))
-    } catch (error) {
-      showToast(`No se pudo actualizar: ${error.message}`)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // Urgencia (prioridad) is editable right from the row — same PillCell
-  // popover Lista uses — after direct feedback that you should be able to
-  // set it yourself on any task, not just today's. Only for open rows;
-  // Completado shows a completion time in this same slot instead.
-  const setPriority = (id) => {
-    withTimeout(applyTaskUpdate(task, { priority: id }, actorUserId, actorName)).catch((error) =>
-      showToast(`No se pudo guardar: ${error.message}`)
-    )
-  }
-
-  return (
-    <div
-      onClick={() => onOpen(task)}
-      className="flex cursor-pointer items-start gap-3 rounded-xl px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
-    >
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.82 }}
-        disabled={busy}
-        onClick={toggle}
-        className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-        style={{ color: completed ? '#4CAF50' : '#444444' }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {completed ? (
-            <motion.span
-              key="done"
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.4, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-              className="flex items-center justify-center"
-            >
-              <CheckCircleIcon size={17} />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="empty"
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.4, opacity: 0 }}
-              transition={{ duration: 0.12 }}
-              className="h-[15px] w-[15px] rounded-full border"
-              style={{ borderColor: '#444444' }}
-            />
-          )}
-        </AnimatePresence>
-      </motion.button>
-
-      <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-[13.5px] font-medium text-[#F5F5F5]"
-          style={{ textDecoration: completed ? 'line-through' : 'none', opacity: completed ? 0.5 : 1 }}
-        >
-          {task.title}
-        </p>
-        {(workstream || onReschedule) && (
-          <div className="mt-0.5 flex items-center gap-2">
-            {workstream && (
-              <span className="text-[10px] font-medium uppercase tracking-[0.06em]" style={{ color: workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B' }}>
-                {workstream.name}
-              </span>
-            )}
-            {onReschedule && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onReschedule(task)
-                }}
-                className="rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
-                style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
-              >
-                → Hoy
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-0.5 flex flex-shrink-0 items-center gap-2">
-        {timeLabel ? (
-          <span className="text-[11px] text-[#444444]">{timeLabel}</span>
-        ) : (
-          <PillCell
-            options={PRIORITIES}
-            value={task.priority}
-            meta={task.priority ? priorityMeta(task.priority) : null}
-            emptyLabel="Prioridad"
-            onChange={setPriority}
-          />
-        )}
-        <ChevronRightIcon size={13} className="text-[#333333]" />
-      </div>
-    </div>
-  )
-}
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
 function SectionIcon({ Icon, color }) {
   return (
@@ -376,7 +264,7 @@ function SectionIcon({ Icon, color }) {
 // Collapsible — a small chevron next to the count, matching the reference's
 // "click the header to fold a group" behavior. Defaults open; state is
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
-function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, workstreamById, onReschedule, headerAction, children, defaultOpen = true, timeLabelFor }) {
+function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, onReschedule, headerAction, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   if (tasks.length === 0 && !children) return null
   return (
@@ -393,20 +281,34 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
         {headerAction && <div onClick={(e) => e.stopPropagation()}>{headerAction}</div>}
       </button>
       {open && (
-        <div className="flex flex-col divide-y divide-white/[0.04] px-3 pb-3">
-          {tasks.map((task) => (
-            <CompactTaskRow
-              key={task.id}
-              task={task}
-              onOpen={onOpenTask}
-              actorName={actorName}
-              actorUserId={actorUserId}
-              workstream={workstreamById[task.workstreamId]}
-              onReschedule={onReschedule}
-              timeLabel={timeLabelFor ? timeLabelFor(task) : null}
-            />
-          ))}
-          {children}
+        <div className="overflow-x-auto px-3 pb-3">
+          <div style={{ minWidth: 760 }}>
+            {tasks.length > 0 && (
+              <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-1" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
+                {COLUMN_HEADERS.map((h, i) => (
+                  <span key={h || i} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {h}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col divide-y divide-white/[0.04]">
+              {tasks.map((task) => (
+                <ProjectTaskRow
+                  key={task.id}
+                  task={task}
+                  workstream={workstreamById[task.workstreamId]}
+                  userById={userById}
+                  users={users}
+                  onOpen={onOpenTask}
+                  actorUserId={actorUserId}
+                  actorName={actorName}
+                  onReschedule={onReschedule}
+                />
+              ))}
+            </div>
+            {children}
+          </div>
         </div>
       )}
     </div>
@@ -418,9 +320,11 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
 // due date, and who's on it. Controlled from the parent (`adding`/
 // `onOpenChange`) so the right rail's "Nueva tarea" Quick Action can open it
 // from anywhere on the page, not just its own "+" button.
-function AddPendiente({ actorUserId, actorName, userById, users, adding, onOpenChange }) {
+function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [], adding, onOpenChange }) {
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [workstreamId, setWorkstreamId] = useState('')
   const [assignedTo, setAssignedTo] = useState(actorUserId ? [actorUserId] : [])
   const [priority, setPriority] = useState('media')
   const [dueDate, setDueDate] = useState(null)
@@ -428,6 +332,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, adding, onOpenC
 
   const reset = () => {
     setTitle('')
+    setDescription('')
+    setWorkstreamId('')
     setAssignedTo(actorUserId ? [actorUserId] : [])
     setPriority('media')
     setDueDate(null)
@@ -438,12 +344,12 @@ function AddPendiente({ actorUserId, actorName, userById, users, adding, onOpenC
     if (!title.trim() || saving) return
     setSaving(true)
     try {
-      const proyectoId = await findOrCreateGeneralProyecto(actorName)
+      const targetId = workstreamId || (await findOrCreateGeneralProyecto(actorName).then((id) => buildWorkstreamId('proyecto', id)))
       await createTask(
         {
           title: title.trim(),
-          description: '',
-          workstreamId: buildWorkstreamId('proyecto', proyectoId),
+          description: description.trim(),
+          workstreamId: targetId,
           assignedTo,
           priority,
           startDate: null,
@@ -473,11 +379,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, adding, onOpenC
   }
 
   return (
-    <div
-      className="grid items-center gap-3 rounded-lg px-2 py-2"
-      style={{ gridTemplateColumns: '1fr 88px 120px auto' }}
-      onKeyDown={(e) => e.key === 'Escape' && reset()}
-    >
+    <div className="grid items-center gap-3 rounded-lg px-2 py-2" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
+      <span />
       <input
         autoFocus
         type="text"
@@ -488,9 +391,23 @@ function AddPendiente({ actorUserId, actorName, userById, users, adding, onOpenC
         placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
         className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
+      <select
+        value={workstreamId}
+        onChange={(e) => setWorkstreamId(e.target.value)}
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-1.5 py-1.5 text-[11px] text-[#F5F5F5] outline-none"
+      >
+        <option value="">General</option>
+        {workstreams.map((w) => (
+          <option key={w.id} value={w.id}>
+            {w.name}
+          </option>
+        ))}
+      </select>
+      <DescriptionCell description={description} onChange={setDescription} />
+      <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
       <EstimationCell startDate={null} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={() => {}} onChangeDue={setDueDate} />
-      <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
+      <span />
     </div>
   )
 }
@@ -508,7 +425,7 @@ function NadaUrgente() {
   )
 }
 
-export default function HoyView({ user, tasks, userId, userById, users, workstreamById, onOpenTask, actorUserId, actorName, notes = [], onNavigate }) {
+export default function HoyView({ user, tasks, userId, userById, users, workstreams = [], workstreamById, onOpenTask, actorUserId, actorName, notes = [], onNavigate }) {
   const showToast = useToast()
   const [addingPendiente, setAddingPendiente] = useState(false)
   const noteInputRef = useRef(null)
@@ -550,8 +467,6 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
     noteInputRef.current?.focus()
   }
 
-  const completedTimeLabel = (task) => task.completedAt?.toDate?.().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) || ''
-
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
       <div className="flex min-w-0 flex-col gap-5">
@@ -579,6 +494,8 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           onOpenTask={onOpenTask}
           actorName={actorName}
           actorUserId={actorUserId}
+          userById={userById}
+          users={users}
           workstreamById={workstreamById}
           onReschedule={rescheduleToday}
           headerAction={
@@ -594,11 +511,11 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
             )
           }
         />
-        <Section title="Para hoy" color="#1E5FAD" Icon={CalendarIcon} tasks={hoy} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} workstreamById={workstreamById} />
+        <Section title="Para hoy" color="#1E5FAD" Icon={CalendarIcon} tasks={hoy} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} userById={userById} users={users} workstreamById={workstreamById} />
         <div ref={pendientesRef}>
-          <Section title="Mis Pendientes" color="#888888" Icon={ListViewIcon} tasks={pendientes} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} workstreamById={workstreamById}>
+          <Section title="Mis Pendientes" color="#888888" Icon={ListViewIcon} tasks={pendientes} onOpenTask={onOpenTask} actorName={actorName} actorUserId={actorUserId} userById={userById} users={users} workstreamById={workstreamById}>
             <div className="pt-1">
-              <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} adding={addingPendiente} onOpenChange={setAddingPendiente} />
+              <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} workstreams={workstreams} adding={addingPendiente} onOpenChange={setAddingPendiente} />
             </div>
           </Section>
         </div>
@@ -610,8 +527,10 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           tasks={completedToday}
           onOpenTask={onOpenTask}
           actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
           workstreamById={workstreamById}
-          timeLabelFor={completedTimeLabel}
         />
       </div>
 

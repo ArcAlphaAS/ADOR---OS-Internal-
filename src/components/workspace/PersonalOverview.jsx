@@ -1,24 +1,22 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  STATUSES,
   PRIORITIES,
-  statusMeta,
   priorityMeta,
   isOverdue,
   isDueToday,
   isPendingFor,
   pickFocusTask,
-  withTimeout,
+  PROJECT_TASK_ROW_GRID,
   workstreamId as buildWorkstreamId,
 } from '../../lib/workspace'
 import { weekRange } from '../../lib/weeklySummary'
-import { applyTaskUpdate, toggleTaskComplete, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { eventColor } from '../../lib/googleCalendar'
 import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon, PlusIcon, NoteIcon } from '../icons'
-import { PillCell, EstimationCell } from './TaskCells'
+import { PillCell, DescriptionCell, AssigneeCell } from './TaskCells'
+import ProjectTaskRow from './ProjectTaskRow'
 
 // A richer "Personal" landing page, built from a reference image the user
 // shared — replaces the plain filtered Lista table with a real dashboard:
@@ -42,9 +40,18 @@ import { PillCell, EstimationCell } from './TaskCells'
 // → Hoy (via onGoToHoy) since that's where QuickCapture actually lives —
 // there's no way to open GlobalCapture.jsx's floating "+" from outside
 // itself, and duplicating that UI here would be a second capture surface,
-// not a real addition.
-
-const ROW_GRID = '28px minmax(160px,1.4fr) minmax(120px,1fr) 92px 120px 104px'
+// not a real addition. "Nuevo Proyecto Interno" was added to Acciones
+// rápidas on a second pass (analyzing what's actually useful on a "my
+// work" page beyond the two the reference showed) — reuses WorkspaceModule's
+// existing NewProyectoModal, a real action genuinely relevant here.
+//
+// The task table's row shape (ProjectTaskRow.jsx) is now the same full
+// column set as Grupo/Lista's TaskRow — Tarea/Proyecto/Descripción/
+// Asignado/Prioridad/Estimación/Estado — per direct request that Hoy,
+// Personal, and Grupo all read as the same kind of table. Proyecto is the
+// one column Grupo doesn't need (its WorkstreamGroup header already says
+// which project a group's rows belong to); Personal and Hoy both mix tasks
+// across projects, so it earns a real column here.
 
 const TABS = [
   { id: 'hoy', label: 'Hoy' },
@@ -94,78 +101,24 @@ function ProjectCard({ workstream, total, pending, pct }) {
   )
 }
 
-function PersonalTaskRow({ task, workstream, onOpen, actorUserId, actorName }) {
-  const completed = task.status === 'completado'
-  const showToast = useToast()
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
-  const applyUpdate = (data) => {
-    withTimeout(applyTaskUpdate(task, data, actorUserId, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
-  }
-  const toggle = (e) => {
-    e.stopPropagation()
-    withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
-  }
-
-  return (
-    <div
-      onClick={() => onOpen(task)}
-      className="grid cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
-      style={{ gridTemplateColumns: ROW_GRID }}
-    >
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.82 }}
-        onClick={toggle}
-        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-        style={{ color: completed ? '#4CAF50' : '#444444' }}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          {completed ? (
-            <motion.span key="done" initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 22 }}>
-              <CheckCircleIcon size={17} />
-            </motion.span>
-          ) : (
-            <motion.span key="empty" initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.12 }} className="h-[15px] w-[15px] rounded-full border" style={{ borderColor: '#444444' }} />
-          )}
-        </AnimatePresence>
-      </motion.button>
-
-      <span className="min-w-0 truncate text-[13.5px] font-medium text-[#F5F5F5]" style={{ textDecoration: completed ? 'line-through' : 'none', opacity: completed ? 0.5 : 1 }}>
-        {task.title}
-      </span>
-
-      <span className="truncate text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B' }}>
-        {workstream?.name || '—'}
-      </span>
-
-      <PillCell options={PRIORITIES} value={task.priority} meta={task.priority ? priorityMeta(task.priority) : null} emptyLabel="Prioridad" onChange={(id) => applyUpdate({ priority: id })} />
-
-      <EstimationCell
-        startDate={task.startDate?.toDate?.() || null}
-        dueDate={task.dueDate?.toDate?.() || null}
-        overdue={isOverdue(task)}
-        dueToday={isDueToday(task)}
-        onChangeStart={(date) => applyUpdate({ startDate: date })}
-        onChangeDue={(date) => applyUpdate({ dueDate: date })}
-      />
-
-      <PillCell options={STATUSES} value={task.status} meta={statusMeta(task.status)} onChange={(id) => applyUpdate({ status: id })} />
-    </div>
-  )
-}
-
-function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChange }) {
+function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forceOpen, onOpenChange }) {
   const [adding, setAdding] = useState(false)
   const open = forceOpen || adding
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [workstreamId, setWorkstreamId] = useState('')
+  const [assignedTo, setAssignedTo] = useState(actorUserId ? [actorUserId] : [])
   const [priority, setPriority] = useState('media')
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
 
   const reset = () => {
     setTitle('')
+    setDescription('')
     setWorkstreamId('')
+    setAssignedTo(actorUserId ? [actorUserId] : [])
     setPriority('media')
     setAdding(false)
     onOpenChange?.(false)
@@ -176,7 +129,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
     setSaving(true)
     try {
       const targetId = workstreamId || (await findOrCreateGeneralProyecto(actorName).then((id) => buildWorkstreamId('proyecto', id)))
-      await createTask({ title: title.trim(), workstreamId: targetId, assignedTo: [actorUserId], priority, status: 'por_hacer' }, actorName, actorUserId)
+      await createTask({ title: title.trim(), description: description.trim(), workstreamId: targetId, assignedTo, priority, status: 'por_hacer' }, actorName, actorUserId)
       reset()
     } catch (error) {
       showToast(`No se pudo crear la tarea: ${error.message}`)
@@ -194,7 +147,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
   }
 
   return (
-    <div className="grid items-center gap-3 rounded-lg px-2 py-2" style={{ gridTemplateColumns: ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
+    <div className="grid items-center gap-3 rounded-lg px-2 py-2" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
       <span />
       <input
         autoFocus
@@ -209,7 +162,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
       <select
         value={workstreamId}
         onChange={(e) => setWorkstreamId(e.target.value)}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1.5 text-[12px] text-[#F5F5F5] outline-none"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-1.5 py-1.5 text-[11px] text-[#F5F5F5] outline-none"
       >
         <option value="">General</option>
         {workstreams.map((w) => (
@@ -218,6 +171,8 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
           </option>
         ))}
       </select>
+      <DescriptionCell description={description} onChange={setDescription} />
+      <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
       <span />
       <span />
@@ -225,7 +180,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, forceOpen, onOpenChan
   )
 }
 
-export default function PersonalOverview({ user, tasks, workstreams, workstreamById, onOpenTask, actorUserId, actorName, onToggleOnlyMine, onGoToHoy, onNavigate }) {
+export default function PersonalOverview({ user, tasks, workstreams, workstreamById, userById, users, onOpenTask, actorUserId, actorName, onToggleOnlyMine, onGoToHoy, onNavigate, onNewProyecto }) {
   const [tab, setTab] = useState('hoy')
   const [addingTask, setAddingTask] = useState(false)
   const { configured: gcalConfigured, status: gcalStatus, events: gcalEvents } = useGoogleCalendar(user?.uid)
@@ -308,16 +263,36 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
               </button>
             ))}
           </div>
-          <div className="flex flex-col divide-y divide-white/[0.04] px-3 py-2">
-            {rows.length === 0 && !(tab === 'hoy' && !addingTask) && <p className="px-2 py-4 text-[13px] text-[#444444]">Nada aquí.</p>}
-            {rows.map((task) => (
-              <PersonalTaskRow key={task.id} task={task} workstream={workstreamById[task.workstreamId]} onOpen={onOpenTask} actorUserId={actorUserId} actorName={actorName} />
-            ))}
-            {tab !== 'completadas' && (
-              <div className="pt-1">
-                <AddTaskRow workstreams={workstreams} actorUserId={actorUserId} actorName={actorName} forceOpen={addingTask} onOpenChange={setAddingTask} />
+          <div className="overflow-x-auto px-3 pb-3">
+            <div style={{ minWidth: 760 }}>
+              <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
+                {COLUMN_HEADERS.map((h, i) => (
+                  <span key={h || i} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {h}
+                  </span>
+                ))}
               </div>
-            )}
+              <div className="flex flex-col divide-y divide-white/[0.04]">
+                {rows.length === 0 && !(tab === 'hoy' && !addingTask) && <p className="px-2 py-4 text-[13px] text-[#444444]">Nada aquí.</p>}
+                {rows.map((task) => (
+                  <ProjectTaskRow
+                    key={task.id}
+                    task={task}
+                    workstream={workstreamById[task.workstreamId]}
+                    userById={userById}
+                    users={users}
+                    onOpen={onOpenTask}
+                    actorUserId={actorUserId}
+                    actorName={actorName}
+                  />
+                ))}
+              </div>
+              {tab !== 'completadas' && (
+                <div className="pt-1">
+                  <AddTaskRow workstreams={workstreams} actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} forceOpen={addingTask} onOpenChange={setAddingTask} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -420,6 +395,14 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
                   <NoteIcon size={14} />
                 </span>
                 <span className="text-[13px] text-[#F5F5F5]">Nueva nota</span>
+              </button>
+            )}
+            {onNewProyecto && (
+              <button type="button" onClick={onNewProyecto} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+                  <BriefcaseIcon size={14} />
+                </span>
+                <span className="text-[13px] text-[#F5F5F5]">Nuevo Proyecto Interno</span>
               </button>
             )}
           </div>

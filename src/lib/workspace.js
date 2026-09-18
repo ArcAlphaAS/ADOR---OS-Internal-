@@ -190,3 +190,11 @@ export function withTimeout(promise, ms = 8000) {
 // based on content (which is what was clipping the Estado column).
 // checkbox · tarea · descripción · asignado · prioridad · estimación · estado
 export const TASK_ROW_GRID = '28px minmax(140px,1.3fr) minmax(120px,1fr) 92px 88px 120px 104px'
+
+// Same shape as TASK_ROW_GRID plus a Proyecto column — for the two places a
+// task list isn't already grouped by workstream (so the project isn't
+// implied by a section header the way it is in Lista's WorkstreamGroup):
+// Personal's task table and Hoy's sections. Grupo/Lista deliberately keeps
+// TASK_ROW_GRID as-is, no Proyecto column, since that would just repeat
+// the group header on every row.
+export const PROJECT_TASK_ROW_GRID = '28px minmax(130px,1.1fr) 108px minmax(110px,1fr) 88px 84px 110px 100px'
