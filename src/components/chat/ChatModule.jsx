@@ -19,7 +19,7 @@ import {
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
-import { MessageIcon, PlusIcon, ArrowRightIcon, EditIcon, CloseIcon } from '../icons'
+import { MessageIcon, PlusIcon, ArrowRightIcon, EditIcon, CloseIcon, SearchIcon } from '../icons'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -96,11 +96,43 @@ function NewChannelInput({ onCreate, onDone }) {
   )
 }
 
+// Falls back through displayName → email → a labeled placeholder — never a
+// blank name next to a bare "?" avatar. A user doc missing both usually
+// means an incomplete/stale profile (e.g. an account whose Auth record has
+// no displayName and, unusually, no email either); this can't fix that
+// account's data, but it can stop rendering it as an unexplained blank.
+function userLabel(u) {
+  return u.displayName || u.email || 'Usuario sin nombre'
+}
+
 function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelectChannel, onSelectDm, onCreateChannel }) {
   const [addingChannel, setAddingChannel] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const q = search.trim().toLowerCase()
+  const otherUsers = users.filter((u) => u.id !== currentUid)
+  const filteredChannels = q ? channels.filter((c) => c.name.toLowerCase().includes(q)) : channels
+  const filteredUsers = q ? otherUsers.filter((u) => userLabel(u).toLowerCase().includes(q)) : otherUsers
+  const searching = q.length > 0
 
   return (
     <div className="flex w-[220px] flex-shrink-0 flex-col gap-5">
+      {/* Slack's own top search box — filters channels and people together,
+          so finding "did we already have a #marketing channel" or
+          "start a DM with Leo" is the same box instead of two separate
+          hunts through the sidebar. Real user request: search for a
+          person/channel and jump straight into it. */}
+      <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">
+        <SearchIcon size={12} className="text-[#666666]" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar personas o canales..."
+          className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+        />
+      </div>
+
       <div>
         <div className="mb-1 flex items-center justify-between px-1">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">Canales</p>
@@ -119,7 +151,7 @@ function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelec
               <NewChannelInput onCreate={onCreateChannel} onDone={() => setAddingChannel(false)} />
             </div>
           )}
-          {channels.map((c) => {
+          {filteredChannels.map((c) => {
             const active = selected?.type === 'channel' && selected.id === c.id
             const unread = !active && unreadMap[c.id]
             return (
@@ -139,20 +171,21 @@ function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelec
               </button>
             )
           })}
-          {channels.length === 0 && !addingChannel && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales todavía</p>}
+          {channels.length === 0 && !addingChannel && !searching && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales todavía</p>}
+          {searching && filteredChannels.length === 0 && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales que coincidan</p>}
         </div>
       </div>
 
       <div>
         <p className="mb-1 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">Mensajes directos</p>
         <div className="flex flex-col gap-0.5">
-          {users.filter((u) => u.id !== currentUid).length === 0 && (
+          {otherUsers.length === 0 && !searching && (
             <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">
               Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
             </p>
           )}
-          {users
-            .filter((u) => u.id !== currentUid)
+          {searching && filteredUsers.length === 0 && otherUsers.length > 0 && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin personas que coincidan</p>}
+          {filteredUsers
             .map((u) => {
               const active = selected?.type === 'dm' && selected.otherUid === u.id
               const convId = dmIdFor(currentUid, u.id)
@@ -166,8 +199,8 @@ function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelec
                   style={{ background: active ? 'rgba(30,95,173,0.14)' : 'transparent', color: active ? '#5B9BD9' : unread ? '#F5F5F5' : '#CCCCCC', fontWeight: unread ? 600 : 500 }}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    <Avatar displayName={u.displayName} photoURL={u.photoDataUrl} size={20} />
-                    <span className="truncate">{u.displayName || u.email}</span>
+                    <Avatar displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
+                    <span className="truncate">{userLabel(u)}</span>
                   </span>
                   {unread && <UnreadDot />}
                 </button>
@@ -409,7 +442,7 @@ export default function ChatModule({ user }) {
         selected={selected}
         unreadMap={unreadMap}
         onSelectChannel={(c) => setSelected({ type: 'channel', id: c.id, name: c.name })}
-        onSelectDm={(u) => setSelected({ type: 'dm', otherUid: u.id, otherName: u.displayName || u.email })}
+        onSelectDm={(u) => setSelected({ type: 'dm', otherUid: u.id, otherName: userLabel(u) })}
         onCreateChannel={handleCreateChannel}
       />
 
