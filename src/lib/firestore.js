@@ -846,14 +846,18 @@ export function createCommunityPost(text, actorUid, actorName) {
   })
 }
 
-// `hasReacted` is read off the client's already-subscribed post data (it
-// already has the full reactions map), so this just applies the opposite
-// of whatever the UI is currently showing — no read-then-write round trip.
-export function toggleCommunityReaction(postId, emoji, uid, hasReacted) {
+// LinkedIn-style single-reaction-per-person: picking a new reaction clears
+// whatever the user had before (a person can be "🎉" on a post, never
+// "🎉" AND "❤️" at once). `previousEmoji` is read off the client's already-
+// subscribed post data, so this never needs a read-then-write round trip.
+// Clicking the same emoji already active un-reacts (removes it, adds
+// nothing) — same as LinkedIn's toggle-off-by-clicking-Like-again.
+export function setCommunityReaction(postId, emoji, uid, previousEmoji) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
-  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), {
-    [`reactions.${emoji}`]: hasReacted ? arrayRemove(uid) : arrayUnion(uid),
-  })
+  const updates = {}
+  if (previousEmoji && previousEmoji !== emoji) updates[`reactions.${previousEmoji}`] = arrayRemove(uid)
+  updates[`reactions.${emoji}`] = emoji === previousEmoji ? arrayRemove(uid) : arrayUnion(uid)
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), updates)
 }
 
 export function deleteCommunityPost(postId) {

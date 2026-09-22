@@ -1,14 +1,24 @@
-import { useState } from 'react'
-import { createCommunityPost, toggleCommunityReaction, deleteCommunityPost } from '../../lib/firestore'
+import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { createCommunityPost, setCommunityReaction, deleteCommunityPost } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import { UsersIcon, CloseIcon } from '../icons'
 
-// Fixed, small reaction set — a full emoji picker is more chrome than an
-// informal "team pulse" feed needs at 3-founder scale (same "don't build
-// for a hypothetical" rule as everywhere else in this app).
-const REACTIONS = ['👍', '🎉', '❤️', '💡', '🔥']
+// LinkedIn's actual 6-reaction set, redone with emoji instead of custom
+// icon art — a person has at most one active reaction per post (see
+// setCommunityReaction in lib/firestore.js), not a free-for-all tally per
+// emoji like the first pass of this feed.
+const REACTIONS = [
+  { emoji: '👍', label: 'Me gusta' },
+  { emoji: '🎉', label: 'Celebrar' },
+  { emoji: '❤️', label: 'Me encanta' },
+  { emoji: '💡', label: 'Interesante' },
+  { emoji: '🤝', label: 'Apoyo' },
+  { emoji: '😂', label: 'Divertido' },
+]
+const REACTION_BY_EMOJI = Object.fromEntries(REACTIONS.map((r) => [r.emoji, r]))
 
 function timeAgo(ts) {
   if (!ts?.toDate) return 'Ahora'
@@ -43,7 +53,7 @@ function Composer({ user, actorName, onPosted }) {
 
   return (
     <div className="ador-glass ador-grain flex gap-3 rounded-2xl p-4">
-      <Avatar displayName={actorName} size={32} />
+      <Avatar displayName={actorName} size={40} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <textarea
           value={text}
@@ -70,63 +80,120 @@ function Composer({ user, actorName, onPosted }) {
   )
 }
 
-function ReactionBar({ post, uid }) {
-  const reactions = post.reactions || {}
+// The small overlapping-emoji + count strip above the action bar — e.g.
+// "👍❤️🎉  12" — same idea as LinkedIn's reaction summary. Shows only the
+// (up to 3) distinct emojis actually used, by how many people used them.
+function ReactionSummary({ reactions }) {
+  const entries = Object.entries(reactions)
+    .map(([emoji, uids]) => [emoji, uids?.length || 0])
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+  const total = entries.reduce((sum, [, count]) => sum + count, 0)
+  if (total === 0) return null
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {REACTIONS.map((emoji) => {
-        const uids = reactions[emoji] || []
-        const mine = uid && uids.includes(uid)
-        if (uids.length === 0 && !mine) {
-          // Collapsed/inactive state: a plain, low-emphasis pill so the bar
-          // doesn't read as 5 already-used reactions before anyone's clicked.
-          return (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => toggleCommunityReaction(post.id, emoji, uid, false).catch(() => {})}
-              className="rounded-full px-2 py-1 text-[13px] opacity-40 transition-opacity duration-150 hover:opacity-90"
-            >
-              {emoji}
-            </button>
-          )
-        }
-        return (
-          <button
-            key={emoji}
-            type="button"
-            onClick={() => toggleCommunityReaction(post.id, emoji, uid, mine).catch(() => {})}
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] transition-colors duration-150"
-            style={{ background: mine ? 'rgba(30,95,173,0.18)' : 'rgba(255,255,255,0.05)', color: mine ? '#5B9BD9' : '#888888' }}
+    <div className="flex items-center gap-1.5 text-[12px] text-[#888888]">
+      <span className="flex -space-x-1">
+        {entries.slice(0, 3).map(([emoji]) => (
+          <span key={emoji} className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#141414] text-[11px] ring-1 ring-[#0A0A0A]">
+            {emoji}
+          </span>
+        ))}
+      </span>
+      {total}
+    </div>
+  )
+}
+
+// The "Me gusta" button — clicking it directly toggles 👍 (or removes your
+// current reaction if you click it while already reacted). Hovering
+// (same 150ms delay as Sidebar's tooltip, CLAUDE.md §1) reveals the full
+// 6-reaction picker above it, LinkedIn-style, to pick something other than
+// a plain like without a second click-through.
+function LikeButton({ post, uid }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const timerRef = useRef(null)
+
+  const myReaction = Object.entries(post.reactions || {}).find(([, uids]) => uid && uids?.includes(uid))?.[0] || null
+  const active = REACTION_BY_EMOJI[myReaction]
+
+  const openPicker = () => {
+    timerRef.current = setTimeout(() => setPickerOpen(true), 150)
+  }
+  const closePicker = () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setPickerOpen(false)
+  }
+  const pick = (emoji) => {
+    setCommunityReaction(post.id, emoji, uid, myReaction).catch(() => {})
+    closePicker()
+  }
+
+  return (
+    <div className="relative" onMouseEnter={openPicker} onMouseLeave={closePicker}>
+      <AnimatePresence>
+        {pickerOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.9 }}
+            transition={{ duration: 0.12 }}
+            className="ador-glass ador-grain absolute bottom-full left-0 mb-2 flex items-center gap-1 rounded-full p-1.5"
           >
-            <span>{emoji}</span>
-            <span className="font-medium">{uids.length}</span>
-          </button>
-        )
-      })}
+            {REACTIONS.map((r) => (
+              <button
+                key={r.emoji}
+                type="button"
+                title={r.label}
+                onClick={() => pick(r.emoji)}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[17px] transition-transform duration-100 hover:scale-125"
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <button
+        type="button"
+        onClick={() => pick(myReaction || '👍')}
+        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-colors duration-150 hover:bg-white/[0.05]"
+        style={{ color: active ? '#5B9BD9' : '#888888' }}
+      >
+        <span>{active?.emoji || '👍'}</span>
+        {active?.label || 'Me gusta'}
+      </button>
     </div>
   )
 }
 
 function PostCard({ post, uid, canDelete, onDelete }) {
   return (
-    <div className="ador-glass flex gap-3 rounded-2xl p-4">
-      <Avatar displayName={post.authorName} size={32} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-[13px] font-medium text-[#F5F5F5]">
-            {post.authorName} <span className="ml-1.5 font-normal text-[#555555]">{timeAgo(post.createdAt)}</span>
-          </p>
-          {canDelete && (
-            <button type="button" onClick={() => onDelete(post)} className="flex-shrink-0 text-[#555555] hover:text-[#EF5350]">
-              <CloseIcon size={12} />
-            </button>
-          )}
+    <div className="ador-glass flex flex-col gap-3 rounded-2xl p-4">
+      <div className="flex items-start gap-3">
+        <Avatar displayName={post.authorName} size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[13.5px] font-semibold text-[#F5F5F5]">{post.authorName}</p>
+              <p className="text-[11.5px] text-[#666666]">
+                Asociado ADOR · {timeAgo(post.createdAt)}
+              </p>
+            </div>
+            {canDelete && (
+              <button type="button" onClick={() => onDelete(post)} className="flex-shrink-0 text-[#555555] hover:text-[#EF5350]">
+                <CloseIcon size={12} />
+              </button>
+            )}
+          </div>
+          <p className="mt-2 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]">{post.text}</p>
         </div>
-        <p className="mt-1 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]">{post.text}</p>
-        <div className="mt-2.5">
-          <ReactionBar post={post} uid={uid} />
-        </div>
+      </div>
+
+      <ReactionSummary reactions={post.reactions || {}} />
+
+      <div className="-mx-1 border-t border-white/[0.06] pt-1">
+        <LikeButton post={post} uid={uid} />
       </div>
     </div>
   )
