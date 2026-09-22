@@ -192,48 +192,59 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
 
   return (
     <>
+      {/* CLAUDE.md §1/§11: this box's `layout` animation (it grows from a
+          bare 32px avatar circle into the full name+role pill) is a
+          transform under the hood — combining that with `.ador-glass`'s
+          backdrop-filter on the SAME element is the exact bug documented
+          there (Chromium/WebKit can stop compositing, or visibly re-resolve,
+          the blur while the element is transforming). This one was missed
+          when the other 13 files got split. Outer motion.div owns the
+          layout/transform + hit area only; the inner plain div owns the
+          glass surface, unanimated. */}
       <motion.div
         ref={triggerRef}
         layout
         onClick={onToggleExpanded}
         transition={REFLOW_TRANSITION}
-        className="ador-glass ador-grain flex cursor-pointer items-center overflow-hidden rounded-full"
+        className="cursor-pointer overflow-hidden rounded-full"
         style={{ minHeight: 32 }}
       >
-        <AnimatePresence initial={false}>
-          {expanded && (
-            <motion.span
-              key="info"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3.5"
-            >
-              <span className="leading-tight">
-                <span className="block text-[13px] font-semibold text-[#F5F5F5]">{name}</span>
-                <span className="block text-[11px] text-[#888888]">{role}</span>
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onToggleMenu()
-                }}
-                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+        <div className="ador-glass ador-grain flex h-full items-center overflow-hidden rounded-full">
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.span
+                key="info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3.5"
               >
-                <ChevronDownIcon
-                  size={14}
-                  style={{
-                    transform: menuOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 150ms ease-out',
+                <span className="leading-tight">
+                  <span className="block text-[13px] font-semibold text-[#F5F5F5]">{name}</span>
+                  <span className="block text-[11px] text-[#888888]">{role}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleMenu()
                   }}
-                />
-              </button>
-            </motion.span>
-          )}
-        </AnimatePresence>
-        <Avatar photoURL={photoURL} displayName={user?.displayName} email={user?.email} size={32} />
+                  className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+                >
+                  <ChevronDownIcon
+                    size={14}
+                    style={{
+                      transform: menuOpen ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 150ms ease-out',
+                    }}
+                  />
+                </button>
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <Avatar photoURL={photoURL} displayName={user?.displayName} email={user?.email} size={32} />
+        </div>
       </motion.div>
 
       {rect &&
