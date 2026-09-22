@@ -146,6 +146,11 @@ function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelec
       <div>
         <p className="mb-1 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">Mensajes directos</p>
         <div className="flex flex-col gap-0.5">
+          {users.filter((u) => u.id !== currentUid).length === 0 && (
+            <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">
+              Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
+            </p>
+          )}
           {users
             .filter((u) => u.id !== currentUid)
             .map((u) => {
@@ -420,7 +425,9 @@ export default function ChatModule({ user }) {
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
             <MessageIcon size={20} className="text-[#333333]" />
-            <p className="text-[13px] text-[#444444]">Crea un canal para empezar a conversar con el equipo.</p>
+            <p className="text-[13px] text-[#444444]">
+              Elige un canal, inicia uno nuevo, o escribe un mensaje directo — no hace falta un canal para eso.
+            </p>
           </div>
         )}
       </div>
