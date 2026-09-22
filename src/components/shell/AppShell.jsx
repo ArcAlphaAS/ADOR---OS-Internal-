@@ -140,7 +140,12 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
 
-      <GlobalCapture user={user} actorName={actorNameFor(user)} />
+      {/* Hidden on Chat — that module already has its own real-time capture
+          point (the message composer), so a second floating "+" doing
+          something unrelated (a quick note, not a chat action) sits right
+          where a Slack-like "new message" button would be expected and
+          caused exactly that confusion in testing (see ChatModule.jsx). */}
+      {activeModule !== 'chat' && <GlobalCapture user={user} actorName={actorNameFor(user)} />}
       <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
     </div>
   )

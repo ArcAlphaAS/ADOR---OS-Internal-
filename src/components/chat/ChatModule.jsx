@@ -23,31 +23,23 @@ function formatTime(ts) {
   return ts.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
 }
 
-// New-channel row — a plain text input inline in the sidebar, not a modal.
-// No isAdmin gate here (unlike every admin-gated collection elsewhere in
-// this app): anyone can spin up a channel, same "open, informal" posture
-// as Comunidad, direct user choice for Chat's v1.
-function NewChannelRow({ onCreate }) {
-  const [open, setOpen] = useState(false)
+// Slack-style: a small "+" icon right next to the "CANALES" header opens
+// an inline input in place of the list — not the small easy-to-miss text
+// link the first pass used at the bottom of the channel list, which a
+// direct bug report showed gets lost next to GlobalCapture's much more
+// visually prominent floating "+" (an app-wide quick-note button,
+// unrelated to Chat — see AppShell.jsx). No isAdmin gate here (unlike
+// every admin-gated collection elsewhere in this app): anyone can spin up
+// a channel, same "open, informal" posture as Comunidad, direct user
+// choice for Chat's v1.
+function NewChannelInput({ onCreate, onDone }) {
   const [name, setName] = useState('')
 
   const submit = () => {
     if (!name.trim()) return
     onCreate(name.trim())
     setName('')
-    setOpen(false)
-  }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] text-[#666666] transition-colors duration-150 hover:text-[#F5F5F5]"
-      >
-        <PlusIcon size={11} /> Nuevo canal
-      </button>
-    )
+    onDone()
   }
 
   return (
@@ -58,9 +50,9 @@ function NewChannelRow({ onCreate }) {
       onChange={(e) => setName(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') submit()
-        if (e.key === 'Escape') setOpen(false)
+        if (e.key === 'Escape') onDone()
       }}
-      onBlur={() => !name.trim() && setOpen(false)}
+      onBlur={() => !name.trim() && onDone()}
       placeholder="Nombre del canal..."
       className="w-full rounded-md border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
     />
@@ -68,13 +60,28 @@ function NewChannelRow({ onCreate }) {
 }
 
 function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, onSelectDm, onCreateChannel }) {
+  const [addingChannel, setAddingChannel] = useState(false)
+
   return (
     <div className="flex w-[220px] flex-shrink-0 flex-col gap-5">
       <div>
         <div className="mb-1 flex items-center justify-between px-1">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">Canales</p>
+          <button
+            type="button"
+            onClick={() => setAddingChannel(true)}
+            title="Nuevo canal"
+            className="flex h-5 w-5 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+          >
+            <PlusIcon size={12} />
+          </button>
         </div>
         <div className="flex flex-col gap-0.5">
+          {addingChannel && (
+            <div className="px-1 pb-1">
+              <NewChannelInput onCreate={onCreateChannel} onDone={() => setAddingChannel(false)} />
+            </div>
+          )}
           {channels.map((c) => {
             const active = selected?.type === 'channel' && selected.id === c.id
             return (
@@ -89,9 +96,7 @@ function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, o
               </button>
             )
           })}
-          <div className="px-1 pt-1">
-            <NewChannelRow onCreate={onCreateChannel} />
-          </div>
+          {channels.length === 0 && !addingChannel && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales todavía</p>}
         </div>
       </div>
 
