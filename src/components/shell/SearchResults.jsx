@@ -46,7 +46,6 @@ export default function SearchResults({ results, anchorRect, onSelectClient, onS
       className="z-[999]"
       style={{
         position: 'fixed',
-        isolation: 'isolate',
         top: anchorRect.bottom + 8,
         left: anchorRect.left,
         width: Math.max(anchorRect.width, 260),

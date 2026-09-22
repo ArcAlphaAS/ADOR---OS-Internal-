@@ -70,7 +70,6 @@ function NavButton({ id, label, Icon, active, accent, onClick }) {
                 className="pointer-events-none z-[999]"
                 style={{
                   position: 'fixed',
-                  isolation: 'isolate',
                   top: tipPos.top,
                   left: tipPos.left,
                   transform: 'translateY(-50%)',

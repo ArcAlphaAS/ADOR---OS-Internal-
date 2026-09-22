@@ -27,7 +27,6 @@ export default function CellPopover({ anchorRect, onClose, children, width = 180
         transition={{ duration: 0.18, ease: 'easeOut' }}
         className="fixed z-[999]"
         style={{
-          isolation: 'isolate',
           top: anchorRect.bottom + 6,
           left: Math.min(anchorRect.left, window.innerWidth - width - 12),
           width,

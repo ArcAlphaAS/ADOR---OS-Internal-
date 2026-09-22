@@ -21,7 +21,6 @@ export default function NotificationCenter({ items = [], anchorRect }) {
       className="z-[999]"
       style={{
         position: 'fixed',
-        isolation: 'isolate',
         top: anchorRect.bottom + 12,
         right: window.innerWidth - anchorRect.right,
       }}

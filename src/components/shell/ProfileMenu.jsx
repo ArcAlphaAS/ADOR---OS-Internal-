@@ -47,7 +47,6 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect }) {
       className="z-[999]"
       style={{
         position: 'fixed',
-        isolation: 'isolate',
         top: anchorRect.bottom + 8,
         right: window.innerWidth - anchorRect.right,
         width: anchorRect.width,
