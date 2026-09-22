@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-18 (Meta del Trimestre and a new Meta Anual merged into one "Metas" card with a radial-progress graphic). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed Markdown wiki). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -15,7 +15,8 @@ Last updated: 2026-09-18 (Meta del Trimestre and a new Meta Anual merged into on
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
 | Phase 3 — Directorio (Personas, Organigrama, Equipos, Roles) | ✅ Done (2026-09-18) |
-| Phase 3 — remaining modules (Conocimiento, Comunidad, Chat, News) | ⬜ Not started |
+| Phase 3 — Conocimiento (Markdown wiki: Estrategia/Marketing/Información General/SOPs/Reglas) | ✅ Done (2026-09-22) |
+| Phase 3 — remaining modules (Comunidad, Chat, News) | ⬜ Not started |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -311,6 +312,14 @@ Last updated: 2026-09-18 (Meta del Trimestre and a new Meta Anual merged into on
 **Directorio — link an existing ADOR OS account instead of retyping (2026-09-18, same-day follow-up)**
 - [x] Real complaint: a founder with an actual ADOR OS login still had to fill out "+ Añadir persona" from scratch as if they were a stranger. `AddPersonModal.jsx` now shows a "Vincular con cuenta de ADOR OS" dropdown (real `users/{uid}` accounts, via `subscribeUsers`) when there's at least one unlinked account — picking one fills in name/email automatically and stores a new `linkedUserId` field on the Directorio person doc
 - [x] An account already linked to one Directorio entry doesn't show up as an option for a second one (except its own entry, when editing) — prevents two entries silently claiming the same real account
+
+**Conocimiento module (2026-09-22) — new, a flat Markdown wiki**
+- [x] Design agreed with the user before building: 5 fixed categories (Estrategia, Marketing, Información General, SOPs, Reglas) shown as a left sidebar with live per-category counts; documents are flat within a category, no Notion-style infinite page nesting; editing is plain Markdown (no drag-and-drop block editor); writes are admin-gated
+- [x] `isDirectorioAdmin` generalized into a shared `isAdmin()` in new `lib/permissions.js` — Directorio's export now delegates to it so both modules read from one source of truth instead of duplicating the same `users/{uid}.isAdmin` check
+- [x] New `lib/knowledge.jsx` — the 5-category list, live `categoryCounts()`, and a small hand-rolled Markdown renderer (headings, bold/italic, inline code, links, bullet/numbered lists, blockquotes, fenced code blocks) rendering directly to React elements (not `dangerouslySetInnerHTML`, so no raw-HTML injection surface). No markdown library added — same "hand-build the simple stuff" rule that produced Finanzas' hand-drawn chart (CLAUDE.md §9)
+- [x] `ConocimientoModule.jsx` — category sidebar, search, a document list (title/category badge/preview/last-edited-by), a document view (rendered Markdown, Editar/Eliminar for admins with a second-click delete confirm, matching Workspace's no-native-`confirm()` convention), and `DocEditor.jsx` (title, category picker, Markdown textarea with an Editar/Vista Previa toggle) shared between create and edit
+- [x] New `knowledgeDocs` collection — title, category, content (markdown string), createdBy/createdAt, updatedBy/updatedAt. Automatically covered by the existing blanket Firestore rule, no console change needed. Every write wrapped in `withTimeout(...).catch(showToast)` from the start (same defensive pattern Directorio/Objetivos had to retrofit after earlier silent-failure bugs)
+- [x] **Verification note:** checked via `?preview=1` — category sidebar with live counts, the empty state, the full editor flow (title, category tabs, Markdown textarea), and the Vista Previa toggle rendering headings/bold/lists/italic/blockquote/links correctly. Did not click "Guardar" — `?preview=1` has no real Firebase Auth session, so a real write would fail with `permission-denied`, same documented limitation as every other module's preview testing
 
 **Not built yet**
 - [ ] Comunidad, Chat, News all still show placeholder
