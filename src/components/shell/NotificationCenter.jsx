@@ -19,13 +19,12 @@ export default function NotificationCenter({ items = [], anchorRect, open }) {
     // the transformed wrapper from the backdrop-filter surface avoids it.
     //
     // Permanently mounted by TopBar.jsx (not conditionally rendered on
-    // `open`) — see ProfileMenu.jsx for the full reasoning: the blur itself
-    // is an expensive GPU computation that visibly takes a couple of frames
-    // to resolve on a freshly-created layer, which no amount of entrance-
-    // animation sequencing avoids. Never destroying the layer once built
-    // means it's already resolved every time this needs to reappear.
+    // `open`) — see ProfileMenu.jsx for the full reasoning, including why
+    // the hidden state uses opacity 0.001 rather than exactly 0 (browsers
+    // skip painting/compositing a fully transparent element, which was
+    // quietly defeating the whole point of staying mounted).
     <motion.div
-      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
+      animate={{ opacity: visible ? 1 : 0.001, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"
       style={{

@@ -46,16 +46,16 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open 
     //
     // This component is permanently mounted by TopBar.jsx once the trigger
     // rect is known (not conditionally rendered on `open`) and visibility is
-    // purely a CSS toggle here. That's the real fix for the "opens
-    // transparent, then pops to blurred" flash: the backdrop-filter blur is
-    // an expensive GPU computation that visibly takes the browser a couple
-    // of frames to fully resolve on a layer it just created — no amount of
-    // sequencing the *entrance animation* avoids that (confirmed: delaying
-    // the animate start via useDeferredReveal alone didn't fix it either).
-    // Never destroying the layer once it exists means it's already fully
-    // resolved by the time the menu needs to be visible again.
+    // purely a CSS toggle here — but `opacity: 0` on the hidden state turned
+    // out to still be part of the problem: browsers commonly skip painting
+    // (and therefore skip computing/compositing backdrop-filter for) a fully
+    // transparent element as a performance optimization, so "permanently
+    // mounted at opacity 0" wasn't actually keeping the blur layer warm at
+    // all — confirmed still reproducing after that fix. Using an
+    // imperceptible-but-nonzero opacity while hidden forces the browser to
+    // keep actually painting it, so the blur really is pre-resolved.
     <motion.div
-      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
+      animate={{ opacity: visible ? 1 : 0.001, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"
       style={{
