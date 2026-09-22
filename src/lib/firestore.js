@@ -58,6 +58,7 @@ export const COLLECTIONS = {
   directoryPeople: 'directoryPeople',
   directoryTeams: 'directoryTeams',
   knowledgeDocs: 'knowledgeDocs',
+  knowledgeSections: 'knowledgeSections',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -733,4 +734,21 @@ export function updateKnowledgeDoc(docId, data, actorName) {
 export function deleteKnowledgeDoc(docId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.knowledgeDocs, docId))
+}
+
+// Admin-created subcategories ("secciones") layered on top of the fixed
+// 4-category tree — see lib/knowledge.jsx's mergeSections(). categoryId
+// references one of the 4 fixed top-level ids ('estrategia', 'marketing',
+// 'operaciones', 'compania'), never a Firestore doc id of its own.
+export function subscribeKnowledgeSections(onData) {
+  return subscribeToCollection(COLLECTIONS.knowledgeSections, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function createKnowledgeSection(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.knowledgeSections), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+  })
 }

@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { CATEGORY_TREE, categoryOf, renderMarkdown } from '../../lib/knowledge'
+import { renderMarkdown } from '../../lib/knowledge'
 
 // Plain-textarea markdown editor with an Editar/Vista previa toggle — no
 // block editor, no rich-text toolbar. Shared between "+ Nuevo documento"
-// and editing an existing one; the parent decides create vs. update.
-export default function DocEditor({ initial, onSave, onCancel, saving }) {
+// and editing an existing one; the parent decides create vs. update. `tree`
+// is the live, sections-merged tree from ConocimientoModule (not imported
+// statically), so admin-added sections show up here immediately too.
+export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   const [title, setTitle] = useState(initial?.title || '')
-  const [subcategory, setSubcategory] = useState(initial?.subcategory || CATEGORY_TREE[0].subcategories[0].id)
+  const [subcategory, setSubcategory] = useState(initial?.subcategory || tree[0].subcategories[0].id)
   const [content, setContent] = useState(initial?.content || '')
   const [tab, setTab] = useState('editar')
 
-  const activeCategoryId = categoryOf(subcategory) || CATEGORY_TREE[0].id
+  const activeCategoryId = tree.find((cat) => cat.subcategories.some((s) => s.id === subcategory))?.id || tree[0].id
   const canSave = title.trim() && content.trim() && !saving
 
   return (
@@ -26,10 +28,10 @@ export default function DocEditor({ initial, onSave, onCancel, saving }) {
 
       {/* Two-level picker: pick the top category, then one of its
           subcategories — a document always lives at the leaf level (see
-          lib/knowledge.jsx, CATEGORY_TREE). */}
+          lib/knowledge.jsx). */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1 overflow-x-auto">
-          {CATEGORY_TREE.map((cat) => (
+          {tree.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -45,7 +47,7 @@ export default function DocEditor({ initial, onSave, onCancel, saving }) {
           ))}
         </div>
         <div className="flex items-center gap-1 overflow-x-auto pl-1">
-          {CATEGORY_TREE.find((c) => c.id === activeCategoryId)?.subcategories.map((sub) => (
+          {tree.find((c) => c.id === activeCategoryId)?.subcategories.map((sub) => (
             <button
               key={sub.id}
               type="button"

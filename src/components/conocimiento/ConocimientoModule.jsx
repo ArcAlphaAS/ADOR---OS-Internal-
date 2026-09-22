@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { subscribeKnowledgeDocs, createKnowledgeDoc, updateKnowledgeDoc, deleteKnowledgeDoc, subscribeUserProfile } from '../../lib/firestore'
 import {
-  CATEGORY_TREE,
-  subcategoryMeta,
-  subcategoryLabel,
-  categoryOf,
-  categoryLabelOf,
-  subcategoryCounts,
-  categoryCounts,
-  renderMarkdown,
-} from '../../lib/knowledge'
+  subscribeKnowledgeDocs,
+  createKnowledgeDoc,
+  updateKnowledgeDoc,
+  deleteKnowledgeDoc,
+  subscribeKnowledgeSections,
+  createKnowledgeSection,
+  subscribeUserProfile,
+} from '../../lib/firestore'
+import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown } from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -22,6 +21,7 @@ import {
   PlusIcon,
   EditIcon,
   ArrowLeftIcon,
+  ChevronDownIcon,
   LayersIcon,
   FlagIcon,
   GridIcon,
@@ -82,11 +82,75 @@ function docPreview(doc) {
   return doc.content?.replace(/[#*`>_-]/g, '').trim().slice(0, 90) || ''
 }
 
+// Inline "+ Nueva sección" row — a text input that appears in place of the
+// button, admin-only. Kept tiny on purpose: a section is just a name, no
+// icon/description picker (custom sections get a generic file icon, see
+// lib/knowledge.jsx's mergeSections).
+function NewSectionRow({ onCreate }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const submit = async () => {
+    if (!name.trim() || saving) return
+    setSaving(true)
+    try {
+      await onCreate(name.trim())
+      setName('')
+      setOpen(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen(true)
+        }}
+        className="flex items-center gap-1.5 rounded-lg py-1.5 pl-4 pr-2 text-left text-[11.5px] text-[#555555] transition-colors duration-150 hover:text-[#888888]"
+      >
+        <PlusIcon size={10} /> Nueva sección
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 py-1 pl-4 pr-2">
+      <input
+        autoFocus
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') setOpen(false)
+        }}
+        onBlur={() => !name.trim() && setOpen(false)}
+        placeholder="Nombre..."
+        className="min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#141414] px-2 py-1 text-[11.5px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+      />
+    </div>
+  )
+}
+
 // ---- Left sidebar: nested category → subcategory tree, connector-lined
-// per the reference image the user shared. Always fully expanded — with
-// only 4 categories × 2-3 subcategories, a collapse/expand affordance would
-// be more chrome than the tree actually needs. ----
-function KnowledgeTree({ search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, total }) {
+// per the reference image the user shared. Categories collapse/expand via
+// a chevron (separate from the label, which filters); admins can add a
+// custom section to any category from "+ Nueva sección". ----
+function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, total, isAdminUser, onCreateSection }) {
+  const [collapsed, setCollapsed] = useState(() => new Set())
+  const toggleCollapsed = (id) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
   return (
     <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
       <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
@@ -114,41 +178,49 @@ function KnowledgeTree({ search, onSearch, counts, subCounts, filter, onSelectAl
           <span className="text-[11px] text-[#555555]">{total}</span>
         </button>
 
-        {CATEGORY_TREE.map((cat) => {
+        {tree.map((cat) => {
           const catActive = filter.type === 'category' && filter.id === cat.id
+          const isCollapsed = collapsed.has(cat.id)
           return (
             <div key={cat.id}>
-              <button
-                type="button"
-                onClick={() => onSelectCategory(cat.id)}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-150"
-                style={{ color: catActive ? '#5B9BD9' : '#CCCCCC' }}
-              >
-                <span className="truncate">{cat.label}</span>
-                <span className="text-[11px] text-[#555555]">{counts[cat.id] || 0}</span>
-              </button>
-              <div className="ml-[13px] flex flex-col border-l border-white/[0.1] pb-0.5 pl-3">
-                {cat.subcategories.map((sub) => {
-                  const Icon = subIcon(sub)
-                  const subActive = filter.type === 'subcategory' && filter.id === sub.id
-                  return (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => onSelectSubcategory(sub.id)}
-                      className="relative flex items-center justify-between gap-2 rounded-lg py-1.5 pl-4 pr-2 text-left text-[12px] transition-colors duration-150"
-                      style={{ color: subActive ? '#5B9BD9' : '#888888', background: subActive ? 'rgba(30,95,173,0.1)' : 'transparent' }}
-                    >
-                      <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-white/[0.12]" />
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <Icon size={12} className="flex-shrink-0" />
-                        <span className="truncate">{sub.label}</span>
-                      </span>
-                      <span className="flex-shrink-0 text-[10.5px] text-[#555555]">{subCounts[sub.id] || 0}</span>
-                    </button>
-                  )
-                })}
+              <div className="flex items-center rounded-lg transition-colors duration-150" style={{ color: catActive ? '#5B9BD9' : '#CCCCCC' }}>
+                <button
+                  type="button"
+                  onClick={() => toggleCollapsed(cat.id)}
+                  className="flex h-7 w-6 flex-shrink-0 items-center justify-center text-[#666666] hover:text-[#F5F5F5]"
+                >
+                  <ChevronDownIcon size={11} style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }} />
+                </button>
+                <button type="button" onClick={() => onSelectCategory(cat.id)} className="flex flex-1 items-center justify-between py-2 pr-2.5 text-left text-[13px] font-medium">
+                  <span className="truncate">{cat.label}</span>
+                  <span className="text-[11px] text-[#555555]">{counts[cat.id] || 0}</span>
+                </button>
               </div>
+              {!isCollapsed && (
+                <div className="ml-[13px] flex flex-col border-l border-white/[0.1] pb-0.5 pl-3">
+                  {cat.subcategories.map((sub) => {
+                    const Icon = subIcon(sub)
+                    const subActive = filter.type === 'subcategory' && filter.id === sub.id
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => onSelectSubcategory(sub.id)}
+                        className="relative flex items-center justify-between gap-2 rounded-lg py-1.5 pl-4 pr-2 text-left text-[12px] transition-colors duration-150"
+                        style={{ color: subActive ? '#5B9BD9' : '#888888', background: subActive ? 'rgba(30,95,173,0.1)' : 'transparent' }}
+                      >
+                        <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-white/[0.12]" />
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <Icon size={12} className="flex-shrink-0" />
+                          <span className="truncate">{sub.label}</span>
+                        </span>
+                        <span className="flex-shrink-0 text-[10.5px] text-[#555555]">{subCounts[sub.id] || 0}</span>
+                      </button>
+                    )
+                  })}
+                  {isAdminUser && <NewSectionRow onCreate={(name) => onCreateSection(cat.id, name)} />}
+                </div>
+              )}
             </div>
           )
         })}
@@ -157,8 +229,8 @@ function KnowledgeTree({ search, onSearch, counts, subCounts, filter, onSelectAl
   )
 }
 
-function TypeCards({ subCounts, onSelect }) {
-  const allSubs = CATEGORY_TREE.flatMap((cat) => cat.subcategories)
+function TypeCards({ tree, subCounts, onSelect }) {
+  const allSubs = tree.flatMap((cat) => cat.subcategories)
   return (
     <div>
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Tipos de conocimiento</p>
@@ -205,7 +277,13 @@ function DocRowMenu({ doc, onEdit, onDelete }) {
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-[998]" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
+          <div
+            className="fixed inset-0 z-[998]"
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen(false)
+            }}
+          />
           <div className="ador-glass ador-grain absolute right-0 top-8 z-[999] w-[140px] overflow-hidden rounded-xl p-1">
             <button
               type="button"
@@ -236,7 +314,7 @@ function DocRowMenu({ doc, onEdit, onDelete }) {
   )
 }
 
-function DocsTable({ title, docs, total, showAll, onShowAll, onOpen, isAdminUser, onEdit, onDelete }) {
+function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAdminUser, onEdit, onDelete }) {
   if (docs.length === 0) {
     return (
       <div className="ador-glass ador-grain mt-6 flex flex-col items-center gap-2 rounded-2xl px-6 py-14 text-center">
@@ -271,7 +349,9 @@ function DocsTable({ title, docs, total, showAll, onShowAll, onOpen, isAdminUser
                 <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
                 {docPreview(doc) && <p className="truncate text-[11.5px] text-[#666666]">{docPreview(doc)}</p>}
               </div>
-              <span className="truncate text-[12px] text-[#5B9BD9]">{categoryLabelOf(doc.subcategory)} · {subcategoryLabel(doc.subcategory)}</span>
+              <span className="truncate text-[12px] text-[#5B9BD9]">
+                {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
+              </span>
               <span className="text-[12px] text-[#888888]">{timeAgo(doc.updatedAt)}</span>
               <span className="flex min-w-0 items-center gap-2">
                 <Avatar displayName={doc.updatedBy || doc.createdBy} size={20} />
@@ -307,9 +387,9 @@ function IntroCard() {
   )
 }
 
-function StatsCard({ docs }) {
+function StatsCard({ index, docs }) {
   const authors = new Set(docs.map((d) => d.updatedBy || d.createdBy).filter(Boolean))
-  const catCounts = categoryCounts(docs)
+  const catCounts = categoryCounts(index, docs)
   const activeCategories = Object.values(catCounts).filter((n) => n > 0).length
   const latest = docs[0]
   return (
@@ -330,7 +410,7 @@ function StatsCard({ docs }) {
   )
 }
 
-function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
+function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   return (
@@ -341,7 +421,7 @@ function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
             <ArrowLeftIcon size={12} /> Volver
           </button>
           <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.04em] text-[#888888]">
-            {categoryLabelOf(doc.subcategory)} · {subcategoryLabel(doc.subcategory)}
+            {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
           </span>
           <h1 className="mt-2 text-[24px] font-semibold text-[#F5F5F5]">{doc.title}</h1>
           <p className="mt-1 text-[12px] text-[#555555]">
@@ -380,6 +460,7 @@ function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
 
 export default function ConocimientoModule({ user }) {
   const [docs, setDocs] = useState([])
+  const [sections, setSections] = useState([])
   const [profile, setProfile] = useState(null)
   const [filter, setFilter] = useState({ type: 'all' })
   const [search, setSearch] = useState('')
@@ -392,24 +473,30 @@ export default function ConocimientoModule({ user }) {
   const isAdminUser = isAdmin(profile)
 
   useEffect(() => subscribeKnowledgeDocs(setDocs), [])
+  useEffect(() => subscribeKnowledgeSections(setSections), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
+  // Merged tree + lookup index, rebuilt only when the live sections list
+  // changes — see lib/knowledge.jsx for why this is never module-level
+  // static state (it has to reflect admin-added sections in real time).
+  const index = useMemo(() => buildKnowledgeIndex(mergeSections(BASE_CATEGORY_TREE, sections)), [sections])
+
   const openDoc = docs.find((d) => d.id === openDocId) || null
-  const subCounts = subcategoryCounts(docs)
-  const catCounts = categoryCounts(docs)
+  const subCounts = subcategoryCounts(index, docs)
+  const catCounts = categoryCounts(index, docs)
 
   const q = search.trim().toLowerCase()
   let scoped = docs
-  if (filter.type === 'category') scoped = scoped.filter((d) => categoryOf(d.subcategory) === filter.id)
+  if (filter.type === 'category') scoped = scoped.filter((d) => subcategoryMeta(index, d.subcategory)?.categoryId === filter.id)
   if (filter.type === 'subcategory') scoped = scoped.filter((d) => d.subcategory === filter.id)
   if (q) scoped = scoped.filter((d) => `${d.title} ${d.content}`.toLowerCase().includes(q))
 
   const visibleDocs = showAll || filter.type !== 'all' || q ? scoped : scoped.slice(0, 6)
   const tableTitle =
     filter.type === 'subcategory'
-      ? subcategoryMeta(filter.id)?.label
+      ? subcategoryMeta(index, filter.id)?.label
       : filter.type === 'category'
-        ? CATEGORY_TREE.find((c) => c.id === filter.id)?.label
+        ? index.tree.find((c) => c.id === filter.id)?.label
         : 'Documentos recientes'
 
   const selectAll = () => {
@@ -465,6 +552,11 @@ export default function ConocimientoModule({ user }) {
       .catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
   }
 
+  const handleCreateSection = (categoryId, name) =>
+    withTimeout(createKnowledgeSection({ categoryId, label: name }, actorName)).catch((error) =>
+      showToast(`No se pudo crear la sección: ${error.message}`)
+    )
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -473,6 +565,7 @@ export default function ConocimientoModule({ user }) {
       className="mx-auto flex w-full max-w-[1680px] gap-8 px-12 pb-16 pt-10"
     >
       <KnowledgeTree
+        tree={index.tree}
         search={search}
         onSearch={setSearch}
         counts={catCounts}
@@ -482,6 +575,8 @@ export default function ConocimientoModule({ user }) {
         onSelectCategory={selectCategory}
         onSelectSubcategory={selectSubcategory}
         total={docs.length}
+        isAdminUser={isAdminUser}
+        onCreateSection={handleCreateSection}
       />
 
       <div className="min-w-0 flex-1">
@@ -507,6 +602,7 @@ export default function ConocimientoModule({ user }) {
 
         {editing ? (
           <DocEditor
+            tree={index.tree}
             initial={editing === 'new' ? null : openDoc}
             onSave={editing === 'new' ? handleSaveNew : handleSaveEdit}
             onCancel={() => setEditing(false)}
@@ -515,14 +611,15 @@ export default function ConocimientoModule({ user }) {
         ) : openDoc ? (
           <AnimatePresence mode="wait">
             <motion.div key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
-              <DocView doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} />
+              <DocView index={index} doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} />
             </motion.div>
           </AnimatePresence>
         ) : (
           <div className="grid grid-cols-[1fr_300px] items-start gap-8">
             <div className="min-w-0">
-              {filter.type === 'all' && !q && <TypeCards subCounts={subCounts} onSelect={selectSubcategory} />}
+              {filter.type === 'all' && !q && <TypeCards tree={index.tree} subCounts={subCounts} onSelect={selectSubcategory} />}
               <DocsTable
+                index={index}
                 title={tableTitle}
                 docs={visibleDocs}
                 total={scoped.length}
@@ -539,7 +636,7 @@ export default function ConocimientoModule({ user }) {
             </div>
             <div className="flex flex-col gap-4">
               <IntroCard />
-              <StatsCard docs={docs} />
+              <StatsCard index={index} docs={docs} />
             </div>
           </div>
         )}

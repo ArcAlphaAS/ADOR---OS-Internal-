@@ -7,13 +7,18 @@
 // reasoning). Deliberately not a block editor — content is a single
 // markdown string per document, edited as plain text.
 
-// Two-level taxonomy (category → subcategory), per a reference image the
-// user shared — a step up from the original flat-per-category design
-// (still no true Notion-style infinite page nesting, just one grouping
-// level). Each document stores only its leaf `subcategory` id; the parent
-// category is always derived via `categoryOf()` rather than also stored,
-// so a doc's category/subcategory pair can never drift out of sync.
-export const CATEGORY_TREE = [
+// Two-level taxonomy (category → subcategory/"sección"), per a reference
+// image the user shared — a step up from the original flat-per-category
+// design (still no true Notion-style infinite page nesting, just one
+// grouping level). The 4 top-level categories are fixed (structural, like
+// Finanzas' expense categories); their subcategories start from this seed
+// list but admins can add more from the sidebar ("+ Nueva sección") —
+// those live in the `knowledgeSections` collection and get merged in at
+// render time via `mergeSections()`, never mutating this constant. Each
+// document stores only its leaf subcategory id; the parent category is
+// always derived (`categoryOf()`/`buildKnowledgeIndex()`) rather than also
+// stored, so a doc's category/subcategory pair can never drift out of sync.
+export const BASE_CATEGORY_TREE = [
   {
     id: 'estrategia',
     label: 'Estrategia',
@@ -52,41 +57,64 @@ export const CATEGORY_TREE = [
   },
 ]
 
-const SUBCATEGORY_INDEX = new Map()
-for (const cat of CATEGORY_TREE) {
-  for (const sub of cat.subcategories) {
-    SUBCATEGORY_INDEX.set(sub.id, { ...sub, categoryId: cat.id, categoryLabel: cat.label })
-  }
+// Merges admin-created `knowledgeSections` docs into the seed tree, one
+// custom subcategory per Firestore doc (grouped by its `categoryId`,
+// ignored if that category id no longer exists). Custom sections use a
+// generic "file" icon — only the 12 seed subcategories get a curated one.
+export function mergeSections(baseTree, customSections) {
+  return baseTree.map((cat) => ({
+    ...cat,
+    subcategories: [
+      ...cat.subcategories,
+      ...customSections
+        .filter((s) => s.categoryId === cat.id)
+        .map((s) => ({ id: s.id, label: s.label, icon: 'file', custom: true })),
+    ],
+  }))
 }
 
-export function subcategoryMeta(id) {
-  return SUBCATEGORY_INDEX.get(id) || null
+// Builds the id → {label, categoryId, categoryLabel} lookup for a
+// (possibly custom-sections-merged) tree — call once per render via
+// useMemo and pass the result down, rather than relying on module-level
+// state, so it always reflects the live `knowledgeSections` subscription.
+export function buildKnowledgeIndex(tree) {
+  const bySubId = new Map()
+  for (const cat of tree) {
+    for (const sub of cat.subcategories) {
+      bySubId.set(sub.id, { ...sub, categoryId: cat.id, categoryLabel: cat.label })
+    }
+  }
+  return { tree, bySubId }
 }
-export function subcategoryLabel(id) {
-  return subcategoryMeta(id)?.label || 'General'
+
+export function subcategoryMeta(index, id) {
+  return index.bySubId.get(id) || null
+}
+export function subcategoryLabel(index, id) {
+  return subcategoryMeta(index, id)?.label || 'General'
 }
 // The parent category id for a document's leaf subcategory — always
 // derived, never stored, so it can't disagree with the real tree.
-export function categoryOf(subcategoryId) {
-  return subcategoryMeta(subcategoryId)?.categoryId || null
+export function categoryOf(index, subcategoryId) {
+  return subcategoryMeta(index, subcategoryId)?.categoryId || null
 }
-export function categoryLabelOf(subcategoryId) {
-  return subcategoryMeta(subcategoryId)?.categoryLabel || 'General'
+export function categoryLabelOf(index, subcategoryId) {
+  return subcategoryMeta(index, subcategoryId)?.categoryLabel || 'General'
 }
 
 // Live counts for the sidebar tree and the "Tipos de Conocimiento" cards —
 // never stored, same rule as every other cross-module number in this app.
-export function subcategoryCounts(docs) {
+export function subcategoryCounts(index, docs) {
   const counts = {}
-  for (const cat of CATEGORY_TREE) for (const sub of cat.subcategories) counts[sub.id] = 0
+  for (const cat of index.tree) for (const sub of cat.subcategories) counts[sub.id] = 0
   for (const d of docs) {
     if (counts[d.subcategory] !== undefined) counts[d.subcategory] += 1
   }
   return counts
 }
-export function categoryCounts(docs) {
-  const subCounts = subcategoryCounts(docs)
-  return Object.fromEntries(CATEGORY_TREE.map((cat) => [cat.id, cat.subcategories.reduce((sum, s) => sum + subCounts[s.id], 0)]))
+export function categoryCounts(index, docs) {
+  const subCounts = subcategoryCounts(index, docs)
+  return Object.fromEntries(index.tree.map((cat) => [cat.id, cat.subcategories.reduce((sum, s) => sum + subCounts[s.id], 0)]))
 }
 
 // ---- Inline markdown: **bold**, *italic*, `code`, [text](url) ----
