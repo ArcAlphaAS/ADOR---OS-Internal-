@@ -64,6 +64,8 @@ export const COLLECTIONS = {
   knowledgeSections: 'knowledgeSections',
   news: 'news',
   communityPosts: 'communityPosts',
+  chatChannels: 'chatChannels',
+  chatDms: 'chatDms',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -863,4 +865,89 @@ export function setCommunityReaction(postId, emoji, uid, previousEmoji) {
 export function deleteCommunityPost(postId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.communityPosts, postId))
+}
+
+// ---- Chat: channels + direct messages ----
+// Real-time messaging reusing the exact same onSnapshot pattern as every
+// other live list in this app — no chat SDK/library. Deliberately scoped
+// down (see the conversation that led here): no threads, no message
+// reactions, no typing indicators, no edit/read-receipts, no file
+// attachments (needs Storage, still not enabled). Anyone can create a
+// channel (no isAdmin gate — same "open, informal" posture as Comunidad,
+// direct user choice), unlike News/Conocimiento/Directorio's admin-gated
+// writes.
+export function subscribeChatChannels(onData) {
+  return subscribeToCollection(COLLECTIONS.chatChannels, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function createChatChannel(name, actorUid, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatChannels), {
+    name,
+    createdBy: actorName,
+    createdByUid: actorUid,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function subscribeChannelMessages(channelId, onData) {
+  if (!db) return () => {}
+  const ref = collection(db, COLLECTIONS.chatChannels, channelId, 'messages')
+  return onSnapshot(
+    query(ref, orderBy('createdAt', 'asc')),
+    (snapshot) => onData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (error) => console.error('Firestore subscription to channel messages failed:', error.message)
+  )
+}
+
+export function sendChannelMessage(channelId, text, uid, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatChannels, channelId, 'messages'), {
+    text,
+    authorUid: uid,
+    authorName: name,
+    createdAt: serverTimestamp(),
+  })
+}
+
+// A DM's id is the two participants' uids, sorted and joined — deterministic
+// on purpose, so opening a conversation with someone never needs a query to
+// find "does a DM already exist between us," just a direct doc lookup/write.
+export function dmIdFor(uidA, uidB) {
+  return [uidA, uidB].sort().join('_')
+}
+
+// One doc per DM pair, keyed by dmIdFor() — lets `subscribeMyDms` list only
+// conversations you're actually part of (`array-contains`), instead of
+// rendering every teammate as a fake "conversation" whether you've
+// messaged them or not. Written (merge: true) lazily on first message,
+// not eagerly when the DM screen is first opened.
+export function subscribeMyDms(uid, onData) {
+  return subscribeToCollection(COLLECTIONS.chatDms, [where('participantUids', 'array-contains', uid)], onData)
+}
+
+export function subscribeDmMessages(dmId, onData) {
+  if (!db) return () => {}
+  const ref = collection(db, COLLECTIONS.chatDms, dmId, 'messages')
+  return onSnapshot(
+    query(ref, orderBy('createdAt', 'asc')),
+    (snapshot) => onData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (error) => console.error('Firestore subscription to DM messages failed:', error.message)
+  )
+}
+
+export function sendDmMessage(dmId, participants, text, uid, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(
+    doc(db, COLLECTIONS.chatDms, dmId),
+    { participantUids: participants.map((p) => p.uid), participantNames: Object.fromEntries(participants.map((p) => [p.uid, p.name])), updatedAt: serverTimestamp() },
+    { merge: true }
+  ).then(() =>
+    addDoc(collection(db, COLLECTIONS.chatDms, dmId, 'messages'), {
+      text,
+      authorUid: uid,
+      authorName: name,
+      createdAt: serverTimestamp(),
+    })
+  )
 }

@@ -12,6 +12,7 @@ import CalendarioModule from '../calendario/CalendarioModule'
 import DirectorioModule from '../directorio/DirectorioModule'
 import ConocimientoModule from '../conocimiento/ConocimientoModule'
 import NewsModule from '../news/NewsModule'
+import ChatModule from '../chat/ChatModule'
 import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
@@ -126,6 +127,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
               />
             ) : activeModule === 'news' ? (
               <NewsModule key="news" user={user} />
+            ) : activeModule === 'chat' ? (
+              <ChatModule key="chat" user={user} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (
