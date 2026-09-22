@@ -14,10 +14,10 @@ import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import DocEditor from './DocEditor'
+import FolderIllustration from './FolderIllustration'
 import Avatar from '../shell/Avatar'
 import {
   BookIcon,
-  FolderIcon,
   SearchIcon,
   PlusIcon,
   EditIcon,
@@ -233,28 +233,27 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 // Top-level categories only (Estrategia/Marketing/Operaciones/Compañía),
 // not all 12 subcategories — direct follow-up feedback that the original
 // version was too granular for a quick-access grid. Each card uses the
-// flat, line-style FolderIcon (see icons.jsx) adapted from a reference
-// image the user shared, rather than every subcategory's own curated icon.
+// bigger, illustrated FolderIllustration (a reference image the user
+// shared, redrawn as layered gradient SVG) rather than the flat single-
+// color FolderIcon used elsewhere — this grid is the one spot in the
+// module meant to read as a set of "shelves," so it earns a richer, more
+// illustrative treatment than a UI icon normally would.
 function TypeCards({ tree, counts, onSelect }) {
   return (
     <div>
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Tipos de conocimiento</p>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tree.map((cat) => (
           <button
             key={cat.id}
             type="button"
             onClick={() => onSelect(cat.id)}
-            className="ador-glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left transition-colors duration-150 hover:bg-white/[0.05]"
+            className="flex flex-col items-start gap-2.5 rounded-2xl px-3 py-4 text-left transition-colors duration-150 hover:bg-white/[0.03]"
           >
-            <span className="flex items-center gap-3">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#888888]">
-                <FolderIcon size={16} />
-              </span>
-              <span>
-                <span className="block text-[13px] font-medium text-[#F5F5F5]">{cat.label}</span>
-                <span className="block text-[11px] text-[#666666]">{counts[cat.id] || 0} documentos</span>
-              </span>
+            <FolderIllustration id={cat.id} size={68} />
+            <span>
+              <span className="block text-[13.5px] font-medium text-[#F5F5F5]">{cat.label}</span>
+              <span className="block text-[11px] text-[#666666]">{counts[cat.id] || 0} documentos</span>
             </span>
           </button>
         ))}
