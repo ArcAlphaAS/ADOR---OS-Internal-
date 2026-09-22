@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { subscribeNews, createNewsPost, updateNewsPost, deleteNewsPost, subscribeUserProfile } from '../../lib/firestore'
+import { subscribeNews, createNewsPost, updateNewsPost, deleteNewsPost, subscribeCommunityPosts, subscribeUserProfile } from '../../lib/firestore'
 import { renderMarkdown } from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import NewsEditor from './NewsEditor'
 import NewsHeroCard from './NewsHeroCard'
+import CommunityFeed from './CommunityFeed'
 import Avatar from '../shell/Avatar'
 import { GlobeIcon, PlusIcon, EditIcon, ArrowLeftIcon } from '../icons'
+
+// One module, two tabs — direct user request to merge News and Comunidad:
+// the only real difference between them was ever tone (formal press-
+// release vs. casual team pulse), not audience, so two separate nav
+// entries was more navigation than the distinction was worth at
+// 3-founder scale. Kept as genuinely different collections/write models
+// underneath (see lib/firestore.js: News is admin-gated with edit/delete
+// history-free but structured; Comunidad is open-write with reactions) —
+// only the shell (header, tab switcher) is shared.
+const TABS = [
+  { id: 'anuncios', label: 'Anuncios' },
+  { id: 'comunidad', label: 'Comunidad' },
+]
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -34,7 +48,7 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   return (
     <div className="flex flex-col gap-5">
       <button type="button" onClick={onBack} className="flex w-fit items-center gap-1.5 text-[12px] text-[#666666] hover:text-[#F5F5F5]">
-        <ArrowLeftIcon size={12} /> Volver a News
+        <ArrowLeftIcon size={12} /> Volver a Anuncios
       </button>
 
       <NewsHeroCard post={post} />
@@ -74,18 +88,15 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   )
 }
 
-export default function NewsModule({ user }) {
+function AnunciosTab({ user, isAdminUser }) {
   const [posts, setPosts] = useState([])
-  const [profile, setProfile] = useState(null)
   const [openPostId, setOpenPostId] = useState(null)
   const [composing, setComposing] = useState(false) // false | true (editing open post) | 'new'
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
   const actorName = actorNameFor(user)
-  const isAdminUser = isAdmin(profile)
 
   useEffect(() => subscribeNews(setPosts), [])
-  useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   const sorted = sortPosts(posts)
   const openPost = posts.find((p) => p.id === openPostId) || null
@@ -114,19 +125,9 @@ export default function NewsModule({ user }) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[880px] flex-col gap-6 px-12 pb-16 pt-10"
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Anuncios oficiales</p>
-          <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">News</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">Lo formal — decisiones, hitos y anuncios de ADOR, escritos por el equipo.</p>
-        </div>
-        {isAdminUser && !composing && !openPost && (
+    <>
+      {isAdminUser && !composing && !openPost && (
+        <div className="mb-5 flex justify-end">
           <button
             type="button"
             onClick={() => setComposing('new')}
@@ -134,8 +135,8 @@ export default function NewsModule({ user }) {
           >
             <PlusIcon size={14} /> Nuevo anuncio
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {composing ? (
         <NewsEditor initial={composing === 'new' ? null : openPost} onSave={handleSave} onCancel={() => setComposing(false)} saving={saving} />
@@ -165,6 +166,70 @@ export default function NewsModule({ user }) {
             <NewsHeroCard key={post.id} post={post} onOpen={() => setOpenPostId(post.id)} />
           ))}
         </div>
+      )}
+    </>
+  )
+}
+
+export default function NewsModule({ user }) {
+  const [tab, setTab] = useState('anuncios')
+  const [profile, setProfile] = useState(null)
+  const [communityPosts, setCommunityPosts] = useState([])
+  const isAdminUser = isAdmin(profile)
+
+  useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
+  useEffect(() => subscribeCommunityPosts(setCommunityPosts), [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="mx-auto flex w-full max-w-[880px] flex-col gap-6 px-12 pb-16 pt-10"
+    >
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">
+          {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
+        </p>
+        <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">News</h1>
+        <p className="mt-1 text-[13px] text-[#888888]">
+          {tab === 'anuncios'
+            ? 'Lo formal — decisiones, hitos y anuncios de ADOR, escritos por el equipo.'
+            : 'Lo informal — avances, ideas y momentos que el equipo quiere compartir.'}
+        </p>
+      </div>
+
+      <div className="ador-glass flex w-fit items-center gap-1 rounded-full p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className="relative rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150"
+            style={{ color: tab === t.id ? '#F5F5F5' : '#888888' }}
+          >
+            {tab === t.id && (
+              <motion.div
+                layoutId="news-tab-indicator"
+                className="absolute inset-0 rounded-full"
+                style={{ background: '#1E5FAD' }}
+                transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+              />
+            )}
+            <span className="relative flex items-center gap-1.5">
+              {t.label}
+              {t.id === 'comunidad' && communityPosts.length > 0 && (
+                <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] leading-none">{communityPosts.length}</span>
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'anuncios' ? (
+        <AnunciosTab user={user} isAdminUser={isAdminUser} />
+      ) : (
+        <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} />
       )}
     </motion.div>
   )

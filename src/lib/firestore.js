@@ -15,6 +15,8 @@ import {
   serverTimestamp,
   runTransaction,
   writeBatch,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange } from './workspace'
@@ -61,6 +63,7 @@ export const COLLECTIONS = {
   knowledgeDocs: 'knowledgeDocs',
   knowledgeSections: 'knowledgeSections',
   news: 'news',
+  communityPosts: 'communityPosts',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -817,4 +820,43 @@ export function updateNewsPost(postId, data, actorName) {
 export function deleteNewsPost(postId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.news, postId))
+}
+
+// ---- Comunidad: informal team-pulse posts ----
+// Lives in the same module/nav slot as News now (one "Anuncios"/"Comunidad"
+// tab switcher — direct user request to merge them, since the only real
+// difference was tone, not audience), but is a deliberately different
+// collection and write model: anyone with app access can post and react
+// here (no isAdmin gate) — that's the whole point of "informal," unlike
+// News/Conocimiento's admin-only writes. `reactions` is a map of emoji to
+// an array of uids (not just a count) so toggling is idempotent per user
+// and the UI can show "you reacted" state.
+export function subscribeCommunityPosts(onData) {
+  return subscribeToCollection(COLLECTIONS.communityPosts, [orderBy('createdAt', 'desc')], onData)
+}
+
+export function createCommunityPost(text, actorUid, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.communityPosts), {
+    text,
+    authorUid: actorUid,
+    authorName: actorName,
+    reactions: {},
+    createdAt: serverTimestamp(),
+  })
+}
+
+// `hasReacted` is read off the client's already-subscribed post data (it
+// already has the full reactions map), so this just applies the opposite
+// of whatever the UI is currently showing — no read-then-write round trip.
+export function toggleCommunityReaction(postId, emoji, uid, hasReacted) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), {
+    [`reactions.${emoji}`]: hasReacted ? arrayRemove(uid) : arrayUnion(uid),
+  })
+}
+
+export function deleteCommunityPost(postId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.communityPosts, postId))
 }

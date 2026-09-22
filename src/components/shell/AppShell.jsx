@@ -30,7 +30,6 @@ const MODULE_LABELS = {
   clientes: 'Clientes',
   finanzas: 'Finanzas',
   conocimiento: 'Conocimiento',
-  comunidad: 'Comunidad',
   chat: 'Chat',
   news: 'News',
   directorio: 'Directorio',

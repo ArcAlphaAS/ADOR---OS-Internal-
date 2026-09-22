@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CalendarIcon, BookIcon, UsersIcon, MessageIcon, GlobeIcon, ContactsIcon, SparkleIcon } from '../icons'
+import { CalendarIcon, BookIcon, MessageIcon, GlobeIcon, ContactsIcon, SparkleIcon } from '../icons'
 
+// Comunidad no longer has its own nav slot — merged into News as a second
+// tab (Anuncios/Comunidad), direct user request: the only real difference
+// between the two was tone (formal vs. informal), not audience, so two
+// separate entries was more navigation than the distinction was worth at
+// 3-founder scale. See NewsModule.jsx.
 const NAV_ITEMS = [
   { id: 'calendario', label: 'Calendario', Icon: CalendarIcon },
   { id: 'conocimiento', label: 'Conocimiento', Icon: BookIcon },
-  { id: 'comunidad', label: 'Comunidad', Icon: UsersIcon },
   { id: 'chat', label: 'Chat', Icon: MessageIcon },
   { id: 'news', label: 'News', Icon: GlobeIcon },
   { id: 'directorio', label: 'Directorio', Icon: ContactsIcon },
