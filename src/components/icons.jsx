@@ -64,6 +64,19 @@ export function BookIcon(props) {
   )
 }
 
+// Flat, line-style folder-with-documents — same visual idea as a reference
+// image the user shared (a glossy 3D folder with pages peeking out), redrawn
+// in ADOR's own thin-stroke icon language instead of copying the glossy
+// macOS-style rendering, which would clash with every other icon in the app.
+export function FolderIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M9 4h3l1.6 2.2H18a1 1 0 0 1 1 1V9" />
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H12l1.8 2.2H19a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 17.7V8.5Z" />
+    </svg>
+  )
+}
+
 export function UsersIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>

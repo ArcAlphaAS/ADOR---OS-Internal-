@@ -17,6 +17,7 @@ import DocEditor from './DocEditor'
 import Avatar from '../shell/Avatar'
 import {
   BookIcon,
+  FolderIcon,
   SearchIcon,
   PlusIcon,
   EditIcon,
@@ -229,33 +230,34 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
   )
 }
 
-function TypeCards({ tree, subCounts, onSelect }) {
-  const allSubs = tree.flatMap((cat) => cat.subcategories)
+// Top-level categories only (Estrategia/Marketing/Operaciones/Compañía),
+// not all 12 subcategories — direct follow-up feedback that the original
+// version was too granular for a quick-access grid. Each card uses the
+// flat, line-style FolderIcon (see icons.jsx) adapted from a reference
+// image the user shared, rather than every subcategory's own curated icon.
+function TypeCards({ tree, counts, onSelect }) {
   return (
     <div>
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Tipos de conocimiento</p>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {allSubs.map((sub) => {
-          const Icon = subIcon(sub)
-          return (
-            <button
-              key={sub.id}
-              type="button"
-              onClick={() => onSelect(sub.id)}
-              className="ador-glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left transition-colors duration-150 hover:bg-white/[0.05]"
-            >
-              <span className="flex items-center gap-3">
-                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#888888]">
-                  <Icon size={16} />
-                </span>
-                <span>
-                  <span className="block text-[13px] font-medium text-[#F5F5F5]">{sub.label}</span>
-                  <span className="block text-[11px] text-[#666666]">{subCounts[sub.id] || 0} documentos</span>
-                </span>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tree.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onSelect(cat.id)}
+            className="ador-glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left transition-colors duration-150 hover:bg-white/[0.05]"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#888888]">
+                <FolderIcon size={16} />
               </span>
-            </button>
-          )
-        })}
+              <span>
+                <span className="block text-[13px] font-medium text-[#F5F5F5]">{cat.label}</span>
+                <span className="block text-[11px] text-[#666666]">{counts[cat.id] || 0} documentos</span>
+              </span>
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -617,7 +619,7 @@ export default function ConocimientoModule({ user }) {
         ) : (
           <div className="grid grid-cols-[1fr_300px] items-start gap-8">
             <div className="min-w-0">
-              {filter.type === 'all' && !q && <TypeCards tree={index.tree} subCounts={subCounts} onSelect={selectSubcategory} />}
+              {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} />}
               <DocsTable
                 index={index}
                 title={tableTitle}
