@@ -57,6 +57,7 @@ export const COLLECTIONS = {
   notes: 'notes',
   directoryPeople: 'directoryPeople',
   directoryTeams: 'directoryTeams',
+  knowledgeDocs: 'knowledgeDocs',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -699,4 +700,37 @@ export function updateDirectoryTeam(teamId, data) {
 export function deleteDirectoryTeam(teamId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.directoryTeams, teamId))
+}
+
+// ---- Conocimiento: wiki documents ----
+// Flat per-category documents (no nesting) — see lib/knowledge.js for the
+// fixed category list and the hand-rolled Markdown renderer. Admin-gated
+// writes, same isAdmin() check as Directorio (lib/permissions.js).
+export function subscribeKnowledgeDocs(onData) {
+  return subscribeToCollection(COLLECTIONS.knowledgeDocs, [orderBy('updatedAt', 'desc')], onData)
+}
+
+export function createKnowledgeDoc(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.knowledgeDocs), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+    updatedBy: actorName,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function updateKnowledgeDoc(docId, data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.knowledgeDocs, docId), {
+    ...data,
+    updatedBy: actorName,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function deleteKnowledgeDoc(docId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.knowledgeDocs, docId))
 }
