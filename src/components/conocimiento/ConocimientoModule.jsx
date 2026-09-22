@@ -1,12 +1,58 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { subscribeKnowledgeDocs, createKnowledgeDoc, updateKnowledgeDoc, deleteKnowledgeDoc, subscribeUserProfile } from '../../lib/firestore'
-import { CATEGORIES, categoryLabel, categoryCounts, renderMarkdown } from '../../lib/knowledge'
+import {
+  CATEGORY_TREE,
+  subcategoryMeta,
+  subcategoryLabel,
+  categoryOf,
+  categoryLabelOf,
+  subcategoryCounts,
+  categoryCounts,
+  renderMarkdown,
+} from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import DocEditor from './DocEditor'
-import { BookIcon, SearchIcon, PlusIcon, EditIcon, ArrowLeftIcon } from '../icons'
+import Avatar from '../shell/Avatar'
+import {
+  BookIcon,
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  ArrowLeftIcon,
+  LayersIcon,
+  FlagIcon,
+  GridIcon,
+  NoteIcon,
+  TrendUpIcon,
+  CheckCircleIcon,
+  KanbanIcon,
+  FileIcon,
+  BriefcaseIcon,
+  AlertIcon,
+  UsersIcon,
+  MoreIcon,
+} from '../icons'
+
+const SUB_ICONS = {
+  layers: LayersIcon,
+  search: SearchIcon,
+  flag: FlagIcon,
+  grid: GridIcon,
+  note: NoteIcon,
+  trend: TrendUpIcon,
+  check: CheckCircleIcon,
+  kanban: KanbanIcon,
+  file: FileIcon,
+  briefcase: BriefcaseIcon,
+  alert: AlertIcon,
+  users: UsersIcon,
+}
+function subIcon(sub) {
+  return SUB_ICONS[sub.icon] || FileIcon
+}
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -17,67 +63,185 @@ function formatDate(ts) {
   return ts.toDate().toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function CategorySidebar({ counts, selected, onSelect, total }) {
+function timeAgo(ts) {
+  if (!ts?.toDate) return '—'
+  const diffMs = Date.now() - ts.toDate().getTime()
+  const mins = Math.floor(diffMs / 60000)
+  if (mins < 1) return 'Ahora'
+  if (mins < 60) return `Hace ${mins} min`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `Hace ${hours} hora${hours === 1 ? '' : 's'}`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `Hace ${days} día${days === 1 ? '' : 's'}`
+  const weeks = Math.floor(days / 7)
+  if (weeks < 5) return `Hace ${weeks} semana${weeks === 1 ? '' : 's'}`
+  return formatDate(ts)
+}
+
+function docPreview(doc) {
+  return doc.content?.replace(/[#*`>_-]/g, '').trim().slice(0, 90) || ''
+}
+
+// ---- Left sidebar: nested category → subcategory tree, connector-lined
+// per the reference image the user shared. Always fully expanded — with
+// only 4 categories × 2-3 subcategories, a collapse/expand affordance would
+// be more chrome than the tree actually needs. ----
+function KnowledgeTree({ search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, total }) {
   return (
-    <div className="flex w-[220px] flex-shrink-0 flex-col gap-1">
-      <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">Categorías</p>
-      <button
-        type="button"
-        onClick={() => onSelect(null)}
-        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors duration-150"
-        style={{ background: selected === null ? 'rgba(30,95,173,0.14)' : 'transparent', color: selected === null ? '#5B9BD9' : '#888888' }}
-      >
-        Todos
-        <span className="text-[11px] text-[#555555]">{total}</span>
-      </button>
-      {CATEGORIES.map((c) => (
+    <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
+      <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
+        <SearchIcon size={13} className="text-[#666666]" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Buscar..."
+          className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+        />
+      </div>
+
+      <div className="flex flex-col gap-0.5">
         <button
-          key={c.id}
           type="button"
-          onClick={() => onSelect(c.id)}
-          className="flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors duration-150"
-          style={{ background: selected === c.id ? 'rgba(30,95,173,0.14)' : 'transparent', color: selected === c.id ? '#5B9BD9' : '#888888' }}
+          onClick={onSelectAll}
+          className="flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-150"
+          style={{ color: filter.type === 'all' ? '#5B9BD9' : '#CCCCCC' }}
         >
-          {c.label}
-          <span className="text-[11px] text-[#555555]">{counts[c.id] || 0}</span>
+          <span className="flex items-center gap-2">
+            <BookIcon size={14} />
+            Todos
+          </span>
+          <span className="text-[11px] text-[#555555]">{total}</span>
         </button>
-      ))}
+
+        {CATEGORY_TREE.map((cat) => {
+          const catActive = filter.type === 'category' && filter.id === cat.id
+          return (
+            <div key={cat.id}>
+              <button
+                type="button"
+                onClick={() => onSelectCategory(cat.id)}
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-150"
+                style={{ color: catActive ? '#5B9BD9' : '#CCCCCC' }}
+              >
+                <span className="truncate">{cat.label}</span>
+                <span className="text-[11px] text-[#555555]">{counts[cat.id] || 0}</span>
+              </button>
+              <div className="ml-[13px] flex flex-col border-l border-white/[0.1] pb-0.5 pl-3">
+                {cat.subcategories.map((sub) => {
+                  const Icon = subIcon(sub)
+                  const subActive = filter.type === 'subcategory' && filter.id === sub.id
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => onSelectSubcategory(sub.id)}
+                      className="relative flex items-center justify-between gap-2 rounded-lg py-1.5 pl-4 pr-2 text-left text-[12px] transition-colors duration-150"
+                      style={{ color: subActive ? '#5B9BD9' : '#888888', background: subActive ? 'rgba(30,95,173,0.1)' : 'transparent' }}
+                    >
+                      <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-white/[0.12]" />
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <Icon size={12} className="flex-shrink-0" />
+                        <span className="truncate">{sub.label}</span>
+                      </span>
+                      <span className="flex-shrink-0 text-[10.5px] text-[#555555]">{subCounts[sub.id] || 0}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-function DocCard({ doc, onOpen }) {
-  const preview = doc.content?.replace(/[#*`>_-]/g, '').trim().slice(0, 120)
+function TypeCards({ subCounts, onSelect }) {
+  const allSubs = CATEGORY_TREE.flatMap((cat) => cat.subcategories)
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(doc)}
-      className="ador-glass flex w-full flex-col gap-1.5 rounded-2xl px-5 py-4 text-left transition-colors duration-150 hover:bg-white/[0.05]"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <p className="truncate text-[14px] font-semibold text-[#F5F5F5]">{doc.title}</p>
-        <span className="flex-shrink-0 rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.04em] text-[#888888]">
-          {categoryLabel(doc.category)}
-        </span>
+    <div>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Tipos de conocimiento</p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {allSubs.map((sub) => {
+          const Icon = subIcon(sub)
+          return (
+            <button
+              key={sub.id}
+              type="button"
+              onClick={() => onSelect(sub.id)}
+              className="ador-glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left transition-colors duration-150 hover:bg-white/[0.05]"
+            >
+              <span className="flex items-center gap-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#888888]">
+                  <Icon size={16} />
+                </span>
+                <span>
+                  <span className="block text-[13px] font-medium text-[#F5F5F5]">{sub.label}</span>
+                  <span className="block text-[11px] text-[#666666]">{subCounts[sub.id] || 0} documentos</span>
+                </span>
+              </span>
+            </button>
+          )
+        })}
       </div>
-      {preview && <p className="line-clamp-2 text-[12.5px] text-[#666666]">{preview}</p>}
-      <p className="mt-1 text-[11px] text-[#444444]">
-        {doc.updatedBy ? `Editado por ${doc.updatedBy}` : ''}
-        {formatDate(doc.updatedAt) ? ` · ${formatDate(doc.updatedAt)}` : ''}
-      </p>
-    </button>
+    </div>
   )
 }
 
-function DocList({ docs, search, onOpen, isAdminUser }) {
-  const q = search.trim().toLowerCase()
-  const filtered = q ? docs.filter((d) => `${d.title} ${d.content}`.toLowerCase().includes(q)) : docs
+function DocRowMenu({ doc, onEdit, onDelete }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+      >
+        <MoreIcon size={14} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[998]" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
+          <div className="ador-glass ador-grain absolute right-0 top-8 z-[999] w-[140px] overflow-hidden rounded-xl p-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setOpen(false)
+                onEdit(doc)
+              }}
+              className="flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-[12px] text-[#F5F5F5] hover:bg-white/[0.06]"
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setOpen(false)
+                onDelete(doc)
+              }}
+              className="flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-[12px] text-[#EF5350] hover:bg-[#EF5350]/10"
+            >
+              Eliminar
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
+function DocsTable({ title, docs, total, showAll, onShowAll, onOpen, isAdminUser, onEdit, onDelete }) {
   if (docs.length === 0) {
     return (
-      <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
+      <div className="ador-glass ador-grain mt-6 flex flex-col items-center gap-2 rounded-2xl px-6 py-14 text-center">
         <BookIcon size={20} className="text-[#333333]" />
-        <p className="text-[14px] font-medium text-[#888888]">Todavía no hay documentos aquí</p>
+        <p className="text-[14px] font-medium text-[#888888]">Nada por aquí todavía</p>
         <p className="text-[13px] text-[#444444]">
           {isAdminUser ? 'Usa "+ Nuevo documento" para empezar a construir el conocimiento de ADOR.' : 'Un administrador todavía no ha añadido documentos.'}
         </p>
@@ -85,14 +249,82 @@ function DocList({ docs, search, onOpen, isAdminUser }) {
     )
   }
 
-  if (filtered.length === 0) {
-    return <p className="px-2 py-16 text-center text-[13px] text-[#444444]">Sin resultados para "{search}".</p>
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      {filtered.map((d) => (
-        <DocCard key={d.id} doc={d} onOpen={onOpen} />
+    <div className="mt-8">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">{title}</p>
+      <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-5 py-2.5">
+          {['Nombre', 'Categoría', 'Última edición', 'Autor', ''].map((h) => (
+            <span key={h} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {h}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-col divide-y divide-white/[0.04]">
+          {docs.map((doc) => (
+            <div
+              key={doc.id}
+              onClick={() => onOpen(doc)}
+              className="grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
+                {docPreview(doc) && <p className="truncate text-[11.5px] text-[#666666]">{docPreview(doc)}</p>}
+              </div>
+              <span className="truncate text-[12px] text-[#5B9BD9]">{categoryLabelOf(doc.subcategory)} · {subcategoryLabel(doc.subcategory)}</span>
+              <span className="text-[12px] text-[#888888]">{timeAgo(doc.updatedAt)}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <Avatar displayName={doc.updatedBy || doc.createdBy} size={20} />
+                <span className="truncate text-[12px] text-[#888888]">{doc.updatedBy || doc.createdBy}</span>
+              </span>
+              {isAdminUser ? (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DocRowMenu doc={doc} onEdit={onEdit} onDelete={onDelete} />
+                </div>
+              ) : (
+                <span />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      {!showAll && total > docs.length && (
+        <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#5B9BD9] hover:text-[#7BAEE0]">
+          Ver todos los documentos →
+        </button>
+      )}
+    </div>
+  )
+}
+
+function IntroCard() {
+  return (
+    <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #0A0A0A 100%)' }}>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Internal intelligence</p>
+      <p className="mt-3 text-[19px] font-semibold leading-tight text-[#F5F5F5]">El conocimiento convierte la intención en capacidad.</p>
+      <p className="mt-3 text-[12px] text-[#666666]">Estrategia. Marketing. Operaciones. Compañía.</p>
+    </div>
+  )
+}
+
+function StatsCard({ docs }) {
+  const authors = new Set(docs.map((d) => d.updatedBy || d.createdBy).filter(Boolean))
+  const catCounts = categoryCounts(docs)
+  const activeCategories = Object.values(catCounts).filter((n) => n > 0).length
+  const latest = docs[0]
+  return (
+    <div className="ador-glass rounded-2xl p-5">
+      <p className="mb-1 text-[13px] font-semibold text-[#F5F5F5]">Estadísticas</p>
+      {[
+        ['Documentos totales', docs.length],
+        ['Categorías activas', activeCategories],
+        ['Última edición', latest ? timeAgo(latest.updatedAt) : '—'],
+        ['Colaboradores', authors.size],
+      ].map(([label, value]) => (
+        <div key={label} className="flex items-center justify-between border-t border-white/[0.05] py-2.5 first:border-0">
+          <span className="text-[12.5px] text-[#888888]">{label}</span>
+          <span className="text-[12.5px] font-medium text-[#F5F5F5]">{value}</span>
+        </div>
       ))}
     </div>
   )
@@ -109,7 +341,7 @@ function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
             <ArrowLeftIcon size={12} /> Volver
           </button>
           <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.04em] text-[#888888]">
-            {categoryLabel(doc.category)}
+            {categoryLabelOf(doc.subcategory)} · {subcategoryLabel(doc.subcategory)}
           </span>
           <h1 className="mt-2 text-[24px] font-semibold text-[#F5F5F5]">{doc.title}</h1>
           <p className="mt-1 text-[12px] text-[#555555]">
@@ -127,19 +359,11 @@ function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
               <EditIcon size={12} /> Editar
             </button>
             {confirmDelete ? (
-              <button
-                type="button"
-                onClick={() => onDelete(doc)}
-                className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]"
-              >
+              <button type="button" onClick={() => onDelete(doc)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]">
                 ¿Confirmar borrado?
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]"
-              >
+              <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">
                 Eliminar
               </button>
             )}
@@ -157,8 +381,9 @@ function DocView({ doc, isAdminUser, onBack, onEdit, onDelete }) {
 export default function ConocimientoModule({ user }) {
   const [docs, setDocs] = useState([])
   const [profile, setProfile] = useState(null)
-  const [category, setCategory] = useState(null)
+  const [filter, setFilter] = useState({ type: 'all' })
   const [search, setSearch] = useState('')
+  const [showAll, setShowAll] = useState(false)
   const [openDocId, setOpenDocId] = useState(null)
   const [editing, setEditing] = useState(false) // false | true (editing open doc) | 'new'
   const [saving, setSaving] = useState(false)
@@ -170,8 +395,35 @@ export default function ConocimientoModule({ user }) {
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   const openDoc = docs.find((d) => d.id === openDocId) || null
-  const scoped = category ? docs.filter((d) => d.category === category) : docs
-  const counts = categoryCounts(docs)
+  const subCounts = subcategoryCounts(docs)
+  const catCounts = categoryCounts(docs)
+
+  const q = search.trim().toLowerCase()
+  let scoped = docs
+  if (filter.type === 'category') scoped = scoped.filter((d) => categoryOf(d.subcategory) === filter.id)
+  if (filter.type === 'subcategory') scoped = scoped.filter((d) => d.subcategory === filter.id)
+  if (q) scoped = scoped.filter((d) => `${d.title} ${d.content}`.toLowerCase().includes(q))
+
+  const visibleDocs = showAll || filter.type !== 'all' || q ? scoped : scoped.slice(0, 6)
+  const tableTitle =
+    filter.type === 'subcategory'
+      ? subcategoryMeta(filter.id)?.label
+      : filter.type === 'category'
+        ? CATEGORY_TREE.find((c) => c.id === filter.id)?.label
+        : 'Documentos recientes'
+
+  const selectAll = () => {
+    setFilter({ type: 'all' })
+    setShowAll(false)
+  }
+  const selectCategory = (id) => {
+    setFilter({ type: 'category', id })
+    setShowAll(false)
+  }
+  const selectSubcategory = (id) => {
+    setFilter({ type: 'subcategory', id })
+    setShowAll(false)
+  }
 
   const handleOpen = (doc) => {
     setOpenDocId(doc.id)
@@ -209,7 +461,7 @@ export default function ConocimientoModule({ user }) {
 
   const handleDelete = (doc) => {
     withTimeout(deleteKnowledgeDoc(doc.id))
-      .then(() => setOpenDocId(null))
+      .then(() => setOpenDocId((id) => (id === doc.id ? null : id)))
       .catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
   }
 
@@ -218,59 +470,80 @@ export default function ConocimientoModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[1680px] gap-8 px-12 pb-16 pt-10"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Base de conocimiento</p>
-          <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">Conocimiento</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">Estrategia, marketing, SOPs y reglas de ADOR — todo en un mismo lugar.</p>
-        </div>
-        {isAdminUser && !editing && (
-          <button
-            type="button"
-            onClick={() => {
-              setOpenDocId(null)
-              setEditing('new')
-            }}
-            className="ador-btn-primary flex flex-shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
-          >
-            <PlusIcon size={14} /> Nuevo documento
-          </button>
-        )}
-      </div>
+      <KnowledgeTree
+        search={search}
+        onSearch={setSearch}
+        counts={catCounts}
+        subCounts={subCounts}
+        filter={filter}
+        onSelectAll={selectAll}
+        onSelectCategory={selectCategory}
+        onSelectSubcategory={selectSubcategory}
+        total={docs.length}
+      />
 
-      {editing ? (
-        <DocEditor
-          initial={editing === 'new' ? null : openDoc}
-          onSave={editing === 'new' ? handleSaveNew : handleSaveEdit}
-          onCancel={() => setEditing(false)}
-          saving={saving}
-        />
-      ) : openDoc ? (
-        <AnimatePresence mode="wait">
-          <motion.div key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
-            <DocView doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} />
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <div className="flex gap-8">
-          <CategorySidebar counts={counts} selected={category} onSelect={setCategory} total={docs.length} />
-          <div className="min-w-0 flex-1">
-            <div className="mb-4 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
-              <SearchIcon size={14} className="text-[#666666]" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar en Conocimiento..."
-                className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+      <div className="min-w-0 flex-1">
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Base de conocimiento</p>
+            <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">Conocimiento</h1>
+            <p className="mt-1 text-[13px] text-[#888888]">Documentación, marcos, investigación y reglas. Todo en un mismo lugar.</p>
+          </div>
+          {isAdminUser && !editing && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpenDocId(null)
+                setEditing('new')
+              }}
+              className="ador-btn-primary flex flex-shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
+            >
+              <PlusIcon size={14} /> Nuevo documento
+            </button>
+          )}
+        </div>
+
+        {editing ? (
+          <DocEditor
+            initial={editing === 'new' ? null : openDoc}
+            onSave={editing === 'new' ? handleSaveNew : handleSaveEdit}
+            onCancel={() => setEditing(false)}
+            saving={saving}
+          />
+        ) : openDoc ? (
+          <AnimatePresence mode="wait">
+            <motion.div key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
+              <DocView doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} />
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="grid grid-cols-[1fr_300px] items-start gap-8">
+            <div className="min-w-0">
+              {filter.type === 'all' && !q && <TypeCards subCounts={subCounts} onSelect={selectSubcategory} />}
+              <DocsTable
+                title={tableTitle}
+                docs={visibleDocs}
+                total={scoped.length}
+                showAll={showAll || filter.type !== 'all' || !!q}
+                onShowAll={() => setShowAll(true)}
+                onOpen={handleOpen}
+                isAdminUser={isAdminUser}
+                onEdit={(doc) => {
+                  setOpenDocId(doc.id)
+                  setEditing(true)
+                }}
+                onDelete={handleDelete}
               />
             </div>
-            <DocList docs={scoped} search={search} onOpen={handleOpen} isAdminUser={isAdminUser} />
+            <div className="flex flex-col gap-4">
+              <IntroCard />
+              <StatsCard docs={docs} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </motion.div>
   )
 }

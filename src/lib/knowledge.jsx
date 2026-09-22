@@ -7,27 +7,86 @@
 // reasoning). Deliberately not a block editor — content is a single
 // markdown string per document, edited as plain text.
 
-export const CATEGORIES = [
-  { id: 'estrategia', label: 'Estrategia' },
-  { id: 'marketing', label: 'Marketing' },
-  { id: 'general', label: 'Información General' },
-  { id: 'sops', label: 'SOPs' },
-  { id: 'reglas', label: 'Reglas' },
+// Two-level taxonomy (category → subcategory), per a reference image the
+// user shared — a step up from the original flat-per-category design
+// (still no true Notion-style infinite page nesting, just one grouping
+// level). Each document stores only its leaf `subcategory` id; the parent
+// category is always derived via `categoryOf()` rather than also stored,
+// so a doc's category/subcategory pair can never drift out of sync.
+export const CATEGORY_TREE = [
+  {
+    id: 'estrategia',
+    label: 'Estrategia',
+    subcategories: [
+      { id: 'frameworks', label: 'Frameworks', icon: 'layers' },
+      { id: 'research', label: 'Research', icon: 'search' },
+      { id: 'decisions', label: 'Decisions', icon: 'flag' },
+    ],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    subcategories: [
+      { id: 'brand', label: 'Brand', icon: 'grid' },
+      { id: 'content', label: 'Content', icon: 'note' },
+      { id: 'campaigns', label: 'Campaigns', icon: 'trend' },
+    ],
+  },
+  {
+    id: 'operaciones',
+    label: 'Operaciones',
+    subcategories: [
+      { id: 'sops', label: 'SOPs', icon: 'check' },
+      { id: 'processes', label: 'Processes', icon: 'kanban' },
+      { id: 'templates', label: 'Templates', icon: 'file' },
+    ],
+  },
+  {
+    id: 'compania',
+    label: 'Compañía',
+    subcategories: [
+      { id: 'principles', label: 'Principles', icon: 'briefcase' },
+      { id: 'rules', label: 'Rules', icon: 'alert' },
+      { id: 'culture', label: 'Culture', icon: 'users' },
+    ],
+  },
 ]
-const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]))
-export function categoryLabel(id) {
-  return CATEGORY_BY_ID[id]?.label || 'Información General'
+
+const SUBCATEGORY_INDEX = new Map()
+for (const cat of CATEGORY_TREE) {
+  for (const sub of cat.subcategories) {
+    SUBCATEGORY_INDEX.set(sub.id, { ...sub, categoryId: cat.id, categoryLabel: cat.label })
+  }
 }
 
-// Live count per category for the sidebar — same "never a stored count,
-// always derived from the real list" rule as every other cross-module
-// number in this app.
-export function categoryCounts(docs) {
-  const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, 0]))
+export function subcategoryMeta(id) {
+  return SUBCATEGORY_INDEX.get(id) || null
+}
+export function subcategoryLabel(id) {
+  return subcategoryMeta(id)?.label || 'General'
+}
+// The parent category id for a document's leaf subcategory — always
+// derived, never stored, so it can't disagree with the real tree.
+export function categoryOf(subcategoryId) {
+  return subcategoryMeta(subcategoryId)?.categoryId || null
+}
+export function categoryLabelOf(subcategoryId) {
+  return subcategoryMeta(subcategoryId)?.categoryLabel || 'General'
+}
+
+// Live counts for the sidebar tree and the "Tipos de Conocimiento" cards —
+// never stored, same rule as every other cross-module number in this app.
+export function subcategoryCounts(docs) {
+  const counts = {}
+  for (const cat of CATEGORY_TREE) for (const sub of cat.subcategories) counts[sub.id] = 0
   for (const d of docs) {
-    if (counts[d.category] !== undefined) counts[d.category] += 1
+    if (counts[d.subcategory] !== undefined) counts[d.subcategory] += 1
   }
   return counts
+}
+export function categoryCounts(docs) {
+  const subCounts = subcategoryCounts(docs)
+  return Object.fromEntries(CATEGORY_TREE.map((cat) => [cat.id, cat.subcategories.reduce((sum, s) => sum + subCounts[s.id], 0)]))
 }
 
 // ---- Inline markdown: **bold**, *italic*, `code`, [text](url) ----
