@@ -102,6 +102,20 @@ export function categoryLabelOf(index, subcategoryId) {
   return subcategoryMeta(index, subcategoryId)?.categoryLabel || 'General'
 }
 
+// A readable summary of what changed on a doc edit, for the auto-logged
+// Historial — same idea as lib/workspace.js's describeTaskChange, but
+// DocEditor always saves title/subcategory/content together (there's no
+// per-field inline editing here like Lista's cells), so this diffs against
+// the previous doc rather than just checking which keys are in the patch.
+export function describeKnowledgeChange(previous, data) {
+  const changed = []
+  if (!previous || previous.title !== data.title) changed.push('título')
+  if (!previous || previous.subcategory !== data.subcategory) changed.push('sección')
+  if (!previous || previous.content !== data.content) changed.push('contenido')
+  if (changed.length === 0) return 'Documento actualizado'
+  return `Editado: ${changed.join(', ')}`
+}
+
 // Live counts for the sidebar tree and the "Tipos de Conocimiento" cards —
 // never stored, same rule as every other cross-module number in this app.
 export function subcategoryCounts(index, docs) {

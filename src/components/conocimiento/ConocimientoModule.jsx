@@ -7,6 +7,7 @@ import {
   deleteKnowledgeDoc,
   subscribeKnowledgeSections,
   createKnowledgeSection,
+  subscribeKnowledgeDocHistory,
   subscribeUserProfile,
 } from '../../lib/firestore'
 import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown } from '../../lib/knowledge'
@@ -411,6 +412,36 @@ function StatsCard({ index, docs }) {
   )
 }
 
+// Read-only, reverse-chronological — same layout convention as Clientes'
+// HistorialTab and the Task Detail Panel's Historial section. Every entry
+// here is auto-logged by createKnowledgeDoc/updateKnowledgeDoc (see
+// lib/firestore.js), never hand-typed — unlike Clientes, there's no
+// "registrar interacción" form, since a doc edit already has a clear,
+// singular trigger to log from.
+function HistorialSection({ docId }) {
+  const [events, setEvents] = useState([])
+  useEffect(() => subscribeKnowledgeDocHistory(docId, setEvents), [docId])
+
+  return (
+    <div>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Historial</p>
+      {events.length === 0 ? (
+        <p className="text-[12.5px] text-[#444444]">Sin actividad registrada todavía.</p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {events.map((ev) => (
+            <div key={ev.id} className="flex items-baseline gap-2.5">
+              <span className="h-1 w-1 flex-shrink-0 rounded-full bg-white/[0.2]" />
+              <p className="text-[12.5px] text-[#888888]">{ev.description}</p>
+              <span className="ml-auto flex-shrink-0 text-[11px] text-[#444444]">{timeAgo(ev.createdAt)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -455,6 +486,10 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete }) {
       <div className="h-px bg-white/[0.06]" />
 
       {renderMarkdown(doc.content) || <p className="text-[13px] text-[#444444]">Este documento no tiene contenido todavía.</p>}
+
+      <div className="h-px bg-white/[0.06]" />
+
+      <HistorialSection docId={doc.id} />
     </div>
   )
 }
@@ -538,7 +573,7 @@ export default function ConocimientoModule({ user }) {
   const handleSaveEdit = async (data) => {
     setSaving(true)
     try {
-      await withTimeout(updateKnowledgeDoc(openDoc.id, data, actorName))
+      await withTimeout(updateKnowledgeDoc(openDoc.id, data, actorName, openDoc))
       setEditing(false)
     } catch (error) {
       showToast(`No se pudo guardar: ${error.message}`)
