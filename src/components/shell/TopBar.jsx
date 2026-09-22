@@ -159,15 +159,21 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
   const [rect, setRect] = useState(null)
   const photoURL = useUserPhoto(user?.uid, user?.photoURL)
 
+  // Measured continuously (not just while the menu is open) so ProfileMenu
+  // can stay permanently mounted — see that file for why: a backdrop-filter
+  // layer built fresh on every open visibly takes the browser a couple of
+  // frames to render at full blur, however carefully the entrance animation
+  // is sequenced. Keeping it mounted (hidden via opacity/pointer-events
+  // instead of unmounting) means the layer is already composited by the
+  // time it needs to appear.
   useEffect(() => {
-    if (!menuOpen) return
     const measure = () => {
       if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect())
     }
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [menuOpen])
+  }, [expanded, menuOpen])
 
   // Collapses the pill when expanded-but-menu-closed and the user clicks
   // elsewhere. When the menu IS open, its own full-screen backdrop already
@@ -232,17 +238,17 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
 
       {rect &&
         createPortal(
-          <AnimatePresence>
+          <>
             {menuOpen && (
-              <>
-                {createPortal(
-                  <div className="fixed inset-0 z-[998]" onClick={onCloseAll} />,
-                  document.body
-                )}
-                <ProfileMenu user={user} anchorRect={rect} onClose={onCloseAll} onSelect={onSelect} />
-              </>
+              <div className="fixed inset-0 z-[998]" onClick={onCloseAll} />
             )}
-          </AnimatePresence>,
+            {/* Permanently mounted (never unmounted) once first measured —
+                see ProfileMenu.jsx for why: visibility toggles via its own
+                `open` prop instead, so the backdrop-filter layer stays warm
+                across opens rather than being rebuilt from scratch (and
+                visibly popping in) every time. */}
+            <ProfileMenu user={user} anchorRect={rect} open={menuOpen} onClose={onCloseAll} onSelect={onSelect} />
+          </>,
           document.body
         )}
     </>
@@ -290,10 +296,18 @@ export default function TopBar({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const toggleNotif = () => {
-    if (!notifOpen) setNotifRect(bellRef.current.getBoundingClientRect())
-    setNotifOpen((v) => !v)
-  }
+  const toggleNotif = () => setNotifOpen((v) => !v)
+
+  // Measured on mount (not just on open) so NotificationCenter can stay
+  // permanently mounted — see that file for why.
+  useEffect(() => {
+    const measure = () => {
+      if (bellRef.current) setNotifRect(bellRef.current.getBoundingClientRect())
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   const handleMenuSelect = (id) => {
     if (id === 'logout') onSignOut?.()
@@ -333,17 +347,14 @@ export default function TopBar({
             )}
           </button>
 
-          <AnimatePresence>
-            {notifOpen && (
-              <>
-                {createPortal(
-                  <div className="fixed inset-0 z-[998]" onClick={() => setNotifOpen(false)} />,
-                  document.body
-                )}
-                <NotificationCenter items={notifications} anchorRect={notifRect} />
-              </>
+          {notifOpen &&
+            createPortal(
+              <div className="fixed inset-0 z-[998]" onClick={() => setNotifOpen(false)} />,
+              document.body
             )}
-          </AnimatePresence>
+          {/* Permanently mounted, visibility toggles via `open` — see
+              NotificationCenter.jsx. */}
+          <NotificationCenter items={notifications} anchorRect={notifRect} open={notifOpen} />
         </motion.div>
 
         <ProfileTrigger

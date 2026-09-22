@@ -23,7 +23,7 @@ function formatLastSignIn(user) {
   return text.replace('.', '')
 }
 
-export default function ProfileMenu({ user, onClose, onSelect, anchorRect }) {
+export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
 
@@ -34,27 +34,33 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect }) {
     onClose?.()
   }
 
+  const visible = open && ready
+
   return createPortal(
     // See NotificationCenter.jsx for why the transform-animated wrapper and
     // the backdrop-filter surface are two separate elements — Chromium
     // silently drops backdrop-filter's blur compositing when the same
     // element also carries a `transform` (even an at-rest identity one like
     // scale(1)), so combining them here made the menu render with none of
-    // the background actually blurred. `animate` doesn't start until
-    // `useDeferredReveal`'s `ready` flips true a couple of frames after
-    // mount — see that hook for why: on a freshly-mounted element the blur
-    // itself needs a frame to composite, and animating visibly before that
-    // is what caused the "opens transparent, then pops to blurred" flash
-    // (will-change alone doesn't fix it — it only helps an element that
-    // already existed a frame earlier).
+    // the background actually blurred.
+    //
+    // This component is permanently mounted by TopBar.jsx once the trigger
+    // rect is known (not conditionally rendered on `open`) and visibility is
+    // purely a CSS toggle here. That's the real fix for the "opens
+    // transparent, then pops to blurred" flash: the backdrop-filter blur is
+    // an expensive GPU computation that visibly takes the browser a couple
+    // of frames to fully resolve on a layer it just created — no amount of
+    // sequencing the *entrance animation* avoids that (confirmed: delaying
+    // the animate start via useDeferredReveal alone didn't fix it either).
+    // Never destroying the layer once it exists means it's already fully
+    // resolved by the time the menu needs to be visible again.
     <motion.div
-      initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={ready ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
-      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"
       style={{
         position: 'fixed',
+        pointerEvents: visible ? 'auto' : 'none',
         top: anchorRect.bottom + 8,
         right: window.innerWidth - anchorRect.right,
         width: anchorRect.width,

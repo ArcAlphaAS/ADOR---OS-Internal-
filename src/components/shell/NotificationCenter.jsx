@@ -3,9 +3,11 @@ import { motion } from 'framer-motion'
 import { BellIcon } from '../icons'
 import useDeferredReveal from '../../hooks/useDeferredReveal'
 
-export default function NotificationCenter({ items = [], anchorRect }) {
+export default function NotificationCenter({ items = [], anchorRect, open }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
+
+  const visible = open && ready
 
   return createPortal(
     // Animation (opacity/y/scale => transform) lives on this outer wrapper,
@@ -15,18 +17,20 @@ export default function NotificationCenter({ items = [], anchorRect }) {
     // confirmed here by inspecting computed style (backdrop-filter was
     // correctly set) vs. the actual screenshot (no blur visible). Splitting
     // the transformed wrapper from the backdrop-filter surface avoids it.
-    // `animate` waits for `useDeferredReveal`'s `ready` flag (see that hook)
-    // so the entrance doesn't start until the freshly-mounted blur layer has
-    // had a couple of frames to composite — without it, this popped in
-    // transparent-then-blurred instead of appearing already frosted.
+    //
+    // Permanently mounted by TopBar.jsx (not conditionally rendered on
+    // `open`) — see ProfileMenu.jsx for the full reasoning: the blur itself
+    // is an expensive GPU computation that visibly takes a couple of frames
+    // to resolve on a freshly-created layer, which no amount of entrance-
+    // animation sequencing avoids. Never destroying the layer once built
+    // means it's already resolved every time this needs to reappear.
     <motion.div
-      initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={ready ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
-      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : -8, scale: visible ? 1 : 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"
       style={{
         position: 'fixed',
+        pointerEvents: visible ? 'auto' : 'none',
         top: anchorRect.bottom + 12,
         right: window.innerWidth - anchorRect.right,
       }}
