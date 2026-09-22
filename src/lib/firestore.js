@@ -900,6 +900,11 @@ export function subscribeChannelMessages(channelId, onData) {
   )
 }
 
+// Also bumps the channel doc's own `lastMessageAt` (separate from the
+// message's own `createdAt`) so the sidebar can show an unread indicator
+// without subscribing to every channel's full message history just to
+// check "is there anything newer than what I've read" — see
+// markChatRead()/`chatLastRead` below.
 export function sendChannelMessage(channelId, text, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return addDoc(collection(db, COLLECTIONS.chatChannels, channelId, 'messages'), {
@@ -907,7 +912,17 @@ export function sendChannelMessage(channelId, text, uid, name) {
     authorUid: uid,
     authorName: name,
     createdAt: serverTimestamp(),
-  })
+  }).then((ref) => updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp() }).then(() => ref))
+}
+
+export function updateChannelMessage(channelId, messageId, text) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatChannels, channelId, 'messages', messageId), { text, editedAt: serverTimestamp() })
+}
+
+export function deleteChannelMessage(channelId, messageId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.chatChannels, channelId, 'messages', messageId))
 }
 
 // A DM's id is the two participants' uids, sorted and joined — deterministic
@@ -936,6 +951,9 @@ export function subscribeDmMessages(dmId, onData) {
   )
 }
 
+// `updatedAt` here doubles as the DM's "lastMessageAt" signal for unread
+// tracking — same idea as channels' own lastMessageAt, just already
+// present on this doc from the original merge-on-first-message write.
 export function sendDmMessage(dmId, participants, text, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return setDoc(
@@ -950,4 +968,25 @@ export function sendDmMessage(dmId, participants, text, uid, name) {
       createdAt: serverTimestamp(),
     })
   )
+}
+
+export function updateDmMessage(dmId, messageId, text) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId), { text, editedAt: serverTimestamp() })
+}
+
+export function deleteDmMessage(dmId, messageId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId))
+}
+
+// Read tracking for the sidebar's unread dots — one map field on the
+// user's own profile doc (`chatLastRead: {conversationId: timestamp}`)
+// rather than a new collection, since it's tiny per-user state, same
+// spirit as `users/{uid}.weeklyGoal`/`birthday`. Written via a dotted
+// field path (updateDoc, not a merged setDoc) so marking one conversation
+// read never touches any other conversation's stored timestamp.
+export function markChatRead(uid, conversationId) {
+  if (!db) return Promise.resolve()
+  return updateDoc(doc(db, COLLECTIONS.users, uid), { [`chatLastRead.${conversationId}`]: serverTimestamp() })
 }

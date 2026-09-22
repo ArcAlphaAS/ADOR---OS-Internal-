@@ -4,15 +4,22 @@ import {
   createChatChannel,
   subscribeChannelMessages,
   sendChannelMessage,
+  updateChannelMessage,
+  deleteChannelMessage,
   subscribeUsers,
   dmIdFor,
+  subscribeMyDms,
   subscribeDmMessages,
   sendDmMessage,
+  updateDmMessage,
+  deleteDmMessage,
+  markChatRead,
+  subscribeUserProfile,
 } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
-import { MessageIcon, PlusIcon, ArrowRightIcon } from '../icons'
+import { MessageIcon, PlusIcon, ArrowRightIcon, EditIcon, CloseIcon } from '../icons'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -21,6 +28,36 @@ function actorNameFor(user) {
 function formatTime(ts) {
   if (!ts?.toDate) return ''
   return ts.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+}
+
+function dayKey(ts) {
+  if (!ts?.toDate) return null
+  return ts.toDate().toDateString()
+}
+
+function dayLabel(ts) {
+  const date = ts.toDate()
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return 'Hoy'
+  if (date.toDateString() === yesterday.toDateString()) return 'Ayer'
+  return date.toLocaleDateString('es', { day: 'numeric', month: 'long' })
+}
+
+// A conversation "has news" when its last message landed after the last
+// time this user marked it read (users/{uid}.chatLastRead, see
+// markChatRead in lib/firestore.js) — never a separately-tracked read
+// receipt per message, just one timestamp per conversation, same "small
+// state, no new collection" instinct as this app's other per-user prefs.
+function isUnread(lastMessageAt, lastReadAt) {
+  if (!lastMessageAt?.toMillis) return false
+  if (!lastReadAt?.toMillis) return true
+  return lastMessageAt.toMillis() > lastReadAt.toMillis()
+}
+
+function UnreadDot() {
+  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD' }} />
 }
 
 // Slack-style: a small "+" icon right next to the "CANALES" header opens
@@ -59,7 +96,7 @@ function NewChannelInput({ onCreate, onDone }) {
   )
 }
 
-function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, onSelectDm, onCreateChannel }) {
+function ChatSidebar({ channels, users, currentUid, selected, unreadMap, onSelectChannel, onSelectDm, onCreateChannel }) {
   const [addingChannel, setAddingChannel] = useState(false)
 
   return (
@@ -84,15 +121,21 @@ function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, o
           )}
           {channels.map((c) => {
             const active = selected?.type === 'channel' && selected.id === c.id
+            const unread = !active && unreadMap[c.id]
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => onSelectChannel(c)}
-                className="truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors duration-150"
-                style={{ background: active ? 'rgba(30,95,173,0.14)' : 'transparent', color: active ? '#5B9BD9' : '#CCCCCC' }}
+                className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150"
+                style={{
+                  background: active ? 'rgba(30,95,173,0.14)' : 'transparent',
+                  color: active ? '#5B9BD9' : unread ? '#F5F5F5' : '#CCCCCC',
+                  fontWeight: unread ? 600 : 500,
+                }}
               >
-                # {c.name}
+                <span className="truncate"># {c.name}</span>
+                {unread && <UnreadDot />}
               </button>
             )
           })}
@@ -107,16 +150,21 @@ function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, o
             .filter((u) => u.id !== currentUid)
             .map((u) => {
               const active = selected?.type === 'dm' && selected.otherUid === u.id
+              const convId = dmIdFor(currentUid, u.id)
+              const unread = !active && unreadMap[convId]
               return (
                 <button
                   key={u.id}
                   type="button"
                   onClick={() => onSelectDm(u)}
-                  className="flex items-center gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors duration-150"
-                  style={{ background: active ? 'rgba(30,95,173,0.14)' : 'transparent', color: active ? '#5B9BD9' : '#CCCCCC' }}
+                  className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150"
+                  style={{ background: active ? 'rgba(30,95,173,0.14)' : 'transparent', color: active ? '#5B9BD9' : unread ? '#F5F5F5' : '#CCCCCC', fontWeight: unread ? 600 : 500 }}
                 >
-                  <Avatar displayName={u.displayName} photoURL={u.photoDataUrl} size={20} />
-                  <span className="truncate">{u.displayName || u.email}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Avatar displayName={u.displayName} photoURL={u.photoDataUrl} size={20} />
+                    <span className="truncate">{u.displayName || u.email}</span>
+                  </span>
+                  {unread && <UnreadDot />}
                 </button>
               )
             })}
@@ -126,12 +174,95 @@ function ChatSidebar({ channels, users, currentUid, selected, onSelectChannel, o
   )
 }
 
-function MessageThread({ messages, currentUid }) {
+// Hover reveals small edit/delete actions on your own messages, matching
+// the expectation any real chat sets (Slack, iMessage, WhatsApp all let
+// you fix or retract something you just sent) — the original v1 had no
+// way to correct or take back a sent message at all.
+function MessageBubble({ message, mine, onEdit, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(message.text)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  if (editing) {
+    return (
+      <div className="flex max-w-[70%] flex-col gap-1 items-end">
+        <input
+          autoFocus
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && draft.trim()) {
+              onEdit(draft.trim())
+              setEditing(false)
+            }
+            if (e.key === 'Escape') setEditing(false)
+          }}
+          className="w-full rounded-2xl border border-white/[0.2] bg-[#141414] px-3.5 py-2 text-[13.5px] text-[#F5F5F5] outline-none"
+        />
+        <p className="px-1 text-[10.5px] text-[#666666]">Enter para guardar · Esc para cancelar</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`group flex max-w-[70%] flex-col gap-0.5 ${mine ? 'items-end' : 'items-start'}`}>
+      {!mine && <p className="px-1 text-[11px] font-medium text-[#666666]">{message.authorName}</p>}
+      <div className="flex items-center gap-1.5">
+        {mine && (
+          <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            <button type="button" onClick={() => setEditing(true)} className="flex h-6 w-6 items-center justify-center rounded-full text-[#666666] hover:bg-white/[0.06] hover:text-[#F5F5F5]">
+              <EditIcon size={11} />
+            </button>
+            <button
+              type="button"
+              onClick={() => (confirmDelete ? onDelete() : setConfirmDelete(true))}
+              onBlur={() => setConfirmDelete(false)}
+              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#EF5350]/10"
+              style={{ color: confirmDelete ? '#EF5350' : '#666666' }}
+            >
+              <CloseIcon size={11} />
+            </button>
+          </span>
+        )}
+        <div
+          className="rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"
+          style={{
+            background: mine ? '#1E5FAD' : 'rgba(255,255,255,0.06)',
+            color: mine ? '#F5F5F5' : '#DDDDDD',
+            borderBottomRightRadius: mine ? 4 : undefined,
+            borderBottomLeftRadius: mine ? undefined : 4,
+          }}
+        >
+          {message.text}
+        </div>
+      </div>
+      <p className="px-1 text-[10.5px] text-[#444444]">
+        {formatTime(message.createdAt)}
+        {message.editedAt ? ' (editado)' : ''}
+      </p>
+    </div>
+  )
+}
+
+function DateDivider({ ts }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="h-px flex-1 bg-white/[0.06]" />
+      <span className="text-[11px] font-medium text-[#555555]">{dayLabel(ts)}</span>
+      <div className="h-px flex-1 bg-white/[0.06]" />
+    </div>
+  )
+}
+
+function MessageThread({ messages, currentUid, onEdit, onDelete }) {
   const scrollRef = useRef(null)
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
+
+  let lastDay = null
 
   return (
     <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1 py-4">
@@ -143,22 +274,14 @@ function MessageThread({ messages, currentUid }) {
       ) : (
         messages.map((m) => {
           const mine = m.authorUid === currentUid
+          const key = dayKey(m.createdAt)
+          const showDivider = key && key !== lastDay
+          lastDay = key
           return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex max-w-[70%] flex-col gap-0.5 ${mine ? 'items-end' : 'items-start'}`}>
-                {!mine && <p className="px-1 text-[11px] font-medium text-[#666666]">{m.authorName}</p>}
-                <div
-                  className="rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"
-                  style={{
-                    background: mine ? '#1E5FAD' : 'rgba(255,255,255,0.06)',
-                    color: mine ? '#F5F5F5' : '#DDDDDD',
-                    borderBottomRightRadius: mine ? 4 : undefined,
-                    borderBottomLeftRadius: mine ? undefined : 4,
-                  }}
-                >
-                  {m.text}
-                </div>
-                <p className="px-1 text-[10.5px] text-[#444444]">{formatTime(m.createdAt)}</p>
+            <div key={m.id} className="flex flex-col gap-3">
+              {showDivider && <DateDivider ts={m.createdAt} />}
+              <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                <MessageBubble message={m} mine={mine} onEdit={(text) => onEdit(m.id, text)} onDelete={() => onDelete(m.id)} />
               </div>
             </div>
           )
@@ -203,6 +326,8 @@ function Composer({ onSend }) {
 export default function ChatModule({ user }) {
   const [channels, setChannels] = useState([])
   const [users, setUsers] = useState([])
+  const [myDms, setMyDms] = useState([])
+  const [profile, setProfile] = useState(null)
   const [selected, setSelected] = useState(null) // {type:'channel', id, name} | {type:'dm', otherUid, otherName}
   const [messages, setMessages] = useState([])
   const showToast = useToast()
@@ -210,6 +335,8 @@ export default function ChatModule({ user }) {
 
   useEffect(() => subscribeChatChannels(setChannels), [])
   useEffect(() => subscribeUsers(setUsers), [])
+  useEffect(() => subscribeMyDms(user.uid, setMyDms), [user.uid])
+  useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   // Default to the first available channel once channels load, so the
   // screen never opens on a dead "nothing selected" state.
@@ -217,11 +344,27 @@ export default function ChatModule({ user }) {
     if (!selected && channels.length > 0) setSelected({ type: 'channel', id: channels[0].id, name: channels[0].name })
   }, [channels, selected])
 
+  const activeConversationId = selected ? (selected.type === 'channel' ? selected.id : dmIdFor(user.uid, selected.otherUid)) : null
+
   useEffect(() => {
     if (!selected) return
     if (selected.type === 'channel') return subscribeChannelMessages(selected.id, setMessages)
     return subscribeDmMessages(dmIdFor(user.uid, selected.otherUid), setMessages)
   }, [selected, user.uid])
+
+  // Marks the open conversation read whenever its message list changes —
+  // covers both "I just opened it" and "a new message arrived while I'm
+  // already looking at it," so the unread dot never lingers on a
+  // conversation you're actively viewing.
+  useEffect(() => {
+    if (!activeConversationId) return
+    markChatRead(user.uid, activeConversationId)
+  }, [activeConversationId, messages, user.uid])
+
+  const lastReadFor = (convId) => profile?.chatLastRead?.[convId]
+  const unreadMap = {}
+  for (const c of channels) unreadMap[c.id] = isUnread(c.lastMessageAt, lastReadFor(c.id))
+  for (const d of myDms) unreadMap[d.id] = isUnread(d.updatedAt, lastReadFor(d.id))
 
   const handleCreateChannel = (name) => {
     withTimeout(createChatChannel(name, user.uid, actorName))
@@ -242,6 +385,16 @@ export default function ChatModule({ user }) {
     }
   }
 
+  const handleEditMessage = (messageId, text) => {
+    const fn = selected.type === 'channel' ? updateChannelMessage(selected.id, messageId, text) : updateDmMessage(dmIdFor(user.uid, selected.otherUid), messageId, text)
+    withTimeout(fn).catch((error) => showToast(`No se pudo editar: ${error.message}`))
+  }
+
+  const handleDeleteMessage = (messageId) => {
+    const fn = selected.type === 'channel' ? deleteChannelMessage(selected.id, messageId) : deleteDmMessage(dmIdFor(user.uid, selected.otherUid), messageId)
+    withTimeout(fn).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
+  }
+
   return (
     <div className="mx-auto flex h-full w-full max-w-[1200px] gap-8 px-12 py-8">
       <ChatSidebar
@@ -249,6 +402,7 @@ export default function ChatModule({ user }) {
         users={users}
         currentUid={user?.uid}
         selected={selected}
+        unreadMap={unreadMap}
         onSelectChannel={(c) => setSelected({ type: 'channel', id: c.id, name: c.name })}
         onSelectDm={(u) => setSelected({ type: 'dm', otherUid: u.id, otherName: u.displayName || u.email })}
         onCreateChannel={handleCreateChannel}
@@ -260,7 +414,7 @@ export default function ChatModule({ user }) {
             <div className="border-b border-white/[0.06] pb-3">
               <p className="text-[15px] font-semibold text-[#F5F5F5]">{selected.type === 'channel' ? `# ${selected.name}` : selected.otherName}</p>
             </div>
-            <MessageThread messages={messages} currentUid={user?.uid} />
+            <MessageThread messages={messages} currentUid={user?.uid} onEdit={handleEditMessage} onDelete={handleDeleteMessage} />
             <Composer onSend={handleSend} />
           </>
         ) : (
