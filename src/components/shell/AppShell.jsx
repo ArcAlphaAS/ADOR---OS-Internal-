@@ -11,6 +11,7 @@ import ObjetivosModule from '../objetivos/ObjetivosModule'
 import CalendarioModule from '../calendario/CalendarioModule'
 import DirectorioModule from '../directorio/DirectorioModule'
 import ConocimientoModule from '../conocimiento/ConocimientoModule'
+import NewsModule from '../news/NewsModule'
 import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
@@ -124,6 +125,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
                 focusDocId={focus?.type === 'knowledge' ? focus.id : null}
                 onFocusHandled={() => setFocus(null)}
               />
+            ) : activeModule === 'news' ? (
+              <NewsModule key="news" user={user} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (

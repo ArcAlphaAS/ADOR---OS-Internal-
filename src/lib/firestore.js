@@ -60,6 +60,7 @@ export const COLLECTIONS = {
   directoryTeams: 'directoryTeams',
   knowledgeDocs: 'knowledgeDocs',
   knowledgeSections: 'knowledgeSections',
+  news: 'news',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -778,4 +779,42 @@ export function createKnowledgeSection(data, actorName) {
     createdBy: actorName,
     createdAt: serverTimestamp(),
   })
+}
+
+// ---- News: formal, team-authored announcements ----
+// Deliberately not a scraped/external feed (CLAUDE.md's scoping note on
+// this module is explicit: newsroom-style posts the team writes, not a
+// news-API integration) and deliberately not Comunidad's informal-post
+// concept — a headline + a Markdown body, reusing lib/knowledge.jsx's
+// renderer rather than building a second one. `pinned` posts sort first
+// (a manual editorial call, not derived) so a founder can keep an
+// important announcement at the top past newer ones. Admin-gated writes,
+// same isAdmin() check as Directorio/Conocimiento.
+export function subscribeNews(onData) {
+  return subscribeToCollection(COLLECTIONS.news, [orderBy('createdAt', 'desc')], onData)
+}
+
+export function createNewsPost(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.news), {
+    ...data,
+    createdBy: actorName,
+    createdAt: serverTimestamp(),
+    updatedBy: actorName,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function updateNewsPost(postId, data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.news, postId), {
+    ...data,
+    updatedBy: actorName,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function deleteNewsPost(postId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.news, postId))
 }
