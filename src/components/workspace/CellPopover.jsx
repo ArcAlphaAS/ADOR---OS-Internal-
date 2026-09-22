@@ -20,13 +20,14 @@ export default function CellPopover({ anchorRect, onClose, children, width = 180
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-[998]" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, y: -8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="fixed z-50"
+        className="fixed z-[999]"
         style={{
+          isolation: 'isolate',
           top: anchorRect.bottom + 6,
           left: Math.min(anchorRect.left, window.innerWidth - width - 12),
           width,

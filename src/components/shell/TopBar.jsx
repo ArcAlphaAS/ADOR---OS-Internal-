@@ -236,7 +236,7 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
             {menuOpen && (
               <>
                 {createPortal(
-                  <div className="fixed inset-0 z-40" onClick={onCloseAll} />,
+                  <div className="fixed inset-0 z-[998]" onClick={onCloseAll} />,
                   document.body
                 )}
                 <ProfileMenu user={user} anchorRect={rect} onClose={onCloseAll} onSelect={onSelect} />
@@ -337,7 +337,7 @@ export default function TopBar({
             {notifOpen && (
               <>
                 {createPortal(
-                  <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />,
+                  <div className="fixed inset-0 z-[998]" onClick={() => setNotifOpen(false)} />,
                   document.body
                 )}
                 <NotificationCenter items={notifications} anchorRect={notifRect} />

@@ -18,9 +18,10 @@ export default function NotificationCenter({ items = [], anchorRect }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      className="z-50"
+      className="z-[999]"
       style={{
         position: 'fixed',
+        isolation: 'isolate',
         top: anchorRect.bottom + 12,
         right: window.innerWidth - anchorRect.right,
       }}

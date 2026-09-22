@@ -67,8 +67,14 @@ function NavButton({ id, label, Icon, active, accent, onClick }) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -4 }}
                 transition={{ duration: 0.15 }}
-                className="pointer-events-none z-50"
-                style={{ position: 'fixed', top: tipPos.top, left: tipPos.left, transform: 'translateY(-50%)' }}
+                className="pointer-events-none z-[999]"
+                style={{
+                  position: 'fixed',
+                  isolation: 'isolate',
+                  top: tipPos.top,
+                  left: tipPos.left,
+                  transform: 'translateY(-50%)',
+                }}
               >
                 <div className="ador-glass ador-grain whitespace-nowrap rounded-lg px-3 py-1.5">
                   <span
