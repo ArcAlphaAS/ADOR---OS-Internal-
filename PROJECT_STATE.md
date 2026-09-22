@@ -16,8 +16,8 @@ Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed 
 | Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
 | Phase 3 — Directorio (Personas, Organigrama, Equipos, Roles) | ✅ Done (2026-09-18) |
 | Phase 3 — Conocimiento (Markdown wiki: Estrategia/Marketing/Información General/SOPs/Reglas) | ✅ Done (2026-09-22) |
-| Phase 3 — News (formal announcements, hero-image cards) | ✅ Done (2026-09-22) |
-| Phase 3 — remaining modules (Comunidad, Chat) | ⬜ Not started, deliberately deferred |
+| Phase 3 — News + Comunidad (merged: Anuncios/Comunidad tabs in one module) | ✅ Done (2026-09-22) |
+| Phase 3 — remaining modules (Chat) | ⬜ Not started, deliberately deferred |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -337,13 +337,18 @@ Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed 
 - [x] Deliberately no history subcollection for v1 (unlike Conocimiento) — kept lighter per the user's own "just get the shell ready" framing; easy to add later following the exact same pattern if it turns out to matter
 - [x] **Verification note:** checked via `?preview=1` — filled in the editor's title/subtitle/cover-image-URL fields with a real Unsplash image and confirmed the live `NewsHeroCard` preview matches the reference layout (logo, gradient, headline, subtitle) correctly. Did not publish a real post — same `permission-denied`-under-preview limitation as every other write in this app
 
+**News + Comunidad merged into one module (2026-09-22, same-day follow-up)**
+- [x] Direct user request: "juntarlos pero separandolos dentro de la misma sección" — News and Comunidad are now one module (`NewsModule.jsx`) with an Anuncios/Comunidad sliding tab switcher (same `layoutId` pattern as Directorio's tabs), header eyebrow/subtitle adapting per tab. Comunidad's standalone sidebar slot was removed entirely (`Sidebar.jsx`'s `NAV_ITEMS`, `AppShell.jsx`'s `MODULE_LABELS`) — it never had a built module behind it, just a placeholder
+- [x] Anuncios tab is the existing hero-card feed, unchanged, just extracted into its own `AnunciosTab` component. New `CommunityFeed.jsx` + `communityPosts` collection for Comunidad: a text composer, compact post cards, and a small fixed reaction bar (👍🎉❤️💡🔥) via new `toggleCommunityReaction()` (`arrayUnion`/`arrayRemove` on a `reactions: {emoji: [uid...]}` map, idempotent per user)
+- [x] Comunidad is deliberately **not** admin-gated, unlike every other write in this app (News, Conocimiento, Directorio) — open posting/reacting is the whole point of "informal team pulse." Delete is scoped to the post's own author or an admin, not admin-only
+- [x] **Verification note:** checked via `?preview=1` — the tab switcher slides correctly between Anuncios/Comunidad, header copy changes per tab, Comunidad's composer and empty state render correctly. Could not verify posting/reacting against real data — `?preview=1` has no real Firebase Auth session, same documented limitation as every other write in this app
+
 **Not built yet**
-- [ ] Comunidad and Chat still show placeholder — direction agreed (see below), user has said "later, not now" for both as of the last time this was discussed
+- [ ] Chat still shows placeholder — direction agreed (see below), user has said "later, not now" as of the last time this was discussed
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
 **Scoped but not started (2026-08-14 evening conversation) — direction agreed, nothing built yet:**
 - **Chat** — basic real-time messaging (channels + DMs) is realistic and cheap to build reusing existing Firestore-subscription patterns; full Slack/Teams parity (threads, reactions, search, calls) is explicitly out of scope. User confirmed: later, not now.
-- **Comunidad** — internal-only (just the 3 founders/asociados, not SPs). Leaning toward a lightweight "team pulse" (short wins/announcement posts + simple reactions) rather than a literal LinkedIn-style feed, since a feed format needs an audience size this team doesn't have. Must stay clearly distinct from Home's "Actividad Reciente" (automatic/system) and Workspace's "Decisiones" (formal/strategic) — Comunidad is the human/informal one. User confirmed: later, not now.
 - **Mobile access (2026-09-18 conversation)** — direction discussed, nothing built yet. Goal is a lightweight "check status on my phone" experience, not a full mobile work surface — user was explicit that phone use is for glancing/reviewing, not working. Recommended path: a PWA built on the existing web app (not a native React Native/iOS/Android app — too much investment for a 3-founder internal tool), in three independent phases: (1) a responsive layout pass on Inicio (and possibly Workspace's Hoy) so it's actually legible on a phone screen, (2) a web manifest + icon so it's installable to the home screen, (3) real push notifications, which needs a backend piece (same Vercel-serverless-function pattern already used for `api/ador-ia.js`/`api/google-calendar/*`) plus a service worker — works on Android always, on iPhone only once the app is installed via phase 2 (Apple allows PWA push since iOS 16.4). User wants to revisit this later, not now — parked here per their own request, not forgotten.
 
 ## Infrastructure status
