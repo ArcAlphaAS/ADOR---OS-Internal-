@@ -118,7 +118,12 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'directorio' ? (
               <DirectorioModule key="directorio" user={user} />
             ) : activeModule === 'conocimiento' ? (
-              <ConocimientoModule key="conocimiento" user={user} />
+              <ConocimientoModule
+                key="conocimiento"
+                user={user}
+                focusDocId={focus?.type === 'knowledge' ? focus.id : null}
+                onFocusHandled={() => setFocus(null)}
+              />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (

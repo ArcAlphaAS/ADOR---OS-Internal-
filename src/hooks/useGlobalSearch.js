@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeClients, subscribeAllTasks, subscribeDecisions } from '../lib/firestore'
+import { subscribeClients, subscribeAllTasks, subscribeDecisions, subscribeKnowledgeDocs } from '../lib/firestore'
 import { clientType } from '../lib/clientStages'
 
 const MAX_RESULTS_PER_GROUP = 5
@@ -12,13 +12,15 @@ export function useGlobalSearch(query) {
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
   const [decisions, setDecisions] = useState([])
+  const [knowledgeDocs, setKnowledgeDocs] = useState([])
 
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeAllTasks(setTasks), [])
   useEffect(() => subscribeDecisions(setDecisions), [])
+  useEffect(() => subscribeKnowledgeDocs(setKnowledgeDocs), [])
 
   const q = query.trim().toLowerCase()
-  if (!q) return { clients: [], tasks: [], decisions: [], hasResults: false }
+  if (!q) return { clients: [], tasks: [], decisions: [], knowledge: [], hasResults: false }
 
   const matchedClients = clients
     .filter((c) => c.name?.toLowerCase().includes(q) || c.contactName?.toLowerCase().includes(q))
@@ -35,10 +37,16 @@ export function useGlobalSearch(query) {
     .slice(0, MAX_RESULTS_PER_GROUP)
     .map((d) => ({ id: d.id, title: d.title, subtitle: 'Decisión' }))
 
+  const matchedKnowledge = knowledgeDocs
+    .filter((d) => d.title?.toLowerCase().includes(q) || d.content?.toLowerCase().includes(q))
+    .slice(0, MAX_RESULTS_PER_GROUP)
+    .map((d) => ({ id: d.id, title: d.title, subtitle: 'Conocimiento' }))
+
   return {
     clients: matchedClients,
     tasks: matchedTasks,
     decisions: matchedDecisions,
-    hasResults: matchedClients.length + matchedTasks.length + matchedDecisions.length > 0,
+    knowledge: matchedKnowledge,
+    hasResults: matchedClients.length + matchedTasks.length + matchedDecisions.length + matchedKnowledge.length > 0,
   }
 }

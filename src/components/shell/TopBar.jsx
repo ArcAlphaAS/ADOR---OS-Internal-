@@ -137,6 +137,7 @@ function SearchToggle({ onNavigate }) {
             onSelectClient={(id) => goTo('clientes', { type: 'client', id })}
             onSelectTask={(id) => goTo('workspace', { type: 'task', id })}
             onSelectDecision={() => goTo('workspace', null)}
+            onSelectKnowledge={(id) => goTo('conocimiento', { type: 'knowledge', id })}
           />
         )}
       </AnimatePresence>

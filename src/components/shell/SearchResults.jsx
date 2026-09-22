@@ -38,7 +38,7 @@ function ResultGroup({ label, items, onSelect }) {
 // each result button stops the input's onBlur from closing this dropdown
 // before the click's own onClick has a chance to fire — the same race
 // flagged in CLAUDE.md's Clientes testing notes.
-export default function SearchResults({ results, anchorRect, onSelectClient, onSelectTask, onSelectDecision }) {
+export default function SearchResults({ results, anchorRect, onSelectClient, onSelectTask, onSelectDecision, onSelectKnowledge }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
 
@@ -64,6 +64,7 @@ export default function SearchResults({ results, anchorRect, onSelectClient, onS
             <ResultGroup label="Clientes" items={results.clients} onSelect={onSelectClient} />
             <ResultGroup label="Tareas" items={results.tasks} onSelect={onSelectTask} />
             <ResultGroup label="Decisiones" items={results.decisions} onSelect={onSelectDecision} />
+            <ResultGroup label="Conocimiento" items={results.knowledge} onSelect={onSelectKnowledge} />
           </>
         )}
       </div>

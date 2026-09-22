@@ -494,7 +494,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete }) {
   )
 }
 
-export default function ConocimientoModule({ user }) {
+export default function ConocimientoModule({ user, focusDocId, onFocusHandled }) {
   const [docs, setDocs] = useState([])
   const [sections, setSections] = useState([])
   const [profile, setProfile] = useState(null)
@@ -511,6 +511,16 @@ export default function ConocimientoModule({ user }) {
   useEffect(() => subscribeKnowledgeDocs(setDocs), [])
   useEffect(() => subscribeKnowledgeSections(setSections), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
+
+  // Opens straight to a document when arriving from a global-search result
+  // (see AppShell.jsx's `focus` state / SearchResults.jsx), same pattern as
+  // ClientesModule's focusClientId.
+  useEffect(() => {
+    if (!focusDocId) return
+    setOpenDocId(focusDocId)
+    setEditing(false)
+    onFocusHandled?.()
+  }, [focusDocId, onFocusHandled])
 
   // Merged tree + lookup index, rebuilt only when the live sections list
   // changes — see lib/knowledge.jsx for why this is never module-level
