@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import useDeferredReveal from '../../hooks/useDeferredReveal'
 
 const MENU_ITEMS = [
   { id: 'perfil', label: 'Mi Perfil' },
@@ -23,6 +24,7 @@ function formatLastSignIn(user) {
 }
 
 export default function ProfileMenu({ user, onClose, onSelect, anchorRect }) {
+  const ready = useDeferredReveal()
   if (!anchorRect) return null
 
   const lastSignIn = formatLastSignIn(user)
@@ -38,10 +40,16 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect }) {
     // silently drops backdrop-filter's blur compositing when the same
     // element also carries a `transform` (even an at-rest identity one like
     // scale(1)), so combining them here made the menu render with none of
-    // the background actually blurred.
+    // the background actually blurred. `animate` doesn't start until
+    // `useDeferredReveal`'s `ready` flips true a couple of frames after
+    // mount — see that hook for why: on a freshly-mounted element the blur
+    // itself needs a frame to composite, and animating visibly before that
+    // is what caused the "opens transparent, then pops to blurred" flash
+    // (will-change alone doesn't fix it — it only helps an element that
+    // already existed a frame earlier).
     <motion.div
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      animate={ready ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"

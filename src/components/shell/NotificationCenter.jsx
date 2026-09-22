@@ -1,8 +1,10 @@
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { BellIcon } from '../icons'
+import useDeferredReveal from '../../hooks/useDeferredReveal'
 
 export default function NotificationCenter({ items = [], anchorRect }) {
+  const ready = useDeferredReveal()
   if (!anchorRect) return null
 
   return createPortal(
@@ -13,9 +15,13 @@ export default function NotificationCenter({ items = [], anchorRect }) {
     // confirmed here by inspecting computed style (backdrop-filter was
     // correctly set) vs. the actual screenshot (no blur visible). Splitting
     // the transformed wrapper from the backdrop-filter surface avoids it.
+    // `animate` waits for `useDeferredReveal`'s `ready` flag (see that hook)
+    // so the entrance doesn't start until the freshly-mounted blur layer has
+    // had a couple of frames to composite — without it, this popped in
+    // transparent-then-blurred instead of appearing already frosted.
     <motion.div
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      animate={ready ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"

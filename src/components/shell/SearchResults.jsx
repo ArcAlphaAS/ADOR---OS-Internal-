@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import useDeferredReveal from '../../hooks/useDeferredReveal'
 
 function ResultGroup({ label, items, onSelect }) {
   if (items.length === 0) return null
@@ -30,17 +31,21 @@ function ResultGroup({ label, items, onSelect }) {
 // Same portal + split-wrapper pattern as NotificationCenter.jsx: the
 // transform-animated wrapper and the ador-glass surface are two separate
 // elements, otherwise Chromium drops the backdrop blur (see that file for
-// the full explanation). onMouseDown/preventDefault on each result button
-// stops the input's onBlur from closing this dropdown before the click's
-// own onClick has a chance to fire — the same race flagged in CLAUDE.md's
-// Clientes testing notes.
+// the full explanation). `animate` waits for `useDeferredReveal`'s `ready`
+// flag so the freshly-mounted blur layer has a couple of frames to
+// composite before anything becomes visible (see that hook — without it
+// this popped in transparent-then-blurred). onMouseDown/preventDefault on
+// each result button stops the input's onBlur from closing this dropdown
+// before the click's own onClick has a chance to fire — the same race
+// flagged in CLAUDE.md's Clientes testing notes.
 export default function SearchResults({ results, anchorRect, onSelectClient, onSelectTask, onSelectDecision }) {
+  const ready = useDeferredReveal()
   if (!anchorRect) return null
 
   return createPortal(
     <motion.div
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      animate={ready ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="z-[999]"
