@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed Markdown wiki). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-22 (Chat module shipped — real-time channels + DMs. With this, every Phase 3 module has shipped in some form; only Firebase Storage-dependent file uploads and mobile/PWA access remain open). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -15,9 +15,9 @@ Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed 
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
 | Phase 3 — Directorio (Personas, Organigrama, Equipos, Roles) | ✅ Done (2026-09-18) |
-| Phase 3 — Conocimiento (Markdown wiki: Estrategia/Marketing/Información General/SOPs/Reglas) | ✅ Done (2026-09-22) |
+| Phase 3 — Conocimiento (Markdown wiki: Estrategia/Marketing/Operaciones/Compañía tree) | ✅ Done (2026-09-22) |
 | Phase 3 — News + Comunidad (merged: Anuncios/Comunidad tabs in one module) | ✅ Done (2026-09-22) |
-| Phase 3 — remaining modules (Chat) | ⬜ Not started, deliberately deferred |
+| Phase 3 — Chat (real-time channels + DMs) | ✅ Done (2026-09-22) |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -343,12 +343,17 @@ Last updated: 2026-09-22 (Conocimiento module shipped — a flat, admin-managed 
 - [x] Comunidad is deliberately **not** admin-gated, unlike every other write in this app (News, Conocimiento, Directorio) — open posting/reacting is the whole point of "informal team pulse." Delete is scoped to the post's own author or an admin, not admin-only
 - [x] **Verification note:** checked via `?preview=1` — the tab switcher slides correctly between Anuncios/Comunidad, header copy changes per tab, Comunidad's composer and empty state render correctly. Could not verify posting/reacting against real data — `?preview=1` has no real Firebase Auth session, same documented limitation as every other write in this app
 
+**Chat module (2026-09-22) — new, real-time channels + DMs**
+- [x] Direct follow-up: user asked how Chat would be made functional, then confirmed two scope calls before building — anyone can create a channel (no isAdmin gate, same "open" posture as Comunidad) rather than a fixed admin-defined list, and DMs are included in v1 rather than deferred
+- [x] Reuses the exact `onSnapshot` pattern every other live list in this app already uses — no chat library/SDK. Deliberately scoped down: no threads, no message reactions, no typing indicators, no edit/read-receipts, no file attachments (Storage still isn't enabled)
+- [x] New collections: `chatChannels/{id}` (+ `/messages` subcollection); `chatDms/{id}` keyed by `dmIdFor(uidA, uidB)` — the two participants' sorted+joined uids, so opening a DM is a direct doc lookup, never a "does this conversation exist" query. The DM doc is written lazily (`setDoc` merge) on first message, not eagerly when the screen opens. `subscribeMyDms` (array-contains) exists for a future richer "active conversations" list, but v1's sidebar just lists every teammate as a DM target directly — at most 2 possible DM partners each in a 3-founder team, not worth a second layer yet
+- [x] `ChatModule.jsx` — a channel/DM sidebar, an auto-scrolling message thread, and a plain text composer (Enter to send). Defaults to the first available channel on load instead of a dead "nothing selected" screen
+- [x] **Verification note:** checked via `?preview=1` — sidebar renders (Canales/Mensajes directos), the inline "+ Nuevo canal" input opens, empty states render with no console errors. Could not verify real-time message exchange or DM lookup against real accounts — no real users/messages exist under `?preview=1`'s permission-denied subscriptions, same documented limitation as every other module's preview testing
+
 **Not built yet**
-- [ ] Chat still shows placeholder — direction agreed (see below), user has said "later, not now" as of the last time this was discussed
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
-**Scoped but not started (2026-08-14 evening conversation) — direction agreed, nothing built yet:**
-- **Chat** — basic real-time messaging (channels + DMs) is realistic and cheap to build reusing existing Firestore-subscription patterns; full Slack/Teams parity (threads, reactions, search, calls) is explicitly out of scope. User confirmed: later, not now.
+**Scoped but not started:**
 - **Mobile access (2026-09-18 conversation)** — direction discussed, nothing built yet. Goal is a lightweight "check status on my phone" experience, not a full mobile work surface — user was explicit that phone use is for glancing/reviewing, not working. Recommended path: a PWA built on the existing web app (not a native React Native/iOS/Android app — too much investment for a 3-founder internal tool), in three independent phases: (1) a responsive layout pass on Inicio (and possibly Workspace's Hoy) so it's actually legible on a phone screen, (2) a web manifest + icon so it's installable to the home screen, (3) real push notifications, which needs a backend piece (same Vercel-serverless-function pattern already used for `api/ador-ia.js`/`api/google-calendar/*`) plus a service worker — works on Android always, on iPhone only once the app is installed via phase 2 (Apple allows PWA push since iOS 16.4). User wants to revisit this later, not now — parked here per their own request, not forgotten.
 
 ## Infrastructure status
@@ -370,4 +375,4 @@ None. Auth + access control + deployment are all done and live.
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: Firestore rules were confirmed 2026-08-15 to already cover every collection via a blanket rule — that item is closed, no action needed. ADOR IA is done and live on its local rule-based engine (see above) — no Vercel step needed unless the user later decides to connect the already-built Gemini path. Calendario is done and confirmed working live as of 2026-09-17 — also closed. **Next up: enable Firebase Storage** for real Documentos/Comprobante uploads. Chat/Comunidad/Noticias all have agreed direction (see "Scoped but not started" above) but the user explicitly wants them later, not now — don't start building any of them without being asked.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: Firestore rules were confirmed 2026-08-15 to already cover every collection via a blanket rule — that item is closed, no action needed. ADOR IA is done and live on its local rule-based engine (see above) — no Vercel step needed unless the user later decides to connect the already-built Gemini path. Calendario is done and confirmed working live as of 2026-09-17 — also closed. Chat, Comunidad (merged into News), and News are all done as of 2026-09-22 — every Phase 3 module has now shipped in some form. **Next up: enable Firebase Storage** for real Documentos/Comprobante/Conocimiento-attachment uploads — the one piece of infrastructure still open. Mobile/PWA access has an agreed direction (see "Scoped but not started" above) but the user wants it later, not now.
