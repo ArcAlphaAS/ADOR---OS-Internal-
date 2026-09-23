@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import { LockIcon, InfoIcon, VideoIcon } from '../icons'
+import { LockIcon, InfoIcon, PhoneIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // The strip above a conversation: who/what it is, presence, call buttons,
@@ -88,7 +88,7 @@ function CallButtons({ openCall, onCall, busy }) {
   const callRef = useRef(null)
   return (
     <IconButton title={busy ? 'Creando reunión…' : 'Llamar (Google Meet)'} busy={busy === 'video'} buttonRef={callRef} active={openCall?.anchorRef === callRef} onClick={() => onCall('video', callRef)}>
-      <VideoIcon size={16} />
+      <PhoneIcon size={15} />
     </IconButton>
   )
 }

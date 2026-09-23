@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { sharedInConversation, userLabel, presenceOf } from '../../lib/chat'
-import { VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
+import { PhoneIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 import SidePanel from './SidePanel'
 
@@ -84,7 +84,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
 
         <div className="flex justify-center gap-1">
           {!inDm && <ActionButton icon={<MessageIcon size={16} />} label="Mensaje" onClick={onMessage} />}
-          <ActionButton icon={<VideoIcon size={16} />} label="Llamar" buttonRef={callRef} onClick={() => onCall('video', callRef)} />
+          <ActionButton icon={<PhoneIcon size={15} />} label="Llamar" buttonRef={callRef} onClick={() => onCall('video', callRef)} />
           {inDm && <ActionButton icon={<SearchIcon size={15} />} label="Buscar" active={searching} onClick={onToggleSearch} />}
         </div>
 
