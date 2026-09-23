@@ -94,7 +94,7 @@ function CallCard({ call, authorName, mine }) {
 // Hover reveals small edit/delete actions on your own messages. Call
 // cards and image-only messages can be deleted but not edited — there's
 // no text to fix.
-function MessageBubble({ message, mine, onEdit, onDelete }) {
+function MessageBubble({ message, mine, onEdit, onDelete, onOpenProfile }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -128,7 +128,11 @@ function MessageBubble({ message, mine, onEdit, onDelete }) {
 
   return (
     <div className={`group flex max-w-[70%] flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`}>
-      {!mine && <p className="px-1 text-[11px] font-medium text-[#666666]">{message.authorName}</p>}
+      {!mine && (
+        <button type="button" onClick={() => onOpenProfile(message.authorUid)} className="px-1 text-[11px] font-medium text-[#666666] hover:text-[#F5F5F5] hover:underline">
+          {message.authorName}
+        </button>
+      )}
       <div className="flex items-center gap-1.5">
         {mine && (
           <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -186,24 +190,31 @@ function DateDivider({ ts }) {
   )
 }
 
-export function MessageThread({ messages, currentUid, onEdit, onDelete }) {
+export function MessageThread({ messages, currentUid, query, onEdit, onDelete, onOpenProfile }) {
   const scrollRef = useRef(null)
+  const q = query?.trim().toLowerCase()
+  const shown = q ? messages.filter((m) => (m.text || '').toLowerCase().includes(q) || (m.attachment?.name || '').toLowerCase().includes(q)) : messages
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [messages])
+  }, [messages, q])
 
   let lastDay = null
 
   return (
     <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1 py-4">
+      {q && (
+        <p className="px-1 text-[11.5px] text-[#666666]">
+          {shown.length ? `${shown.length} ${shown.length === 1 ? 'mensaje coincide' : 'mensajes coinciden'} con “${query.trim()}”` : `Nada coincide con “${query.trim()}” en esta conversación.`}
+        </p>
+      )}
       {messages.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
           <MessageIcon size={20} className="text-[#333333]" />
           <p className="text-[13px] text-[#444444]">Sin mensajes todavía — escribe el primero.</p>
         </div>
       ) : (
-        messages.map((m) => {
+        shown.map((m) => {
           const mine = m.authorUid === currentUid
           const key = dayKey(m.createdAt)
           const showDivider = key && key !== lastDay
@@ -212,7 +223,7 @@ export function MessageThread({ messages, currentUid, onEdit, onDelete }) {
             <div key={m.id} className="flex flex-col gap-3">
               {showDivider && <DateDivider ts={m.createdAt} />}
               <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <MessageBubble message={m} mine={mine} onEdit={(text) => onEdit(m.id, text)} onDelete={() => onDelete(m.id)} />
+                <MessageBubble message={m} mine={mine} onEdit={(text) => onEdit(m.id, text)} onDelete={() => onDelete(m.id)} onOpenProfile={onOpenProfile} />
               </div>
             </div>
           )

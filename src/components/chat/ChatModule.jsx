@@ -19,6 +19,8 @@ import {
   deleteDmMessage,
   markChatRead,
   subscribeUserProfile,
+  subscribeDirectoryPeople,
+  setChatMuted,
 } from '../../lib/firestore'
 import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
@@ -29,6 +31,7 @@ import { MessageThread, Composer } from './ChatThread'
 import NewConversationModal from './NewConversationModal'
 import ConversationInfoPanel from './ConversationInfoPanel'
 import MeetPopover from './MeetPopover'
+import ProfilePanel from './ProfilePanel'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -216,49 +219,63 @@ function HeaderButton({ title, onClick, active, children, buttonRef }) {
   )
 }
 
+// Icon-only round buttons for calls, the way every messaging app's header
+// does it — labeled buttons crowded out the person's name once the
+// profile panel was open beside the thread. The tooltip still names them.
+function IconButton({ title, onClick, active, children, buttonRef }) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-[#AAAAAA] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+      style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
+    >
+      {children}
+    </button>
+  )
+}
+
 // Llamar / Videollamada both hand off to Google Meet — ADOR OS is where the
-// call starts, Meet is the call's infrastructure. No in-app video.
-function CallButtons({ onCall }) {
+// call starts, Meet is the call's infrastructure. No in-app video. The
+// popover's open state lives in ChatModule so the same flow can be started
+// from here or from the profile panel's buttons.
+function CallButtons({ openCall, onCall }) {
   const audioRef = useRef(null)
   const videoRef = useRef(null)
-  const [open, setOpen] = useState(null) // 'audio' | 'video' | null
-
   return (
     <>
-      <HeaderButton title="Llamar con Google Meet" buttonRef={audioRef} active={open === 'audio'} onClick={() => setOpen(open === 'audio' ? null : 'audio')}>
-        <PhoneIcon size={13} /> Llamar
-      </HeaderButton>
-      <HeaderButton title="Videollamada con Google Meet" buttonRef={videoRef} active={open === 'video'} onClick={() => setOpen(open === 'video' ? null : 'video')}>
-        <VideoIcon size={14} /> Videollamada
-      </HeaderButton>
-      {open && (
-        <MeetPopover
-          type={open}
-          anchorRef={open === 'audio' ? audioRef : videoRef}
-          onClose={() => setOpen(null)}
-          onSend={(url) => {
-            onCall({ type: open, url })
-            setOpen(null)
-          }}
-        />
-      )}
+      <IconButton title="Llamar (Google Meet)" buttonRef={audioRef} active={openCall?.anchorRef === audioRef} onClick={() => onCall('audio', audioRef)}>
+        <PhoneIcon size={15} />
+      </IconButton>
+      <IconButton title="Videollamada (Google Meet)" buttonRef={videoRef} active={openCall?.anchorRef === videoRef} onClick={() => onCall('video', videoRef)}>
+        <VideoIcon size={16} />
+      </IconButton>
     </>
   )
 }
 
-function ConversationHeader({ selected, conversation, dmUser, users, currentUid, infoOpen, onToggleInfo, onCall }) {
+function ConversationHeader({ selected, conversation, dmUser, dmEntry, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall }) {
   if (selected.type === 'dm') {
     return (
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Avatar displayName={userLabel(dmUser)} photoURL={dmUser?.photoDataUrl} size={28} />
+        <button
+          type="button"
+          onClick={onToggleProfile}
+          title="Ver perfil"
+          className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
+          style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
+        >
+          <Avatar displayName={dmEntry?.name || userLabel(dmUser)} photoURL={dmEntry?.photoDataUrl || dmUser?.photoDataUrl} size={30} />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{userLabel(dmUser)}</p>
-            <p className="text-[11.5px] text-[#555555]">Mensaje directo · solo ustedes dos</p>
+            <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
+            <p className="truncate text-[11.5px] text-[#555555]">{[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ') || 'Mensaje directo · solo ustedes dos'}</p>
           </div>
-        </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <CallButtons onCall={onCall} />
+        </button>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <CallButtons openCall={openCall} onCall={onCall} />
         </div>
       </div>
     )
@@ -288,7 +305,7 @@ function ConversationHeader({ selected, conversation, dmUser, users, currentUid,
         </p>
       </div>
       <div className="flex flex-shrink-0 items-center gap-2">
-        {kind === 'group' && <CallButtons onCall={onCall} />}
+        {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} />}
         <HeaderButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
           <InfoIcon size={14} /> Detalles
         </HeaderButton>
@@ -305,7 +322,12 @@ export default function ChatModule({ user }) {
   const [selected, setSelected] = useState(null) // {type:'conv', id} | {type:'dm', id: otherUid}
   const [messages, setMessages] = useState([])
   const [modal, setModal] = useState(null) // 'channel' | 'group' | null
-  const [infoOpen, setInfoOpen] = useState(false)
+  // One right-hand panel at a time: a channel/group's Detalles, or a
+  // person's profile (from a DM header or an author name in a channel).
+  const [panel, setPanel] = useState(null) // {type:'info'} | {type:'profile', uid} | null
+  const [openCall, setOpenCall] = useState(null) // {type, anchorRef} | null
+  const [searchQuery, setSearchQuery] = useState(null) // null = search bar closed
+  const [directory, setDirectory] = useState([])
   const showToast = useToast()
   const actorName = actorNameFor(user)
 
@@ -313,6 +335,7 @@ export default function ChatModule({ user }) {
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribeMyDms(user.uid, setMyDms), [user.uid])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
+  useEffect(() => subscribeDirectoryPeople(setDirectory), [])
 
   // Private channels/groups you're not in are never listed — you can't
   // find them, let alone join them. See lib/chat.js isMember().
@@ -334,6 +357,15 @@ export default function ChatModule({ user }) {
   }, [allChannels, selected])
 
   const activeConversationId = selected ? (selected.type === 'conv' ? selected.id : dmIdFor(user.uid, selected.id)) : null
+  const directoryFor = (uid) => directory.find((p) => p.linkedUserId === uid)
+
+  // Search is scoped to the open conversation — close it when you move.
+  // An open profile follows you into another DM (it's "who am I talking
+  // to"), the same way Slack's member panel does.
+  useEffect(() => {
+    setSearchQuery(null)
+    if (selected?.type === 'dm') setPanel((p) => (p?.type === 'profile' ? { type: 'profile', uid: selected.id } : p))
+  }, [activeConversationId])
 
   useEffect(() => {
     setMessages([])
@@ -351,9 +383,10 @@ export default function ChatModule({ user }) {
   }, [activeConversationId, messages, user.uid])
 
   const lastReadFor = (convId) => profile?.chatLastRead?.[convId]
+  const isMuted = (convId) => Boolean(profile?.chatMuted?.[convId])
   const unreadMap = {}
-  for (const c of visible) unreadMap[c.id] = isUnread(c.lastMessageAt, lastReadFor(c.id))
-  for (const d of myDms) unreadMap[d.id] = isUnread(d.updatedAt, lastReadFor(d.id))
+  for (const c of visible) unreadMap[c.id] = !isMuted(c.id) && isUnread(c.lastMessageAt, lastReadFor(c.id))
+  for (const d of myDms) unreadMap[d.id] = !isMuted(d.id) && isUnread(d.updatedAt, lastReadFor(d.id))
 
   const fail = (verb) => (error) => showToast(`No se pudo ${verb}: ${error.message}`)
 
@@ -394,7 +427,19 @@ export default function ChatModule({ user }) {
     onConvert: (name, visibility) => withTimeout(convertGroupToChannel(conversation.id, name, visibility)).catch(fail('convertir el grupo')),
   }
 
-  const showInfo = infoOpen && conversation
+  const toggleCall = (type, anchorRef) => setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
+
+  // A profile opened from a channel whose "Llamar" is pressed: jump into
+  // the DM with that person first, so the Meet card lands there.
+  const callFromProfile = (uid, type, anchorRef) => {
+    if (selected?.type !== 'dm' || selected.id !== uid) setSelected({ type: 'dm', id: uid })
+    toggleCall(type, anchorRef)
+  }
+
+  const showInfo = panel?.type === 'info' && conversation
+  const profileUid = panel?.type === 'profile' ? panel.uid : null
+  const profileUser = profileUid ? users.find((u) => u.id === profileUid) : null
+  const profileInDm = selected?.type === 'dm' && selected.id === profileUid
 
   return (
     <div className="mx-auto flex h-full w-full max-w-[1320px] gap-8 px-12 py-8">
@@ -417,13 +462,41 @@ export default function ChatModule({ user }) {
               selected={selected}
               conversation={conversation}
               dmUser={dmUser}
+              dmEntry={dmUser && directoryFor(dmUser.id)}
               users={users}
               currentUid={user.uid}
-              infoOpen={infoOpen}
-              onToggleInfo={() => setInfoOpen((v) => !v)}
-              onCall={(call) => handleSend({ call })}
+              infoOpen={showInfo}
+              profileOpen={Boolean(profileUid) && profileInDm}
+              onToggleInfo={() => setPanel((p) => (p?.type === 'info' ? null : { type: 'info' }))}
+              onToggleProfile={() => setPanel((p) => (p?.type === 'profile' && p.uid === selected.id ? null : { type: 'profile', uid: selected.id }))}
+              openCall={openCall}
+              onCall={toggleCall}
             />
-            <MessageThread messages={messages} currentUid={user.uid} onEdit={handleEditMessage} onDelete={handleDeleteMessage} />
+            {searchQuery !== null && (
+              <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3.5 py-2">
+                <SearchIcon size={12} className="text-[#666666]" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && setSearchQuery(null)}
+                  placeholder="Buscar en esta conversación..."
+                  className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+                />
+                <button type="button" onClick={() => setSearchQuery(null)} className="text-[11.5px] text-[#666666] hover:text-[#F5F5F5]">
+                  Cerrar
+                </button>
+              </div>
+            )}
+            <MessageThread
+              messages={messages}
+              currentUid={user.uid}
+              query={searchQuery}
+              onEdit={handleEditMessage}
+              onDelete={handleDeleteMessage}
+              onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
+            />
             <Composer onSend={handleSend} onError={showToast} />
           </>
         ) : (
@@ -445,8 +518,38 @@ export default function ChatModule({ user }) {
           users={users}
           currentUid={user.uid}
           existingNames={channels.map((c) => c.name)}
-          onClose={() => setInfoOpen(false)}
+          onClose={() => setPanel(null)}
           {...infoActions}
+        />
+      )}
+
+      {profileUser && (
+        <ProfilePanel
+          key={profileUid}
+          person={profileUser}
+          directoryEntry={directoryFor(profileUid)}
+          inDm={profileInDm}
+          messages={profileInDm ? messages : []}
+          muted={isMuted(dmIdFor(user.uid, profileUid))}
+          searching={profileInDm && searchQuery !== null}
+          onClose={() => setPanel(null)}
+          onMessage={() => setSelected({ type: 'dm', id: profileUid })}
+          onCall={(type, anchorRef) => callFromProfile(profileUid, type, anchorRef)}
+          onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
+          onToggleMute={() => withTimeout(setChatMuted(user.uid, dmIdFor(user.uid, profileUid), !isMuted(dmIdFor(user.uid, profileUid)))).catch(fail('silenciar'))}
+        />
+      )}
+
+      {openCall && (
+        <MeetPopover
+          key={openCall.type}
+          type={openCall.type}
+          anchorRef={openCall.anchorRef}
+          onClose={() => setOpenCall(null)}
+          onSend={(url) => {
+            handleSend({ call: { type: openCall.type, url } })
+            setOpenCall(null)
+          }}
         />
       )}
 

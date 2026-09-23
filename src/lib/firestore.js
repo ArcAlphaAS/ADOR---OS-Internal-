@@ -1027,6 +1027,14 @@ export function deleteDmMessage(dmId, messageId) {
   return deleteDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId))
 }
 
+// Per-user mute, same one-map-field-on-the-profile shape as chatLastRead:
+// a muted conversation still receives messages, it just never shows an
+// unread dot/bold label in the sidebar.
+export function setChatMuted(uid, conversationId, muted) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.users, uid), { [`chatMuted.${conversationId}`]: muted })
+}
+
 // Read tracking for the sidebar's unread dots — one map field on the
 // user's own profile doc (`chatLastRead: {conversationId: timestamp}`)
 // rather than a new collection, since it's tiny per-user state, same

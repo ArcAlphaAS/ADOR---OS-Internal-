@@ -108,3 +108,27 @@ export function splitLinks(text) {
   if (last < text.length) parts.push({ type: 'text', value: text.slice(last) })
   return parts
 }
+
+// Everything shared inside one conversation, newest first — powers the
+// profile panel's "Archivos compartidos" and "Enlaces". Derived from the
+// messages already loaded, never a separately-stored index. Meet links are
+// left out on purpose: those are calls, already shown as call cards.
+export function sharedInConversation(messages) {
+  const files = []
+  const links = []
+  for (const m of [...messages].reverse()) {
+    if (m.attachment?.kind === 'image') files.push({ id: m.id, name: m.attachment.name, dataUrl: m.attachment.dataUrl, createdAt: m.createdAt })
+    for (const part of splitLinks(m.text || '')) {
+      if (part.type !== 'link' || isMeetLink(part.value)) continue
+      let host = part.value
+      try {
+        host = new URL(part.value).hostname.replace(/^www\./, '')
+      } catch {
+        // keep the raw URL as its own label
+      }
+      const drive = DRIVE_PATTERN.test(part.value)
+      links.push({ id: `${m.id}-${links.length}`, url: part.value, host, label: drive ? `${driveDocType(part.value)} de Drive` : host, drive, createdAt: m.createdAt })
+    }
+  }
+  return { files, links }
+}
