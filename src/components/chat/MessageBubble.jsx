@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions } from '../../lib/chat'
+import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
-import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon } from '../icons'
+import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -351,6 +351,91 @@ function QuoteBlock({ quote, mine, onJump }) {
   )
 }
 
+// Encuesta: each option is a button with its live result bar behind it,
+// your choice in gold, and who voted (faces). The author can close it;
+// once closed, the results stay and nobody can vote.
+function PollCard({ message, mine, currentUid, userName, onVote, onClose }) {
+  const { poll } = message
+  const { options, totalVoters, max } = pollResults(message)
+  const closed = poll.closed
+  return (
+    <div className="flex w-[320px] flex-col gap-2 rounded-2xl border px-3.5 py-3" style={{ borderColor: mine ? MINE_BORDER : 'rgba(255,255,255,0.1)', background: mine ? MINE_BG : 'rgba(255,255,255,0.04)' }}>
+      <p className="flex items-start gap-2 text-[13.5px] font-medium leading-snug text-[#F5F5F5]">
+        <PollIcon size={14} className="mt-0.5 flex-shrink-0 text-[#E8C15A]" />
+        {poll.question}
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {options.map((o) => {
+          const voted = o.uids.includes(currentUid)
+          const pct = totalVoters ? Math.round((o.count / totalVoters) * 100) : 0
+          const leading = closed && o.count > 0 && o.count === max
+          return (
+            <button
+              key={o.id}
+              type="button"
+              disabled={closed}
+              onClick={() => onVote(o.id)}
+              title={o.uids.length ? o.uids.map(userName).join(', ') : 'Sin votos'}
+              className="relative overflow-hidden rounded-lg border px-3 py-2 text-left transition-colors enabled:hover:border-white/[0.25] disabled:cursor-default"
+              style={{ borderColor: voted ? 'rgba(232,193,90,0.7)' : 'rgba(255,255,255,0.1)' }}
+            >
+              <span className="absolute inset-y-0 left-0 transition-[width] duration-300" style={{ width: `${pct}%`, background: voted || leading ? 'rgba(184,134,11,0.22)' : 'rgba(255,255,255,0.06)' }} />
+              <span className="relative flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: voted ? '#E8C15A' : '#DDDDDD', fontWeight: voted || leading ? 600 : 400 }}>
+                  {voted && '✓ '}
+                  {o.label}
+                </span>
+                {o.uids.length > 0 && (
+                  <span className="flex -space-x-1">
+                    {o.uids.slice(0, 3).map((uid) => (
+                      <span key={uid} className="rounded-full ring-1 ring-[#141414]">
+                        <PersonAvatar uid={uid} name={userName(uid)} size={16} />
+                      </span>
+                    ))}
+                  </span>
+                )}
+                <span className="w-9 flex-shrink-0 text-right text-[11px] text-[#AAAAAA]">{pct}%</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="flex items-center gap-1.5 text-[11px] text-[#858585]">
+        {totalVoters} {totalVoters === 1 ? 'voto' : 'votos'} · {closed ? 'Encuesta cerrada' : poll.multi ? 'Varias respuestas' : 'Una respuesta'}
+        {mine && (
+          <button type="button" onClick={() => onClose(!closed)} className="ml-auto text-[#E8C15A] hover:underline">
+            {closed ? 'Reabrir' : 'Cerrar encuesta'}
+          </button>
+        )}
+      </p>
+    </div>
+  )
+}
+
+// Importante: the author sees who has confirmed and who's missing; everyone
+// else gets a "Confirmar lectura" button until they press it.
+function ImportantFooter({ message, mine, currentUid, audienceUids, userName, onAck }) {
+  const expected = (audienceUids || []).filter((uid) => uid !== message.authorUid)
+  const acks = message.acks || []
+  const confirmed = expected.filter((uid) => acks.includes(uid))
+  const missing = expected.filter((uid) => !acks.includes(uid))
+  if (mine) {
+    return (
+      <p className="flex items-center gap-1.5 px-1 text-[11px]" style={{ color: missing.length ? '#E8C15A' : '#8FD19A' }} title={missing.length ? `Falta: ${missing.map(userName).join(', ')}` : 'Todos confirmaron'}>
+        <AlertIcon size={11} />
+        Confirmado por {confirmed.length} de {expected.length}
+        {missing.length > 0 && missing.length <= 3 && <span className="text-[#858585]"> · falta {missing.map((uid) => (userName(uid) || '').split(' ')[0]).join(', ')}</span>}
+      </p>
+    )
+  }
+  if (acks.includes(currentUid)) return <p className="px-1 text-[11px] text-[#8FD19A]">✓ Confirmaste la lectura</p>
+  return (
+    <button type="button" onClick={onAck} className="rounded-full border border-[#B8860B]/60 bg-[#B8860B]/[0.12] px-3 py-1 text-[12.5px] font-medium text-[#E8C15A] hover:bg-[#B8860B]/[0.2]">
+      Confirmar lectura
+    </button>
+  )
+}
+
 function ActionIcon({ title, onClick, children, danger, active }) {
   return (
     <button
@@ -368,7 +453,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -417,6 +502,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         <>
           {onForward &&
             !message.call &&
+            !message.poll &&
             menuButton('Reenviar', () => {
               onForward()
               setMenu(null)
@@ -548,7 +634,13 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               {message.forwarded.from ? ` en ${message.forwarded.from}` : ''}
             </span>
           )}
+          {message.important && (
+            <span className="flex items-center gap-1 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#E8C15A]">
+              <AlertIcon size={11} /> Importante
+            </span>
+          )}
           {message.replyTo && <QuoteBlock quote={message.replyTo} mine={mine} onJump={onJump} />}
+          {message.poll && <PollCard message={message} mine={mine} currentUid={currentUid} userName={userName} onVote={(id) => onVote?.(id)} onClose={(closed) => onClosePoll?.(closed)} />}
           {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
@@ -581,6 +673,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               ✓ Tarea: <span className="max-w-[200px] truncate">{message.task.title}</span>
             </button>
           )}
+          {message.important && <ImportantFooter message={message} mine={mine} currentUid={currentUid} audienceUids={audienceUids} userName={userName} onAck={onAck} />}
         </div>
       </div>
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />

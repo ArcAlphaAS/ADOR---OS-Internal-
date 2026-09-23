@@ -964,6 +964,16 @@ function messageFields(payload) {
   // original was, e.g. "#general").
   if (p.replyTo) fields.replyTo = p.replyTo
   if (p.forwarded) fields.forwarded = p.forwarded
+  // poll: see lib/chat.js pollResults(). important: asks every recipient to
+  // confirm they read it ("Confirmado por 2 de 3") — `acks: [uids]`.
+  if (p.poll) {
+    fields.poll = { ...p.poll, closed: false }
+    fields.pollVotes = {}
+  }
+  if (p.important) {
+    fields.important = true
+    fields.acks = []
+  }
   if (p.mentions?.length) {
     fields.mentions = p.mentions
     fields.mentionUids = p.mentions.map((m) => m.uid)
@@ -980,6 +990,8 @@ function previewOf(payload, authorUid, authorName) {
   if (!text && p.call) text = p.call.type === 'video' ? '📞 Videollamada' : '📞 Llamada'
   if (!text && p.attachment?.kind === 'image') text = '📷 Imagen'
   if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
+  if (!text && p.poll) text = `📊 Encuesta: ${p.poll.question}`.slice(0, 140)
+  if (p.important) text = `❗ ${text}`
   return { text, authorUid, authorName }
 }
 
@@ -1014,6 +1026,30 @@ export async function fetchRecentMessages(convType, convId, count) {
   if (!db) return []
   const snap = await getDocs(query(messagesCol(convType, convId), orderBy('createdAt', 'desc'), limit(count)))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+// Encuestas: one vote = one small update. Single-choice polls move your
+// vote (added to the chosen option, removed from the rest, atomically);
+// clicking your current choice again removes it. Multi-choice toggles.
+export function votePoll(convType, convId, message, optionId, uid, parentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const has = (message.pollVotes?.[optionId] || []).includes(uid)
+  const patch = { [`pollVotes.${optionId}`]: has ? arrayRemove(uid) : arrayUnion(uid) }
+  if (!message.poll.multi && !has) {
+    for (const o of message.poll.options) if (o.id !== optionId) patch[`pollVotes.${o.id}`] = arrayRemove(uid)
+  }
+  return updateDoc(doc(messagesCol(convType, convId, parentId), message.id), patch)
+}
+
+export function closePoll(convType, convId, messageId, closed, parentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { 'poll.closed': closed })
+}
+
+// "Confirmar lectura" on a message marked Importante.
+export function ackImportantMessage(convType, convId, messageId, uid, parentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { acks: arrayUnion(uid) })
 }
 
 // Same emoji → [uids] map shape as Comunidad's reactions, but multiple
@@ -1548,6 +1584,19 @@ export function subscribeScheduledFor(uid, onData) {
 export function deleteScheduledMessage(id) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.chatScheduled, id))
+}
+
+// Editing a scheduled message only works while nobody has started sending
+// it — otherwise the edit would silently be lost. Returns false then.
+export async function updateScheduledMessage(id, patch) {
+  if (!db) return false
+  const ref = doc(db, COLLECTIONS.chatScheduled, id)
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists() || snap.data().status !== 'pending') return false
+    tx.update(ref, { ...patch, ...(patch.sendAt instanceof Date ? { sendAt: Timestamp.fromDate(patch.sendAt) } : {}) })
+    return true
+  })
 }
 
 // Returns the doc's data if this app won the right to send it, else null.

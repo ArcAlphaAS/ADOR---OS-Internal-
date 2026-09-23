@@ -405,6 +405,7 @@ export function messageSnippet(m, max = 160) {
   if (m.attachment?.kind === 'image') return '📷 Imagen'
   if (m.attachment?.kind === 'voice') return '🎤 Nota de voz'
   if (m.call) return '📞 Llamada'
+  if (m.poll) return `📊 Encuesta: ${m.poll.question}`.slice(0, max)
   return 'Mensaje'
 }
 
@@ -417,4 +418,36 @@ export function quoteOf(m) {
 // ---- Enviar más tarde ----
 export function scheduleOptions(now = new Date()) {
   return reminderOptions(now).filter((o) => o.id !== '20m')
+}
+
+// ---- Encuestas ----
+// A poll is a message with `poll: {question, options:[{id,label}], multi,
+// closed}`; votes live next to it in `pollVotes: {optionId: [uids]}` so
+// each vote is one small update (arrayUnion/arrayRemove), never a
+// rewrite of the whole poll. Votes are visible — for 3 partners, who voted
+// what is the point.
+export const MAX_POLL_OPTIONS = 6
+
+export function pollResults(message) {
+  const poll = message.poll
+  const votes = message.pollVotes || {}
+  const voters = new Set()
+  const options = (poll?.options || []).map((o) => {
+    const uids = votes[o.id] || []
+    uids.forEach((u) => voters.add(u))
+    return { ...o, uids, count: uids.length }
+  })
+  const max = Math.max(0, ...options.map((o) => o.count))
+  return { options, totalVoters: voters.size, max }
+}
+
+// ---- Cómo se describe cada aviso de chatMentions ----
+// kind: 'mention' (te mencionaron con @), 'quote' (respondieron citando tu
+// mensaje), 'important' (un mensaje marcado Importante que pide
+// confirmación), 'reply' (respuesta en un hilo tuyo).
+export function mentionVerb(kind) {
+  if (kind === 'quote') return 'respondió a tu mensaje en'
+  if (kind === 'important') return 'pide confirmación de un mensaje importante en'
+  if (kind === 'reply') return 'respondió en un hilo de'
+  return 'te mencionó en'
 }

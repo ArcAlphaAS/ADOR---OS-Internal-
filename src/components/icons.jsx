@@ -518,3 +518,12 @@ export function ForwardIcon(props) {
     </svg>
   )
 }
+
+// Encuesta (horizontal result bars).
+export function PollIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M4 6h11M4 12h16M4 18h7" />
+    </svg>
+  )
+}

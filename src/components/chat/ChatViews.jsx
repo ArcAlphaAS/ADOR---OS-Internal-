@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMessageSearch, normalize } from '../../hooks/useMessageSearch'
-import { dayBucket, formatReminderTime } from '../../lib/chat'
+import { dayBucket, formatReminderTime, mentionVerb } from '../../lib/chat'
 import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon, SearchIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 import { useChatDrafts } from '../../lib/chatDrafts'
@@ -225,7 +225,7 @@ export function ThreadsView({ threads, onOpen }) {
 export function MentionsView({ mentions, onOpen }) {
   return (
     <>
-      <ViewHeader icon={<AtIcon size={15} />} title="Menciones" subtitle="Mensajes donde alguien te mencionó con @" />
+      <ViewHeader icon={<AtIcon size={15} />} title="Menciones" subtitle="Cuando te mencionan con @, responden citando tu mensaje o piden confirmar algo importante" />
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
         {mentions.length === 0 ? (
           <Empty icon={<AtIcon size={22} />} text="Cuando alguien escriba @tu nombre en un canal o grupo, aparecerá aquí y en la campana." />
@@ -236,7 +236,7 @@ export function MentionsView({ mentions, onOpen }) {
               unread={m.unread}
               onClick={() => onOpen(m)}
               leading={<PersonAvatar uid={m.fromUid} name={m.fromName} size={30} />}
-              title={`${m.fromName} · ${m.conversationLabel}`}
+              title={`${m.fromName} ${mentionVerb(m.kind)} ${m.conversationLabel}`}
               meta={timeAgo(m.createdAt)}
               preview={m.text}
             />

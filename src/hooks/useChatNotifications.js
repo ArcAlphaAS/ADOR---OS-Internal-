@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeUserProfile, subscribeMyDms, subscribeChatChannels, subscribeMyMentions, subscribeUsers, subscribeMyReminders, updateChatReminder } from '../lib/firestore'
-import { conversationKind, isMember, groupLabel, userLabel, notifyLevel } from '../lib/chat'
+import { conversationKind, isMember, groupLabel, userLabel, notifyLevel, mentionVerb } from '../lib/chat'
 
 function newerThan(ts, lastRead) {
   const t = ts?.toMillis?.() || 0
@@ -85,9 +85,7 @@ export function useChatNotifications(uid, onNavigate) {
       key: `m:${m.id}`,
       from: m.fromName,
       at: m.createdAt?.toMillis?.() || 0,
-      text: isReply
-        ? `${m.fromName} respondió en un hilo de ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`
-        : `${m.fromName} te mencionó en ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`,
+      text: `${m.fromName} ${mentionVerb(m.kind)} ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`,
       time: timeAgo(m.createdAt),
       onClick: () =>
         onNavigate('chat', { type: 'chat', convType: m.convType, convId: m.convId, participantUids: m.participantUids, messageId: m.messageId, threadParentId: m.threadParentId }),

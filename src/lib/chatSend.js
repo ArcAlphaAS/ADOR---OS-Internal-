@@ -11,7 +11,9 @@ import { findDriveLink, driveDocType } from './chat'
 //   convId       the channel id, or the DM id (dmIdFor)
 //   dmParticipants  [{uid, name}, {uid, name}] — DMs only
 //   participantUids DMs only, stored on the index docs
-export async function deliverMessage({ convType, convId, dmParticipants, participantUids, conversationLabel, payload, authorUid, authorName, parentId = null }) {
+//   audienceUids    who a message marked Importante asks to confirm (everyone
+//                   in the conversation except the author)
+export async function deliverMessage({ convType, convId, dmParticipants, participantUids, conversationLabel, payload, authorUid, authorName, parentId = null, audienceUids = [] }) {
   const ref = parentId
     ? await sendThreadReply(convType, convId, parentId, payload, authorUid, authorName)
     : convType === 'conv'
@@ -32,7 +34,25 @@ export async function deliverMessage({ convType, convId, dmParticipants, partici
   const attachment = payload.attachment
   const snippet = (payload.text || (attachment ? '📎 Archivo' : '')).slice(0, 200)
 
-  if (convType === 'conv' && payload.mentions?.length) createMentions(payload.mentions, { ...pointer, kind: 'mention', text: snippet }, authorUid, authorName).catch(() => {})
+  const snippetText = snippet || (payload.poll ? `📊 ${payload.poll.question}` : '')
+  const notified = new Set([authorUid])
+  if (convType === 'conv' && payload.mentions?.length) {
+    createMentions(payload.mentions, { ...pointer, kind: 'mention', text: snippetText }, authorUid, authorName).catch(() => {})
+    payload.mentions.forEach((m) => notified.add(m.uid))
+  }
+  // Importante: everyone it asks to confirm hears about it, whatever their
+  // notification setting for that channel (unless they silenced it).
+  if (convType === 'conv' && payload.important) {
+    const targets = audienceUids.filter((uid) => !notified.has(uid))
+    if (targets.length) createMentions(targets.map((uid) => ({ uid })), { ...pointer, kind: 'important', text: snippetText }, authorUid, authorName).catch(() => {})
+    targets.forEach((uid) => notified.add(uid))
+  }
+  // Responder citando in a channel or group: the quoted person hears about
+  // it like a mention (in a DM every message already reaches them).
+  const quoted = payload.replyTo?.authorUid
+  if (convType === 'conv' && quoted && !notified.has(quoted)) {
+    createMentions([{ uid: quoted }], { ...pointer, kind: 'quote', text: snippetText }, authorUid, authorName).catch(() => {})
+  }
   if (attachment?.kind === 'image' && !attachment.expired)
     indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})
   if (attachment?.kind === 'voice' && !attachment.expired) indexChatFile({ ...pointer, kind: 'voice', blobId: attachment.blobId, duration: attachment.duration, name: 'Nota de voz' }).catch(() => {})

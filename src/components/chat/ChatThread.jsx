@@ -58,7 +58,7 @@ function groupFlags(list) {
   })
 }
 
-export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump }) {
+export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const positionedRef = useRef(null) // conversationKey already positioned on open
@@ -198,6 +198,10 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
                   onReply={onReply ? () => onReply(m) : null}
                   onForward={onForward ? () => onForward(m) : null}
                   onJump={onJump}
+                  onVote={onVote ? (optionId) => onVote(m, optionId) : null}
+                  onClosePoll={onClosePoll ? (closed) => onClosePoll(m, closed) : null}
+                  onAck={onAck ? () => onAck(m) : null}
+                  audienceUids={audienceUids}
                   onEdit={(text) => onEdit(m.id, text)}
                   onDelete={() => onDelete(m.id)}
                   onOpenProfile={onOpenProfile}

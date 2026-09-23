@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime } from '../../lib/chat'
+import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
 import { getDraft, setDraft } from '../../lib/chatDrafts'
 import { resizeImageToDataUrl } from '../../lib/image'
-import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon } from '../icons'
+import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 
@@ -109,10 +109,13 @@ function useVoiceRecorder({ onDone, onError }) {
 // `draftKey` keeps what you half-wrote per conversation (lib/chatDrafts.js).
 // `replyTo` shows "Respondiendo a…" above the box. `onSchedule(draft, at)`
 // enables "Enviar más tarde" (text only — images and voice go now).
-export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact, draftKey, replyTo, onCancelReply, onSchedule }) {
+// `canPoll` adds "Encuesta"; `canMarkImportant` adds "Importante" (asks
+// everyone in the conversation to confirm they read it).
+export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact, draftKey, replyTo, onCancelReply, onSchedule, canPoll, canMarkImportant }) {
   const [text, setText] = useState(() => getDraft(draftKey))
   const [panel, setPanel] = useState(null) // 'format' | 'emoji' | 'schedule' | null
   const [customAt, setCustomAt] = useState('')
+  const [important, setImportant] = useState(false)
   const [driveMode, setDriveMode] = useState(false)
   const [pendingImage, setPendingImage] = useState(null)
   const [processing, setProcessing] = useState(false)
@@ -181,19 +184,21 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     setPanel(null)
     setMentions([])
     setMentionQuery(null)
+    setImportant(false)
   }
 
   const submit = () => {
     if (driveMode && !findDriveLink(text)) return onError('Pega un enlace de Google Drive, Docs, Sheets o Slides.')
     if (!text.trim() && !pendingImage) return
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
-    onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions })
+    onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions, important: important || undefined })
     reset()
   }
 
   const schedule = (at) => {
     if (!text.trim()) return onError('Escribe el mensaje antes de programarlo.')
     if (pendingImage) return onError('Las imágenes se envían al momento — quita la imagen para programar el texto.')
+    if (important) return onError('Los mensajes importantes se envían al momento — quita “Importante” para programarlo.')
     if (!(at instanceof Date) || Number.isNaN(at.getTime()) || at.getTime() < Date.now() + 60_000) return onError('Elige una hora al menos un minuto en el futuro.')
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
     onSchedule({ text: text.trim(), mentions: finalMentions }, at)
@@ -419,6 +424,27 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         </div>
       )}
 
+      {panel === 'poll' && (
+        <PollForm
+          onCancel={() => setPanel(null)}
+          onError={onError}
+          onPublish={(poll) => {
+            onSend({ poll })
+            setPanel(null)
+          }}
+        />
+      )}
+
+      {important && (
+        <div className="flex items-center gap-2 px-1 text-[12.5px] text-[#E8C15A]">
+          <AlertIcon size={13} />
+          Importante — se pedirá a todos que confirmen que lo leyeron.
+          <button type="button" onClick={() => setImportant(false)} className="ml-auto text-[11px] text-[#858585] hover:text-[#F5F5F5]">
+            Quitar
+          </button>
+        </div>
+      )}
+
       {replyTo && (
         <div className="flex items-center gap-2.5 rounded-xl border-l-2 border-[#B8860B] bg-white/[0.03] py-1.5 pr-2 pl-3">
           <ReplyIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
@@ -518,6 +544,16 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <ToolButton title="Nota de voz (máx. 1 min)" onClick={voice.start}>
             <MicIcon size={16} />
           </ToolButton>
+          {canPoll && (
+            <ToolButton title="Encuesta" active={panel === 'poll'} onClick={() => togglePanel('poll')}>
+              <PollIcon size={16} />
+            </ToolButton>
+          )}
+          {canMarkImportant && (
+            <ToolButton title="Marcar como importante (pide confirmación de lectura)" active={important} onClick={() => setImportant((v) => !v)}>
+              <AlertIcon size={15} />
+            </ToolButton>
+          )}
           {onSchedule && (
             <ToolButton title="Enviar más tarde" active={panel === 'schedule'} onClick={() => togglePanel('schedule')}>
               <ClockIcon size={15} />
@@ -540,3 +576,68 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   )
 }
 
+
+// Inline poll builder, in normal flow above the text box like every other
+// composer panel. Starts with Sí / No filled in — the most common quick
+// vote between partners — editable, up to MAX_POLL_OPTIONS options.
+let optionSeq = 0
+const newOption = (label = '') => ({ id: `o${Date.now().toString(36)}${optionSeq++}`, label })
+
+function PollForm({ onPublish, onCancel, onError }) {
+  const [question, setQuestion] = useState('')
+  const [options, setOptions] = useState(() => [newOption('Sí'), newOption('No')])
+  const [multi, setMulti] = useState(false)
+  const inputClass = 'w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-1.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none focus:border-white/[0.22]'
+
+  const publish = () => {
+    const clean = options.map((o) => ({ ...o, label: o.label.trim() })).filter((o) => o.label)
+    if (!question.trim()) return onError('Escribe la pregunta de la encuesta.')
+    if (clean.length < 2) return onError('La encuesta necesita al menos dos opciones.')
+    onPublish({ question: question.trim(), options: clean, multi })
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">
+        <PollIcon size={12} /> Nueva encuesta
+      </p>
+      <input autoFocus type="text" value={question} maxLength={200} onChange={(e) => setQuestion(e.target.value)} placeholder="¿Qué quieres preguntar?" className={inputClass} />
+      {options.map((o, i) => (
+        <div key={o.id} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={o.label}
+            maxLength={80}
+            onChange={(e) => setOptions((list) => list.map((x) => (x.id === o.id ? { ...x, label: e.target.value } : x)))}
+            placeholder={`Opción ${i + 1}`}
+            className={inputClass}
+          />
+          {options.length > 2 && (
+            <button type="button" title="Quitar opción" onClick={() => setOptions((list) => list.filter((x) => x.id !== o.id))} className="flex-shrink-0 text-[#858585] hover:text-[#F5F5F5]">
+              <CloseIcon size={11} />
+            </button>
+          )}
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-3">
+        {options.length < MAX_POLL_OPTIONS && (
+          <button type="button" onClick={() => setOptions((list) => [...list, newOption()])} className="text-[12.5px] text-[#E8C15A] hover:underline">
+            + Opción
+          </button>
+        )}
+        <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[#AAAAAA]">
+          <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} className="accent-[#B8860B]" />
+          Permitir varias respuestas
+        </label>
+        <span className="ml-auto flex items-center gap-2">
+          <button type="button" onClick={onCancel} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
+            Cancelar
+          </button>
+          <button type="button" onClick={publish} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+            Publicar encuesta
+          </button>
+        </span>
+      </div>
+    </div>
+  )
+}

@@ -35,6 +35,10 @@ import {
   setChatNotify,
   createScheduledMessage,
   deleteScheduledMessage,
+  updateScheduledMessage,
+  votePoll,
+  closePoll,
+  ackImportantMessage,
 } from '../../lib/firestore'
 import {
   conversationKind,
@@ -336,7 +340,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
         attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
       }
-      const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions, replyTo: draft.replyTo }
+      const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions, replyTo: draft.replyTo, poll: draft.poll, important: draft.important }
       const { pointer, snippet } = await withTimeout(
         deliverMessage({
           convType,
@@ -348,6 +352,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           authorUid: user.uid,
           authorName: actorName,
           parentId,
+          audienceUids: conversationAudience,
         })
       )
       // Slack's rule: everyone taking part in a thread (whoever wrote the
@@ -423,6 +428,37 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   const myScheduled = scheduledMessages
     .filter((x) => x.authorUid === user.uid && x.convId === selectedConversationId && x.status === 'pending')
     .sort((a, b) => (a.sendAt?.toMillis?.() || 0) - (b.sendAt?.toMillis?.() || 0))
+
+  // Everyone a message here reaches: DM partners, a private conversation's
+  // members, or everyone in ADOR for a public channel. Used by "Importante"
+  // (who has to confirm) — the author is left out where it's read.
+  const conversationAudience = !selected ? [] : selected.type === 'dm' ? [user.uid, selected.id] : conversation ? membersOf(conversation, users) : []
+
+  const handleVote = (m, optionId) => withTimeout(votePoll(convType, selectedConversationId, m, optionId, user.uid)).catch(fail('votar'))
+  const handleClosePoll = (m, closed) => withTimeout(closePoll(convType, selectedConversationId, m.id, closed)).catch(fail(closed ? 'cerrar la encuesta' : 'reabrir la encuesta'))
+  const handleAck = (m) => withTimeout(ackImportantMessage(convType, selectedConversationId, m.id, user.uid)).catch(fail('confirmar la lectura'))
+
+  const [editingScheduled, setEditingScheduled] = useState(null) // {id, text, at: 'YYYY-MM-DDTHH:mm'}
+  const toLocalInput = (ts) => {
+    const d = ts?.toDate?.() || new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  const saveScheduledEdit = async () => {
+    const { id, text, at, original } = editingScheduled
+    const when = new Date(at)
+    if (!text.trim()) return showToast('El mensaje no puede quedar vacío — usa Cancelar para borrarlo.')
+    if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() + 60_000) return showToast('Elige una hora al menos un minuto en el futuro.')
+    try {
+      const mentions = (original.payload?.mentions || []).filter((m) => text.includes(`@${m.name}`))
+      const ok = await withTimeout(updateScheduledMessage(id, { 'payload.text': text.trim(), 'payload.mentions': mentions, sendAt: when }))
+      if (!ok) return showToast('Ese mensaje ya se está enviando — no se pudo editar.')
+      setEditingScheduled(null)
+      showToast(`Se enviará ${formatReminderTime(when)}`)
+    } catch (error) {
+      fail('editar el mensaje programado')(error)
+    }
+  }
 
   const handleReact = (messageId, emoji, has, parentId = null) =>
     withTimeout(toggleMessageReaction(convType, selectedConversationId, messageId, emoji, user.uid, has, parentId)).catch(fail('reaccionar'))
@@ -733,32 +769,73 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onReply={(m) => setReplyTo(quoteOf(m))}
               onForward={(m) => setForwarding(m)}
               onJump={jumpToMessage}
+              onVote={handleVote}
+              onClosePoll={handleClosePoll}
+              onAck={handleAck}
+              audienceUids={conversationAudience}
             />
             <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
             {myScheduled.length > 0 && (
               <div className="mb-1 flex flex-col gap-1">
-                {myScheduled.map((x) => (
-                  <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">
-                    <ClockIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
-                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#AAAAAA]">
-                      <span className="font-medium text-[#E8C15A]">Programado · {formatReminderTime(x.sendAt)}</span> {x.payload?.text}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        withTimeout(deleteScheduledMessage(x.id))
-                          .then(() => handleSend({ text: x.payload?.text || '', mentions: x.payload?.mentions || [], replyTo: x.payload?.replyTo }))
-                          .catch(fail('enviar'))
-                      }
-                      className="flex-shrink-0 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]"
-                    >
-                      Enviar ahora
-                    </button>
-                    <button type="button" onClick={() => withTimeout(deleteScheduledMessage(x.id)).catch(fail('cancelar'))} className="flex-shrink-0 text-[12.5px] text-[#858585] hover:text-[#EF8A88]">
-                      Cancelar
-                    </button>
-                  </div>
-                ))}
+                {myScheduled.map((x) =>
+                  editingScheduled?.id === x.id ? (
+                    <div key={x.id} className="flex flex-col gap-2 rounded-xl border border-[#B8860B]/40 bg-white/[0.03] px-3 py-2.5">
+                      <textarea
+                        autoFocus
+                        rows={2}
+                        value={editingScheduled.text}
+                        onChange={(e) => setEditingScheduled((cur) => ({ ...cur, text: e.target.value }))}
+                        onKeyDown={(e) => e.key === 'Escape' && setEditingScheduled(null)}
+                        className="w-full resize-none bg-transparent text-[13.5px] text-[#F5F5F5] outline-none"
+                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <ClockIcon size={13} className="text-[#E8C15A]" />
+                        <input
+                          type="datetime-local"
+                          value={editingScheduled.at}
+                          onChange={(e) => setEditingScheduled((cur) => ({ ...cur, at: e.target.value }))}
+                          className="rounded-full border border-white/[0.1] bg-transparent px-2.5 py-1 text-[12.5px] text-[#CCCCCC] outline-none [color-scheme:dark]"
+                        />
+                        <span className="ml-auto flex items-center gap-3">
+                          <button type="button" onClick={() => setEditingScheduled(null)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
+                            Descartar cambios
+                          </button>
+                          <button type="button" onClick={saveScheduledEdit} className="rounded-full px-3 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+                            Guardar
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">
+                      <ClockIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
+                      <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#AAAAAA]">
+                        <span className="font-medium text-[#E8C15A]">Programado · {formatReminderTime(x.sendAt)}</span> {x.payload?.text}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingScheduled({ id: x.id, text: x.payload?.text || '', at: toLocalInput(x.sendAt), original: x })}
+                        className="flex-shrink-0 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          withTimeout(deleteScheduledMessage(x.id))
+                            .then(() => handleSend({ text: x.payload?.text || '', mentions: x.payload?.mentions || [], replyTo: x.payload?.replyTo }))
+                            .catch(fail('enviar'))
+                        }
+                        className="flex-shrink-0 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]"
+                      >
+                        Enviar ahora
+                      </button>
+                      <button type="button" onClick={() => withTimeout(deleteScheduledMessage(x.id)).catch(fail('cancelar'))} className="flex-shrink-0 text-[12.5px] text-[#858585] hover:text-[#EF8A88]">
+                        Cancelar
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             )}
             <Composer
@@ -767,6 +844,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               replyTo={replyTo}
               onCancelReply={() => setReplyTo(null)}
               onSchedule={handleSchedule}
+              canPoll
+              canMarkImportant
               onSend={(draft) => {
                 handleSend({ ...draft, replyTo: replyTo || undefined })
                 setReplyTo(null)

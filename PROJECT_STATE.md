@@ -383,7 +383,8 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
   - Imágenes ahora 1280 px y voz a 24 kbps (≈ mitad de peso).
   - Las pocas imágenes de las primeras pruebas (antes del índice de archivos) no caducan solas.
 - [x] Borradores por conversación, responder citando, reenviar, avisos por conversación (todos / solo menciones / nada), descripción editable del canal, enviar más tarde, y arreglos de interfaz (sin "Sin actividad reciente", buscar en el encabezado, clip directo a Drive, botón "↓ mensajes nuevos") (2026-09-23). See CLAUDE.md §34
-- [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: reenviar, enviar más tarde (que salga a la hora aunque el autor tenga ADOR OS cerrado), avisos por canal, menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
+- [x] Encuestas rápidas, aviso cuando citan tu mensaje en un canal/grupo, editar mensajes programados, mensajes importantes con confirmación de lectura (2026-09-23). See CLAUDE.md §34
+- [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: votar en una encuesta, confirmar un mensaje importante, reenviar, enviar más tarde (que salga a la hora aunque el autor tenga ADOR OS cerrado), avisos por canal, menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
