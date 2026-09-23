@@ -42,6 +42,8 @@ const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${MEET_SCOPE}`
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
+import { getUserProfile, getGoogleAccountPolicy } from './firestore'
+
 export const isGoogleCalendarConfigured = Boolean(CLIENT_ID)
 
 // The redirect URI is the app's own bare origin — Google redirects back
@@ -54,8 +56,11 @@ function redirectUri() {
 // `returnTo` travels through Google as the OAuth `state` param, so the app
 // can reopen the module that started the connection (see AppShell.jsx) and
 // the right hook finishes it — Calendario's or the chat's.
-export function buildAuthUrl(returnTo = 'calendario') {
+// `loginHint` pre-selects the company account on Google's account picker,
+// so nobody has to remember which of their Google accounts to click.
+export function buildAuthUrl(returnTo = 'calendario', loginHint) {
   const params = new URLSearchParams({
+    ...(loginHint ? { login_hint: loginHint } : {}),
     state: returnTo,
     include_granted_scopes: 'true',
     client_id: CLIENT_ID,
@@ -81,6 +86,29 @@ async function postJson(url, body) {
 
 export function exchangeCode(code) {
   return postJson('/api/google-calendar/exchange', { code, redirectUri: redirectUri() })
+}
+
+// Only the company's Google account may be connected — never a personal
+// one (explicit user requirement). Allowed = the same email the person
+// logs into ADOR OS with, or any address on a domain listed in
+// settings/google.allowedDomains. Anything else is refused *before* the
+// token is saved, and the token is revoked with Google so it can't linger.
+export async function assertCompanyGoogleAccount(userId, googleEmail, refreshToken) {
+  const [profile, policy] = await Promise.all([getUserProfile(userId), getGoogleAccountPolicy()])
+  const loginEmail = (profile?.email || '').toLowerCase()
+  const email = (googleEmail || '').toLowerCase()
+  const allowed = Boolean(email) && (email === loginEmail || policy.allowedDomains.some((d) => email.endsWith(`@${d.toLowerCase().replace(/^@/, '')}`)))
+  if (allowed) return
+  if (refreshToken) {
+    fetch('https://oauth2.googleapis.com/revoke', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `token=${encodeURIComponent(refreshToken)}`,
+    }).catch(() => {})
+  }
+  const expected = policy.allowedDomains.length ? `tu cuenta de ADOR (${loginEmail} o @${policy.allowedDomains.join(', @')})` : `la misma cuenta con la que entras a ADOR OS (${loginEmail || 'tu correo de ADOR'})`
+  throw new Error(`Solo se puede conectar ${expected}. ${googleEmail || 'Esa cuenta'} no está permitida — no se guardó nada.`)
 }
 
 export function hasMeetScope(saved) {

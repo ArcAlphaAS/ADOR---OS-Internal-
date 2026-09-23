@@ -373,6 +373,7 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Inbox tipo email (No leídos / Todos, contador por conversación, marcar leído / no leído / todo) y llamadas estilo Teams (tarjeta en vivo: llamando / en curso / perdida / rechazada / cancelada / finalizada, aviso "Llamando a…" con Cancelar) (2026-09-23)
 - [x] Grafito y oro en todo el chat; fijar mensajes; "Recordármelo"; mensaje → tarea con confirmación (2026-09-23)
 - [x] Llamar en un clic con Google Meet — código listo (2026-09-23)
+- [x] Solo se puede conectar la cuenta de Google de la empresa (mismo correo de ADOR OS, o dominios en `settings/google.allowedDomains`); modo manual detecta el enlace de Meet copiado y llama solo (2026-09-23)
 - [ ] **Activar Google Meet REST API + añadir el scope `meetings.space.created` en Cloud Console**, y que cada socio pulse "Conectar Google" una vez desde el chat — sin esto sigue el modo manual (abrir Meet y pegar enlace)
 - [ ] Probar menciones/campana/voz/llamadas entre dos cuentas reales
 

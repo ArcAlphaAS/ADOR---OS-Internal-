@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { isMeetLink } from '../../lib/chat'
+import { findMeetLink } from '../../lib/chat'
 import { PhoneIcon, VideoIcon } from '../icons'
 
 const WIDTH = 300
@@ -19,6 +19,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
   const [rect, setRect] = useState(null)
   const [url, setUrl] = useState('')
   const [opened, setOpened] = useState(false)
+  const [detected, setDetected] = useState(false)
   const popRef = useRef(null)
   const video = type === 'video'
 
@@ -43,9 +44,32 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
     }
   }, [anchorRef, onClose])
 
+  // Coming back from the Meet tab with the link already copied: read the
+  // clipboard when this window regains focus and, if there's a Meet link,
+  // send the call right away — no pasting. The browser asks once for
+  // clipboard permission; if it's refused, pasting by hand still works.
+  useEffect(() => {
+    if (!opened) return
+    const onFocus = async () => {
+      try {
+        const link = findMeetLink(await navigator.clipboard.readText())
+        if (link) {
+          setUrl(link)
+          setDetected(true)
+          setTimeout(() => onSend(link), 700)
+        }
+      } catch {
+        // permission refused or clipboard empty — manual paste stays available
+      }
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [opened, onSend])
+
   if (!rect) return null
 
-  const valid = isMeetLink(url.trim())
+  const link = findMeetLink(url)
+  const valid = Boolean(link)
   const left = Math.max(16, Math.min(rect.right - WIDTH, window.innerWidth - WIDTH - 16))
 
   const openMeet = () => {
@@ -102,11 +126,15 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && valid && onSend(url.trim())}
+                onKeyDown={(e) => e.key === 'Enter' && valid && onSend(link)}
                 placeholder="Pega el enlace: meet.google.com/..."
                 className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12px] text-[#F5F5F5] placeholder:text-[#555555] outline-none focus:border-white/[0.2]"
               />
               {url.trim() && !valid && <p className="mt-1 text-[10.5px] text-[#EF5350]">Eso no parece un enlace de Google Meet.</p>}
+              {detected && <p className="mt-1 text-[10.5px] text-[#4CAF50]">Enlace detectado — llamando…</p>}
+              {opened && !detected && !url && (
+                <p className="mt-1 text-[10.5px] leading-snug text-[#666666]">En Meet copia el enlace (o “Copiar información de la reunión”) y vuelve aquí: la llamada sale sola.</p>
+              )}
             </div>
           </div>
         </div>
@@ -114,7 +142,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
         <button
           type="button"
           disabled={!valid}
-          onClick={() => onSend(url.trim())}
+          onClick={() => onSend(link)}
           className="mt-3.5 w-full rounded-lg border border-white/[0.12] px-3 py-2 text-[12.5px] font-medium text-[#F5F5F5] transition-opacity disabled:opacity-35"
         >
           Enviar invitación al chat

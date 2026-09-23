@@ -524,6 +524,11 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   useEffect(() => subscribePresence(setPresence), [])
   useEffect(() => subscribeMyReminders(user.uid, setReminders), [user.uid])
   useEffect(() => {
+    if (!meet.connectError) return
+    showToast(meet.connectError)
+    meet.clearConnectError()
+  }, [meet.connectError])
+  useEffect(() => {
     if (!meet.justConnected) return
     showToast('Google conectado — ya puedes llamar en un clic.')
     meet.clearJustConnected()

@@ -85,6 +85,12 @@ export function isMeetLink(url) {
   return MEET_PATTERN.test(url || '')
 }
 
+// Pulls the meet.google.com link out of whatever was copied — the bare URL
+// or Meet's whole "Copiar información de la reunión" block.
+export function findMeetLink(text) {
+  return (text || '').match(MEET_PATTERN)?.[0] || null
+}
+
 export function driveDocType(url) {
   if (/docs\.google\.com\/document/.test(url)) return 'Documento'
   if (/docs\.google\.com\/spreadsheets|sheets\.google/.test(url)) return 'Hoja de cálculo'

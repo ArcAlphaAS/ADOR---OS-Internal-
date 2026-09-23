@@ -7,6 +7,7 @@ import {
   refreshAccessToken,
   isReconnectError,
   fetchPrimaryCalendarEmail,
+  assertCompanyGoogleAccount,
   fetchEvents,
 } from '../lib/googleCalendar'
 
@@ -102,9 +103,10 @@ export function useGoogleCalendar(userId) {
 
       exchangeCode(code)
         .then(async ({ accessToken, refreshToken, expiresIn, scope }) => {
+          const email = await fetchPrimaryCalendarEmail(accessToken)
+          if (userId !== 'preview') await assertCompanyGoogleAccount(userId, email, refreshToken)
           accessTokenRef.current = { token: accessToken, expiresAt: Date.now() + expiresIn * 1000 }
           refreshTokenRef.current = refreshToken
-          const email = await fetchPrimaryCalendarEmail(accessToken)
           setConnectedEmail(email)
           if (userId !== 'preview') {
             await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, scopes: scope || '', connectedAt: new Date().toISOString() } })
@@ -126,8 +128,20 @@ export function useGoogleCalendar(userId) {
       return
     }
 
-    getUserProfile(userId).then((profile) => {
+    getUserProfile(userId).then(async (profile) => {
       const saved = profile?.googleCalendar
+      // A connection made before the company-account rule existed is
+      // checked too; a non-company account is disconnected, not used.
+      if (saved?.refreshToken && saved.connectedEmail) {
+        try {
+          await assertCompanyGoogleAccount(userId, saved.connectedEmail, saved.refreshToken)
+        } catch (err) {
+          await saveUserProfile(userId, { googleCalendar: null })
+          setStatus('error')
+          setError(err.message)
+          return
+        }
+      }
       if (saved?.refreshToken) {
         refreshTokenRef.current = saved.refreshToken
         setConnectedEmail(saved.connectedEmail || null)
@@ -138,8 +152,9 @@ export function useGoogleCalendar(userId) {
     })
   }, [userId, loadRange])
 
-  const connect = () => {
-    window.location.href = buildAuthUrl()
+  const connect = async () => {
+    const profile = userId && userId !== 'preview' ? await getUserProfile(userId) : null
+    window.location.href = buildAuthUrl('calendario', profile?.email)
   }
 
   const disconnect = async () => {

@@ -59,12 +59,13 @@ const MODULE_LABELS = {
 }
 
 export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
-  // Coming back from Google's consent screen with ?state=chat means the
-  // connection was started from Comunicación — reopen it there so its hook
-  // can finish the connection (Calendario's hook handles every other case).
-  const [activeModule, setActiveModule] = useState(() =>
-    new URLSearchParams(window.location.search).get('state') === 'chat' && new URLSearchParams(window.location.search).get('code') ? 'chat' : 'inicio'
-  )
+  // Coming back from Google's consent screen: reopen the module that
+  // started the connection (OAuth `state`), so its hook finishes it.
+  const [activeModule, setActiveModule] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (!params.get('code')) return 'inicio'
+    return params.get('state') === 'chat' ? 'chat' : params.get('state') === 'calendario' ? 'calendario' : 'inicio'
+  })
   // Set alongside activeModule when a global-search result should also open
   // a specific client/task's detail panel once its module mounts — cleared
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).

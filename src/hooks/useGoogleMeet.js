@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getUserProfile, saveUserProfile } from '../lib/firestore'
-import { isGoogleCalendarConfigured, buildAuthUrl, exchangeCode, refreshAccessToken, isReconnectError, fetchPrimaryCalendarEmail, hasMeetScope, createMeetSpace } from '../lib/googleCalendar'
+import { isGoogleCalendarConfigured, buildAuthUrl, exchangeCode, refreshAccessToken, isReconnectError, fetchPrimaryCalendarEmail, hasMeetScope, createMeetSpace, assertCompanyGoogleAccount } from '../lib/googleCalendar'
 
 // One-click calls from Comunicación. Reuses the same Google connection as
 // Calendario (users/{uid}.googleCalendar — one refresh token, two scopes);
@@ -13,6 +13,8 @@ import { isGoogleCalendarConfigured, buildAuthUrl, exchangeCode, refreshAccessTo
 export function useGoogleMeet(userId) {
   const [status, setStatus] = useState(isGoogleCalendarConfigured ? 'checking' : 'unavailable')
   const [justConnected, setJustConnected] = useState(false)
+  const [connectError, setConnectError] = useState(null)
+  const loginEmailRef = useRef(null)
   const refreshTokenRef = useRef(null)
   const accessRef = useRef(null)
   const handledRef = useRef(false)
@@ -30,25 +32,39 @@ export function useGoogleMeet(userId) {
       window.history.replaceState({}, '', url.toString())
       exchangeCode(code)
         .then(async ({ accessToken, refreshToken, expiresIn, scope }) => {
+          const email = await fetchPrimaryCalendarEmail(accessToken).catch(() => null)
+          await assertCompanyGoogleAccount(userId, email, refreshToken)
           accessRef.current = { token: accessToken, expiresAt: Date.now() + expiresIn * 1000 }
           refreshTokenRef.current = refreshToken
-          const email = await fetchPrimaryCalendarEmail(accessToken).catch(() => null)
           await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, scopes: scope || '', connectedAt: new Date().toISOString() } })
           setStatus(hasMeetScope({ scopes: scope }) ? 'ready' : 'needsConnect')
           setJustConnected(true)
         })
-        .catch(() => setStatus('needsConnect'))
+        .catch((error) => {
+          setStatus('needsConnect')
+          setConnectError(error.message)
+        })
       return
     }
-    getUserProfile(userId).then((profile) => {
+    getUserProfile(userId).then(async (profile) => {
+      loginEmailRef.current = profile?.email || null
       const saved = profile?.googleCalendar
+      if (saved?.refreshToken && saved.connectedEmail) {
+        try {
+          await assertCompanyGoogleAccount(userId, saved.connectedEmail, saved.refreshToken)
+        } catch {
+          await saveUserProfile(userId, { googleCalendar: null })
+          setStatus('needsConnect')
+          return
+        }
+      }
       refreshTokenRef.current = saved?.refreshToken || null
       setStatus(saved?.refreshToken && hasMeetScope(saved) ? 'ready' : 'needsConnect')
     })
   }, [userId])
 
   const connect = () => {
-    window.location.href = buildAuthUrl('chat')
+    window.location.href = buildAuthUrl('chat', loginEmailRef.current)
   }
 
   const createRoom = useCallback(async () => {
@@ -72,5 +88,5 @@ export function useGoogleMeet(userId) {
     }
   }, [])
 
-  return { status, connect, createRoom, justConnected, clearJustConnected: () => setJustConnected(false) }
+  return { status, connect, createRoom, justConnected, clearJustConnected: () => setJustConnected(false), connectError, clearConnectError: () => setConnectError(null) }
 }

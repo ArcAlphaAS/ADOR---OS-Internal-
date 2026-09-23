@@ -278,6 +278,16 @@ export async function getUserProfile(userId) {
   return snap.exists() ? snap.data() : null
 }
 
+// Which Google accounts may be connected (Calendario + one-click calls).
+// `settings/google.allowedDomains` — e.g. ["ador.pe"] — is edited by hand
+// in the Firestore console, same as allowedEmails; with no domains set, the
+// only acceptable Google account is the same email you log into ADOR OS with.
+export async function getGoogleAccountPolicy() {
+  if (!db) return { allowedDomains: [] }
+  const snap = await getDoc(doc(db, COLLECTIONS.settings, 'google'))
+  return { allowedDomains: (snap.exists() && snap.data().allowedDomains) || [] }
+}
+
 export function saveUserProfile(userId, data) {
   if (!db || !userId) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
