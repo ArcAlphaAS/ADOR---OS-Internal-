@@ -57,7 +57,7 @@ function ListSection({ title, items, render, empty }) {
 //
 // No online/offline dot: ADOR OS has no presence tracking, and a green dot
 // that isn't real would be worse than none.
-export default function ProfilePanel({ person, directoryEntry, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute }) {
+export default function ProfilePanel({ person, directoryEntry, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute, onOpenImage }) {
   const audioRef = useRef(null)
   const videoRef = useRef(null)
   const name = directoryEntry?.name || userLabel(person)
@@ -96,13 +96,13 @@ export default function ProfilePanel({ person, directoryEntry, inDm, messages, m
               items={files}
               empty="Las imágenes que se envíen aquí aparecerán en esta lista."
               render={(f) => (
-                <a key={f.id} href={f.dataUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-white/[0.04]">
-                  <img src={f.dataUrl} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
+                <button key={f.id} type="button" onClick={() => onOpenImage(f.attachment)} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-left hover:bg-white/[0.04]">
+                  <img src={f.src} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-[#DDDDDD]">{f.name}</span>
                     <span className="block text-[11px] text-[#555555]">Archivo de conversación · {shortDate(f.createdAt)}</span>
                   </span>
-                </a>
+                </button>
               )}
             />
 

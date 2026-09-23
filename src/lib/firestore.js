@@ -13,6 +13,7 @@ import {
   deleteDoc,
   getDocs,
   serverTimestamp,
+  limitToLast,
   runTransaction,
   writeBatch,
   arrayUnion,
@@ -67,6 +68,10 @@ export const COLLECTIONS = {
   chatChannels: 'chatChannels',
   chatDms: 'chatDms',
   chatCalls: 'chatCalls',
+  chatMentions: 'chatMentions',
+  chatSaved: 'chatSaved',
+  chatFiles: 'chatFiles',
+  chatBlobs: 'chatBlobs',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -935,7 +940,50 @@ function messageFields(payload) {
   const fields = { text: p.text || '' }
   if (p.attachment) fields.attachment = p.attachment
   if (p.call) fields.call = p.call
+  if (p.mentions?.length) {
+    fields.mentions = p.mentions
+    fields.mentionUids = p.mentions.map((m) => m.uid)
+  }
   return fields
+}
+
+// One-line preview stored on the conversation doc itself (`lastMessage`),
+// so Inbox and the bell can show "Leonardo: Ya terminé el análisis…"
+// without opening every conversation's message history.
+function previewOf(payload, authorUid, authorName) {
+  const p = typeof payload === 'string' ? { text: payload } : payload
+  let text = (p.text || '').slice(0, 140)
+  if (!text && p.call) text = p.call.type === 'video' ? '📞 Videollamada' : '📞 Llamada'
+  if (!text && p.attachment?.kind === 'image') text = '📷 Imagen'
+  if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
+  return { text, authorUid, authorName }
+}
+
+// Messages live at chatChannels/{id}/messages (channels + groups) or
+// chatDms/{id}/messages (DMs). `convType` is 'conv' or 'dm' everywhere in
+// the newer chat code so one set of functions serves both.
+function messagesCol(convType, convId) {
+  return collection(db, convType === 'dm' ? COLLECTIONS.chatDms : COLLECTIONS.chatChannels, convId, 'messages')
+}
+
+// Only the most recent `count` messages are listened to — a long-running
+// channel would otherwise stream its whole history (images included) every
+// time it's opened. "Cargar anteriores" in the thread just raises `count`.
+export function subscribeMessages(convType, convId, count, onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    query(messagesCol(convType, convId), orderBy('createdAt', 'asc'), limitToLast(count)),
+    (snapshot) => onData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (error) => console.error('Firestore subscription to chat messages failed:', error.message)
+  )
+}
+
+// Same emoji → [uids] map shape as Comunidad's reactions, but multiple
+// reactions per person are allowed here (Slack-style), so each emoji
+// toggles independently.
+export function toggleMessageReaction(convType, convId, messageId, emoji, uid, alreadyReacted) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId), messageId), { [`reactions.${emoji}`]: alreadyReacted ? arrayRemove(uid) : arrayUnion(uid) })
 }
 
 export function subscribeChannelMessages(channelId, onData) {
@@ -960,7 +1008,9 @@ export function sendChannelMessage(channelId, payload, uid, name) {
     authorUid: uid,
     authorName: name,
     createdAt: serverTimestamp(),
-  }).then((ref) => updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp() }).then(() => ref))
+  }).then((ref) =>
+    updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp(), lastMessage: previewOf(payload, uid, name) }).then(() => ref)
+  )
 }
 
 export function updateChannelMessage(channelId, messageId, text) {
@@ -1006,7 +1056,12 @@ export function sendDmMessage(dmId, participants, payload, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return setDoc(
     doc(db, COLLECTIONS.chatDms, dmId),
-    { participantUids: participants.map((p) => p.uid), participantNames: Object.fromEntries(participants.map((p) => [p.uid, p.name])), updatedAt: serverTimestamp() },
+    {
+      participantUids: participants.map((p) => p.uid),
+      participantNames: Object.fromEntries(participants.map((p) => [p.uid, p.name])),
+      updatedAt: serverTimestamp(),
+      lastMessage: previewOf(payload, uid, name),
+    },
     { merge: true }
   ).then(() =>
     addDoc(collection(db, COLLECTIONS.chatDms, dmId, 'messages'), {
@@ -1026,6 +1081,96 @@ export function updateDmMessage(dmId, messageId, text) {
 export function deleteDmMessage(dmId, messageId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId))
+}
+
+// ---- Menciones, guardados, archivos ----
+// All three are small top-level index collections instead of
+// collection-group queries over every conversation's `messages`: a
+// collection-group query needs its own index created by hand in the
+// Firebase console, and scanning every message ever sent is exactly the
+// "carga demasiado" the user asked to avoid. Each doc is a tiny pointer
+// back to the real message.
+
+// One doc per person mentioned. "Unread" is never stored: a mention is new
+// when it's newer than users/{uid}.chatLastRead[conversationKey] — the same
+// timestamp that already drives the sidebar's unread dots, so opening the
+// conversation clears both at once with no extra writes.
+export function createMentions(mentions, meta, fromUid, fromName) {
+  if (!db || !mentions.length) return Promise.resolve()
+  const batch = writeBatch(db)
+  for (const m of mentions) {
+    if (m.uid === fromUid) continue
+    batch.set(doc(collection(db, COLLECTIONS.chatMentions)), { toUid: m.uid, fromUid, fromName, ...meta, createdAt: serverTimestamp() })
+  }
+  return batch.commit()
+}
+
+export function subscribeMyMentions(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.chatMentions, [where('toUid', '==', uid)], onData)
+}
+
+// Saved message = a snapshot of its text at save time (so the list reads
+// without loading the conversation) + a pointer back to it. Doc id is
+// `${uid}_${messageId}` so saving is idempotent and unsaving is a direct
+// delete, no query.
+export function toggleSavedMessage(uid, message, meta, saved) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const ref = doc(db, COLLECTIONS.chatSaved, `${uid}_${message.id}`)
+  if (saved) return deleteDoc(ref)
+  return setDoc(ref, {
+    uid,
+    messageId: message.id,
+    text: message.text || '',
+    authorName: message.authorName || '',
+    messageCreatedAt: message.createdAt || null,
+    ...meta,
+    savedAt: serverTimestamp(),
+  })
+}
+
+export function subscribeMySaved(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.chatSaved, [where('uid', '==', uid)], onData)
+}
+
+// Every file shared in chat gets a pointer here (images, voice notes,
+// Drive documents). Which ones you can see is decided client-side against
+// the conversations you're currently a member of, so leaving a private
+// channel also hides its files.
+export function indexChatFile(entry) {
+  if (!db) return Promise.resolve()
+  return addDoc(collection(db, COLLECTIONS.chatFiles), { ...entry, createdAt: serverTimestamp() })
+}
+
+export function subscribeChatFiles(onData) {
+  return subscribeToCollection(COLLECTIONS.chatFiles, [orderBy('createdAt', 'desc')], onData)
+}
+
+// Heavy payloads (full-size image, voice recording) live in their own doc
+// and are only fetched when someone opens/plays them — the message itself
+// carries just a small thumbnail/duration, so opening a thread stays light.
+export function createChatBlob(dataUrl, kind) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatBlobs), { dataUrl, kind, createdAt: serverTimestamp() })
+}
+
+export async function getChatBlob(blobId) {
+  if (!db) throw new Error('Firestore no configurado')
+  const snap = await getDoc(doc(db, COLLECTIONS.chatBlobs, blobId))
+  return snap.exists() ? snap.data().dataUrl : null
+}
+
+// When a message is deleted, its pointers go with it — otherwise Menciones,
+// Guardados and Archivos would list a message that no longer exists.
+export async function cleanupMessageIndexes(messageId) {
+  if (!db) return
+  const batch = writeBatch(db)
+  for (const name of [COLLECTIONS.chatFiles, COLLECTIONS.chatMentions, COLLECTIONS.chatSaved]) {
+    const snap = await getDocs(query(collection(db, name), where('messageId', '==', messageId)))
+    snap.forEach((d) => batch.delete(d.ref))
+  }
+  return batch.commit()
 }
 
 // ---- Llamadas entrantes ----

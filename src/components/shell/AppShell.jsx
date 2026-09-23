@@ -1,24 +1,42 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ModulePlaceholder from './ModulePlaceholder'
 import HomeScreen from '../home/HomeScreen'
-import ClientesModule from '../clientes/ClientesModule'
-import FinanzasModule from '../finanzas/FinanzasModule'
-import WorkspaceModule from '../workspace/WorkspaceModule'
-import ObjetivosModule from '../objetivos/ObjetivosModule'
-import CalendarioModule from '../calendario/CalendarioModule'
-import DirectorioModule from '../directorio/DirectorioModule'
-import ConocimientoModule from '../conocimiento/ConocimientoModule'
-import NewsModule from '../news/NewsModule'
-import ChatModule from '../chat/ChatModule'
-import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
 import IncomingCallGate from './IncomingCallGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
+
+// Every module except Home is its own code-split chunk, downloaded the
+// first time someone opens it instead of all at once on login — the app
+// used to ship one ~1.4MB bundle before anything rendered. After the shell
+// has loaded, the rest are prefetched in the background (see the idle
+// effect below), so switching modules still feels instant.
+const moduleLoaders = {
+  clientes: () => import('../clientes/ClientesModule'),
+  finanzas: () => import('../finanzas/FinanzasModule'),
+  workspace: () => import('../workspace/WorkspaceModule'),
+  objetivos: () => import('../objetivos/ObjetivosModule'),
+  calendario: () => import('../calendario/CalendarioModule'),
+  directorio: () => import('../directorio/DirectorioModule'),
+  conocimiento: () => import('../conocimiento/ConocimientoModule'),
+  news: () => import('../news/NewsModule'),
+  chat: () => import('../chat/ChatModule'),
+  'ador-ia': () => import('../adoria/AdorIAModule'),
+}
+const ClientesModule = lazy(moduleLoaders.clientes)
+const FinanzasModule = lazy(moduleLoaders.finanzas)
+const WorkspaceModule = lazy(moduleLoaders.workspace)
+const ObjetivosModule = lazy(moduleLoaders.objetivos)
+const CalendarioModule = lazy(moduleLoaders.calendario)
+const DirectorioModule = lazy(moduleLoaders.directorio)
+const ConocimientoModule = lazy(moduleLoaders.conocimiento)
+const NewsModule = lazy(moduleLoaders.news)
+const ChatModule = lazy(moduleLoaders.chat)
+const AdorIAModule = lazy(moduleLoaders['ador-ia'])
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -66,6 +84,14 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     }
   }, [user?.uid])
 
+  // Prefetch the other modules once the browser is idle after login.
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1500))
+    const cancel = window.cancelIdleCallback || clearTimeout
+    const handle = idle(() => Object.values(moduleLoaders).forEach((load) => load().catch(() => {})))
+    return () => cancel(handle)
+  }, [])
+
   const finishOnboarding = () => {
     setShowOnboarding(false)
     if (user?.uid && user.uid !== 'preview') markOnboardingSeen(user.uid)
@@ -93,6 +119,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} />
 
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <Suspense fallback={null}>
           <AnimatePresence mode="wait">
             {activeModule === 'inicio' ? (
               <HomeScreen key="inicio" user={user} onNavigate={navigateTo} />
@@ -129,13 +156,14 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'news' ? (
               <NewsModule key="news" user={user} />
             ) : activeModule === 'chat' ? (
-              <ChatModule key="chat" user={user} />
+              <ChatModule key="chat" user={user} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (
               <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
             )}
           </AnimatePresence>
+          </Suspense>
         </main>
       </div>
 

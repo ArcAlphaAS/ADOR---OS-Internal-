@@ -443,3 +443,58 @@ export function ImageIcon(props) {
     </svg>
   )
 }
+
+export function SmileIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.5 14c.9 1.3 2.1 2 3.5 2s2.6-.7 3.5-2" />
+      <circle cx="9.2" cy="9.8" r="0.6" fill="currentColor" />
+      <circle cx="14.8" cy="9.8" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function MicIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="9" y="3.5" width="6" height="11" rx="3" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0" />
+      <path d="M12 18v2.5" />
+    </svg>
+  )
+}
+
+export function BookmarkIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M6.5 4h11v16.5L12 16.5l-5.5 4V4Z" fill={props.filled ? 'currentColor' : 'none'} />
+    </svg>
+  )
+}
+
+export function AtIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <circle cx="12" cy="12" r="3.6" />
+      <path d="M15.6 12v1.4a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.5 7" />
+    </svg>
+  )
+}
+
+export function InboxIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M4 13.5 6.5 5h11l2.5 8.5V19H4v-5.5Z" />
+      <path d="M4 13.5h4.5l1 2h5l1-2H20" />
+    </svg>
+  )
+}
+
+export function PauseIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M9 6v12M15 6v12" />
+    </svg>
+  )
+}

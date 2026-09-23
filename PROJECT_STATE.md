@@ -367,7 +367,10 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Profile panel on tap (DM header or author name in a channel): Directorio identity, Llamar/Video/Buscar/Mensaje, shared files + Drive docs/links derived from the DM, Silenciar toggle (`users/{uid}.chatMuted`). No fake online dot. See CLAUDE.md §34
 - [x] Incoming-call alerting (2026-09-23): app-wide ringing overlay with ringtone + Unirse/Rechazar (`IncomingCallGate.jsx`, `chatCalls` collection), OS notification + flashing tab title when ADOR OS is in a background tab, one-time "Activar avisos de llamada" prompt in Comunicación. Not yet tested between two real accounts
 - [ ] Ringing when ADOR OS is closed / computer asleep — needs Web Push + service worker; rides with the parked PWA phase 3
-- [ ] Threads, mentions, reactions, chat notifications in the bell — next layer
+- [x] Menciones con @ (sugerencias, resaltado), campana con menciones + DMs + grupos sin leer (clic → abre la conversación en el mensaje), Inbox / Menciones / Mensajes guardados / Archivos en la barra, reacciones, formato Aa, emojis, notas de voz (60s), imágenes con miniatura (2026-09-23). See CLAUDE.md §34
+- [x] Optimización: hilos cargan de 50 en 50, imágenes/voz pesadas en `chatBlobs` bajo demanda, módulos con carga diferida (bundle inicial 1.38MB → ~1.03MB)
+- [ ] Hilos (respuestas en hilo) — pendiente
+- [ ] Probar menciones/campana/voz entre dos cuentas reales
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip

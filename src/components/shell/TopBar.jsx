@@ -11,6 +11,7 @@ import SearchResults from './SearchResults'
 import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
+import { useChatNotifications } from '../../hooks/useChatNotifications'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { useGlobalSearch } from '../../hooks/useGlobalSearch'
@@ -289,7 +290,10 @@ export default function TopBar({
   }))
   const clientNotifications = useClientNotifications()
   const taskNotifications = useTaskNotifications(user?.uid)
-  const notifications = [...birthdayNotifications, ...taskNotifications, ...clientNotifications]
+  // Chat items lead: a mention or a direct message is someone waiting on
+  // you right now; deadlines and client reminders are slower-moving.
+  const chatNotifications = useChatNotifications(user?.uid, onNavigate)
+  const notifications = [...chatNotifications, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
@@ -366,7 +370,7 @@ export default function TopBar({
             )}
           {/* Permanently mounted, visibility toggles via `open` — see
               NotificationCenter.jsx. */}
-          <NotificationCenter items={notifications} anchorRect={notifRect} open={notifOpen} />
+          <NotificationCenter items={notifications} anchorRect={notifRect} open={notifOpen} onItemClick={() => setNotifOpen(false)} />
         </motion.div>
 
         <ProfileTrigger

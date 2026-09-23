@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { BellIcon } from '../icons'
 import useDeferredReveal from '../../hooks/useDeferredReveal'
 
-export default function NotificationCenter({ items = [], anchorRect, open }) {
+export default function NotificationCenter({ items = [], anchorRect, open, onItemClick }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
 
@@ -50,11 +50,30 @@ export default function NotificationCenter({ items = [], anchorRect, open }) {
             <p className="text-[13px] font-light text-[#444444]">Sin notificaciones</p>
           </div>
         ) : (
-          <ul>
+          <ul className="max-h-[420px] overflow-y-auto">
+            {/* Items with an onClick (chat mentions/messages) are real
+                buttons that take you there; the rest stay informational. */}
             {items.map((item, i) => (
-              <li key={i} className="flex items-center gap-3 border-b border-white/[0.04] px-5 py-3 last:border-0">
-                <span className="text-[13px] text-[#888888]">{item.text}</span>
-                <span className="ml-auto text-[11px] text-[#444444]">{item.time}</span>
+              <li key={i} className="border-b border-white/[0.04] last:border-0">
+                {item.onClick ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      item.onClick()
+                      onItemClick?.()
+                    }}
+                    className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-150 hover:bg-white/[0.04]"
+                  >
+                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD' }} />
+                    <span className="line-clamp-2 text-[13px] text-[#CCCCCC]">{item.text}</span>
+                    <span className="ml-auto flex-shrink-0 text-[11px] text-[#444444]">{item.time}</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 px-5 py-3">
+                    <span className="text-[13px] text-[#888888]">{item.text}</span>
+                    <span className="ml-auto text-[11px] text-[#444444]">{item.time}</span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

@@ -6,14 +6,12 @@ import {
   addChannelMembers,
   removeChannelMember,
   convertGroupToChannel,
-  subscribeChannelMessages,
   sendChannelMessage,
   updateChannelMessage,
   deleteChannelMessage,
   subscribeUsers,
   dmIdFor,
   subscribeMyDms,
-  subscribeDmMessages,
   sendDmMessage,
   updateDmMessage,
   deleteDmMessage,
@@ -22,17 +20,32 @@ import {
   subscribeDirectoryPeople,
   setChatMuted,
   createChatCall,
+  subscribeMessages,
+  toggleMessageReaction,
+  createMentions,
+  subscribeMyMentions,
+  toggleSavedMessage,
+  subscribeMySaved,
+  indexChatFile,
+  subscribeChatFiles,
+  createChatBlob,
+  cleanupMessageIndexes,
 } from '../../lib/firestore'
-import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel } from '../../lib/chat'
+import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
-import { MessageIcon, PlusIcon, SearchIcon, LockIcon, InfoIcon, PhoneIcon, VideoIcon } from '../icons'
-import { MessageThread, Composer } from './ChatThread'
+import { MessageIcon, PlusIcon, SearchIcon, LockIcon, InfoIcon, PhoneIcon, VideoIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon } from '../icons'
+import { MessageThread, Composer, ImageLightbox } from './ChatThread'
+import { InboxView, MentionsView, SavedView, FilesView } from './ChatViews'
 import NewConversationModal from './NewConversationModal'
 import ConversationInfoPanel from './ConversationInfoPanel'
 import MeetPopover from './MeetPopover'
 import ProfilePanel from './ProfilePanel'
+
+// How many messages a conversation streams at first; "Cargar mensajes
+// anteriores" adds another page. Keeps opening a busy channel light.
+const PAGE_SIZE = 50
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -96,7 +109,42 @@ function ConversationButton({ active, unread, onClick, children }) {
 // ad-hoc groups, then the permanent channels — split into "Empresa"
 // (everyone in ADOR) and "Privados" (invitation only), so it's obvious at
 // a glance which rooms the whole firm can read.
-function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap, onSelect, onNewChannel, onNewGroup }) {
+const VIEWS = [
+  { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
+  { id: 'mentions', label: 'Menciones', Icon: AtIcon },
+  { id: 'saved', label: 'Mensajes guardados', Icon: BookmarkIcon },
+  { id: 'files', label: 'Archivos', Icon: FolderIcon },
+]
+
+function ViewNav({ view, counts, onSelectView }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {VIEWS.map(({ id, label, Icon }) => {
+        const active = view === id
+        const count = counts[id]
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelectView(id)}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
+            style={{ background: active ? 'rgba(30,95,173,0.14)' : undefined, color: active ? '#5B9BD9' : count ? '#F5F5F5' : '#CCCCCC', fontWeight: count ? 600 : 500 }}
+          >
+            <Icon size={15} className="flex-shrink-0 opacity-80" />
+            <span className="flex-1 truncate">{label}</span>
+            {count > 0 && (
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold" style={{ background: id === 'mentions' ? '#B8860B' : 'rgba(255,255,255,0.12)', color: '#F5F5F5' }}>
+                {count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function ChatSidebar({ channels, groups, users, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup }) {
   const [search, setSearch] = useState('')
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
@@ -108,7 +156,7 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap,
   const searching = q.length > 0
   const nothingFound = searching && !otherUsers.length && !visibleGroups.length && !publicChannels.length && !privateChannels.length
 
-  const isActive = (type, id) => selected?.type === type && selected.id === id
+  const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
     <div className="flex w-[230px] flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4">
@@ -126,7 +174,7 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap,
         </div>
       </div>
 
-      <CallNotificationsPrompt />
+      <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
 
       {nothingFound && <p className="px-2.5 text-[12px] text-[#444444]">Sin resultados para “{search}”.</p>}
 
@@ -195,6 +243,8 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap,
           })}
         </div>
       </div>
+
+      <CallNotificationsPrompt />
     </div>
   )
 }
@@ -342,7 +392,7 @@ function ConversationHeader({ selected, conversation, dmUser, dmEntry, users, cu
   )
 }
 
-export default function ChatModule({ user }) {
+export default function ChatModule({ user, focus, onFocusHandled }) {
   const [allChannels, setAllChannels] = useState([])
   const [users, setUsers] = useState([])
   const [myDms, setMyDms] = useState([])
@@ -356,6 +406,16 @@ export default function ChatModule({ user }) {
   const [openCall, setOpenCall] = useState(null) // {type, anchorRef} | null
   const [searchQuery, setSearchQuery] = useState(null) // null = search bar closed
   const [directory, setDirectory] = useState([])
+  // The sidebar's top section: Inbox / Menciones / Guardados / Archivos.
+  // While one is open, no conversation is "open" — nothing streams and
+  // nothing gets marked read behind the reader's back.
+  const [view, setView] = useState(null)
+  const [mentions, setMentions] = useState([])
+  const [saved, setSaved] = useState([])
+  const [files, setFiles] = useState([])
+  const [messageLimit, setMessageLimit] = useState(PAGE_SIZE)
+  const [lightbox, setLightbox] = useState(null)
+  const jumpToRef = useRef(null)
   const showToast = useToast()
   const actorName = actorNameFor(user)
 
@@ -364,6 +424,11 @@ export default function ChatModule({ user }) {
   useEffect(() => subscribeMyDms(user.uid, setMyDms), [user.uid])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
   useEffect(() => subscribeDirectoryPeople(setDirectory), [])
+  useEffect(() => subscribeMyMentions(user.uid, setMentions), [user.uid])
+  useEffect(() => subscribeMySaved(user.uid, setSaved), [user.uid])
+  // Archivos is the only index that grows with the whole team's activity,
+  // so it's only listened to while that view is actually open.
+  useEffect(() => (view === 'files' ? subscribeChatFiles(setFiles) : undefined), [view])
 
   // Private channels/groups you're not in are never listed — you can't
   // find them, let alone join them. See lib/chat.js isMember().
@@ -384,7 +449,9 @@ export default function ChatModule({ user }) {
     setSelected(fallback ? { type: 'conv', id: fallback.id } : null)
   }, [allChannels, selected])
 
-  const activeConversationId = selected ? (selected.type === 'conv' ? selected.id : dmIdFor(user.uid, selected.id)) : null
+  const selectedConversationId = selected ? (selected.type === 'conv' ? selected.id : dmIdFor(user.uid, selected.id)) : null
+  const activeConversationId = view ? null : selectedConversationId
+  const convType = selected?.type === 'dm' ? 'dm' : 'conv'
   const directoryFor = (uid) => directory.find((p) => p.linkedUserId === uid)
 
   // Search is scoped to the open conversation — close it when you move.
@@ -392,15 +459,31 @@ export default function ChatModule({ user }) {
   // to"), the same way Slack's member panel does.
   useEffect(() => {
     setSearchQuery(null)
+    setMessageLimit(PAGE_SIZE)
     if (selected?.type === 'dm') setPanel((p) => (p?.type === 'profile' ? { type: 'profile', uid: selected.id } : p))
   }, [activeConversationId])
 
+  // Clear the thread only when switching conversations, not when paging
+  // older messages in (that would flash the thread empty).
+  useEffect(() => setMessages([]), [activeConversationId])
+
   useEffect(() => {
-    setMessages([])
-    if (!activeConversationId) return
-    if (selected.type === 'conv') return subscribeChannelMessages(selected.id, setMessages)
-    return subscribeDmMessages(activeConversationId, setMessages)
-  }, [activeConversationId])
+    if (!activeConversationId) return setMessages([])
+    return subscribeMessages(convType, activeConversationId, messageLimit, setMessages)
+  }, [activeConversationId, messageLimit])
+
+
+  // Jump-to-message from Menciones / Guardados / the bell: once the target
+  // conversation's messages are on screen, scroll to it and flash it.
+  useEffect(() => {
+    const id = jumpToRef.current
+    if (!id) return
+    const el = document.getElementById(`msg-${id}`)
+    if (!el) return
+    jumpToRef.current = null
+    el.scrollIntoView({ block: 'center' })
+    el.animate([{ background: 'rgba(184,134,11,0.18)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+  }, [messages])
 
   // Marks the open conversation read whenever its message list changes —
   // covers both "I just opened it" and "a new message arrived while I'm
@@ -418,6 +501,112 @@ export default function ChatModule({ user }) {
 
   const fail = (verb) => (error) => showToast(`No se pudo ${verb}: ${error.message}`)
 
+  const nameOf = (uid) => userLabel(users.find((u) => u.id === uid))
+
+  // Human label for any conversation, resolved from live data (so a
+  // renamed channel or group shows its current name everywhere).
+  const labelFor = (type, convId, participantUids) => {
+    if (type === 'dm') {
+      const other = (participantUids || []).find((uid) => uid !== user.uid)
+      return other ? nameOf(other) : 'Mensaje directo'
+    }
+    const c = allChannels.find((x) => x.id === convId)
+    if (!c) return 'Conversación'
+    return conversationKind(c) === 'group' ? groupLabel(c, users, user.uid) : `#${c.name}`
+  }
+
+  // Everything the index collections (mentions, saved, files) need to
+  // point back at the open conversation.
+  const convMeta = () => ({
+    convType,
+    convId: selectedConversationId,
+    conversationKey: selectedConversationId,
+    conversationLabel: labelFor(convType, selectedConversationId, convType === 'dm' ? [user.uid, selected.id] : null),
+    ...(convType === 'dm' ? { participantUids: [user.uid, selected.id] } : {}),
+  })
+
+  // Opens a conversation from any index entry (Inbox, Menciones,
+  // Guardados, Archivos, the bell) and optionally jumps to one message.
+  const openConversation = ({ convType: type, convId, participantUids, messageId }) => {
+    jumpToRef.current = messageId || null
+    setView(null)
+    if (type === 'dm') {
+      const other = (participantUids || []).find((uid) => uid !== user.uid)
+      if (other) setSelected({ type: 'dm', id: other })
+    } else if (visible.some((c) => c.id === convId)) {
+      setSelected({ type: 'conv', id: convId })
+    } else {
+      showToast('Ya no tienes acceso a esa conversación.')
+    }
+  }
+
+  // A request from the bell. Channel targets wait until channels have
+  // loaded, so access can actually be checked.
+  useEffect(() => {
+    if (focus?.type !== 'chat') return
+    if (!focus.view && focus.convType === 'conv' && !allChannels.length) return
+    if (focus.view) setView(focus.view)
+    else openConversation(focus)
+    onFocusHandled?.()
+  }, [focus, allChannels.length])
+
+  const lastReadMs = (key) => lastReadFor(key)?.toMillis?.() || 0
+  const visibleKeys = new Set([...visible.map((c) => c.id), ...myDms.map((d) => d.id)])
+  const myMentions = mentions
+    .filter((m) => visibleKeys.has(m.conversationKey))
+    .map((m) => ({ ...m, conversationLabel: labelFor(m.convType, m.convId), unread: (m.createdAt?.toMillis?.() || 0) > lastReadMs(m.conversationKey) }))
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+  const mySaved = saved
+    .map((x) => ({ ...x, conversationLabel: labelFor(x.convType, x.convId, x.participantUids) }))
+    .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0))
+  const savedIds = new Set(saved.map((x) => x.messageId))
+  const myFiles = files.filter((f) => visibleKeys.has(f.conversationKey)).map((f) => ({ ...f, conversationLabel: labelFor(f.convType, f.convId, f.participantUids) }))
+
+  const inboxConversations = [
+    ...visible.map((c) => ({
+      key: c.id,
+      convType: 'conv',
+      convId: c.id,
+      kind: conversationKind(c),
+      private: isPrivate(c),
+      memberCount: (c.memberUids || []).length,
+      label: conversationKind(c) === 'group' ? groupLabel(c, users, user.uid) : c.name,
+      lastMessage: c.lastMessage,
+      lastAt: c.lastMessageAt,
+      unread: unreadMap[c.id],
+    })),
+    ...myDms.map((d) => {
+      const other = (d.participantUids || []).find((uid) => uid !== user.uid)
+      const otherUser = users.find((u) => u.id === other)
+      return {
+        key: d.id,
+        convType: 'dm',
+        convId: d.id,
+        participantUids: d.participantUids,
+        label: otherUser ? userLabel(otherUser) : d.participantNames?.[other] || 'Mensaje directo',
+        photo: otherUser?.photoDataUrl,
+        lastMessage: d.lastMessage,
+        lastAt: d.updatedAt,
+        unread: unreadMap[d.id],
+      }
+    }),
+  ].sort((a, b) => (b.lastAt?.toMillis?.() || 0) - (a.lastAt?.toMillis?.() || 0))
+
+  const viewCounts = {
+    inbox: inboxConversations.filter((c) => c.unread && c.lastMessage).length,
+    mentions: myMentions.filter((m) => m.unread).length,
+  }
+
+  const mentionCandidates =
+    selected?.type === 'conv' && conversation
+      ? membersOf(conversation, users)
+          .filter((uid) => uid !== user.uid)
+          .map((uid) => {
+            const u = users.find((x) => x.id === uid)
+            return { uid, name: userLabel(u), photo: u?.photoDataUrl }
+          })
+      : []
+
   const handleCreate = (data) =>
     withTimeout(createChatChannel(data, user.uid, actorName))
       .then((ref) => {
@@ -426,17 +615,44 @@ export default function ChatModule({ user }) {
       })
       .catch(fail(data.kind === 'group' ? 'crear el grupo' : 'crear el canal'))
 
-  const handleSend = (payload) => {
-    if (selected.type === 'conv') {
-      withTimeout(sendChannelMessage(selected.id, payload, user.uid, actorName)).catch(fail('enviar'))
-    } else {
-      const participants = [
-        { uid: user.uid, name: actorName },
-        { uid: selected.id, name: userLabel(dmUser) },
-      ]
-      withTimeout(sendDmMessage(activeConversationId, participants, payload, user.uid, actorName)).catch(fail('enviar'))
+  // One send path for everything the composer produces. Heavy media goes
+  // to chatBlobs first (only a thumbnail rides in the message), then the
+  // message, then the small index docs (mentions, files) pointing at it.
+  const handleSend = async (draft) => {
+    const meta = convMeta()
+    try {
+      let attachment
+      if (draft.image) {
+        const blob = await withTimeout(createChatBlob(draft.image.fullDataUrl, 'image'))
+        attachment = { kind: 'image', thumbUrl: draft.image.thumbUrl, blobId: blob.id, name: draft.image.name }
+      } else if (draft.voice) {
+        const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
+        attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
+      }
+      const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions }
+      const ref =
+        convType === 'conv'
+          ? await withTimeout(sendChannelMessage(selected.id, payload, user.uid, actorName))
+          : await withTimeout(
+              sendDmMessage(selectedConversationId, [{ uid: user.uid, name: actorName }, { uid: selected.id, name: userLabel(dmUser) }], payload, user.uid, actorName)
+            )
+
+      const pointer = { ...meta, messageId: ref.id, authorName: actorName, authorUid: user.uid }
+      if (convType === 'conv' && draft.mentions?.length) createMentions(draft.mentions, { ...pointer, text: (draft.text || '').slice(0, 200) }, user.uid, actorName).catch(() => {})
+      if (attachment?.kind === 'image') indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})
+      if (attachment?.kind === 'voice') indexChatFile({ ...pointer, kind: 'voice', blobId: attachment.blobId, duration: attachment.duration, name: 'Nota de voz' }).catch(() => {})
+      const drive = findDriveLink(draft.text)
+      if (drive) indexChatFile({ ...pointer, kind: 'drive', url: drive, name: `${driveDocType(drive)} de Drive` }).catch(() => {})
+    } catch (error) {
+      fail('enviar')(error)
     }
   }
+
+  const handleReact = (messageId, emoji, has) =>
+    withTimeout(toggleMessageReaction(convType, selectedConversationId, messageId, emoji, user.uid, has)).catch(fail('reaccionar'))
+
+  const handleToggleSave = (message) =>
+    withTimeout(toggleSavedMessage(user.uid, message, convMeta(), savedIds.has(message.id))).catch(fail('guardar el mensaje'))
 
   const handleEditMessage = (messageId, text) => {
     const p = selected.type === 'conv' ? updateChannelMessage(selected.id, messageId, text) : updateDmMessage(activeConversationId, messageId, text)
@@ -445,7 +661,9 @@ export default function ChatModule({ user }) {
 
   const handleDeleteMessage = (messageId) => {
     const p = selected.type === 'conv' ? deleteChannelMessage(selected.id, messageId) : deleteDmMessage(activeConversationId, messageId)
-    withTimeout(p).catch(fail('eliminar'))
+    withTimeout(p)
+      .then(() => cleanupMessageIndexes(messageId))
+      .catch(fail('eliminar'))
   }
 
   const infoActions = conversation && {
@@ -488,14 +706,32 @@ export default function ChatModule({ user }) {
         users={users}
         currentUid={user.uid}
         selected={selected}
+        view={view}
+        viewCounts={viewCounts}
         unreadMap={unreadMap}
-        onSelect={setSelected}
+        onSelect={(sel) => {
+          setView(null)
+          setSelected(sel)
+        }}
+        onSelectView={setView}
         onNewChannel={() => setModal('channel')}
         onNewGroup={() => setModal('group')}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {selected && (conversation || dmUser) ? (
+        {view === 'inbox' ? (
+          <InboxView conversations={inboxConversations} onOpen={openConversation} />
+        ) : view === 'mentions' ? (
+          <MentionsView mentions={myMentions} onOpen={openConversation} />
+        ) : view === 'saved' ? (
+          <SavedView
+            saved={mySaved}
+            onOpen={openConversation}
+            onUnsave={(x) => withTimeout(toggleSavedMessage(user.uid, { id: x.messageId }, {}, true)).catch(fail('quitar el guardado'))}
+          />
+        ) : view === 'files' ? (
+          <FilesView files={myFiles} onOpen={openConversation} onOpenImage={setLightbox} />
+        ) : selected && (conversation || dmUser) ? (
           <>
             <ConversationHeader
               selected={selected}
@@ -532,11 +768,24 @@ export default function ChatModule({ user }) {
               messages={messages}
               currentUid={user.uid}
               query={searchQuery}
+              hasMore={messages.length >= messageLimit}
+              onLoadMore={() => setMessageLimit((n) => n + PAGE_SIZE)}
+              savedIds={savedIds}
+              userName={nameOf}
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}
               onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
+              onReact={handleReact}
+              onToggleSave={handleToggleSave}
+              onOpenImage={setLightbox}
             />
-            <Composer onSend={handleSend} onError={showToast} />
+            <Composer
+              key={selectedConversationId}
+              onSend={handleSend}
+              onError={showToast}
+              mentionCandidates={mentionCandidates}
+              placeholder={selected.type === 'dm' ? `Mensaje a ${userLabel(dmUser).split(' ')[0]}...` : mentionCandidates.length ? 'Escribe un mensaje... usa @ para mencionar' : undefined}
+            />
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -551,7 +800,9 @@ export default function ChatModule({ user }) {
         )}
       </div>
 
-      {showInfo && (
+      {lightbox && <ImageLightbox attachment={lightbox} onClose={() => setLightbox(null)} />}
+
+      {showInfo && !view && (
         <ConversationInfoPanel
           conversation={conversation}
           users={users}
@@ -562,7 +813,7 @@ export default function ChatModule({ user }) {
         />
       )}
 
-      {profileUser && (
+      {profileUser && !view && (
         <ProfilePanel
           key={profileUid}
           person={profileUser}
@@ -575,6 +826,7 @@ export default function ChatModule({ user }) {
           onMessage={() => setSelected({ type: 'dm', id: profileUid })}
           onCall={(type, anchorRef) => callFromProfile(profileUid, type, anchorRef)}
           onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
+          onOpenImage={setLightbox}
           onToggleMute={() => withTimeout(setChatMuted(user.uid, dmIdFor(user.uid, profileUid), !isMuted(dmIdFor(user.uid, profileUid)))).catch(fail('silenciar'))}
         />
       )}

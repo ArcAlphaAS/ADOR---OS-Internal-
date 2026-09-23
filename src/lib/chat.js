@@ -117,7 +117,7 @@ export function sharedInConversation(messages) {
   const files = []
   const links = []
   for (const m of [...messages].reverse()) {
-    if (m.attachment?.kind === 'image') files.push({ id: m.id, name: m.attachment.name, dataUrl: m.attachment.dataUrl, createdAt: m.createdAt })
+    if (m.attachment?.kind === 'image') files.push({ id: m.id, attachment: m.attachment, name: m.attachment.name, src: m.attachment.thumbUrl || m.attachment.dataUrl, createdAt: m.createdAt })
     for (const part of splitLinks(m.text || '')) {
       if (part.type !== 'link' || isMeetLink(part.value)) continue
       let host = part.value
@@ -131,4 +131,79 @@ export function sharedInConversation(messages) {
     }
   }
   return { files, links }
+}
+
+// ---- Emoji, reactions, formatting, mentions ----
+
+// A curated set instead of an emoji library — keeps the bundle small and
+// covers what a work chat actually uses.
+export const EMOJIS = [
+  '👍', '👏', '🙌', '🙏', '💪', '👀', '✅', '❌', '🔥', '🚀', '🎯', '💡',
+  '📌', '📈', '📉', '💰', '🗓️', '⏰', '⚠️', '❓', '❗', '💯', '🤝', '🎉',
+  '😀', '😂', '😊', '😉', '😍', '🤔', '😅', '😬', '😮', '😢', '😴', '🙃',
+  '❤️', '💙', '👌', '✌️', '🤞', '👋', '☕', '🍕', '🏆', '⭐', '📎', '📝',
+]
+
+export const QUICK_REACTIONS = ['👍', '✅', '👀', '🙌', '😂', '❤️']
+
+// Lightweight Slack-style formatting — *not* full Markdown:
+//   **negrita**   _cursiva_   ~tachado~   `código`
+export const FORMATS = [
+  { id: 'bold', label: 'B', wrap: '**', title: 'Negrita' },
+  { id: 'italic', label: 'I', wrap: '_', title: 'Cursiva' },
+  { id: 'strike', label: 'S', wrap: '~', title: 'Tachado' },
+  { id: 'code', label: '</>', wrap: '`', title: 'Código' },
+]
+
+const FORMAT_RE = /(\*\*[^*\n]+\*\*|`[^`\n]+`|_[^_\n]+_|~[^~\n]+~)/g
+
+export function splitFormatting(text) {
+  const parts = []
+  let last = 0
+  let m
+  FORMAT_RE.lastIndex = 0
+  while ((m = FORMAT_RE.exec(text))) {
+    if (m.index > last) parts.push({ type: 'text', value: text.slice(last, m.index) })
+    const token = m[0]
+    if (token.startsWith('**')) parts.push({ type: 'bold', value: token.slice(2, -2) })
+    else if (token.startsWith('`')) parts.push({ type: 'code', value: token.slice(1, -1) })
+    else if (token.startsWith('_')) parts.push({ type: 'italic', value: token.slice(1, -1) })
+    else parts.push({ type: 'strike', value: token.slice(1, -1) })
+    last = m.index + token.length
+  }
+  if (last < text.length) parts.push({ type: 'text', value: text.slice(last) })
+  return parts
+}
+
+// Splits text around "@Nombre" tokens for the people actually mentioned in
+// this message (stored as `mentions: [{uid, name}]`) — never a guess from
+// arbitrary "@word" text.
+export function splitMentions(text, mentions = []) {
+  if (!mentions.length) return [{ type: 'text', value: text }]
+  const names = [...mentions].sort((a, b) => b.name.length - a.name.length)
+  const parts = []
+  let rest = text
+  while (rest) {
+    let best = null
+    for (const m of names) {
+      const i = rest.indexOf(`@${m.name}`)
+      if (i !== -1 && (!best || i < best.i)) best = { i, m }
+    }
+    if (!best) {
+      parts.push({ type: 'text', value: rest })
+      break
+    }
+    if (best.i > 0) parts.push({ type: 'text', value: rest.slice(0, best.i) })
+    parts.push({ type: 'mention', value: `@${best.m.name}`, uid: best.m.uid })
+    rest = rest.slice(best.i + best.m.name.length + 1)
+  }
+  return parts
+}
+
+// The "@que" being typed right before the cursor, if any — drives the
+// mention suggestions above the composer.
+export function mentionQueryAt(text, cursor) {
+  const before = text.slice(0, cursor)
+  const m = before.match(/(?:^|\s)@([^\s@]{0,30})$/)
+  return m ? { query: m[1], start: cursor - m[1].length - 1 } : null
 }
