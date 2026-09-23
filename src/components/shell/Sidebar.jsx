@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 // trigger's own rect — keeping them inside the shrink-wrapped capsule caused
 // a Chromium flex+absolute-positioning quirk where the tooltip's width fed
 // back into the capsule's own auto-width, making it visibly balloon on hover.
-function NavButton({ id, label, Icon, active, accent, onClick }) {
+function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
   const [hovered, setHovered] = useState(false)
   const [showTip, setShowTip] = useState(false)
   const [tipPos, setTipPos] = useState(null)
@@ -60,6 +60,16 @@ function NavButton({ id, label, Icon, active, accent, onClick }) {
           />
         )}
         <Icon size={19} className="relative" />
+        {/* Unread count (Comunicación). Kept inside the 40px button's own
+            box so it can never widen the shrink-wrapped capsule (§1). */}
+        {badge > 0 && (
+          <span
+            className="absolute top-0.5 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-semibold text-[#1C1A16]"
+            style={{ background: '#E8C15A' }}
+          >
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
       </button>
 
       {tipPos &&
@@ -85,6 +95,7 @@ function NavButton({ id, label, Icon, active, accent, onClick }) {
                     style={{ fontSize: 12, letterSpacing: '0.04em' }}
                   >
                     {label}
+                    {badge > 0 ? ` · ${badge} sin leer` : ''}
                   </span>
                 </div>
               </motion.div>
@@ -96,7 +107,7 @@ function NavButton({ id, label, Icon, active, accent, onClick }) {
   )
 }
 
-export default function Sidebar({ activeModule, onNavigate }) {
+export default function Sidebar({ activeModule, onNavigate, badges = {} }) {
   return (
     <div className="flex h-full w-20 flex-shrink-0 items-center justify-center">
       <nav
@@ -110,6 +121,7 @@ export default function Sidebar({ activeModule, onNavigate }) {
             key={item.id}
             {...item}
             active={activeModule === item.id}
+            badge={badges[item.id]}
             onClick={() => onNavigate(item.id)}
           />
         ))}

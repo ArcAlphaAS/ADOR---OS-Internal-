@@ -9,6 +9,8 @@ import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
 import IncomingCallGate, { OutgoingCallBanner } from './IncomingCallGate'
 import ReminderGate from './ReminderGate'
+import ChatMessageToaster from './ChatMessageToaster'
+import { useChatUnreadCount } from '../../hooks/useChatNotifications'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 
@@ -72,6 +74,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const [focus, setFocus] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   usePresenceHeartbeat(user?.uid)
+  const chatUnread = useChatUnreadCount(user?.uid)
 
   const navigateTo = (moduleId, focusTarget = null) => {
     setActiveModule(moduleId)
@@ -125,7 +128,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       />
 
       <div className="flex min-h-0 flex-1">
-        <Sidebar activeModule={activeModule} onNavigate={navigateTo} />
+        <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} />
 
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Suspense fallback={null}>
@@ -188,6 +191,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       <IncomingCallGate user={user} />
       <OutgoingCallBanner user={user} />
       <ReminderGate user={user} onNavigate={navigateTo} />
+      <ChatMessageToaster user={user} activeModule={activeModule} onNavigate={navigateTo} />
     </div>
   )
 }

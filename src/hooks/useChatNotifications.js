@@ -81,6 +81,8 @@ export function useChatNotifications(uid, onNavigate) {
     if (isReply) seenThreads.add(m.threadParentId)
     const where = m.convType === 'dm' ? 'tu mensaje directo' : labelOf(m.convId)
     items.push({
+      key: `m:${m.id}`,
+      from: m.fromName,
       at: m.createdAt?.toMillis?.() || 0,
       text: isReply
         ? `${m.fromName} respondió en un hilo de ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`
@@ -97,6 +99,8 @@ export function useChatNotifications(uid, onNavigate) {
     const other = (d.participantUids || []).find((x) => x !== uid)
     const name = userLabel(users.find((u) => u.id === other)) || d.participantNames?.[other]
     items.push({
+      key: `dm:${d.id}:${d.updatedAt?.toMillis?.() || 0}`,
+      from: name,
       at: d.updatedAt?.toMillis?.() || 0,
       text: `${name}: ${last.text || 'Nuevo mensaje'}`,
       time: timeAgo(d.updatedAt),
@@ -108,6 +112,8 @@ export function useChatNotifications(uid, onNavigate) {
     const last = g.lastMessage
     if (!last || last.authorUid === uid || muted[g.id] || !newerThan(g.lastMessageAt, lastRead[g.id])) continue
     items.push({
+      key: `g:${g.id}:${g.lastMessageAt?.toMillis?.() || 0}`,
+      from: last.authorName,
       at: g.lastMessageAt?.toMillis?.() || 0,
       text: `${groupLabel(g, users, uid)} · ${(last.authorName || '').split(' ')[0]}: ${last.text || 'Nuevo mensaje'}`,
       time: timeAgo(g.lastMessageAt),
@@ -120,6 +126,8 @@ export function useChatNotifications(uid, onNavigate) {
   const reminderItems = reminders
     .filter((r) => !r.done && r.remindAt?.toMillis && r.remindAt.toMillis() <= Date.now())
     .map((r) => ({
+      key: `r:${r.id}`,
+      reminder: true,
       at: Number.MAX_SAFE_INTEGER - r.remindAt.toMillis(),
       text: `⏰ Recordatorio: ${r.authorName ? `${r.authorName.split(' ')[0]}: ` : ''}${(r.text || '').slice(0, 70)}`,
       time: timeAgo(r.remindAt),
@@ -130,4 +138,39 @@ export function useChatNotifications(uid, onNavigate) {
     }))
 
   return [...reminderItems, ...items.sort((a, b) => b.at - a.at)].slice(0, 10)
+}
+
+// How many conversations have something unread (channels you're in, your
+// groups and DMs; muted ones excluded) — the number on the Comunicación
+// icon in the sidebar and in the browser tab. Same chatLastRead rule as
+// everywhere else. Identical Firestore queries opened elsewhere share one
+// listener in the SDK, so this adds no extra reads.
+export function useChatUnreadCount(uid) {
+  const [profile, setProfile] = useState(null)
+  const [dms, setDms] = useState([])
+  const [channels, setChannels] = useState([])
+
+  useEffect(() => {
+    if (!uid || uid === 'preview') return
+    return subscribeUserProfile(uid, setProfile)
+  }, [uid])
+  useEffect(() => {
+    if (!uid || uid === 'preview') return
+    return subscribeMyDms(uid, setDms)
+  }, [uid])
+  useEffect(() => subscribeChatChannels(setChannels), [])
+
+  if (!uid || uid === 'preview') return 0
+  const lastRead = profile?.chatLastRead || {}
+  const muted = profile?.chatMuted || {}
+  let count = 0
+  for (const c of channels) {
+    if (!isMember(c, uid) || muted[c.id] || c.lastMessage?.authorUid === uid) continue
+    if (newerThan(c.lastMessageAt, lastRead[c.id])) count++
+  }
+  for (const d of dms) {
+    if (muted[d.id] || d.lastMessage?.authorUid === uid) continue
+    if (newerThan(d.updatedAt, lastRead[d.id])) count++
+  }
+  return count
 }
