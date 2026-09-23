@@ -46,21 +46,6 @@ export function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
   )
 }
 
-function HeaderButton({ title, onClick, active, children, buttonRef }) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] px-3 text-[12.5px] text-[#AAAAAA] transition-colors duration-150 hover:border-white/[0.16] hover:text-[#F5F5F5]"
-      style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
-    >
-      {children}
-    </button>
-  )
-}
-
 // Icon-only round buttons for calls, the way every messaging app's header
 // does it — labeled buttons crowded out the person's name once the
 // profile panel was open beside the thread. The tooltip still names them.
@@ -162,9 +147,9 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
       <div className="flex flex-shrink-0 items-center gap-1">
         <SearchButton active={searching} onClick={onToggleSearch} />
         {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />}
-        <HeaderButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
-          <InfoIcon size={14} /> Detalles
-        </HeaderButton>
+        <IconButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
+          <InfoIcon size={16} />
+        </IconButton>
       </div>
     </div>
   )

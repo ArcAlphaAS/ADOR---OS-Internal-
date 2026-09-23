@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
 import { getDraft, setDraft } from '../../lib/chatDrafts'
 import { resizeImageToDataUrl } from '../../lib/image'
-import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon } from '../icons'
+import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 
@@ -113,7 +113,7 @@ function useVoiceRecorder({ onDone, onError }) {
 // everyone in the conversation to confirm they read it).
 export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact, draftKey, replyTo, onCancelReply, onSchedule, canPoll, canMarkImportant }) {
   const [text, setText] = useState(() => getDraft(draftKey))
-  const [panel, setPanel] = useState(null) // 'format' | 'emoji' | 'schedule' | null
+  const [panel, setPanel] = useState(null) // 'more' | 'format' | 'emoji' | 'schedule' | 'poll' | null
   const [customAt, setCustomAt] = useState('')
   const [important, setImportant] = useState(false)
   const [driveMode, setDriveMode] = useState(false)
@@ -352,6 +352,61 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         </div>
       )}
 
+      {panel === 'more' && (
+        <div className={`grid gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {[
+            { id: 'format', icon: <span className="text-[12.5px] font-semibold">Aa</span>, label: 'Formato', hint: 'Negrita, cursiva, tachado, código', onPick: () => setPanel('format') },
+            {
+              id: 'drive',
+              icon: <PaperclipIcon size={14} />,
+              label: 'Documento de Drive',
+              hint: 'Comparte el enlace — el oficial sigue en Drive',
+              active: driveMode,
+              onPick: () => {
+                setDriveMode((v) => !v)
+                setPanel(null)
+                inputRef.current?.focus()
+              },
+            },
+            canPoll && { id: 'poll', icon: <PollIcon size={14} />, label: 'Encuesta', hint: 'Pregunta rápida, todos votan con un clic', onPick: () => setPanel('poll') },
+            canMarkImportant && {
+              id: 'important',
+              icon: <AlertIcon size={14} />,
+              label: important ? 'Quitar “Importante”' : 'Marcar importante',
+              hint: 'Pide a todos confirmar que lo leyeron',
+              active: important,
+              onPick: () => {
+                setImportant((v) => !v)
+                setPanel(null)
+                inputRef.current?.focus()
+              },
+            },
+            onSchedule && { id: 'schedule', icon: <ClockIcon size={14} />, label: 'Enviar más tarde', hint: 'Elige día y hora de envío', onPick: () => setPanel('schedule') },
+          ]
+            .filter(Boolean)
+            .map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={o.onPick}
+                className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-white/[0.05]"
+                style={o.active ? { background: 'rgba(184,134,11,0.12)' } : undefined}
+              >
+                <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06]" style={{ color: o.active ? '#E8C15A' : '#CCCCCC' }}>
+                  {o.icon}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-medium" style={{ color: o.active ? '#E8C15A' : '#E5E5E5' }}>
+                    {o.label}
+                  </span>
+                  <span className="block text-[11px] leading-snug text-[#858585]">{o.hint}</span>
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
+
       {panel === 'format' && (
         <div className="flex items-center gap-1">
           {FORMATS.map((f) => (
@@ -519,24 +574,19 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
         />
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          <ToolButton title="Formato" active={panel === 'format'} onClick={() => togglePanel('format')}>
-            <span className="text-[13.5px] font-medium">Aa</span>
-          </ToolButton>
+          {/* Only the everyday tools stay in view (emoji, imagen, voz);
+              everything else lives behind "+" with its name and what it
+              does — nine buttons in a row read as clutter. */}
+          <span className="relative">
+            <ToolButton title="Más opciones" active={panel === 'more'} onClick={() => togglePanel('more')}>
+              <PlusIcon size={16} />
+            </ToolButton>
+            {(important || driveMode || panel === 'format' || panel === 'poll' || panel === 'schedule') && panel !== 'more' && (
+              <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#E8C15A' }} />
+            )}
+          </span>
           <ToolButton title="Emoji" active={panel === 'emoji'} onClick={() => togglePanel('emoji')}>
             <SmileIcon size={17} />
-          </ToolButton>
-          {/* The official document stays in Google Drive — here you share
-              its link. (Other files need Firebase Storage, not enabled.) */}
-          <ToolButton
-            title="Compartir documento de Google Drive"
-            active={driveMode}
-            onClick={() => {
-              setDriveMode((v) => !v)
-              setPanel(null)
-              inputRef.current?.focus()
-            }}
-          >
-            <PaperclipIcon size={16} />
           </ToolButton>
           <ToolButton title={processing ? 'Procesando imagen…' : 'Imagen'} disabled={processing} onClick={() => fileRef.current?.click()}>
             <ImageIcon size={16} />
@@ -544,21 +594,6 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <ToolButton title="Nota de voz (máx. 1 min)" onClick={voice.start}>
             <MicIcon size={16} />
           </ToolButton>
-          {canPoll && (
-            <ToolButton title="Encuesta" active={panel === 'poll'} onClick={() => togglePanel('poll')}>
-              <PollIcon size={16} />
-            </ToolButton>
-          )}
-          {canMarkImportant && (
-            <ToolButton title="Marcar como importante (pide confirmación de lectura)" active={important} onClick={() => setImportant((v) => !v)}>
-              <AlertIcon size={15} />
-            </ToolButton>
-          )}
-          {onSchedule && (
-            <ToolButton title="Enviar más tarde" active={panel === 'schedule'} onClick={() => togglePanel('schedule')}>
-              <ClockIcon size={15} />
-            </ToolButton>
-          )}
           <button
             type="button"
             onClick={submit}

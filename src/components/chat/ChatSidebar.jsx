@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { dmIdFor } from '../../lib/firestore'
 import { isPrivate, userLabel, groupLabel, presenceOf } from '../../lib/chat'
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon } from '../icons'
@@ -80,21 +80,21 @@ function ThreadsNavIcon({ size = 15, className }) {
 }
 
 const VIEWS = [
-  { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
-  { id: 'threads', label: 'Hilos', Icon: ThreadsNavIcon },
-  { id: 'mentions', label: 'Menciones', Icon: AtIcon },
-  { id: 'saved', label: 'Mensajes guardados', Icon: BookmarkIcon },
-  { id: 'files', label: 'Archivos', Icon: FolderIcon },
+  { id: 'inbox', label: 'Inbox', short: 'Inbox', Icon: InboxIcon },
+  { id: 'threads', label: 'Hilos', short: 'Hilos', Icon: ThreadsNavIcon },
+  { id: 'mentions', label: 'Menciones', short: 'Menciones', Icon: AtIcon },
+  { id: 'saved', label: 'Mensajes guardados', short: 'Guardados', Icon: BookmarkIcon },
+  { id: 'files', label: 'Archivos', short: 'Archivos', Icon: FolderIcon },
 ]
 
 // Inbox · Hilos · Menciones · Guardados · Archivos as one compact row of
 // icons (with their counts) instead of five full-width rows — the sidebar
-// was carrying too much at the same visual weight. Native tooltips name
-// each one; the open view is gold.
+// was carrying too much at the same visual weight. The open view widens to
+// show its name in gold, so it's clear where you are without a tooltip.
 function ViewNav({ view, counts, onSelectView }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
-      {VIEWS.map(({ id, label, Icon }) => {
+      {VIEWS.map(({ id, label, short, Icon }) => {
         const active = view === id
         const count = counts[id]
         return (
@@ -104,10 +104,11 @@ function ViewNav({ view, counts, onSelectView }) {
             title={count ? `${label} · ${count} sin leer` : label}
             aria-label={label}
             onClick={() => onSelectView(id)}
-            className="relative flex h-9 flex-1 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-white/[0.05]"
+            className={`relative flex h-9 items-center justify-center gap-1.5 rounded-lg transition-[flex,background-color] duration-200 hover:bg-white/[0.05] ${active ? 'flex-[2.6] px-2' : 'flex-1'}`}
             style={{ background: active ? 'rgba(184,134,11,0.16)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#9A9A9A' }}
           >
-            <Icon size={17} />
+            <Icon size={active ? 15 : 17} />
+            {active && <span className="truncate text-[12.5px] font-medium">{short}</span>}
             {count > 0 && (
               <span
                 className="absolute top-0.5 right-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold"
@@ -264,6 +265,16 @@ function CallNotificationsPrompt() {
       // private mode — it just shows again next time
     }
   }
+  // "Blocked" is only worth saying once: after it's been shown, it's
+  // remembered as seen and doesn't sit in the sidebar forever.
+  useEffect(() => {
+    if (permission !== 'denied' || dismissed) return
+    try {
+      localStorage.setItem(PROMPT_KEY, '1')
+    } catch {
+      // private mode — it shows again next time
+    }
+  }, [permission, dismissed])
   // Shown until answered or dismissed once — never a permanent fixture.
   if (dismissed || permission === 'granted' || permission === 'unsupported') return null
   if (permission === 'denied') {

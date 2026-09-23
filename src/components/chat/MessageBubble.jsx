@@ -606,7 +606,9 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
     ) : null
 
   return (
-    <div className={`group flex max-w-[75%] gap-2 ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
+    // Capped at a comfortable reading width: on a wide screen, 75% of the
+    // column made lines far too long to read.
+    <div className={`group flex max-w-[min(75%,600px)] gap-2 ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
         setPicking(false)
         setMenu(null)
       }}>
@@ -634,7 +636,9 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               {message.forwarded.from ? ` en ${message.forwarded.from}` : ''}
             </span>
           )}
-          {message.important && (
+          {/* Importante reads as a gold edge on the bubble (below); the
+              label only shows when there's no text bubble to carry it. */}
+          {message.important && !showBubble && (
             <span className="flex items-center gap-1 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#E8C15A]">
               <AlertIcon size={11} /> Importante
             </span>
@@ -657,7 +661,9 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 borderBottomRightRadius: mine ? (groupEnd ? 4 : 6) : undefined,
                 borderTopLeftRadius: !mine && !groupStart ? 6 : undefined,
                 borderBottomLeftRadius: !mine ? (groupEnd ? 4 : 6) : undefined,
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_BG : 'rgba(184,134,11,0.08)' } : {}),
               }}
+              title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
               <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
             </div>

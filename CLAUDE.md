@@ -669,6 +669,13 @@ Channels and groups share one collection deliberately: one messages subcollectio
 - **Importante:** composer toggle (not schedulable). Message gets `important: true, acks: []`; everyone else in the conversation (`membersOf`, or the DM partner) sees "Confirmar lectura" (`ackImportantMessage` → arrayUnion); the author sees "Confirmado por N de M · falta X". In channels/groups every recipient also gets a `kind: 'important'` notification regardless of their "Solo menciones" setting (unless the conversation is set to "Nada"). Preview gets a "❗" prefix.
 - **Verification:** temporary seed (removed): poll with votes/percentages/faces, both sides of an important message, the scheduled "Editar" form, the poll builder. Votes, acks and edits are writes — need a real login.
 
+**Pase de diseño del chat (2026-09-23, same day).** From a design review; the user chose these and deferred per-person avatar colors and narrow-screen layout ("cuando optimicemos todo").
+- **Composer:** only emoji / imagen / voz / enviar stay visible. Everything else is behind a "+" (Más opciones) panel, in normal flow above the box, each with a name and a one-line description: Formato, Documento de Drive, Encuesta, Marcar importante, Enviar más tarde. A small gold dot on "+" means something from it is on (Importante, Drive mode, or one of its panels open). Threads' compact composer shows only the options that apply there.
+- **Bubbles:** max width `min(75%, 600px)` so long messages wrap at a readable line length on wide screens. "Importante" is now a 3px gold left edge on the bubble (plus a tooltip) instead of an uppercase label above it; the label only remains when the message has no text bubble.
+- **Header:** "Detalles" became an ⓘ icon button, matching buscar/llamar.
+- **Sidebar:** the open view in the Inbox/Hilos/Menciones/Guardados/Archivos row widens to show its name in gold. The "avisos del sistema bloqueados" note is shown once and then remembered as seen (same localStorage key as "Ahora no").
+- The hover toolbar was left as is — editing and deleting are already one click, and ⋯ holds the rest (user's call).
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.
