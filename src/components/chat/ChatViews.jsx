@@ -458,7 +458,7 @@ export function SearchView({ query, onQueryChange, conversations, onOpen }) {
         {!words.length ? (
           <Empty icon={<SearchIcon size={22} />} text="Escribe una palabra, un nombre o una frase. Busca en mensajes directos, grupos y canales a los que perteneces." />
         ) : !loading && searched && !shown.length ? (
-          <Empty icon={<SearchIcon size={22} />} text={`Nada coincide con “${searched}”. Se buscan los últimos 400 mensajes de cada conversación; las respuestas dentro de hilos no se incluyen.`} />
+          <Empty icon={<SearchIcon size={22} />} text={`Nada coincide con “${searched}”. Se buscan los últimos 150 mensajes de cada conversación; las respuestas dentro de hilos no se incluyen.`} />
         ) : (
           shown.map(({ message, conv }) => (
             <button

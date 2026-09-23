@@ -1362,6 +1362,59 @@ export async function cleanupMessageIndexes(messageId) {
   return batch.commit()
 }
 
+// ---- Retención (limpieza diaria, gratis, sin servidor) ----
+// See lib/chatRetention.js for the policy and hooks/useChatRetention.js for
+// when it runs. These are the raw operations.
+
+// Claims today's cleanup so only one open ADOR OS runs it: a transaction on
+// settings/maintenance that succeeds only if the last run was > 20 h ago.
+export async function claimDailyCleanup() {
+  if (!db) return false
+  const ref = doc(db, COLLECTIONS.settings, 'maintenance')
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    const last = snap.exists() ? snap.data().chatCleanupAt?.toMillis?.() || 0 : 0
+    if (Date.now() - last < 20 * 3600 * 1000) return false
+    tx.set(ref, { chatCleanupAt: serverTimestamp() }, { merge: true })
+    return true
+  })
+}
+
+export async function queryOlderThan(collectionName, field, cutoff, max) {
+  if (!db) return []
+  const snap = await getDocs(query(collection(db, collectionName), where(field, '<', Timestamp.fromDate(cutoff)), limit(max)))
+  return snap.docs.map((d) => ({ id: d.id, ref: d.ref, ...d.data() }))
+}
+
+export async function queryDoneReminders(max) {
+  if (!db) return []
+  const snap = await getDocs(query(collection(db, COLLECTIONS.chatReminders), where('done', '==', true), limit(max)))
+  return snap.docs.map((d) => ({ id: d.id, ref: d.ref, ...d.data() }))
+}
+
+// Expires one conversation file: the full image / voice recording is
+// deleted, and its message keeps only a small "expirado" stub — no
+// thumbnail, no blob — so the conversation still reads correctly.
+export async function expireChatFile(entry) {
+  if (!db) return
+  const batch = writeBatch(db)
+  if (entry.blobId) batch.delete(doc(db, COLLECTIONS.chatBlobs, entry.blobId))
+  if (entry.messageId && entry.convId) {
+    batch.update(doc(messagesCol(entry.convType, entry.convId, entry.threadParentId || null), entry.messageId), {
+      attachment: { kind: entry.kind, name: entry.name || '', expired: true, ...(entry.duration ? { duration: entry.duration } : {}) },
+    })
+  }
+  batch.delete(doc(db, COLLECTIONS.chatFiles, entry.id))
+  return batch.commit()
+}
+
+export function deleteRefs(refs) {
+  if (!db || !refs.length) return Promise.resolve()
+  const batch = writeBatch(db)
+  refs.forEach((r) => batch.delete(r))
+  return batch.commit()
+}
+
 // ---- Llamadas entrantes ----
 // One `chatCalls/{id}` doc per started call, separate from the call card
 // posted in the conversation: the card is the permanent record, this doc is

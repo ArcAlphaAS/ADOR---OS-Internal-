@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
-import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon } from '../icons'
+import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -101,7 +101,23 @@ function DriveCard({ url }) {
 // Images carry only a small thumbnail inline; the full-size version sits in
 // chatBlobs and loads when clicked. Older image messages (before the split)
 // have the full `dataUrl` inline and still render the same way.
+// After 90 days a conversation file is deleted (lib/chatRetention.js); its
+// message keeps this stub so the thread still makes sense.
+function ExpiredAttachment({ attachment }) {
+  const voice = attachment.kind === 'voice'
+  return (
+    <span
+      className="inline-flex items-center gap-2 rounded-xl border border-dashed border-white/[0.12] px-3 py-2 text-[12.5px] text-[#8A8A8A]"
+      title="Los archivos de conversación se borran a los 90 días. Lo importante va en Google Drive."
+    >
+      {voice ? <MicIcon size={13} /> : <ImageIcon size={13} />}
+      {voice ? 'Nota de voz expirada' : `Imagen expirada${attachment.name ? ` · ${attachment.name}` : ''}`}
+    </span>
+  )
+}
+
 function ImageAttachment({ attachment, onOpen }) {
+  if (attachment.expired) return <ExpiredAttachment attachment={attachment} />
   const src = attachment.thumbUrl || attachment.dataUrl
   return (
     <button type="button" onClick={() => onOpen(attachment)} className="block text-left">
@@ -112,6 +128,11 @@ function ImageAttachment({ attachment, onOpen }) {
 }
 
 function VoiceNote({ attachment, mine }) {
+  if (attachment.expired) return <ExpiredAttachment attachment={attachment} />
+  return <VoicePlayer attachment={attachment} mine={mine} />
+}
+
+function VoicePlayer({ attachment, mine }) {
   const audioRef = useRef(null)
   const [state, setState] = useState('idle') // idle | loading | playing | paused
   const [progress, setProgress] = useState(0)

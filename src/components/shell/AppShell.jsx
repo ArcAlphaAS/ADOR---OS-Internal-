@@ -13,6 +13,7 @@ import ChatMessageToaster from './ChatMessageToaster'
 import { useChatUnreadCount } from '../../hooks/useChatNotifications'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
+import { useChatRetention } from '../../hooks/useChatRetention'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -74,6 +75,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const [focus, setFocus] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   usePresenceHeartbeat(user?.uid)
+  useChatRetention(user?.uid)
   const chatUnread = useChatUnreadCount(user?.uid)
 
   const navigateTo = (moduleId, focusTarget = null) => {

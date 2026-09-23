@@ -74,7 +74,7 @@ import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 // anteriores" adds another page. Keeps opening a busy channel light.
 const PAGE_SIZE = 50
 // Matches useMessageSearch's depth, so any search result can be scrolled to.
-const SEARCH_DEPTH = 400
+const SEARCH_DEPTH = 150
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'

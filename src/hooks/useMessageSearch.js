@@ -3,14 +3,14 @@ import { fetchRecentMessages } from '../lib/firestore'
 
 // How far back each conversation is searched, and how long a fetched copy
 // is reused before searching again reads fresh messages.
-const DEPTH = 400
-const CACHE_MS = 60_000
+const DEPTH = 150
+const CACHE_MS = 15 * 60_000
 
 // Firestore has no full-text search, and a paid search service (Algolia,
 // Typesense) is overkill for a 3-person firm. Instead: when you search,
 // read the last DEPTH messages of every conversation you can see — once,
 // no live listeners — and match on the device, accent- and case-
-// insensitive, every word must appear. Cached for a minute per
+// insensitive, every word must appear. Cached 15 minutes per
 // conversation so refining a search doesn't re-read anything. Thread
 // replies aren't included (they live one level deeper).
 const cache = new Map() // convId → { at, messages }

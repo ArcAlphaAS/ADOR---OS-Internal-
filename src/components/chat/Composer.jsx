@@ -41,7 +41,7 @@ function useVoiceRecorder({ onDone, onError }) {
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 })
+    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
     const chunks = []
     const startedAt = Date.now()
     cancelRef.current = false
@@ -133,13 +133,28 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     ? mentionCandidates.filter((c) => c.name.toLowerCase().includes(mentionQuery.query.toLowerCase())).slice(0, 5)
     : []
 
-  // Auto-grow up to ~6 lines, then scroll inside.
-  useEffect(() => {
+  // Auto-grow up to ~6 lines, then scroll inside. Also re-measured when the
+  // box changes width (window resized, a side panel opened), otherwise it
+  // could stay tall from an earlier, narrower layout.
+  const fitHeight = () => {
     const el = inputRef.current
     if (!el) return
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`
-  }, [text])
+  }
+  useEffect(fitHeight, [text])
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    let lastWidth = el.clientWidth
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === lastWidth) return
+      lastWidth = el.clientWidth
+      fitHeight()
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const reset = () => {
     if (lastTypingRef.current) {
@@ -236,7 +251,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     if (!file.type.startsWith('image/')) return onError('Solo imágenes aquí — los documentos oficiales se comparten desde Google Drive.')
     setProcessing(true)
     try {
-      const [thumbUrl, fullDataUrl] = await Promise.all([resizeImageToDataUrl(file, 480, 0.72), resizeImageToDataUrl(file, 1600, 0.82)])
+      const [thumbUrl, fullDataUrl] = await Promise.all([resizeImageToDataUrl(file, 400, 0.7), resizeImageToDataUrl(file, 1280, 0.78)])
       if (fullDataUrl.length > MAX_BLOB_CHARS) return onError('La imagen es demasiado pesada incluso comprimida. Prueba con una más pequeña.')
       setPendingImage({ thumbUrl, fullDataUrl, name: file.name })
       setPanel(null)
@@ -372,7 +387,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <img src={pendingImage.thumbUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12.5px] text-[#DDDDDD]">{pendingImage.name}</p>
-            <p className="text-[11px] text-[#7A7A7A]">Archivo de conversación — añade un mensaje o envíalo solo</p>
+            <p className="text-[11px] text-[#8A8A8A]">Archivo de conversación · se borra a los 90 días — lo importante, súbelo a Drive</p>
           </div>
           <button type="button" onClick={() => setPendingImage(null)} className="text-[#858585] hover:text-[#F5F5F5]">
             <CloseIcon size={12} />
