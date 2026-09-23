@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { sharedInConversation, userLabel, presenceOf } from '../../lib/chat'
-import { PhoneIcon, VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
+import { VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 import SidePanel from './SidePanel'
 
@@ -58,8 +58,7 @@ function ListSection({ title, items, render, empty }) {
 //
 // Presence comes from presence/{uid} heartbeats (usePresenceHeartbeat).
 export default function ProfilePanel({ person, directoryEntry, presence, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute, onOpenImage }) {
-  const audioRef = useRef(null)
-  const videoRef = useRef(null)
+  const callRef = useRef(null)
   const name = directoryEntry?.name || userLabel(person)
   const photo = directoryEntry?.photoDataUrl || person?.photoDataUrl
   const subtitle = [directoryEntry?.role, directoryEntry?.area].filter(Boolean).join(' · ')
@@ -85,8 +84,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
 
         <div className="flex justify-center gap-1">
           {!inDm && <ActionButton icon={<MessageIcon size={16} />} label="Mensaje" onClick={onMessage} />}
-          <ActionButton icon={<PhoneIcon size={15} />} label="Llamar" buttonRef={audioRef} onClick={() => onCall('audio', audioRef)} />
-          <ActionButton icon={<VideoIcon size={16} />} label="Video" buttonRef={videoRef} onClick={() => onCall('video', videoRef)} />
+          <ActionButton icon={<VideoIcon size={16} />} label="Llamar" buttonRef={callRef} onClick={() => onCall('video', callRef)} />
           {inDm && <ActionButton icon={<SearchIcon size={15} />} label="Buscar" active={searching} onClick={onToggleSearch} />}
         </div>
 

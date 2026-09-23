@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import { LockIcon, InfoIcon, PhoneIcon, VideoIcon } from '../icons'
+import { LockIcon, InfoIcon, VideoIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // The strip above a conversation: who/what it is, presence, call buttons,
@@ -85,17 +85,11 @@ function IconButton({ title, onClick, active, busy, children, buttonRef }) {
 // popover's open state lives in ChatModule so the same flow can be started
 // from here or from the profile panel's buttons.
 function CallButtons({ openCall, onCall, busy }) {
-  const audioRef = useRef(null)
-  const videoRef = useRef(null)
+  const callRef = useRef(null)
   return (
-    <>
-      <IconButton title={busy === 'audio' ? 'Creando reunión…' : 'Llamar (Google Meet)'} busy={busy === 'audio'} buttonRef={audioRef} active={openCall?.anchorRef === audioRef} onClick={() => onCall('audio', audioRef)}>
-        <PhoneIcon size={15} />
-      </IconButton>
-      <IconButton title={busy === 'video' ? 'Creando reunión…' : 'Videollamada (Google Meet)'} busy={busy === 'video'} buttonRef={videoRef} active={openCall?.anchorRef === videoRef} onClick={() => onCall('video', videoRef)}>
-        <VideoIcon size={16} />
-      </IconButton>
-    </>
+    <IconButton title={busy ? 'Creando reunión…' : 'Llamar (Google Meet)'} busy={busy === 'video'} buttonRef={callRef} active={openCall?.anchorRef === callRef} onClick={() => onCall('video', callRef)}>
+      <VideoIcon size={16} />
+    </IconButton>
   )
 }
 
