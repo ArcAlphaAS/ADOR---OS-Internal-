@@ -29,11 +29,14 @@ function Sparkline({ points }) {
   )
 }
 
-export default function FinanceBlock({ latestRevenueAmount, revenueChangePct, revenueSeries = [] }) {
-  const hasData = latestRevenueAmount !== undefined
+// Same figures as Finanzas (useFinanceData): this month's income — client
+// payments received plus manual incomes — its change vs. last month, and
+// the last six months as a sparkline. Click opens Finanzas.
+export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct, series = [], onOpen }) {
+  const points = series.map((p) => ({ month: p.month, amount: p.ingresos }))
 
   return (
-    <div className="ador-glass ador-grain ador-card-hover rounded-[20px] px-7 py-6">
+    <button type="button" onClick={onOpen} className="ador-glass ador-grain ador-card-hover block w-full rounded-[20px] px-7 py-6 text-left">
       <div className="flex items-center gap-2">
         <span
           className="font-medium text-[#444444]"
@@ -54,23 +57,19 @@ export default function FinanceBlock({ latestRevenueAmount, revenueChangePct, re
         </div>
       ) : (
         <>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-[32px] font-semibold text-[#F5F5F5]">
-              {currencyPEN.format(latestRevenueAmount)}
-            </span>
-            {revenueChangePct !== null && (
-              <span
-                className="text-[13px] font-medium"
-                style={{ color: revenueChangePct >= 0 ? '#1E5FAD' : '#E05252' }}
-              >
-                {revenueChangePct >= 0 ? '+' : ''}
-                {revenueChangePct.toFixed(1)}% vs. mes anterior
+          <p className="mt-3 text-[12px] text-[#666666]">Ingresos del mes</p>
+          <div className="mt-1 flex items-baseline gap-3">
+            <span className="text-[32px] font-semibold text-[#F5F5F5]">{currencyPEN.format(ingresosDelMes)}</span>
+            {ingresosDeltaPct !== null && (
+              <span className="text-[13px] font-medium" style={{ color: ingresosDeltaPct >= 0 ? '#1E5FAD' : '#E05252' }}>
+                {ingresosDeltaPct >= 0 ? '+' : ''}
+                {ingresosDeltaPct.toFixed(1)}% vs. mes anterior
               </span>
             )}
           </div>
-          <Sparkline points={revenueSeries} />
+          <Sparkline points={points} />
         </>
       )}
-    </div>
+    </button>
   )
 }

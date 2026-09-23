@@ -35,7 +35,11 @@ function defaultRange() {
 // reconnect case).
 //
 // `status`: 'checking' | 'disconnected' | 'connecting' | 'loading' | 'ready' | 'error' | 'needsReconnect'
-export function useGoogleCalendar(userId) {
+// `initialRange` (optional, a function returning {start, end}): what to
+// load on first connect instead of the current week — Inicio asks for the
+// next two weeks so it can show the next meeting.
+export function useGoogleCalendar(userId, { initialRange } = {}) {
+  const firstRange = initialRange || defaultRange
   const [status, setStatus] = useState('checking')
   const [connectedEmail, setConnectedEmail] = useState(null)
   const [events, setEvents] = useState([])
@@ -111,7 +115,7 @@ export function useGoogleCalendar(userId) {
           if (userId !== 'preview') {
             await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, scopes: scope || '', connectedAt: new Date().toISOString() } })
           }
-          const range = defaultRange()
+          const range = firstRange()
           const items = await fetchEvents(accessToken, { timeMin: range.start, timeMax: range.end })
           setEvents(items)
           setStatus('ready')
@@ -145,7 +149,7 @@ export function useGoogleCalendar(userId) {
       if (saved?.refreshToken) {
         refreshTokenRef.current = saved.refreshToken
         setConnectedEmail(saved.connectedEmail || null)
-        loadRange(defaultRange())
+        loadRange(firstRange())
       } else {
         setStatus('disconnected')
       }

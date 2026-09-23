@@ -3,7 +3,6 @@ import {
   subscribeClients,
   subscribeTasksForUser,
   subscribeDecisions,
-  subscribeMeetings,
 } from '../lib/firestore'
 import { isPendingFor } from '../lib/workspace'
 
@@ -12,8 +11,7 @@ import { isPendingFor } from '../lib/workspace'
 //                interventionWeek, interventionTotalWeeks }
 //   tasks:     { assignedTo, title, dueDate: Timestamp, status, clientId? }
 //   decisions: { title, decidedAt: Timestamp, clientId? }
-//   meetings:  { title, startsAt: Timestamp, clientId? }
-// `clientId` on tasks/decisions/meetings is optional — there's no UI to
+// `clientId` on tasks/decisions is optional — there's no UI to
 // create them yet (Workspace/Calendario are still placeholders), but Home
 // already resolves it to a client name wherever present so nothing needs to
 // change here once those modules exist and start writing it.
@@ -21,11 +19,9 @@ export function useHomeData(userId) {
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
   const [decisions, setDecisions] = useState([])
-  const [meetings, setMeetings] = useState([])
 
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeDecisions(setDecisions), [])
-  useEffect(() => subscribeMeetings(setMeetings), [])
   useEffect(() => {
     if (!userId) return
     return subscribeTasksForUser(userId, setTasks)
@@ -63,14 +59,8 @@ export function useHomeData(userId) {
       : 0,
   }))
 
-  const now = new Date()
-  const upcomingMeetingRaw = meetings
-    .filter((m) => m.startsAt?.toDate?.() >= now)
-    .sort((a, b) => a.startsAt.toDate() - b.startsAt.toDate())[0]
-  const upcomingMeeting = upcomingMeetingRaw && {
-    ...upcomingMeetingRaw,
-    clientName: clientNameById[upcomingMeetingRaw.clientId],
-  }
+  // Próxima reunión comes from Google Calendar now (HomeScreen) — the old
+  // `meetings` collection was never written by anything.
 
   const latestDecisionRaw = decisions
     .filter((d) => d.decidedAt?.toDate)
@@ -80,27 +70,9 @@ export function useHomeData(userId) {
     clientName: clientNameById[latestDecisionRaw.clientId],
   }
 
-  // Revenue is derived from real payment records (pago1/pago2 across all
-  // clients) rather than a hand-entered monthly total — one source of truth
-  // shared with the Clientes module's Pagos tab. See CLAUDE.md §8.
-  const monthTotals = new Map()
-  for (const client of clients) {
-    for (const key of ['pago1', 'pago2']) {
-      const payment = client[key]
-      if (payment?.status !== 'Recibido' || !payment.date || !payment.amount) continue
-      const monthKey = payment.date.slice(0, 7)
-      monthTotals.set(monthKey, (monthTotals.get(monthKey) || 0) + payment.amount)
-    }
-  }
-  const revenueSeries = [...monthTotals.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, amount]) => ({ month, amount }))
-  const latestRevenueEntry = revenueSeries[revenueSeries.length - 1]
-  const previousRevenueEntry = revenueSeries[revenueSeries.length - 2]
-  const revenueChangePct =
-    latestRevenueEntry && previousRevenueEntry?.amount
-      ? ((latestRevenueEntry.amount - previousRevenueEntry.amount) / previousRevenueEntry.amount) * 100
-      : null
+  // Resumen financiero now reads useFinanceData() in HomeScreen — the same
+  // numbers as Finanzas (client payments + manual incomes), so the two can
+  // never disagree.
 
   return {
     activeSPCount: activeSPs.length,
@@ -108,10 +80,6 @@ export function useHomeData(userId) {
     tasksTodayCount: tasksToday.length,
     tasksTodayRows,
     interventions: interventionRows,
-    upcomingMeeting,
     latestDecision,
-    revenueSeries: revenueSeries.slice(-6),
-    latestRevenueAmount: latestRevenueEntry?.amount,
-    revenueChangePct,
   }
 }

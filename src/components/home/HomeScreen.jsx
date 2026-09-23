@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { firstName } from '../../lib/user'
 import { useHomeData } from '../../hooks/useHomeData'
+import { useFinanceData } from '../../hooks/useFinanceData'
+import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import BirthdayBanner from './BirthdayBanner'
 import GreetingBlock from './GreetingBlock'
@@ -22,6 +24,28 @@ const containerVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 }
+// Inicio asks Google Calendar for the next two weeks (not the current
+// week) so "Próxima reunión" still finds something on a Friday afternoon.
+const nextTwoWeeks = () => {
+  const start = new Date()
+  const end = new Date(start.getTime() + 14 * 86400000)
+  return { start, end }
+}
+
+// The next thing on your calendar: a meeting with other guests if there is
+// one, otherwise your next timed event. All-day events (holidays,
+// "vacaciones") aren't meetings. One that already started but hasn't ended
+// counts — it shows as "ahora".
+function pickNextMeeting(events) {
+  const now = Date.now()
+  const timed = events
+    .filter((e) => !e.allDay && e.end && new Date(e.end).getTime() > now)
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+  const e = timed.find((x) => x.isMeeting) || timed[0]
+  if (!e) return null
+  return { title: e.title, start: new Date(e.start), inProgress: new Date(e.start).getTime() <= now, isMeeting: e.isMeeting, link: e.htmlLink }
+}
+
 const itemVariants = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
@@ -34,12 +58,12 @@ export default function HomeScreen({ user, onNavigate }) {
     tasksTodayCount,
     tasksTodayRows,
     interventions,
-    upcomingMeeting,
     latestDecision,
-    revenueSeries,
-    latestRevenueAmount,
-    revenueChangePct,
   } = useHomeData(user?.uid)
+  // Same numbers as Finanzas (client payments + manual incomes).
+  const finance = useFinanceData()
+  const calendar = useGoogleCalendar(user?.uid, { initialRange: nextTwoWeeks })
+  const nextMeeting = calendar.status === 'ready' ? pickNextMeeting(calendar.events) : null
 
   const birthdays = useTodaysBirthdays()
 
@@ -69,13 +93,20 @@ export default function HomeScreen({ user, onNavigate }) {
         <div className="flex flex-col gap-6">
           <motion.div variants={itemVariants}>
             <FinanceBlock
-              latestRevenueAmount={latestRevenueAmount}
-              revenueChangePct={revenueChangePct}
-              revenueSeries={revenueSeries}
+              hasData={finance.movements.length > 0}
+              ingresosDelMes={finance.ingresosDelMes}
+              ingresosDeltaPct={finance.ingresosDeltaPct}
+              series={finance.series}
+              onOpen={() => onNavigate?.('finanzas')}
             />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <MeetingDecisionBlock upcomingMeeting={upcomingMeeting} latestDecision={latestDecision} />
+            <MeetingDecisionBlock
+              meeting={nextMeeting}
+              calendarStatus={calendar.status}
+              onOpenCalendar={() => onNavigate?.('calendario')}
+              latestDecision={latestDecision}
+            />
           </motion.div>
         </div>
 
