@@ -867,27 +867,74 @@ export function deleteCommunityPost(postId) {
   return deleteDoc(doc(db, COLLECTIONS.communityPosts, postId))
 }
 
-// ---- Chat: channels + direct messages ----
+// ---- Chat (Comunicación): DMs, canales, grupos ----
 // Real-time messaging reusing the exact same onSnapshot pattern as every
-// other live list in this app — no chat SDK/library. Deliberately scoped
-// down (see the conversation that led here): no threads, no message
-// reactions, no typing indicators, no edit/read-receipts, no file
-// attachments (needs Storage, still not enabled). Anyone can create a
-// channel (no isAdmin gate — same "open, informal" posture as Comunidad,
-// direct user choice), unlike News/Conocimiento/Directorio's admin-gated
-// writes.
+// other live list in this app — no chat SDK/library. Three kinds of
+// conversation (see lib/chat.js and CLAUDE.md §34 for the architecture):
+//   - DMs: `chatDms/{dmIdFor(a,b)}` — private between exactly two people.
+//   - Canales: `chatChannels/{id}` with kind 'channel' — a permanent space
+//     for an area/function. `visibility: 'public'` (everyone in ADOR,
+//     implicitly a member) or 'private' (`memberUids`, invitation only).
+//   - Grupos: `chatChannels/{id}` with kind 'group' — an ad-hoc private
+//     conversation between a few people, not a permanent area. Can be
+//     promoted to a channel (convertGroupToChannel) once it turns recurring.
+// Channels and groups share one collection on purpose: same messages
+// subcollection, same unread tracking, same composer — they differ only
+// in how they're listed and who can see them.
 export function subscribeChatChannels(onData) {
   return subscribeToCollection(COLLECTIONS.chatChannels, [orderBy('createdAt', 'asc')], onData)
 }
 
-export function createChatChannel(name, actorUid, actorName) {
+export function createChatChannel({ name, description = '', kind = 'channel', visibility = 'public', memberUids = [] }, actorUid, actorName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const members = Array.from(new Set([actorUid, ...memberUids]))
   return addDoc(collection(db, COLLECTIONS.chatChannels), {
     name,
+    description,
+    kind,
+    visibility: kind === 'group' ? 'private' : visibility,
+    // Public channels don't track members — everyone in ADOR is in them
+    // automatically. Stored anyway (as the creator) so flipping a channel
+    // to private later never leaves it with zero members.
+    memberUids: members,
     createdBy: actorName,
     createdByUid: actorUid,
     createdAt: serverTimestamp(),
   })
+}
+
+export function updateChatChannel(channelId, patch) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), patch)
+}
+
+export function addChannelMembers(channelId, uids) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { memberUids: arrayUnion(...uids) })
+}
+
+export function removeChannelMember(channelId, uid) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { memberUids: arrayRemove(uid) })
+}
+
+export function convertGroupToChannel(channelId, name, visibility) {
+  return updateChatChannel(channelId, { kind: 'channel', name, visibility })
+}
+
+// A message is `{text, attachment?, call?}`:
+//   attachment: {kind:'image', dataUrl, name} — a *conversation* file,
+//     compressed into the message doc itself (no Storage). Official
+//     documents are never uploaded here: they live in Google Drive and are
+//     shared as a Drive link, which the UI renders as its own card.
+//   call: {type:'audio'|'video', url} — a Google Meet invitation.
+// Accepts a bare string too, for callers that only ever send text.
+function messageFields(payload) {
+  const p = typeof payload === 'string' ? { text: payload } : payload
+  const fields = { text: p.text || '' }
+  if (p.attachment) fields.attachment = p.attachment
+  if (p.call) fields.call = p.call
+  return fields
 }
 
 export function subscribeChannelMessages(channelId, onData) {
@@ -905,10 +952,10 @@ export function subscribeChannelMessages(channelId, onData) {
 // without subscribing to every channel's full message history just to
 // check "is there anything newer than what I've read" — see
 // markChatRead()/`chatLastRead` below.
-export function sendChannelMessage(channelId, text, uid, name) {
+export function sendChannelMessage(channelId, payload, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return addDoc(collection(db, COLLECTIONS.chatChannels, channelId, 'messages'), {
-    text,
+    ...messageFields(payload),
     authorUid: uid,
     authorName: name,
     createdAt: serverTimestamp(),
@@ -954,7 +1001,7 @@ export function subscribeDmMessages(dmId, onData) {
 // `updatedAt` here doubles as the DM's "lastMessageAt" signal for unread
 // tracking — same idea as channels' own lastMessageAt, just already
 // present on this doc from the original merge-on-first-message write.
-export function sendDmMessage(dmId, participants, text, uid, name) {
+export function sendDmMessage(dmId, participants, payload, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return setDoc(
     doc(db, COLLECTIONS.chatDms, dmId),
@@ -962,7 +1009,7 @@ export function sendDmMessage(dmId, participants, text, uid, name) {
     { merge: true }
   ).then(() =>
     addDoc(collection(db, COLLECTIONS.chatDms, dmId, 'messages'), {
-      text,
+      ...messageFields(payload),
       authorUid: uid,
       authorName: name,
       createdAt: serverTimestamp(),

@@ -358,6 +358,14 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] **Added a search box** at the top of the sidebar (Slack's own pattern) filtering channels and people together by name, so finding a person to DM or a channel that might already exist is one box instead of two separate scans
 - [x] **Verification note:** all of the above checked via `?preview=1` — the "+" next to CANALES opens the channel-name input, GlobalCapture's floating button no longer renders on Chat, both new empty-state messages render, the search box filters visually. Could not verify edit/delete, unread dots, or search results against real messages/accounts — no real chat data exists yet and `?preview=1` has no real Firebase Auth session, same documented limitation as every other write in this app
 
+**Chat → "Comunicación" architecture (2026-09-23)**
+- [x] Three conversation kinds: Mensajes directos, Grupos (ad-hoc private, can be converted into a channel), Canales split into Empresa (public, everyone auto-member) and Privados (invitation only, hidden from non-members). Suggested channels incl. private-by-default `#direccion`. See CLAUDE.md §34
+- [x] Detalles panel per channel/group: visibility, who can find/join, members, invite/remove/leave, public↔private toggle
+- [x] Llamar / Videollamada in DMs and groups → Google Meet (open Meet, paste link, posted as a "Unirse" card)
+- [x] Files: images as conversation files (compressed into the message, no Storage), official docs as Drive links rendered as "Documento oficial" cards; other file types disabled until Storage
+- [ ] **Private channels are hidden in the UI but not yet locked in Firestore rules** — must be tightened before any non-founder gets a login (see CLAUDE.md §34 for the exact change)
+- [ ] Threads, mentions, reactions, chat notifications in the bell — next layer
+
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 

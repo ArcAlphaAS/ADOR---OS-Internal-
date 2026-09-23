@@ -31,7 +31,7 @@ const MODULE_LABELS = {
   clientes: 'Clientes',
   finanzas: 'Finanzas',
   conocimiento: 'Conocimiento',
-  chat: 'Chat',
+  chat: 'Comunicación',
   news: 'News',
   directorio: 'Directorio',
   'ador-ia': 'ADOR IA',

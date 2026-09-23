@@ -11,7 +11,7 @@ import { CalendarIcon, BookIcon, MessageIcon, GlobeIcon, ContactsIcon, SparkleIc
 const NAV_ITEMS = [
   { id: 'calendario', label: 'Calendario', Icon: CalendarIcon },
   { id: 'conocimiento', label: 'Conocimiento', Icon: BookIcon },
-  { id: 'chat', label: 'Chat', Icon: MessageIcon },
+  { id: 'chat', label: 'Comunicación', Icon: MessageIcon },
   { id: 'news', label: 'News', Icon: GlobeIcon },
   { id: 'directorio', label: 'Directorio', Icon: ContactsIcon },
 ]

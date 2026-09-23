@@ -389,3 +389,57 @@ export function AlertIcon(props) {
     </svg>
   )
 }
+
+export function PhoneIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z" />
+    </svg>
+  )
+}
+
+export function VideoIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="3" y="6.5" width="12.5" height="11" rx="2" />
+      <path d="m15.5 10.5 5-3v9l-5-3" />
+    </svg>
+  )
+}
+
+export function LockIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="5" y="10.5" width="14" height="10" rx="2" />
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+    </svg>
+  )
+}
+
+export function InfoIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5.5" />
+      <circle cx="12" cy="7.8" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function PaperclipIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.3 3.3 0 0 1 4.7 4.7l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.5-7.5" />
+    </svg>
+  )
+}
+
+export function ImageIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="m20.5 16-4.5-4.5L6 19.5" />
+    </svg>
+  )
+}
