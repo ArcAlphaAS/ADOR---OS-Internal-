@@ -86,6 +86,12 @@ export const db = isFirebaseConfigured ? getFirestore(app) : null
 
 // Generic live-collection subscription. Returns [] until Firestore is
 // configured and the query resolves — no module should assume data exists.
+//
+// `serverTimestamps: 'estimate'`: a serverTimestamp() this app just wrote
+// reads as the local clock's estimate until the server confirms it, instead
+// of null. Without it, opening a conversation (which writes
+// chatLastRead = serverTimestamp()) briefly made it look never-read, so the
+// Inbox count flashed "1" and went away.
 function subscribeToCollection(collectionName, constraints, onData) {
   if (!db) return () => {}
   const ref = collection(db, collectionName)
@@ -93,7 +99,7 @@ function subscribeToCollection(collectionName, constraints, onData) {
   return onSnapshot(
     q,
     (snapshot) => {
-      onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+      onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) })))
     },
     (error) => {
       console.error(`Firestore subscription to "${collectionName}" failed:`, error.message)
@@ -316,7 +322,9 @@ export function subscribeUserProfile(userId, onData) {
   if (!db || !userId) return () => {}
   return onSnapshot(
     doc(db, COLLECTIONS.users, userId),
-    (snap) => onData(snap.exists() ? snap.data() : null),
+    // 'estimate': see subscribeToCollection — keeps chatLastRead from
+    // reading as null for a moment right after a conversation is opened.
+    (snap) => onData(snap.exists() ? snap.data({ serverTimestamps: 'estimate' }) : null),
     (error) => console.error('Firestore subscription to user profile failed:', error.message)
   )
 }
