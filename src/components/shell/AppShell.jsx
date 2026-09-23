@@ -17,6 +17,7 @@ import AdorIAModule from '../adoria/AdorIAModule'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
+import IncomingCallGate from './IncomingCallGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 
 function actorNameFor(user) {
@@ -147,6 +148,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           caused exactly that confusion in testing (see ChatModule.jsx). */}
       {activeModule !== 'chat' && <GlobalCapture user={user} actorName={actorNameFor(user)} />}
       <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
+      <IncomingCallGate user={user} />
     </div>
   )
 }

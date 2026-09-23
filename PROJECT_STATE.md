@@ -365,7 +365,8 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Files: images as conversation files (compressed into the message, no Storage), official docs as Drive links rendered as "Documento oficial" cards; other file types disabled until Storage
 - [ ] **Private channels are hidden in the UI but not yet locked in Firestore rules** — must be tightened before any non-founder gets a login (see CLAUDE.md §34 for the exact change)
 - [x] Profile panel on tap (DM header or author name in a channel): Directorio identity, Llamar/Video/Buscar/Mensaje, shared files + Drive docs/links derived from the DM, Silenciar toggle (`users/{uid}.chatMuted`). No fake online dot. See CLAUDE.md §34
-- [ ] Incoming-call alerting: in-app ringing overlay + browser notification (cheap, recommended next); real push when ADOR OS is closed rides with the parked PWA phase 3
+- [x] Incoming-call alerting (2026-09-23): app-wide ringing overlay with ringtone + Unirse/Rechazar (`IncomingCallGate.jsx`, `chatCalls` collection), OS notification + flashing tab title when ADOR OS is in a background tab, one-time "Activar avisos de llamada" prompt in Comunicación. Not yet tested between two real accounts
+- [ ] Ringing when ADOR OS is closed / computer asleep — needs Web Push + service worker; rides with the parked PWA phase 3
 - [ ] Threads, mentions, reactions, chat notifications in the bell — next layer
 
 **Not built yet**

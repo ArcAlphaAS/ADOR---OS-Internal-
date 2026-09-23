@@ -66,6 +66,7 @@ export const COLLECTIONS = {
   communityPosts: 'communityPosts',
   chatChannels: 'chatChannels',
   chatDms: 'chatDms',
+  chatCalls: 'chatCalls',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -1025,6 +1026,39 @@ export function updateDmMessage(dmId, messageId, text) {
 export function deleteDmMessage(dmId, messageId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId))
+}
+
+// ---- Llamadas entrantes ----
+// One `chatCalls/{id}` doc per started call, separate from the call card
+// posted in the conversation: the card is the permanent record, this doc is
+// the short-lived "ring" signal IncomingCallGate listens for, app-wide.
+// `toUids` = everyone who should ring (never the caller). Each recipient's
+// answer goes in `responses.{uid}` ('joined' | 'declined') so it stops
+// ringing for them without affecting anyone else in a group call.
+export function createChatCall({ type, url, toUids, conversationLabel, conversationKey }, fromUid, fromName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatCalls), {
+    type,
+    url,
+    toUids,
+    conversationLabel,
+    conversationKey,
+    fromUid,
+    fromName,
+    responses: {},
+    createdAt: serverTimestamp(),
+  })
+}
+
+// No orderBy on purpose: array-contains alone needs no composite index.
+export function subscribeIncomingCalls(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.chatCalls, [where('toUids', 'array-contains', uid)], onData)
+}
+
+export function respondToChatCall(callId, uid, response) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatCalls, callId), { [`responses.${uid}`]: response })
 }
 
 // Per-user mute, same one-map-field-on-the-profile shape as chatLastRead:

@@ -21,6 +21,7 @@ import {
   subscribeUserProfile,
   subscribeDirectoryPeople,
   setChatMuted,
+  createChatCall,
 } from '../../lib/firestore'
 import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
@@ -125,6 +126,8 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap,
         </div>
       </div>
 
+      <CallNotificationsPrompt />
+
       {nothingFound && <p className="px-2.5 text-[12px] text-[#444444]">Sin resultados para “{search}”.</p>}
 
       <div>
@@ -192,6 +195,31 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, unreadMap,
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Browsers only let a page ask for notification permission in response to
+// a click, so this is an explicit one-time prompt rather than something
+// that fires on load. Hidden once answered either way; if denied, only the
+// browser's own site settings can undo it, so it says so once.
+function CallNotificationsPrompt() {
+  const supported = typeof Notification !== 'undefined'
+  const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported')
+  if (permission === 'granted' || permission === 'unsupported') return null
+  if (permission === 'denied') {
+    return <p className="px-1 text-[11px] leading-relaxed text-[#555555]">Avisos de llamada bloqueados en este navegador — actívalos desde la configuración del sitio.</p>
+  }
+  return (
+    <div className="rounded-xl border border-dashed border-white/[0.12] px-3 py-2.5">
+      <p className="text-[11.5px] leading-relaxed text-[#888888]">Recibe un aviso del sistema cuando te llamen y ADOR OS esté en otra pestaña.</p>
+      <button
+        type="button"
+        onClick={() => Notification.requestPermission().then(setPermission)}
+        className="mt-1.5 text-[12px] font-medium text-[#5B9BD9] hover:underline"
+      >
+        Activar avisos de llamada
+      </button>
     </div>
   )
 }
@@ -427,6 +455,17 @@ export default function ChatModule({ user }) {
     onConvert: (name, visibility) => withTimeout(convertGroupToChannel(conversation.id, name, visibility)).catch(fail('convertir el grupo')),
   }
 
+  // Besides the call card in the thread, a call also writes a short-lived
+  // chatCalls doc so the other person's ADOR OS rings wherever they are in
+  // the app (IncomingCallGate.jsx). Calls only start from DMs and groups.
+  const ringRecipients = (type, url) => {
+    const isDm = selected.type === 'dm'
+    const toUids = isDm ? [selected.id] : (conversation?.memberUids || []).filter((uid) => uid !== user.uid)
+    if (!toUids.length) return
+    const conversationLabel = isDm ? 'Mensaje directo' : `Grupo · ${groupLabel(conversation, users, user.uid)}`
+    withTimeout(createChatCall({ type, url, toUids, conversationLabel, conversationKey: activeConversationId }, user.uid, actorName)).catch(fail('avisar la llamada'))
+  }
+
   const toggleCall = (type, anchorRef) => setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
 
   // A profile opened from a channel whose "Llamar" is pressed: jump into
@@ -548,6 +587,7 @@ export default function ChatModule({ user }) {
           onClose={() => setOpenCall(null)}
           onSend={(url) => {
             handleSend({ call: { type: openCall.type, url } })
+            ringRecipients(openCall.type, url)
             setOpenCall(null)
           }}
         />
