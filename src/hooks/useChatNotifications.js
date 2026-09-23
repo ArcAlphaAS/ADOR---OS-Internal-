@@ -18,7 +18,8 @@ function timeAgo(ts) {
 
 // Comunicación's contribution to the top-bar bell. Deliberately only the
 // things addressed to *you*: @mentions, direct messages, and your private
-// groups. Ordinary channel chatter never reaches the bell — that's what
+// groups, plus replies in threads you take part in. Ordinary channel
+// chatter never reaches the bell — that's what
 // the sidebar's unread dots and Inbox are for; ringing the bell for every
 // #general message would train everyone to ignore it.
 //
@@ -63,13 +64,25 @@ export function useChatNotifications(uid, onNavigate) {
 
   const items = []
 
-  for (const m of mentions) {
-    if (!visibleKeys.has(m.conversationKey) || muted[m.conversationKey] || !newerThan(m.createdAt, lastRead[m.conversationKey])) continue
+  // Mentions and thread replies share chatMentions; one inside a thread is
+  // read once that thread is opened (`thread_{parentId}`). Several replies
+  // in the same thread collapse into one bell item.
+  const seenThreads = new Set()
+  for (const m of [...mentions].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))) {
+    const readKey = m.threadParentId ? `thread_${m.threadParentId}` : m.conversationKey
+    if (!visibleKeys.has(m.conversationKey) || muted[m.conversationKey] || !newerThan(m.createdAt, lastRead[readKey])) continue
+    const isReply = m.kind === 'reply'
+    if (isReply && seenThreads.has(m.threadParentId)) continue
+    if (isReply) seenThreads.add(m.threadParentId)
+    const where = m.convType === 'dm' ? 'tu mensaje directo' : labelOf(m.convId)
     items.push({
       at: m.createdAt?.toMillis?.() || 0,
-      text: `${m.fromName} te mencionó en ${labelOf(m.convId)}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`,
+      text: isReply
+        ? `${m.fromName} respondió en un hilo de ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`
+        : `${m.fromName} te mencionó en ${where}${m.text ? ` — “${m.text.slice(0, 60)}”` : ''}`,
       time: timeAgo(m.createdAt),
-      onClick: () => onNavigate('chat', { type: 'chat', convType: 'conv', convId: m.convId, messageId: m.messageId }),
+      onClick: () =>
+        onNavigate('chat', { type: 'chat', convType: m.convType, convId: m.convId, participantUids: m.participantUids, messageId: m.messageId, threadParentId: m.threadParentId }),
     })
   }
 

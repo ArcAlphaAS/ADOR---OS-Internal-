@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { sharedInConversation, userLabel } from '../../lib/chat'
+import { sharedInConversation, userLabel, presenceOf } from '../../lib/chat'
 import Avatar from '../shell/Avatar'
 import { CloseIcon, PhoneIcon, VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
 
@@ -55,9 +55,8 @@ function ListSection({ title, items, render, empty }) {
 // channel shows who they are plus a way into the DM, not a list of files
 // from a conversation you're not looking at.
 //
-// No online/offline dot: ADOR OS has no presence tracking, and a green dot
-// that isn't real would be worse than none.
-export default function ProfilePanel({ person, directoryEntry, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute, onOpenImage }) {
+// Presence comes from presence/{uid} heartbeats (usePresenceHeartbeat).
+export default function ProfilePanel({ person, directoryEntry, presence, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute, onOpenImage }) {
   const audioRef = useRef(null)
   const videoRef = useRef(null)
   const name = directoryEntry?.name || userLabel(person)
@@ -75,8 +74,16 @@ export default function ProfilePanel({ person, directoryEntry, inDm, messages, m
         </div>
 
         <div className="-mt-3 flex flex-col items-center text-center">
-          <Avatar displayName={name} photoURL={photo} size={84} />
+          <span className="relative">
+            <Avatar displayName={name} photoURL={photo} size={84} />
+            {presenceOf(presence).color && (
+              <span className="absolute right-1 bottom-1 h-4 w-4 rounded-full ring-[3px] ring-[#121212]" style={{ background: presenceOf(presence).color }} />
+            )}
+          </span>
           <p className="mt-3 text-[16px] font-semibold text-[#F5F5F5]">{name}</p>
+          <p className="text-[11.5px]" style={{ color: presenceOf(presence).color || '#666666' }}>
+            {presenceOf(presence).label}
+          </p>
           {subtitle && <p className="mt-0.5 text-[12px] text-[#888888]">{subtitle}</p>}
           {directoryEntry?.about && <p className="mt-2 text-[12px] leading-relaxed text-[#666666]">{directoryEntry.about}</p>}
           {person?.email && <p className="mt-2 text-[11px] text-[#555555]">{person.email}</p>}

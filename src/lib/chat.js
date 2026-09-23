@@ -207,3 +207,60 @@ export function mentionQueryAt(text, cursor) {
   const m = before.match(/(?:^|\s)@([^\s@]{0,30})$/)
   return m ? { query: m[1], start: cursor - m[1].length - 1 } : null
 }
+
+// ---- Presencia, escribiendo, leído ----
+
+const ONLINE_MS = 2.5 * 60 * 1000 // heartbeat is every 60s; allow a missed beat
+const AWAY_MS = 30 * 60 * 1000
+
+function ago(ms) {
+  const min = Math.floor(ms / 60000)
+  if (min < 60) return `hace ${Math.max(1, min)} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `hace ${h} h`
+  const d = Math.floor(h / 24)
+  return d === 1 ? 'ayer' : `hace ${d} días`
+}
+
+// En línea = ADOR OS open and visible in the last ~2 min. Ausente = open
+// but in a background tab/window. Otherwise, when they were last active.
+export function presenceOf(p, now = Date.now()) {
+  const at = p?.lastActiveAt?.toMillis?.()
+  if (!at) return { status: 'offline', label: 'Sin actividad reciente', color: null }
+  const age = now - at
+  if (p.state === 'online' && age < ONLINE_MS) return { status: 'online', label: 'En línea', color: '#4CAF50' }
+  if (p.state === 'away' && age < AWAY_MS) return { status: 'away', label: 'Ausente', color: '#FFC107' }
+  return { status: 'offline', label: `Activo ${ago(age)}`, color: null }
+}
+
+// Who is typing right now in a typing doc, minus you. Entries older than
+// a few seconds are stale (the person stopped without sending).
+export function typingNames(doc, currentUid, now = Date.now()) {
+  return Object.entries(doc || {})
+    .filter(([uid, v]) => uid !== currentUid && v?.at?.toMillis && now - v.at.toMillis() < 7000)
+    .map(([, v]) => (v.name || '').split(' ')[0])
+}
+
+export function typingLabel(names) {
+  if (!names.length) return ''
+  if (names.length === 1) return `${names[0]} está escribiendo…`
+  if (names.length === 2) return `${names[0]} y ${names[1]} están escribiendo…`
+  return 'Varias personas están escribiendo…'
+}
+
+// WhatsApp-style receipts on your own messages, for DMs and private groups
+// (Slack-style public channels don't have them — "leído por toda la
+// empresa" isn't meaningful). Built on the chatLastRead timestamps every
+// user already writes, read straight from their users/{uid} docs:
+//   sending → not confirmed by the server yet
+//   sent    → ✓   delivered, not read
+//   read    → ✓✓  every other participant has opened it since
+export function receiptFor(message, readerUids, users, conversationKey) {
+  const sentAt = message.createdAt?.toMillis?.()
+  if (!sentAt) return { state: 'sending', readers: [] }
+  const readers = readerUids.filter((uid) => {
+    const u = users.find((x) => x.id === uid)
+    return (u?.chatLastRead?.[conversationKey]?.toMillis?.() || 0) >= sentAt
+  })
+  return { state: readerUids.length && readers.length === readerUids.length ? 'read' : 'sent', readers }
+}

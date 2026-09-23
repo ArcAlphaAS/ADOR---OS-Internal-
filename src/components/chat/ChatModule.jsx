@@ -30,18 +30,25 @@ import {
   subscribeChatFiles,
   createChatBlob,
   cleanupMessageIndexes,
+  sendThreadReply,
+  updateThreadReply,
+  deleteThreadReply,
+  setTyping,
+  subscribeTyping,
+  subscribePresence,
 } from '../../lib/firestore'
-import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType } from '../../lib/chat'
+import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import { MessageIcon, PlusIcon, SearchIcon, LockIcon, InfoIcon, PhoneIcon, VideoIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon } from '../icons'
 import { MessageThread, Composer, ImageLightbox } from './ChatThread'
-import { InboxView, MentionsView, SavedView, FilesView } from './ChatViews'
+import { InboxView, ThreadsView, MentionsView, SavedView, FilesView } from './ChatViews'
 import NewConversationModal from './NewConversationModal'
 import ConversationInfoPanel from './ConversationInfoPanel'
 import MeetPopover from './MeetPopover'
 import ProfilePanel from './ProfilePanel'
+import ThreadPanel from './ThreadPanel'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -109,8 +116,35 @@ function ConversationButton({ active, unread, onClick, children }) {
 // ad-hoc groups, then the permanent channels — split into "Empresa"
 // (everyone in ADOR) and "Privados" (invitation only), so it's obvious at
 // a glance which rooms the whole firm can read.
+function ThreadsNavIcon({ size = 15, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 5.5h16v10H11l-4 3.5v-3.5H4v-10Z" />
+      <path d="M8 9.5h8M8 12.5h5" />
+    </svg>
+  )
+}
+
+// Online dot on an avatar: green = en línea, amber = ausente, none =
+// desconectado (no grey dot — absence of a signal is the signal).
+export function PresenceAvatar({ presence, size = 20, ...avatarProps }) {
+  const p = presenceOf(presence)
+  return (
+    <span className="relative inline-flex flex-shrink-0" title={p.label}>
+      <Avatar size={size} {...avatarProps} />
+      {p.color && (
+        <span
+          className="absolute rounded-full ring-2 ring-[#0A0A0A]"
+          style={{ background: p.color, width: Math.max(7, size * 0.3), height: Math.max(7, size * 0.3), right: -1, bottom: -1 }}
+        />
+      )}
+    </span>
+  )
+}
+
 const VIEWS = [
   { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
+  { id: 'threads', label: 'Hilos', Icon: ThreadsNavIcon },
   { id: 'mentions', label: 'Menciones', Icon: AtIcon },
   { id: 'saved', label: 'Mensajes guardados', Icon: BookmarkIcon },
   { id: 'files', label: 'Archivos', Icon: FolderIcon },
@@ -144,7 +178,7 @@ function ViewNav({ view, counts, onSelectView }) {
   )
 }
 
-function ChatSidebar({ channels, groups, users, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup }) {
+function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup }) {
   const [search, setSearch] = useState('')
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
@@ -191,7 +225,7 @@ function ChatSidebar({ channels, groups, users, currentUid, selected, view, view
             const active = isActive('dm', u.id)
             return (
               <ConversationButton key={u.id} active={active} unread={!active && unreadMap[convId]} onClick={() => onSelect({ type: 'dm', id: u.id })}>
-                <Avatar displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
+                <PresenceAvatar presence={presence[u.id]} displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
                 <span className="truncate">{userLabel(u)}</span>
               </ConversationButton>
             )
@@ -335,7 +369,7 @@ function CallButtons({ openCall, onCall }) {
   )
 }
 
-function ConversationHeader({ selected, conversation, dmUser, dmEntry, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall }) {
+function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall }) {
   if (selected.type === 'dm') {
     return (
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
@@ -346,10 +380,13 @@ function ConversationHeader({ selected, conversation, dmUser, dmEntry, users, cu
           className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
           style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
         >
-          <Avatar displayName={dmEntry?.name || userLabel(dmUser)} photoURL={dmEntry?.photoDataUrl || dmUser?.photoDataUrl} size={30} />
+          <PresenceAvatar presence={dmPresence} displayName={dmEntry?.name || userLabel(dmUser)} photoURL={dmEntry?.photoDataUrl || dmUser?.photoDataUrl} size={30} />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
-            <p className="truncate text-[11.5px] text-[#555555]">{[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ') || 'Mensaje directo · solo ustedes dos'}</p>
+            <p className="truncate text-[11.5px] text-[#555555]">
+              <span style={{ color: presenceOf(dmPresence).color || undefined }}>{presenceOf(dmPresence).label}</span>
+              {[dmEntry?.role, dmEntry?.area].filter(Boolean).length ? ` · ${[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')}` : ''}
+            </p>
           </div>
         </button>
         <div className="flex flex-shrink-0 items-center gap-1">
@@ -415,6 +452,9 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   const [files, setFiles] = useState([])
   const [messageLimit, setMessageLimit] = useState(PAGE_SIZE)
   const [lightbox, setLightbox] = useState(null)
+  const [presence, setPresence] = useState({})
+  const [typingDoc, setTypingDoc] = useState({})
+  const [, setTick] = useState(0)
   const jumpToRef = useRef(null)
   const showToast = useToast()
   const actorName = actorNameFor(user)
@@ -426,6 +466,13 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   useEffect(() => subscribeDirectoryPeople(setDirectory), [])
   useEffect(() => subscribeMyMentions(user.uid, setMentions), [user.uid])
   useEffect(() => subscribeMySaved(user.uid, setSaved), [user.uid])
+  useEffect(() => subscribePresence(setPresence), [])
+  // Presence and "escribiendo…" are time-based: re-evaluate every few
+  // seconds so a dot turns off / a typing line disappears on its own.
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 5000)
+    return () => clearInterval(t)
+  }, [])
   // Archivos is the only index that grows with the whole team's activity,
   // so it's only listened to while that view is actually open.
   useEffect(() => (view === 'files' ? subscribeChatFiles(setFiles) : undefined), [view])
@@ -488,10 +535,31 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   // Marks the open conversation read whenever its message list changes —
   // covers both "I just opened it" and "a new message arrived while I'm
   // already looking at it."
+  //
+  // Only while the window is actually in front of the person — otherwise a
+  // background tab would mark things read (and flip the other person's ✓✓)
+  // without anyone having seen them. Coming back to the tab marks it then.
+  const markReadIfVisible = (key) => {
+    if (!key || document.visibilityState !== 'visible' || !document.hasFocus()) return
+    markChatRead(user.uid, key)
+  }
   useEffect(() => {
-    if (!activeConversationId) return
-    markChatRead(user.uid, activeConversationId)
+    markReadIfVisible(activeConversationId)
   }, [activeConversationId, messages, user.uid])
+  useEffect(() => {
+    const onFocus = () => {
+      markReadIfVisible(activeConversationId)
+      if (panel?.type === 'thread') markReadIfVisible(`thread_${panel.parentId}`)
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  })
+
+  useEffect(() => subscribeTyping(activeConversationId, setTypingDoc), [activeConversationId])
 
   const lastReadFor = (convId) => profile?.chatLastRead?.[convId]
   const isMuted = (convId) => Boolean(profile?.chatMuted?.[convId])
@@ -527,9 +595,10 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
 
   // Opens a conversation from any index entry (Inbox, Menciones,
   // Guardados, Archivos, the bell) and optionally jumps to one message.
-  const openConversation = ({ convType: type, convId, participantUids, messageId }) => {
-    jumpToRef.current = messageId || null
+  const openConversation = ({ convType: type, convId, participantUids, messageId, threadParentId }) => {
+    jumpToRef.current = threadParentId || messageId || null
     setView(null)
+    if (threadParentId) setPanel({ type: 'thread', convId, parentId: threadParentId, jumpToId: messageId !== threadParentId ? messageId : null })
     if (type === 'dm') {
       const other = (participantUids || []).find((uid) => uid !== user.uid)
       if (other) setSelected({ type: 'dm', id: other })
@@ -552,10 +621,22 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
 
   const lastReadMs = (key) => lastReadFor(key)?.toMillis?.() || 0
   const visibleKeys = new Set([...visible.map((c) => c.id), ...myDms.map((d) => d.id)])
-  const myMentions = mentions
+  // A mention or reply inside a thread is read once that thread is opened
+  // (`thread_{parentId}`), not the conversation around it.
+  const readKeyOf = (m) => (m.threadParentId ? `thread_${m.threadParentId}` : m.conversationKey)
+  const indexed = mentions
     .filter((m) => visibleKeys.has(m.conversationKey))
-    .map((m) => ({ ...m, conversationLabel: labelFor(m.convType, m.convId), unread: (m.createdAt?.toMillis?.() || 0) > lastReadMs(m.conversationKey) }))
+    .map((m) => ({ ...m, conversationLabel: labelFor(m.convType, m.convId, m.participantUids), unread: (m.createdAt?.toMillis?.() || 0) > lastReadMs(readKeyOf(m)) }))
     .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+  const myMentions = indexed.filter((m) => m.kind !== 'reply')
+  // Hilos: one row per thread you take part in, its latest reply first.
+  const myThreads = []
+  const seenThreads = new Set()
+  for (const m of indexed) {
+    if (m.kind !== 'reply' || seenThreads.has(m.threadParentId)) continue
+    seenThreads.add(m.threadParentId)
+    myThreads.push({ ...m, unread: indexed.some((x) => x.kind === 'reply' && x.threadParentId === m.threadParentId && x.unread) })
+  }
   const mySaved = saved
     .map((x) => ({ ...x, conversationLabel: labelFor(x.convType, x.convId, x.participantUids) }))
     .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0))
@@ -595,7 +676,17 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   const viewCounts = {
     inbox: inboxConversations.filter((c) => c.unread && c.lastMessage).length,
     mentions: myMentions.filter((m) => m.unread).length,
+    threads: myThreads.filter((t) => t.unread).length,
   }
+
+  const typers = typingNames(typingDoc, user.uid)
+
+  // ✓ / ✓✓ on your own messages in DMs and private groups only.
+  const receiptReaders =
+    selected?.type === 'dm' ? [selected.id] : conversation && conversationKind(conversation) === 'group' ? (conversation.memberUids || []).filter((uid) => uid !== user.uid) : null
+  const receiptOf = receiptReaders ? (m) => receiptFor(m, receiptReaders, users, selectedConversationId) : null
+
+  const userPhoto = (uid) => users.find((u) => u.id === uid)?.photoDataUrl
 
   const mentionCandidates =
     selected?.type === 'conv' && conversation
@@ -618,7 +709,7 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   // One send path for everything the composer produces. Heavy media goes
   // to chatBlobs first (only a thumbnail rides in the message), then the
   // message, then the small index docs (mentions, files) pointing at it.
-  const handleSend = async (draft) => {
+  const handleSend = async (draft, parentId = null, parentMsg = null) => {
     const meta = convMeta()
     try {
       let attachment
@@ -630,15 +721,28 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
         attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
       }
       const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions }
-      const ref =
-        convType === 'conv'
+      const ref = parentId
+        ? await withTimeout(sendThreadReply(convType, selectedConversationId, parentId, payload, user.uid, actorName))
+        : convType === 'conv'
           ? await withTimeout(sendChannelMessage(selected.id, payload, user.uid, actorName))
           : await withTimeout(
               sendDmMessage(selectedConversationId, [{ uid: user.uid, name: actorName }, { uid: selected.id, name: userLabel(dmUser) }], payload, user.uid, actorName)
             )
 
-      const pointer = { ...meta, messageId: ref.id, authorName: actorName, authorUid: user.uid }
-      if (convType === 'conv' && draft.mentions?.length) createMentions(draft.mentions, { ...pointer, text: (draft.text || '').slice(0, 200) }, user.uid, actorName).catch(() => {})
+      const pointer = { ...meta, messageId: ref.id, authorName: actorName, authorUid: user.uid, ...(parentId ? { threadParentId: parentId } : {}) }
+      const snippet = (draft.text || (attachment ? '📎 Archivo' : '')).slice(0, 200)
+      if (convType === 'conv' && draft.mentions?.length) createMentions(draft.mentions, { ...pointer, kind: 'mention', text: snippet }, user.uid, actorName).catch(() => {})
+      // Slack's rule: everyone taking part in a thread (whoever wrote the
+      // original + anyone who has replied) is notified of new replies —
+      // except people already @mentioned in this reply, who get that instead.
+      if (parentId) {
+        const parent = parentMsg || messages.find((m) => m.id === parentId)
+        const mentioned = new Set((draft.mentions || []).map((m) => m.uid))
+        const followers = [...new Set([parent?.authorUid, ...(parent?.replyUids || [])])].filter((uid) => uid && uid !== user.uid && !mentioned.has(uid))
+        if (followers.length) createMentions(followers.map((uid) => ({ uid })), { ...pointer, kind: 'reply', text: snippet }, user.uid, actorName).catch(() => {})
+      }
+      if (parentId) setTyping(`${selectedConversationId}_thread_${parentId}`, user.uid, actorName, false).catch(() => {})
+      else setTyping(selectedConversationId, user.uid, actorName, false).catch(() => {})
       if (attachment?.kind === 'image') indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})
       if (attachment?.kind === 'voice') indexChatFile({ ...pointer, kind: 'voice', blobId: attachment.blobId, duration: attachment.duration, name: 'Nota de voz' }).catch(() => {})
       const drive = findDriveLink(draft.text)
@@ -648,11 +752,26 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
     }
   }
 
-  const handleReact = (messageId, emoji, has) =>
-    withTimeout(toggleMessageReaction(convType, selectedConversationId, messageId, emoji, user.uid, has)).catch(fail('reaccionar'))
+  const handleReact = (messageId, emoji, has, parentId = null) =>
+    withTimeout(toggleMessageReaction(convType, selectedConversationId, messageId, emoji, user.uid, has, parentId)).catch(fail('reaccionar'))
 
-  const handleToggleSave = (message) =>
-    withTimeout(toggleSavedMessage(user.uid, message, convMeta(), savedIds.has(message.id))).catch(fail('guardar el mensaje'))
+  const handleToggleSave = (message, parentId = null) =>
+    withTimeout(toggleSavedMessage(user.uid, message, { ...convMeta(), ...(parentId ? { threadParentId: parentId } : {}) }, savedIds.has(message.id))).catch(fail('guardar el mensaje'))
+
+  const handleEditReply = (id, text, parentId) => {
+    if (!parentId) return handleEditMessage(id, text)
+    withTimeout(updateThreadReply(convType, selectedConversationId, parentId, id, text)).catch(fail('editar'))
+  }
+
+  const handleDeleteReply = (id, parentId) => {
+    if (!parentId) return handleDeleteMessage(id)
+    withTimeout(deleteThreadReply(convType, selectedConversationId, parentId, id))
+      .then(() => cleanupMessageIndexes(id))
+      .catch(fail('eliminar'))
+  }
+
+  // Tied to the conversation it was opened in; switching away hides it.
+  const openThread = (m) => setPanel({ type: 'thread', convId: selectedConversationId, parentId: m.id, jumpToId: null })
 
   const handleEditMessage = (messageId, text) => {
     const p = selected.type === 'conv' ? updateChannelMessage(selected.id, messageId, text) : updateDmMessage(activeConversationId, messageId, text)
@@ -699,11 +818,12 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   const profileInDm = selected?.type === 'dm' && selected.id === profileUid
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1320px] gap-8 px-12 py-8">
+    <div className={`mx-auto flex h-full w-full max-w-[1320px] py-8 ${panel && !view ? 'gap-5 px-8' : 'gap-8 px-12'}`}>
       <ChatSidebar
         channels={channels}
         groups={groups}
         users={users}
+        presence={presence}
         currentUid={user.uid}
         selected={selected}
         view={view}
@@ -721,6 +841,8 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
       <div className="flex min-w-0 flex-1 flex-col">
         {view === 'inbox' ? (
           <InboxView conversations={inboxConversations} onOpen={openConversation} />
+        ) : view === 'threads' ? (
+          <ThreadsView threads={myThreads} onOpen={openConversation} />
         ) : view === 'mentions' ? (
           <MentionsView mentions={myMentions} onOpen={openConversation} />
         ) : view === 'saved' ? (
@@ -738,6 +860,7 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
               conversation={conversation}
               dmUser={dmUser}
               dmEntry={dmUser && directoryFor(dmUser.id)}
+              dmPresence={dmUser && presence[dmUser.id]}
               users={users}
               currentUid={user.uid}
               infoOpen={showInfo}
@@ -772,6 +895,9 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
               onLoadMore={() => setMessageLimit((n) => n + PAGE_SIZE)}
               savedIds={savedIds}
               userName={nameOf}
+              userPhoto={userPhoto}
+              receiptFor={receiptOf}
+              onOpenThread={openThread}
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}
               onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
@@ -779,9 +905,11 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
               onToggleSave={handleToggleSave}
               onOpenImage={setLightbox}
             />
+            <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
             <Composer
               key={selectedConversationId}
-              onSend={handleSend}
+              onSend={(draft) => handleSend(draft)}
+              onTyping={(typing) => setTyping(selectedConversationId, user.uid, actorName, typing).catch(() => {})}
               onError={showToast}
               mentionCandidates={mentionCandidates}
               placeholder={selected.type === 'dm' ? `Mensaje a ${userLabel(dmUser).split(' ')[0]}...` : mentionCandidates.length ? 'Escribe un mensaje... usa @ para mencionar' : undefined}
@@ -813,11 +941,39 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
         />
       )}
 
+      {panel?.type === 'thread' && !view && panel.convId === selectedConversationId && (
+        <ThreadPanel
+          key={panel.parentId}
+          convType={convType}
+          convId={selectedConversationId}
+          parentId={panel.parentId}
+          jumpToId={panel.jumpToId}
+          conversationLabel={labelFor(convType, selectedConversationId, convType === 'dm' ? [user.uid, selected.id] : null)}
+          currentUid={user.uid}
+          savedIds={savedIds}
+          userName={nameOf}
+          userPhoto={userPhoto}
+          mentionCandidates={mentionCandidates}
+          onClose={() => setPanel(null)}
+          onSend={(draft, parentMsg) => handleSend(draft, panel.parentId, parentMsg)}
+          onTyping={(typing) => setTyping(`${selectedConversationId}_thread_${panel.parentId}`, user.uid, actorName, typing).catch(() => {})}
+          onEdit={handleEditReply}
+          onDelete={handleDeleteReply}
+          onReact={handleReact}
+          onToggleSave={handleToggleSave}
+          onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
+          onOpenImage={setLightbox}
+          onRead={() => markReadIfVisible(`thread_${panel.parentId}`)}
+          onError={showToast}
+        />
+      )}
+
       {profileUser && !view && (
         <ProfilePanel
           key={profileUid}
           person={profileUser}
           directoryEntry={directoryFor(profileUid)}
+          presence={presence[profileUid]}
           inDm={profileInDm}
           messages={profileInDm ? messages : []}
           muted={isMuted(dmIdFor(user.uid, profileUid))}

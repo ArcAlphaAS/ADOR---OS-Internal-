@@ -369,7 +369,7 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [ ] Ringing when ADOR OS is closed / computer asleep — needs Web Push + service worker; rides with the parked PWA phase 3
 - [x] Menciones con @ (sugerencias, resaltado), campana con menciones + DMs + grupos sin leer (clic → abre la conversación en el mensaje), Inbox / Menciones / Mensajes guardados / Archivos en la barra, reacciones, formato Aa, emojis, notas de voz (60s), imágenes con miniatura (2026-09-23). See CLAUDE.md §34
 - [x] Optimización: hilos cargan de 50 en 50, imágenes/voz pesadas en `chatBlobs` bajo demanda, módulos con carga diferida (bundle inicial 1.38MB → ~1.03MB)
-- [ ] Hilos (respuestas en hilo) — pendiente
+- [x] Hilos estilo Slack (panel, resumen "N respuestas", vista Hilos, avisos a participantes), presencia (en línea / ausente / activo hace X), "escribiendo…", ✓/✓✓ leído en DMs y grupos, pegar (Ctrl+V) / arrastrar imágenes, copiar imagen (2026-09-23). See CLAUDE.md §34
 - [ ] Probar menciones/campana/voz entre dos cuentas reales
 
 **Not built yet**

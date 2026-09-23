@@ -95,6 +95,33 @@ export function InboxView({ conversations, onOpen }) {
   )
 }
 
+// Slack's "Hilos": every thread you're part of (you wrote the original or
+// replied), latest reply first, bold when there's something new.
+export function ThreadsView({ threads, onOpen }) {
+  return (
+    <>
+      <ViewHeader icon={<AtIcon size={15} />} title="Hilos" subtitle="Conversaciones en hilo en las que participas" />
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
+        {threads.length === 0 ? (
+          <Empty icon={<InboxIcon size={22} />} text="Cuando respondas en un hilo, o alguien responda a un mensaje tuyo, lo seguirás aquí." />
+        ) : (
+          threads.map((t) => (
+            <Row
+              key={t.threadParentId}
+              unread={t.unread}
+              onClick={() => onOpen(t)}
+              leading={<Avatar displayName={t.fromName} size={30} />}
+              title={`Hilo en ${t.conversationLabel}`}
+              meta={timeAgo(t.createdAt)}
+              preview={`${t.fromName.split(' ')[0]}: ${t.text || 'respondió'}`}
+            />
+          ))
+        )}
+      </div>
+    </>
+  )
+}
+
 export function MentionsView({ mentions, onOpen }) {
   return (
     <>

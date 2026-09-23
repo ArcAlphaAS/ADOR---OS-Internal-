@@ -14,6 +14,8 @@ import {
   getDocs,
   serverTimestamp,
   limitToLast,
+  increment,
+  deleteField,
   runTransaction,
   writeBatch,
   arrayUnion,
@@ -72,6 +74,8 @@ export const COLLECTIONS = {
   chatSaved: 'chatSaved',
   chatFiles: 'chatFiles',
   chatBlobs: 'chatBlobs',
+  chatTyping: 'chatTyping',
+  presence: 'presence',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -962,17 +966,23 @@ function previewOf(payload, authorUid, authorName) {
 // Messages live at chatChannels/{id}/messages (channels + groups) or
 // chatDms/{id}/messages (DMs). `convType` is 'conv' or 'dm' everywhere in
 // the newer chat code so one set of functions serves both.
-function messagesCol(convType, convId) {
-  return collection(db, convType === 'dm' ? COLLECTIONS.chatDms : COLLECTIONS.chatChannels, convId, 'messages')
+//
+// A thread's replies live one level deeper, at .../messages/{parentId}/replies
+// — a subcollection rather than a `threadId` field on messages, because
+// filtering replies out of the main timeline would need `where` + `orderBy`
+// on two fields, i.e. a composite index created by hand in the console.
+function messagesCol(convType, convId, parentId) {
+  const base = collection(db, convType === 'dm' ? COLLECTIONS.chatDms : COLLECTIONS.chatChannels, convId, 'messages')
+  return parentId ? collection(base, parentId, 'replies') : base
 }
 
 // Only the most recent `count` messages are listened to — a long-running
 // channel would otherwise stream its whole history (images included) every
 // time it's opened. "Cargar anteriores" in the thread just raises `count`.
-export function subscribeMessages(convType, convId, count, onData) {
+export function subscribeMessages(convType, convId, count, onData, parentId) {
   if (!db) return () => {}
   return onSnapshot(
-    query(messagesCol(convType, convId), orderBy('createdAt', 'asc'), limitToLast(count)),
+    query(messagesCol(convType, convId, parentId), orderBy('createdAt', 'asc'), limitToLast(count)),
     (snapshot) => onData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
     (error) => console.error('Firestore subscription to chat messages failed:', error.message)
   )
@@ -981,9 +991,9 @@ export function subscribeMessages(convType, convId, count, onData) {
 // Same emoji → [uids] map shape as Comunidad's reactions, but multiple
 // reactions per person are allowed here (Slack-style), so each emoji
 // toggles independently.
-export function toggleMessageReaction(convType, convId, messageId, emoji, uid, alreadyReacted) {
+export function toggleMessageReaction(convType, convId, messageId, emoji, uid, alreadyReacted, parentId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
-  return updateDoc(doc(messagesCol(convType, convId), messageId), { [`reactions.${emoji}`]: alreadyReacted ? arrayRemove(uid) : arrayUnion(uid) })
+  return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { [`reactions.${emoji}`]: alreadyReacted ? arrayRemove(uid) : arrayUnion(uid) })
 }
 
 export function subscribeChannelMessages(channelId, onData) {
@@ -1081,6 +1091,81 @@ export function updateDmMessage(dmId, messageId, text) {
 export function deleteDmMessage(dmId, messageId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.chatDms, dmId, 'messages', messageId))
+}
+
+// Live copy of one message (a thread's parent), so the thread panel shows
+// its current text, reactions and reply count.
+export function subscribeMessage(convType, convId, messageId, onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(messagesCol(convType, convId), messageId),
+    (snap) => onData(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+    (error) => console.error('Firestore subscription to chat message failed:', error.message)
+  )
+}
+
+// ---- Hilos (threads), Slack's model ----
+// A reply goes into the parent's `replies` subcollection, and the parent
+// gets a small summary (`replyCount`, `lastReplyAt`, `replyUids` = who's
+// taking part) so the main timeline can show "3 respuestas · hace 5 min"
+// with avatars without loading any replies.
+export function sendThreadReply(convType, convId, parentId, payload, uid, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const replyRef = doc(messagesCol(convType, convId, parentId))
+  const batch = writeBatch(db)
+  batch.set(replyRef, { ...messageFields(payload), authorUid: uid, authorName: name, createdAt: serverTimestamp() })
+  batch.update(doc(messagesCol(convType, convId), parentId), { replyCount: increment(1), lastReplyAt: serverTimestamp(), replyUids: arrayUnion(uid) })
+  return batch.commit().then(() => replyRef)
+}
+
+export function updateThreadReply(convType, convId, parentId, replyId, text) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId, parentId), replyId), { text, editedAt: serverTimestamp() })
+}
+
+export function deleteThreadReply(convType, convId, parentId, replyId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  batch.delete(doc(messagesCol(convType, convId, parentId), replyId))
+  batch.update(doc(messagesCol(convType, convId), parentId), { replyCount: increment(-1) })
+  return batch.commit()
+}
+
+// ---- Escribiendo… ----
+// One tiny doc per conversation (or thread), `{[uid]: {name, at}}`. The
+// composer writes at most once every few seconds while someone types and
+// clears its own entry on send, so this costs almost nothing.
+export function setTyping(typingKey, uid, name, typing) {
+  if (!db) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.chatTyping, typingKey), { [uid]: typing ? { name, at: serverTimestamp() } : deleteField() }, { merge: true })
+}
+
+export function subscribeTyping(typingKey, onData) {
+  if (!db || !typingKey) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.chatTyping, typingKey),
+    (snap) => onData(snap.exists() ? snap.data() : {}),
+    () => {}
+  )
+}
+
+// ---- Presencia (conectado / ausente) ----
+// Heartbeat model: each open ADOR OS tab writes `presence/{uid}` when it
+// opens, once a minute while visible, and on hide/close. Someone counts as
+// "en línea" if their last heartbeat is recent — see lib/chat.js
+// presenceOf(). ~60 writes/hour per person, far inside the free tier.
+export function writePresence(uid, state) {
+  if (!db || !uid) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.presence, uid), { state, lastActiveAt: serverTimestamp() }, { merge: true })
+}
+
+export function subscribePresence(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    collection(db, COLLECTIONS.presence),
+    (snapshot) => onData(Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data()]))),
+    () => {}
+  )
 }
 
 // ---- Menciones, guardados, archivos ----

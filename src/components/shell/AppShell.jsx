@@ -9,6 +9,7 @@ import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
 import IncomingCallGate from './IncomingCallGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
+import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -63,6 +64,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).
   const [focus, setFocus] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  usePresenceHeartbeat(user?.uid)
 
   const navigateTo = (moduleId, focusTarget = null) => {
     setActiveModule(moduleId)

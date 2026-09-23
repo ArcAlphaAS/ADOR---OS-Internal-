@@ -231,6 +231,54 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
   )
 }
 
+// ✓ sent · ✓✓ read (blue) · a small clock while the server hasn't
+// confirmed it yet. Hover says who has read it in a group.
+function Ticks({ receipt, userName }) {
+  if (!receipt) return null
+  if (receipt.state === 'sending') return <span className="text-[10px] text-[#555555]" title="Enviando">◷</span>
+  const read = receipt.state === 'read'
+  const title = read ? 'Leído' : receipt.readers.length ? `Leído por ${receipt.readers.map(userName).join(', ')}` : 'Enviado'
+  return (
+    <span title={title} className="inline-flex items-center" style={{ color: read ? '#5B9BD9' : '#666666' }}>
+      <svg width={read ? 16 : 11} height="10" viewBox={read ? '0 0 16 10' : '0 0 11 10'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 5.2 3.8 8 10 1.8" />
+        {read && <path d="M6.5 7.3 7.2 8 13.4 1.8" />}
+      </svg>
+    </span>
+  )
+}
+
+function timeAgoShort(ts) {
+  if (!ts?.toMillis) return ''
+  const min = Math.floor((Date.now() - ts.toMillis()) / 60000)
+  if (min < 1) return 'ahora'
+  if (min < 60) return `hace ${min} min`
+  if (min < 1440) return `hace ${Math.floor(min / 60)} h`
+  return ts.toDate().toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}
+
+// Slack's thread summary under a message: who's in it, how many replies,
+// when the last one landed. Click opens the thread panel.
+function ThreadSummary({ message, userPhoto, userName, onOpen }) {
+  if (!message.replyCount) return null
+  const uids = (message.replyUids || []).slice(0, 4)
+  return (
+    <button type="button" onClick={onOpen} className="group/thread flex items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-white/[0.04]">
+      <span className="flex -space-x-1.5">
+        {uids.map((uid) => (
+          <span key={uid} className="rounded-full ring-2 ring-[#0A0A0A]">
+            <Avatar displayName={userName(uid)} photoURL={userPhoto(uid)} size={18} />
+          </span>
+        ))}
+      </span>
+      <span className="whitespace-nowrap text-[12px] font-medium text-[#5B9BD9] group-hover/thread:underline">
+        {message.replyCount} {message.replyCount === 1 ? 'respuesta' : 'respuestas'}
+      </span>
+      <span className="whitespace-nowrap text-[11px] text-[#555555]">Última {timeAgoShort(message.lastReplyAt)}</span>
+    </button>
+  )
+}
+
 function ActionIcon({ title, onClick, children, danger, active }) {
   return (
     <button
@@ -248,7 +296,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-function MessageBubble({ message, mine, currentUid, saved, userName, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage }) {
+export function MessageBubble({ message, mine, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -305,6 +353,11 @@ function MessageBubble({ message, mine, currentUid, saved, userName, onEdit, onD
           <SmileIcon size={14} />
         </ActionIcon>
       )}
+      {onOpenThread && (
+        <ActionIcon title="Responder en hilo" onClick={onOpenThread}>
+          <ThreadIcon />
+        </ActionIcon>
+      )}
       <ActionIcon title={saved ? 'Quitar de guardados' : 'Guardar mensaje'} onClick={onToggleSave} active={saved}>
         <BookmarkIcon size={13} filled={saved} />
       </ActionIcon>
@@ -353,11 +406,22 @@ function MessageBubble({ message, mine, currentUid, saved, userName, onEdit, onD
         </div>
       </div>
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
-      <p className="px-1 text-[10.5px] text-[#444444]">
+      {onOpenThread && <ThreadSummary message={message} userPhoto={userPhoto} userName={userName} onOpen={onOpenThread} />}
+      <p className="flex items-center gap-1.5 px-1 text-[10.5px] text-[#444444]">
         {formatTime(message.createdAt)}
         {message.editedAt ? ' (editado)' : ''}
+        {mine && <Ticks receipt={receipt} userName={userName} />}
       </p>
     </div>
+  )
+}
+
+function ThreadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5.5h16v10H11l-4 3.5v-3.5H4v-10Z" />
+      <path d="M8 9.5h8M8 12.5h5" />
+    </svg>
   )
 }
 
@@ -371,7 +435,7 @@ function DateDivider({ ts }) {
   )
 }
 
-export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage }) {
+export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const q = query?.trim().toLowerCase()
@@ -432,6 +496,9 @@ export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore
                   currentUid={currentUid}
                   saved={savedIds.has(m.id)}
                   userName={userName}
+                  userPhoto={userPhoto}
+                  receipt={mine && receiptFor ? receiptFor(m) : null}
+                  onOpenThread={onOpenThread ? () => onOpenThread(m) : null}
                   onEdit={(text) => onEdit(m.id, text)}
                   onDelete={() => onDelete(m.id)}
                   onOpenProfile={onOpenProfile}
@@ -450,8 +517,23 @@ export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore
 
 // Full-size image viewer. Chrome refuses to open a data: URL in a new tab,
 // so images open here instead of via target="_blank".
+// The clipboard only accepts PNG images, so the JPEG is redrawn as PNG
+// before copying. Lets Ctrl+V drop it into any other app or chat.
+async function copyImageToClipboard(src) {
+  const img = new Image()
+  img.src = src
+  await img.decode()
+  const canvas = document.createElement('canvas')
+  canvas.width = img.naturalWidth
+  canvas.height = img.naturalHeight
+  canvas.getContext('2d').drawImage(img, 0, 0)
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+}
+
 export function ImageLightbox({ attachment, onClose }) {
   const [src, setSrc] = useState(attachment.dataUrl || null)
+  const [copied, setCopied] = useState(null)
 
   useEffect(() => {
     if (attachment.dataUrl || !attachment.blobId) return
@@ -478,9 +560,23 @@ export function ImageLightbox({ attachment, onClose }) {
       <p className="text-[12px] text-[#AAAAAA]">
         {attachment.name} · Archivo de conversación
         {src && (
-          <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#5B9BD9] hover:underline">
-            Descargar
-          </a>
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                copyImageToClipboard(src)
+                  .then(() => setCopied('Copiada — pégala con Ctrl+V'))
+                  .catch(() => setCopied('Tu navegador no permitió copiarla'))
+              }}
+              className="ml-3 text-[#5B9BD9] hover:underline"
+            >
+              {copied || 'Copiar imagen'}
+            </button>
+            <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#5B9BD9] hover:underline">
+              Descargar
+            </a>
+          </>
         )}
       </p>
     </div>,
@@ -587,7 +683,7 @@ function useVoiceRecorder({ onDone, onError }) {
 // suggestions) sits in normal flow directly above the input — nothing
 // floats, so nothing needs a portal. The reference's separate "+" was left
 // out: it duplicated the paperclip.
-export function Composer({ onSend, onError, mentionCandidates = [], placeholder }) {
+export function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact }) {
   const [text, setText] = useState('')
   const [panel, setPanel] = useState(null) // 'format' | 'emoji' | 'attach' | null
   const [driveMode, setDriveMode] = useState(false)
@@ -596,8 +692,20 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
   const [mentions, setMentions] = useState([])
   const [mentionQuery, setMentionQuery] = useState(null)
   const [mentionIndex, setMentionIndex] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const fileRef = useRef(null)
   const inputRef = useRef(null)
+  const lastTypingRef = useRef(0)
+
+  // "Escribiendo…" signal, throttled to one write every 3s while typing.
+  const signalTyping = (value) => {
+    if (!onTyping) return
+    const now = Date.now()
+    if (value.trim() && now - lastTypingRef.current > 3000) {
+      lastTypingRef.current = now
+      onTyping(true)
+    }
+  }
   const voice = useVoiceRecorder({ onDone: (v) => onSend({ voice: v }), onError })
 
   const suggestions = mentionQuery
@@ -613,6 +721,10 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
   }, [text])
 
   const reset = () => {
+    if (lastTypingRef.current) {
+      lastTypingRef.current = 0
+      onTyping?.(false)
+    }
     setText('')
     setPendingImage(null)
     setDriveMode(false)
@@ -631,6 +743,7 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
 
   const updateText = (value, cursor) => {
     setText(value)
+    signalTyping(value)
     setMentionQuery(mentionCandidates.length ? mentionQueryAt(value, cursor) : null)
     setMentionIndex(0)
   }
@@ -674,10 +787,31 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
     })
   }
 
-  const pickImage = async (e) => {
+  const pickImage = (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file) return
+    if (file) attachImage(file)
+  }
+
+  // Ctrl+V / ⌘V of a screenshot or copied image, and drag-and-drop, both
+  // land here — same compression path as the image button.
+  const onPaste = (e) => {
+    const item = [...(e.clipboardData?.items || [])].find((i) => i.kind === 'file' && i.type.startsWith('image/'))
+    if (!item) return
+    e.preventDefault()
+    const file = item.getAsFile()
+    attachImage(new File([file], file.name && file.name !== 'image.png' ? file.name : `Captura ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}.png`, { type: file.type }))
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = [...(e.dataTransfer?.files || [])].find((f) => f.type.startsWith('image/'))
+    if (file) attachImage(file)
+    else if (e.dataTransfer?.files?.length) onError('Solo imágenes por ahora — los documentos oficiales se comparten desde Google Drive.')
+  }
+
+  const attachImage = async (file) => {
     if (!file.type.startsWith('image/')) return onError('Solo imágenes aquí — los documentos oficiales se comparten desde Google Drive.')
     setProcessing(true)
     try {
@@ -716,7 +850,22 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
   }
 
   return (
-    <div className="flex flex-col gap-2 border-t border-white/[0.06] pt-3">
+    <div
+      className={`relative flex flex-col gap-2 ${compact ? '' : 'border-t border-white/[0.06]'} pt-3`}
+      onDragOver={(e) => {
+        if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
+          e.preventDefault()
+          setDragging(true)
+        }
+      }}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget) && setDragging(false)}
+      onDrop={onDrop}
+    >
+      {dragging && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#5B9BD9]/60 bg-[#0A0A0A]/80 text-[13px] text-[#9CC4EC]">
+          Suelta la imagen para adjuntarla
+        </div>
+      )}
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-0.5 rounded-xl border border-white/[0.1] bg-[#141414] p-1.5">
           <p className="px-2 pb-1 text-[10.5px] uppercase tracking-[0.08em] text-[#555555]">Mencionar</p>
@@ -819,12 +968,16 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
         </div>
       )}
 
-      <div className="flex items-end gap-2 rounded-[22px] border border-white/[0.1] bg-white/[0.03] py-1.5 pr-1.5 pl-4">
+      {/* Tools wrap onto their own line under the text when the column is
+          narrow (a side panel open, or the thread composer), instead of
+          squeezing the text box down to a few characters. */}
+      <div className="flex flex-wrap items-end gap-x-2 gap-y-1 rounded-[22px] border border-white/[0.1] bg-white/[0.03] py-1.5 pr-1.5 pl-4">
         <textarea
           ref={inputRef}
           rows={1}
           value={text}
           onChange={(e) => updateText(e.target.value, e.target.selectionStart)}
+          onPaste={onPaste}
           onKeyDown={(e) => {
             if (suggestions.length) {
               if (e.key === 'ArrowDown') {
@@ -848,9 +1001,9 @@ export function Composer({ onSend, onError, mentionCandidates = [], placeholder 
             if (e.key === 'Escape') reset()
           }}
           placeholder={driveMode ? 'https://docs.google.com/...' : placeholder || 'Escribe un mensaje...'}
-          className="max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#666666] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
         />
-        <div className="flex flex-shrink-0 items-center gap-0.5">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
           <ToolButton title="Formato" active={panel === 'format'} onClick={() => togglePanel('format')}>
             <span className="text-[13px] font-medium">Aa</span>
           </ToolButton>
