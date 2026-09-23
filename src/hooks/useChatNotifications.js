@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeUserProfile, subscribeMyDms, subscribeChatChannels, subscribeMyMentions, subscribeUsers } from '../lib/firestore'
+import { subscribeUserProfile, subscribeMyDms, subscribeChatChannels, subscribeMyMentions, subscribeUsers, subscribeMyReminders, updateChatReminder } from '../lib/firestore'
 import { conversationKind, isMember, groupLabel, userLabel } from '../lib/chat'
 
 function newerThan(ts, lastRead) {
@@ -34,6 +34,7 @@ export function useChatNotifications(uid, onNavigate) {
   const [channels, setChannels] = useState([])
   const [mentions, setMentions] = useState([])
   const [users, setUsers] = useState([])
+  const [reminders, setReminders] = useState([])
 
   useEffect(() => {
     if (!uid || uid === 'preview') return
@@ -46,6 +47,10 @@ export function useChatNotifications(uid, onNavigate) {
   useEffect(() => {
     if (!uid || uid === 'preview') return
     return subscribeMyMentions(uid, setMentions)
+  }, [uid])
+  useEffect(() => {
+    if (!uid || uid === 'preview') return
+    return subscribeMyReminders(uid, setReminders)
   }, [uid])
   useEffect(() => subscribeChatChannels(setChannels), [])
   useEffect(() => subscribeUsers(setUsers), [])
@@ -110,5 +115,19 @@ export function useChatNotifications(uid, onNavigate) {
     })
   }
 
-  return items.sort((a, b) => b.at - a.at).slice(0, 8)
+  // Reminders that are due and not handled yet — first, since you asked
+  // for them yourself.
+  const reminderItems = reminders
+    .filter((r) => !r.done && r.remindAt?.toMillis && r.remindAt.toMillis() <= Date.now())
+    .map((r) => ({
+      at: Number.MAX_SAFE_INTEGER - r.remindAt.toMillis(),
+      text: `⏰ Recordatorio: ${r.authorName ? `${r.authorName.split(' ')[0]}: ` : ''}${(r.text || '').slice(0, 70)}`,
+      time: timeAgo(r.remindAt),
+      onClick: () => {
+        updateChatReminder(r.id, { done: true }).catch(() => {})
+        onNavigate('chat', { type: 'chat', convType: r.convType, convId: r.convId, participantUids: r.participantUids, messageId: r.messageId, threadParentId: r.threadParentId })
+      },
+    }))
+
+  return [...reminderItems, ...items.sort((a, b) => b.at - a.at)].slice(0, 10)
 }

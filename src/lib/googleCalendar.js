@@ -32,7 +32,13 @@
 // founders could technically read another's stored token. Same trust
 // posture already accepted everywhere else in this 3-person tool.
 
-const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
+// One Google connection serves two features: the read-only Calendario
+// reflection, and one-click calls — `meetings.space.created` only lets ADOR
+// OS create Meet rooms and manage the ones it created, nothing else in the
+// account. Connections made before Meet was added lack that scope; the
+// chat detects it (hasMeetScope) and asks to reconnect once.
+export const MEET_SCOPE = 'https://www.googleapis.com/auth/meetings.space.created'
+const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${MEET_SCOPE}`
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -45,8 +51,13 @@ function redirectUri() {
   return window.location.origin + window.location.pathname
 }
 
-export function buildAuthUrl() {
+// `returnTo` travels through Google as the OAuth `state` param, so the app
+// can reopen the module that started the connection (see AppShell.jsx) and
+// the right hook finishes it — Calendario's or the chat's.
+export function buildAuthUrl(returnTo = 'calendario') {
   const params = new URLSearchParams({
+    state: returnTo,
+    include_granted_scopes: 'true',
     client_id: CLIENT_ID,
     redirect_uri: redirectUri(),
     response_type: 'code',
@@ -70,6 +81,20 @@ async function postJson(url, body) {
 
 export function exchangeCode(code) {
   return postJson('/api/google-calendar/exchange', { code, redirectUri: redirectUri() })
+}
+
+export function hasMeetScope(saved) {
+  return Boolean(saved?.scopes && saved.scopes.includes(MEET_SCOPE))
+}
+
+// Creates a Meet room through our own tiny proxy (api/google-meet/space.js)
+// so the browser never has to depend on Meet's API allowing cross-origin
+// calls. Returns the room's join link.
+export async function createMeetSpace(accessToken) {
+  const res = await fetch('/api/google-meet/space', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'No se pudo crear la reunión de Meet.')
+  return data.meetingUri
 }
 
 export function refreshAccessToken(refreshToken) {

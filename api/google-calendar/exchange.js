@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       return
     }
 
-    res.status(200).json({ accessToken: data.access_token, refreshToken: data.refresh_token, expiresIn: data.expires_in })
+    res.status(200).json({ accessToken: data.access_token, refreshToken: data.refresh_token, expiresIn: data.expires_in, scope: data.scope || '' })
   } catch (error) {
     res.status(500).json({ error: error.message || 'Error inesperado conectando con Google.' })
   }

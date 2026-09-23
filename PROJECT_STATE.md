@@ -371,7 +371,9 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Optimización: hilos cargan de 50 en 50, imágenes/voz pesadas en `chatBlobs` bajo demanda, módulos con carga diferida (bundle inicial 1.38MB → ~1.03MB)
 - [x] Hilos estilo Slack (panel, resumen "N respuestas", vista Hilos, avisos a participantes), presencia (en línea / ausente / activo hace X), "escribiendo…", ✓/✓✓ leído en DMs y grupos, pegar (Ctrl+V) / arrastrar imágenes, copiar imagen (2026-09-23). See CLAUDE.md §34
 - [x] Inbox tipo email (No leídos / Todos, contador por conversación, marcar leído / no leído / todo) y llamadas estilo Teams (tarjeta en vivo: llamando / en curso / perdida / rechazada / cancelada / finalizada, aviso "Llamando a…" con Cancelar) (2026-09-23)
-- [ ] Llamar en un clic (crear el enlace de Meet automáticamente) — requiere activar Google Meet API en Cloud Console
+- [x] Grafito y oro en todo el chat; fijar mensajes; "Recordármelo"; mensaje → tarea con confirmación (2026-09-23)
+- [x] Llamar en un clic con Google Meet — código listo (2026-09-23)
+- [ ] **Activar Google Meet REST API + añadir el scope `meetings.space.created` en Cloud Console**, y que cada socio pulse "Conectar Google" una vez desde el chat — sin esto sigue el modo manual (abrir Meet y pegar enlace)
 - [ ] Probar menciones/campana/voz/llamadas entre dos cuentas reales
 
 **Not built yet**

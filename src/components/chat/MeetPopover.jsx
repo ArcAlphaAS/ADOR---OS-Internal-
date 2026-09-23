@@ -6,16 +6,16 @@ import { PhoneIcon, VideoIcon } from '../icons'
 
 const WIDTH = 300
 
-// Llamar / Videollamada hand the call itself to Google Meet. ADOR OS only
-// has read-only Google access (see CLAUDE.md §27), so it can't create the
-// Meet room and read its link back on its own — instead: open a fresh
-// Meet in a new tab, paste its link here, and it lands in the conversation
-// as a card with a "Unirse" button. Two steps, no new OAuth scope.
+// The fallback path for Llamar / Videollamada. With Google connected
+// (useGoogleMeet 'ready') the call is one click and this popover never
+// shows. Without it, the popover leads with "connect Google once" and
+// keeps the manual path below it: open a fresh Meet, paste its link, and
+// it lands in the conversation as a call card.
 //
 // Portaled + positioned from the trigger's measured rect, with a resize
 // listener — the shell's rule for every floating element (CLAUDE.md §1).
 // Glass lives on the inner div, transform on the outer (§11).
-export default function MeetPopover({ type, anchorRef, onClose, onSend }) {
+export default function MeetPopover({ type, anchorRef, onClose, onSend, canConnect, onConnect }) {
   const [rect, setRect] = useState(null)
   const [url, setUrl] = useState('')
   const [opened, setOpened] = useState(false)
@@ -68,6 +68,17 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend }) {
           {video ? 'Videollamada' : 'Llamada'} con Google Meet
         </p>
 
+        {canConnect && (
+          <div className="mt-3 rounded-xl border border-[#B8860B]/35 bg-[#B8860B]/[0.07] p-3">
+            <p className="text-[12.5px] font-medium text-[#F2EBDD]">Llama en un clic</p>
+            <p className="mt-0.5 text-[11.5px] leading-relaxed text-[#999999]">Conecta tu cuenta de Google una sola vez: ADOR OS crea la reunión, le suena a la otra persona y te abre Meet.</p>
+            <button type="button" onClick={onConnect} className="mt-2 w-full rounded-lg px-3 py-2 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+              Conectar Google
+            </button>
+          </div>
+        )}
+        {canConnect && <p className="mt-3 text-[11px] text-[#555555]">O hazlo manual esta vez:</p>}
+
         <div className="mt-3 flex flex-col gap-2.5">
           <div className="flex items-start gap-2.5">
             <Step n={1} done={opened} />
@@ -75,8 +86,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend }) {
               <button
                 type="button"
                 onClick={openMeet}
-                className="w-full rounded-lg px-3 py-2 text-[12.5px] font-medium text-white"
-                style={{ background: '#1E5FAD' }}
+                className="w-full rounded-lg border border-white/[0.12] px-3 py-2 text-[12.5px] font-medium text-[#F5F5F5] hover:border-white/[0.24]"
               >
                 Abrir Google Meet
               </button>

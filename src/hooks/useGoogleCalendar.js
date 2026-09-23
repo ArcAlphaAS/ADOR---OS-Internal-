@@ -88,22 +88,26 @@ export function useGoogleCalendar(userId) {
 
     const url = new URL(window.location.href)
     const code = url.searchParams.get('code')
+    // A connection started from the chat (state=chat) is finished by
+    // useGoogleMeet instead — only one hook may spend the one-time code.
+    const startedHere = url.searchParams.get('state') !== 'chat'
 
-    if (code && !oauthHandledRef.current) {
+    if (code && startedHere && !oauthHandledRef.current) {
       oauthHandledRef.current = true
       setStatus('connecting')
       url.searchParams.delete('code')
       url.searchParams.delete('scope')
+      url.searchParams.delete('state')
       window.history.replaceState({}, '', url.toString())
 
       exchangeCode(code)
-        .then(async ({ accessToken, refreshToken, expiresIn }) => {
+        .then(async ({ accessToken, refreshToken, expiresIn, scope }) => {
           accessTokenRef.current = { token: accessToken, expiresAt: Date.now() + expiresIn * 1000 }
           refreshTokenRef.current = refreshToken
           const email = await fetchPrimaryCalendarEmail(accessToken)
           setConnectedEmail(email)
           if (userId !== 'preview') {
-            await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, connectedAt: new Date().toISOString() } })
+            await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, scopes: scope || '', connectedAt: new Date().toISOString() } })
           }
           const range = defaultRange()
           const items = await fetchEvents(accessToken, { timeMin: range.start, timeMax: range.end })

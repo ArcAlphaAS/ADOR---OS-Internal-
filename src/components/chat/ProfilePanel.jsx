@@ -36,7 +36,7 @@ function ListSection({ title, items, render, empty }) {
       <div className="mb-2 flex items-center justify-between">
         <p className="text-[12.5px] font-semibold text-[#DDDDDD]">{title}</p>
         {items.length > 4 && (
-          <button type="button" onClick={() => setAll((v) => !v)} className="text-[11.5px] text-[#5B9BD9] hover:underline">
+          <button type="button" onClick={() => setAll((v) => !v)} className="text-[11.5px] text-[#E8C15A] hover:underline">
             {all ? 'Ver menos' : `Ver todos (${items.length})`}
           </button>
         )}
@@ -121,7 +121,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                 <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-white/[0.04]">
                   <span
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md"
-                    style={l.drive ? { background: 'rgba(30,95,173,0.16)', color: '#5B9BD9' } : { background: 'rgba(255,255,255,0.05)', color: '#888888' }}
+                    style={l.drive ? { background: 'rgba(184,134,11,0.14)', color: '#E8C15A' } : { background: 'rgba(255,255,255,0.05)', color: '#888888' }}
                   >
                     {l.drive ? <FileIcon size={15} /> : <GlobeIcon size={15} />}
                   </span>
@@ -146,7 +146,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                 aria-checked={muted}
                 onClick={onToggleMute}
                 className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
-                style={{ background: muted ? '#1E5FAD' : 'rgba(255,255,255,0.12)' }}
+                style={{ background: muted ? '#B8860B' : 'rgba(255,255,255,0.12)' }}
               >
                 <span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-all duration-200" style={{ left: muted ? 19 : 3 }} />
               </button>

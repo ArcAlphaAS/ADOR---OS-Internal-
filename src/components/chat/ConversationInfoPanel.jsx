@@ -131,7 +131,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   </div>
                 </div>
               ) : (
-                <button type="button" onClick={() => setAdding(true)} className="mt-1 rounded-lg px-1.5 py-1.5 text-left text-[12.5px] text-[#5B9BD9] hover:bg-white/[0.04]">
+                <button type="button" onClick={() => setAdding(true)} className="mt-1 rounded-lg px-1.5 py-1.5 text-left text-[12.5px] text-[#E8C15A] hover:bg-white/[0.04]">
                   + Invitar personas
                 </button>
               )}
@@ -174,7 +174,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
             ) : (
               <>
                 <p className="text-[12px] leading-relaxed text-[#666666]">Si este grupo ya es un espacio fijo de trabajo, conviértelo en canal — se conservan los mensajes.</p>
-                <button type="button" onClick={() => setConverting(true)} className="mt-2 text-[12.5px] text-[#5B9BD9] hover:underline">
+                <button type="button" onClick={() => setConverting(true)} className="mt-2 text-[12.5px] text-[#E8C15A] hover:underline">
                   Convertir en canal
                 </button>
               </>

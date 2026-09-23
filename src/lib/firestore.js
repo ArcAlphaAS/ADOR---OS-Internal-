@@ -77,6 +77,7 @@ export const COLLECTIONS = {
   chatBlobs: 'chatBlobs',
   chatTyping: 'chatTyping',
   presence: 'presence',
+  chatReminders: 'chatReminders',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -1168,6 +1169,63 @@ export function subscribePresence(onData) {
     (snapshot) => onData(Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data()]))),
     () => {}
   )
+}
+
+// ---- Fijados, tarea desde mensaje, recordatorios ----
+
+// Pinned messages live on the conversation doc as a map keyed by message
+// id (`pinned.{id}`), so pin/unpin are single field writes and the pinned
+// bar needs no extra query. A text snapshot rides along so the bar reads
+// without loading the message.
+export function setMessagePinned(convType, convId, message, pinned, uid, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const ref = doc(db, convType === 'dm' ? COLLECTIONS.chatDms : COLLECTIONS.chatChannels, convId)
+  return updateDoc(ref, {
+    [`pinned.${message.id}`]: pinned
+      ? { text: (message.text || (message.attachment ? '📎 Archivo' : '')).slice(0, 200), authorName: message.authorName || '', pinnedBy: name, pinnedByUid: uid, pinnedAt: serverTimestamp() }
+      : deleteField(),
+  })
+}
+
+// Marks a message with the task created from it, so the message shows a
+// "Tarea creada" chip and can't be turned into a duplicate by accident.
+export function linkTaskToMessage(convType, convId, messageId, task, parentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { task })
+}
+
+// "Recuérdamelo": one doc per reminder, only its owner reads it. Delivery
+// is client-side — ReminderGate (mounted app-wide) fires a card + OS
+// notification when `remindAt` passes while ADOR OS is open, and the bell
+// keeps it until it's handled; if ADOR OS was closed, it shows up the
+// moment it's opened again.
+export function createChatReminder(uid, remindAt, message, meta) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatReminders), {
+    uid,
+    remindAt: Timestamp.fromDate(remindAt),
+    messageId: message.id,
+    text: (message.text || (message.attachment ? '📎 Archivo' : '')).slice(0, 200),
+    authorName: message.authorName || '',
+    done: false,
+    ...meta,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function subscribeMyReminders(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.chatReminders, [where('uid', '==', uid)], onData)
+}
+
+export function updateChatReminder(id, patch) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatReminders, id), patch)
+}
+
+export function deleteChatReminder(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.chatReminders, id))
 }
 
 // ---- Menciones, guardados, archivos ----

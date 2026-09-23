@@ -64,7 +64,7 @@ export default function NotificationCenter({ items = [], anchorRect, open, onIte
                     }}
                     className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-150 hover:bg-white/[0.04]"
                   >
-                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD' }} />
+                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#E8C15A' }} />
                     <span className="line-clamp-2 text-[13px] text-[#CCCCCC]">{item.text}</span>
                     <span className="ml-auto flex-shrink-0 text-[11px] text-[#444444]">{item.time}</span>
                   </button>

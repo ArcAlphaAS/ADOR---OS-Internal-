@@ -21,7 +21,7 @@ export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids
             key={u.id}
             className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] ${locked ? 'text-[#888888]' : 'cursor-pointer text-[#DDDDDD] hover:bg-white/[0.04]'}`}
           >
-            <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#1E5FAD]" />
+            <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#B8860B]" />
             <Avatar displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
             <span className="truncate">{userLabel(u)}</span>
             {u.id === currentUid && <span className="ml-auto text-[10.5px] text-[#555555]">tú</span>}
@@ -48,9 +48,9 @@ export function VisibilityToggle({ value, onChange }) {
             onClick={() => onChange(id)}
             className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[12.5px] font-medium transition-colors duration-150"
             style={{
-              borderColor: value === id ? 'rgba(30,95,173,0.6)' : 'rgba(255,255,255,0.08)',
-              background: value === id ? 'rgba(30,95,173,0.14)' : 'transparent',
-              color: value === id ? '#5B9BD9' : '#888888',
+              borderColor: value === id ? 'rgba(184,134,11,0.6)' : 'rgba(255,255,255,0.08)',
+              background: value === id ? 'rgba(184,134,11,0.14)' : 'transparent',
+              color: value === id ? '#E8C15A' : '#888888',
             }}
           >
             <Icon size={13} /> {label}
@@ -134,7 +134,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
                       type="button"
                       onClick={() => applySuggestion(s)}
                       className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[11.5px] text-[#AAAAAA] transition-colors hover:border-white/[0.2] hover:text-[#F5F5F5]"
-                      style={normalized === s.name ? { borderColor: 'rgba(30,95,173,0.6)', color: '#5B9BD9' } : undefined}
+                      style={normalized === s.name ? { borderColor: 'rgba(184,134,11,0.6)', color: '#E8C15A' } : undefined}
                     >
                       {s.visibility === 'private' ? <LockIcon size={10} /> : '#'} {s.name}
                     </button>

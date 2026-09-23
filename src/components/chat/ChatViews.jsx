@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { dayBucket } from '../../lib/chat'
+import { dayBucket, formatReminderTime } from '../../lib/chat'
 import Avatar from '../shell/Avatar'
 import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon } from '../icons'
 
@@ -49,7 +49,7 @@ function Row({ unread, onClick, leading, title, meta, preview }) {
             {title}
           </span>
           <span className="ml-auto flex-shrink-0 text-[11px] text-[#555555]">{meta}</span>
-          {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD' }} />}
+          {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#B8860B' }} />}
         </span>
         <span className="mt-0.5 block truncate text-[12.5px] text-[#777777]">{preview}</span>
       </span>
@@ -236,12 +236,37 @@ export function MentionsView({ mentions, onOpen }) {
   )
 }
 
-export function SavedView({ saved, onOpen, onUnsave }) {
+export function SavedView({ saved, reminders = [], onOpen, onUnsave, onCancelReminder }) {
   return (
     <>
       <ViewHeader icon={<BookmarkIcon size={14} />} title="Mensajes guardados" subtitle="Solo tú ves esta lista" />
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
-        {saved.length === 0 ? (
+        {reminders.length > 0 && (
+          <div className="mb-3">
+            <p className="px-3 pb-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#444444]">Recordatorios pendientes</p>
+            {reminders.map((r) => (
+              <div key={r.id} className="group flex items-start gap-1">
+                <div className="min-w-0 flex-1">
+                  <Row
+                    onClick={() => onOpen(r)}
+                    leading={
+                      <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[#E8C15A]" style={{ background: 'rgba(184,134,11,0.14)' }}>
+                        ⏰
+                      </span>
+                    }
+                    title={`${r.authorName || 'Mensaje'} · ${r.conversationLabel}`}
+                    meta={formatReminderTime(r.remindAt)}
+                    preview={r.text}
+                  />
+                </div>
+                <button type="button" onClick={() => onCancelReminder(r)} className="mt-3 flex-shrink-0 rounded-full px-2 py-1 text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#F5F5F5] group-hover:opacity-100">
+                  Cancelar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {saved.length === 0 && reminders.length === 0 ? (
           <Empty icon={<BookmarkIcon size={22} />} text="Pasa el cursor sobre cualquier mensaje y pulsa el marcador para guardarlo aquí." />
         ) : (
           saved.map((s) => (
@@ -289,7 +314,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
             <div className="flex flex-col gap-0.5">
               {docs.map((f) => (
                 <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/[0.04]">
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(30,95,173,0.16)', color: '#5B9BD9' }}>
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
                     <FileIcon size={14} />
                   </span>
                   <span className="min-w-0 flex-1">

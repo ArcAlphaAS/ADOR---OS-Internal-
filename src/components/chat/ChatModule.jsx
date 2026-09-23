@@ -38,8 +38,14 @@ import {
   subscribePresence,
   markChatUnread,
   markManyChatRead,
+  setMessagePinned,
+  linkTaskToMessage,
+  createChatReminder,
+  subscribeMyReminders,
+  deleteChatReminder,
+  createTask,
 } from '../../lib/firestore'
-import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor, unreadCountOf } from '../../lib/chat'
+import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor, unreadCountOf, formatReminderTime } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
@@ -51,6 +57,8 @@ import ConversationInfoPanel from './ConversationInfoPanel'
 import MeetPopover from './MeetPopover'
 import ProfilePanel from './ProfilePanel'
 import ThreadPanel from './ThreadPanel'
+import { useGoogleMeet } from '../../hooks/useGoogleMeet'
+import TaskFromMessageModal from './TaskFromMessageModal'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -71,7 +79,7 @@ function isUnread(lastMessageAt, lastReadAt) {
 }
 
 function UnreadDot() {
-  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD' }} />
+  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#B8860B' }} />
 }
 
 function SectionHeader({ label, onAdd, addTitle }) {
@@ -103,8 +111,8 @@ function ConversationButton({ active, unread, onClick, children }) {
       onClick={onClick}
       className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
       style={{
-        background: active ? 'rgba(30,95,173,0.14)' : undefined,
-        color: active ? '#5B9BD9' : unread ? '#F5F5F5' : '#CCCCCC',
+        background: active ? 'rgba(184,134,11,0.14)' : undefined,
+        color: active ? '#E8C15A' : unread ? '#F5F5F5' : '#CCCCCC',
         fontWeight: unread ? 600 : 500,
       }}
     >
@@ -144,6 +152,46 @@ export function PresenceAvatar({ presence, size = 20, ...avatarProps }) {
   )
 }
 
+// Pinned messages bar under the conversation header: the latest pin in one
+// line, click to expand the whole list (in normal flow, no popover). Each
+// entry jumps to its message or can be unpinned.
+function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
+  return (
+    <div className="mt-2 rounded-xl border border-[#B8860B]/25 bg-[#B8860B]/[0.05]">
+      <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 px-3 py-2 text-left">
+        <span className="text-[12px]">📌</span>
+        <span className="flex-shrink-0 text-[11.5px] font-medium text-[#E8C15A]">
+          {pins.length} {pins.length === 1 ? 'fijado' : 'fijados'}
+        </span>
+        {!open && (
+          <span className="truncate text-[12px] text-[#AAAAAA]">
+            {pins[0].authorName ? `${pins[0].authorName.split(' ')[0]}: ` : ''}
+            {pins[0].text}
+          </span>
+        )}
+        <span className="ml-auto flex-shrink-0 text-[11px] text-[#777777]">{open ? 'Cerrar' : 'Ver'}</span>
+      </button>
+      {open && (
+        <div className="flex flex-col gap-0.5 border-t border-[#B8860B]/15 px-1.5 py-1.5">
+          {pins.map((p) => (
+            <div key={p.id} className="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
+              <button type="button" onClick={() => onJump(p.id)} className="min-w-0 flex-1 text-left">
+                <span className="block truncate text-[12.5px] text-[#DDDDDD]">{p.text || 'Mensaje'}</span>
+                <span className="block text-[10.5px] text-[#666666]">
+                  {p.authorName} · fijado por {(p.pinnedBy || '').split(' ')[0]}
+                </span>
+              </button>
+              <button type="button" onClick={() => onUnpin(p.id)} className="flex-shrink-0 text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#F5F5F5] group-hover:opacity-100">
+                Desfijar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const VIEWS = [
   { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
   { id: 'threads', label: 'Hilos', Icon: ThreadsNavIcon },
@@ -164,7 +212,7 @@ function ViewNav({ view, counts, onSelectView }) {
             type="button"
             onClick={() => onSelectView(id)}
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
-            style={{ background: active ? 'rgba(30,95,173,0.14)' : undefined, color: active ? '#5B9BD9' : count ? '#F5F5F5' : '#CCCCCC', fontWeight: count ? 600 : 500 }}
+            style={{ background: active ? 'rgba(184,134,11,0.14)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#CCCCCC', fontWeight: count ? 600 : 500 }}
           >
             <Icon size={15} className="flex-shrink-0 opacity-80" />
             <span className="flex-1 truncate">{label}</span>
@@ -302,7 +350,7 @@ function CallNotificationsPrompt() {
       <button
         type="button"
         onClick={() => Notification.requestPermission().then(setPermission)}
-        className="mt-1.5 text-[12px] font-medium text-[#5B9BD9] hover:underline"
+        className="mt-1.5 text-[12px] font-medium text-[#E8C15A] hover:underline"
       >
         Activar avisos de llamada
       </button>
@@ -336,7 +384,7 @@ function HeaderButton({ title, onClick, active, children, buttonRef }) {
 // Icon-only round buttons for calls, the way every messaging app's header
 // does it — labeled buttons crowded out the person's name once the
 // profile panel was open beside the thread. The tooltip still names them.
-function IconButton({ title, onClick, active, children, buttonRef }) {
+function IconButton({ title, onClick, active, busy, children, buttonRef }) {
   return (
     <button
       ref={buttonRef}
@@ -345,7 +393,7 @@ function IconButton({ title, onClick, active, children, buttonRef }) {
       aria-label={title}
       onClick={onClick}
       className="flex h-9 w-9 items-center justify-center rounded-full text-[#AAAAAA] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
-      style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
+      style={{ ...(active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : {}), ...(busy ? { color: '#E8C15A', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
     >
       {children}
     </button>
@@ -356,22 +404,22 @@ function IconButton({ title, onClick, active, children, buttonRef }) {
 // call starts, Meet is the call's infrastructure. No in-app video. The
 // popover's open state lives in ChatModule so the same flow can be started
 // from here or from the profile panel's buttons.
-function CallButtons({ openCall, onCall }) {
+function CallButtons({ openCall, onCall, busy }) {
   const audioRef = useRef(null)
   const videoRef = useRef(null)
   return (
     <>
-      <IconButton title="Llamar (Google Meet)" buttonRef={audioRef} active={openCall?.anchorRef === audioRef} onClick={() => onCall('audio', audioRef)}>
+      <IconButton title={busy === 'audio' ? 'Creando reunión…' : 'Llamar (Google Meet)'} busy={busy === 'audio'} buttonRef={audioRef} active={openCall?.anchorRef === audioRef} onClick={() => onCall('audio', audioRef)}>
         <PhoneIcon size={15} />
       </IconButton>
-      <IconButton title="Videollamada (Google Meet)" buttonRef={videoRef} active={openCall?.anchorRef === videoRef} onClick={() => onCall('video', videoRef)}>
+      <IconButton title={busy === 'video' ? 'Creando reunión…' : 'Videollamada (Google Meet)'} busy={busy === 'video'} buttonRef={videoRef} active={openCall?.anchorRef === videoRef} onClick={() => onCall('video', videoRef)}>
         <VideoIcon size={16} />
       </IconButton>
     </>
   )
 }
 
-function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall }) {
+function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy }) {
   if (selected.type === 'dm') {
     return (
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
@@ -392,7 +440,7 @@ function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresenc
           </div>
         </button>
         <div className="flex flex-shrink-0 items-center gap-1">
-          <CallButtons openCall={openCall} onCall={onCall} />
+          <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />
         </div>
       </div>
     )
@@ -422,7 +470,7 @@ function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresenc
         </p>
       </div>
       <div className="flex flex-shrink-0 items-center gap-2">
-        {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} />}
+        {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />}
         <HeaderButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
           <InfoIcon size={14} /> Detalles
         </HeaderButton>
@@ -431,7 +479,7 @@ function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresenc
   )
 }
 
-export default function ChatModule({ user, focus, onFocusHandled }) {
+export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) {
   const [allChannels, setAllChannels] = useState([])
   const [users, setUsers] = useState([])
   const [myDms, setMyDms] = useState([])
@@ -457,6 +505,11 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   const [presence, setPresence] = useState({})
   const [typingDoc, setTypingDoc] = useState({})
   const [, setTick] = useState(0)
+  const [callBusy, setCallBusy] = useState(null)
+  const [taskDraft, setTaskDraft] = useState(null) // { message, parentId }
+  const [reminders, setReminders] = useState([])
+  const [pinsOpen, setPinsOpen] = useState(false)
+  const meet = useGoogleMeet(user.uid)
   const jumpToRef = useRef(null)
   const showToast = useToast()
   const actorName = actorNameFor(user)
@@ -469,6 +522,12 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   useEffect(() => subscribeMyMentions(user.uid, setMentions), [user.uid])
   useEffect(() => subscribeMySaved(user.uid, setSaved), [user.uid])
   useEffect(() => subscribePresence(setPresence), [])
+  useEffect(() => subscribeMyReminders(user.uid, setReminders), [user.uid])
+  useEffect(() => {
+    if (!meet.justConnected) return
+    showToast('Google conectado — ya puedes llamar en un clic.')
+    meet.clearJustConnected()
+  }, [meet.justConnected])
   // Presence and "escribiendo…" are time-based: re-evaluate every few
   // seconds so a dot turns off / a typing line disappears on its own.
   useEffect(() => {
@@ -781,6 +840,44 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
       .catch(fail('eliminar'))
   }
 
+  // ---- Fijar / recordar / tarea ----
+  const pinnedMap = activeDoc?.pinned || {}
+  const pinnedIds = new Set(Object.keys(pinnedMap))
+  const pinnedList = Object.entries(pinnedMap)
+    .map(([id, p]) => ({ id, ...p }))
+    .sort((a, b) => (b.pinnedAt?.toMillis?.() || 0) - (a.pinnedAt?.toMillis?.() || 0))
+
+  const handleTogglePin = (m) =>
+    withTimeout(setMessagePinned(convType, selectedConversationId, m, !pinnedIds.has(m.id), user.uid, actorName))
+      .then(() => showToast(pinnedIds.has(m.id) ? 'Mensaje desfijado' : 'Mensaje fijado en la conversación'))
+      .catch(fail('fijar el mensaje'))
+
+  const handleRemind = (m, at, parentId = null) =>
+    withTimeout(createChatReminder(user.uid, at, m, { ...convMeta(), ...(parentId ? { threadParentId: parentId } : {}) }))
+      .then(() => showToast(`Te lo recordaré ${formatReminderTime(at)}`))
+      .catch(fail('crear el recordatorio'))
+
+  const confirmTask = async (data) => {
+    const { message, parentId } = taskDraft
+    try {
+      const ref = await withTimeout(createTask(data, actorName, user.uid))
+      await withTimeout(linkTaskToMessage(convType, selectedConversationId, message.id, { id: ref.id, title: data.title }, parentId))
+      setTaskDraft(null)
+      showToast('Tarea creada en Workspace')
+    } catch (error) {
+      fail('crear la tarea')(error)
+    }
+  }
+
+  const openTask = (taskId) => onNavigate?.('workspace', { type: 'task', id: taskId })
+
+  const jumpToMessage = (id) => {
+    const el = document.getElementById(`msg-${id}`)
+    if (!el) return showToast('Ese mensaje es más antiguo que los cargados — usa "Cargar mensajes anteriores".')
+    el.scrollIntoView({ block: 'center' })
+    el.animate([{ background: 'rgba(184,134,11,0.18)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+  }
+
   // Tied to the conversation it was opened in; switching away hides it.
   const openThread = (m) => setPanel({ type: 'thread', convId: selectedConversationId, parentId: m.id, jumpToId: null })
 
@@ -831,14 +928,58 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
     handleSend({ call: { type, url, ...(callId ? { callId } : {}) } })
   }
 
-  const toggleCall = (type, anchorRef) => setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
+  // One-click call (Google connected): open a tab right away — it has to
+  // happen inside the click or the browser blocks it as a popup — create
+  // the Meet room, point the tab at it, then post the card + ring the
+  // other side. Anything fails → close the tab and fall back to the
+  // manual popover, so a call is never a dead end.
+  const quickCall = async (type, anchorRef, preOpened) => {
+    const win = preOpened || window.open('', '_blank')
+    try {
+      win?.document.write('<title>Google Meet</title><body style="background:#0A0A0A;color:#999;font:14px system-ui;display:grid;place-items:center;height:100vh;margin:0">Creando la reunión…</body>')
+    } catch {
+      // cross-origin or blocked — fine, the redirect below still works
+    }
+    setCallBusy(type)
+    try {
+      const uri = await meet.createRoom()
+      if (win) {
+        win.opener = null
+        win.location.href = uri
+      } else window.open(uri, '_blank', 'noopener,noreferrer')
+      await startCall(type, uri)
+    } catch (error) {
+      win?.close()
+      showToast(`No se pudo crear la reunión automáticamente: ${error.message}`)
+      setOpenCall({ type, anchorRef })
+    } finally {
+      setCallBusy(null)
+    }
+  }
+
+  const toggleCall = (type, anchorRef) => {
+    if (meet.status === 'ready' && !callBusy) return quickCall(type, anchorRef)
+    setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
+  }
 
   // A profile opened from a channel whose "Llamar" is pressed: jump into
-  // the DM with that person first, so the Meet card lands there.
+  // the DM with that person first, so the call card lands there. The call
+  // itself starts once that DM is the open conversation (effect below);
+  // the Meet tab is opened now, while we're still inside the click.
+  const pendingCallRef = useRef(null)
   const callFromProfile = (uid, type, anchorRef) => {
-    if (selected?.type !== 'dm' || selected.id !== uid) setSelected({ type: 'dm', id: uid })
-    toggleCall(type, anchorRef)
+    if (selected?.type === 'dm' && selected.id === uid) return toggleCall(type, anchorRef)
+    const preOpened = meet.status === 'ready' ? window.open('', '_blank') : null
+    pendingCallRef.current = { type, anchorRef, preOpened }
+    setSelected({ type: 'dm', id: uid })
   }
+  useEffect(() => {
+    const pending = pendingCallRef.current
+    if (!pending || selected?.type !== 'dm') return
+    pendingCallRef.current = null
+    if (pending.preOpened) quickCall(pending.type, pending.anchorRef, pending.preOpened)
+    else setOpenCall({ type: pending.type, anchorRef: pending.anchorRef })
+  }, [selectedConversationId])
 
   const showInfo = panel?.type === 'info' && conversation
   const profileUid = panel?.type === 'profile' ? panel.uid : null
@@ -881,6 +1022,8 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
           <MentionsView mentions={myMentions} onOpen={openConversation} />
         ) : view === 'saved' ? (
           <SavedView
+            reminders={reminders.filter((r) => !r.done).sort((a, b) => (a.remindAt?.toMillis?.() || 0) - (b.remindAt?.toMillis?.() || 0))}
+            onCancelReminder={(r) => withTimeout(deleteChatReminder(r.id)).catch(fail('cancelar el recordatorio'))}
             saved={mySaved}
             onOpen={openConversation}
             onUnsave={(x) => withTimeout(toggleSavedMessage(user.uid, { id: x.messageId }, {}, true)).catch(fail('quitar el guardado'))}
@@ -903,7 +1046,20 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
               onToggleProfile={() => setPanel((p) => (p?.type === 'profile' && p.uid === selected.id ? null : { type: 'profile', uid: selected.id }))}
               openCall={openCall}
               onCall={toggleCall}
+              callBusy={callBusy}
             />
+            {pinnedList.length > 0 && (
+              <PinnedBar
+                pins={pinnedList}
+                open={pinsOpen}
+                onToggle={() => setPinsOpen((v) => !v)}
+                onJump={(id) => {
+                  setPinsOpen(false)
+                  jumpToMessage(id)
+                }}
+                onUnpin={(id) => handleTogglePin({ id })}
+              />
+            )}
             {searchQuery !== null && (
               <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3.5 py-2">
                 <SearchIcon size={12} className="text-[#666666]" />
@@ -932,6 +1088,11 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
               userPhoto={userPhoto}
               receiptFor={receiptOf}
               onOpenThread={openThread}
+              pinnedIds={pinnedIds}
+              onTogglePin={handleTogglePin}
+              onRemind={(m, at) => handleRemind(m, at)}
+              onCreateTask={(m) => setTaskDraft({ message: m, parentId: null })}
+              onOpenTask={openTask}
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}
               onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
@@ -961,6 +1122,18 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
           </div>
         )}
       </div>
+
+      {taskDraft && (
+        <TaskFromMessageModal
+          message={taskDraft.message}
+          conversationLabel={convType === 'dm' ? `tu chat con ${userLabel(dmUser)}` : labelFor(convType, selectedConversationId, null)}
+          users={users}
+          currentUid={user.uid}
+          actorName={actorName}
+          onClose={() => setTaskDraft(null)}
+          onConfirm={confirmTask}
+        />
+      )}
 
       {lightbox && <ImageLightbox attachment={lightbox} onClose={() => setLightbox(null)} />}
 
@@ -998,6 +1171,9 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
           onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
           onOpenImage={setLightbox}
           onRead={() => markReadIfVisible(`thread_${panel.parentId}`)}
+          onRemind={(m, at) => handleRemind(m, at, m.id === panel.parentId ? null : panel.parentId)}
+          onCreateTask={(m) => setTaskDraft({ message: m, parentId: m.id === panel.parentId ? null : panel.parentId })}
+          onOpenTask={openTask}
           onError={showToast}
         />
       )}
@@ -1031,6 +1207,8 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
             startCall(openCall.type, url)
             setOpenCall(null)
           }}
+          canConnect={meet.status === 'needsConnect'}
+          onConnect={meet.connect}
         />
       )}
 

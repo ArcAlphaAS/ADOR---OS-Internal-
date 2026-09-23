@@ -11,6 +11,7 @@ import {
   QUICK_REACTIONS,
   FORMATS,
   callState,
+  reminderOptions,
 } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { resizeImageToDataUrl } from '../../lib/image'
@@ -32,6 +33,12 @@ import {
   PlayIcon,
   PauseIcon,
 } from '../icons'
+
+// Graphite and gold (user's choice over the generic bright blue): your
+// own messages are warm graphite with a thin gold edge, and gold marks
+// what's yours or new — unread, mentions of you, read receipts, send.
+const MINE_BG = '#1C1A16'
+const MINE_BORDER = 'rgba(184,134,11,0.42)'
 
 function formatTime(ts) {
   if (!ts?.toDate) return ''
@@ -95,7 +102,7 @@ function RichText({ text, mentions, currentUid }) {
             <span
               key={j}
               className="rounded px-0.5 font-medium"
-              style={seg.uid === currentUid ? { background: 'rgba(184,134,11,0.25)', color: '#E8C15A' } : { background: 'rgba(91,155,217,0.18)', color: '#9CC4EC' }}
+              style={seg.uid === currentUid ? { background: 'rgba(184,134,11,0.25)', color: '#E8C15A' } : { background: 'rgba(255,255,255,0.1)', color: '#F2EBDD' }}
             >
               {seg.value}
             </span>
@@ -120,7 +127,7 @@ function DriveCard({ url }) {
       rel="noopener noreferrer"
       className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.2]"
     >
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(30,95,173,0.16)', color: '#5B9BD9' }}>
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
         {type === 'Carpeta' ? <FolderIcon size={16} /> : <FileIcon size={16} />}
       </span>
       <span className="min-w-0">
@@ -174,7 +181,7 @@ function VoiceNote({ attachment, mine }) {
   }
 
   return (
-    <div className="flex w-[240px] items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: mine ? '#1E5FAD' : 'rgba(255,255,255,0.06)' }}>
+    <div className="flex w-[240px] items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
       <button type="button" onClick={toggle} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.15] text-white">
         {state === 'playing' ? <PauseIcon size={14} /> : state === 'loading' ? <span className="h-3 w-3 animate-spin rounded-full border border-white/60 border-t-transparent" /> : <PlayIcon size={12} />}
       </button>
@@ -285,8 +292,8 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
             onClick={() => onReact(emoji, mine)}
             className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition-colors"
             style={{
-              borderColor: mine ? 'rgba(91,155,217,0.6)' : 'rgba(255,255,255,0.1)',
-              background: mine ? 'rgba(30,95,173,0.18)' : 'rgba(255,255,255,0.03)',
+              borderColor: mine ? 'rgba(184,134,11,0.6)' : 'rgba(255,255,255,0.1)',
+              background: mine ? 'rgba(184,134,11,0.18)' : 'rgba(255,255,255,0.03)',
               color: '#DDDDDD',
             }}
           >
@@ -306,7 +313,7 @@ function Ticks({ receipt, userName }) {
   const read = receipt.state === 'read'
   const title = read ? 'Leído' : receipt.readers.length ? `Leído por ${receipt.readers.map(userName).join(', ')}` : 'Enviado'
   return (
-    <span title={title} className="inline-flex items-center" style={{ color: read ? '#5B9BD9' : '#666666' }}>
+    <span title={title} className="inline-flex items-center" style={{ color: read ? '#E8C15A' : '#666666' }}>
       <svg width={read ? 16 : 11} height="10" viewBox={read ? '0 0 16 10' : '0 0 11 10'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 5.2 3.8 8 10 1.8" />
         {read && <path d="M6.5 7.3 7.2 8 13.4 1.8" />}
@@ -338,7 +345,7 @@ function ThreadSummary({ message, userPhoto, userName, onOpen }) {
           </span>
         ))}
       </span>
-      <span className="whitespace-nowrap text-[12px] font-medium text-[#5B9BD9] group-hover/thread:underline">
+      <span className="whitespace-nowrap text-[12px] font-medium text-[#E8C15A] group-hover/thread:underline">
         {message.replyCount} {message.replyCount === 1 ? 'respuesta' : 'respuestas'}
       </span>
       <span className="whitespace-nowrap text-[11px] text-[#555555]">Última {timeAgoShort(message.lastReplyAt)}</span>
@@ -363,11 +370,13 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread }) {
+export function MessageBubble({ message, mine, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [picking, setPicking] = useState(false)
+  // 'more' = the ⋯ menu (fijar · recordar · tarea); 'remind' = its time picker
+  const [menu, setMenu] = useState(null)
   const driveUrl = findDriveLink(message.text)
   const hasText = Boolean(message.text)
   // A message that's nothing but a Drive link shows just the card — the
@@ -397,7 +406,43 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
     )
   }
 
-  const actions = (
+  const menuButton = (label, onClick) => (
+    <button type="button" onClick={onClick} className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] text-[#CCCCCC] hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+      {label}
+    </button>
+  )
+
+  const actions = menu ? (
+    // Inline, in the row itself — never a floating menu (no portal needed).
+    <span className="flex items-center gap-0.5 rounded-full border border-white/[0.1] bg-[#141414] px-1 py-0.5">
+      {menu === 'more' ? (
+        <>
+          {onTogglePin &&
+            menuButton(pinned ? 'Desfijar' : 'Fijar', () => {
+              onTogglePin()
+              setMenu(null)
+            })}
+          {onRemind && menuButton('Recordármelo', () => setMenu('remind'))}
+          {onCreateTask &&
+            !message.task &&
+            menuButton('Crear tarea', () => {
+              onCreateTask()
+              setMenu(null)
+            })}
+        </>
+      ) : (
+        reminderOptions().map((o) =>
+          menuButton(o.label, () => {
+            onRemind(o.at)
+            setMenu(null)
+          })
+        )
+      )}
+      <button type="button" onClick={() => setMenu(null)} className="flex h-6 w-6 items-center justify-center rounded-full text-[#666666] hover:text-[#F5F5F5]">
+        <CloseIcon size={10} />
+      </button>
+    </span>
+  ) : (
     <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
       {picking ? (
         <span className="flex items-center gap-0.5 rounded-full border border-white/[0.1] bg-[#141414] px-1 py-0.5">
@@ -428,6 +473,11 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
       <ActionIcon title={saved ? 'Quitar de guardados' : 'Guardar mensaje'} onClick={onToggleSave} active={saved}>
         <BookmarkIcon size={13} filled={saved} />
       </ActionIcon>
+      {(onTogglePin || onRemind || onCreateTask) && (
+        <ActionIcon title="Más: fijar, recordármelo, crear tarea" onClick={() => setMenu('more')}>
+          <span className="text-[14px] leading-none">⋯</span>
+        </ActionIcon>
+      )}
       {mine && hasText && !message.call && (
         <ActionIcon title="Editar" onClick={() => setEditing(true)}>
           <EditIcon size={12} />
@@ -444,7 +494,10 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
   )
 
   return (
-    <div className={`group flex max-w-[75%] flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`} onMouseLeave={() => setPicking(false)}>
+    <div className={`group flex max-w-[75%] flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`} onMouseLeave={() => {
+        setPicking(false)
+        setMenu(null)
+      }}>
       {!mine && (
         <button type="button" onClick={() => onOpenProfile(message.authorUid)} className="px-1 text-[11px] font-medium text-[#666666] hover:text-[#F5F5F5] hover:underline">
           {message.authorName}
@@ -460,8 +513,9 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
             <div
               className="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"
               style={{
-                background: mine ? '#1E5FAD' : 'rgba(255,255,255,0.06)',
-                color: mine ? '#F5F5F5' : '#DDDDDD',
+                background: mine ? MINE_BG : 'rgba(255,255,255,0.06)',
+                border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent',
+                color: mine ? '#F2EBDD' : '#DDDDDD',
                 borderBottomRightRadius: mine ? 4 : undefined,
                 borderBottomLeftRadius: mine ? undefined : 4,
               }}
@@ -470,6 +524,16 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
             </div>
           )}
           {driveUrl && <DriveCard url={driveUrl} />}
+          {message.task && (
+            <button
+              type="button"
+              onClick={() => onOpenTask?.(message.task.id)}
+              className="flex items-center gap-1.5 rounded-full border border-[#4CAF50]/30 bg-[#4CAF50]/[0.08] px-2.5 py-1 text-[11px] text-[#8FD19A] hover:border-[#4CAF50]/60"
+              title="Abrir en Workspace"
+            >
+              ✓ Tarea: <span className="max-w-[200px] truncate">{message.task.title}</span>
+            </button>
+          )}
         </div>
       </div>
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
@@ -477,6 +541,7 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
       <p className="flex items-center gap-1.5 px-1 text-[10.5px] text-[#444444]">
         {formatTime(message.createdAt)}
         {message.editedAt ? ' (editado)' : ''}
+        {pinned && <span className="text-[#E8C15A]" title="Mensaje fijado">📌</span>}
         {mine && <Ticks receipt={receipt} userName={userName} />}
       </p>
     </div>
@@ -502,7 +567,7 @@ function DateDivider({ ts }) {
   )
 }
 
-export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread }) {
+export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const q = query?.trim().toLowerCase()
@@ -566,6 +631,11 @@ export function MessageThread({ messages, currentUid, query, hasMore, onLoadMore
                   userPhoto={userPhoto}
                   receipt={mine && receiptFor ? receiptFor(m) : null}
                   onOpenThread={onOpenThread ? () => onOpenThread(m) : null}
+                  pinned={pinnedIds?.has(m.id)}
+                  onTogglePin={onTogglePin ? () => onTogglePin(m) : null}
+                  onRemind={onRemind ? (at) => onRemind(m, at) : null}
+                  onCreateTask={onCreateTask ? () => onCreateTask(m) : null}
+                  onOpenTask={onOpenTask}
                   onEdit={(text) => onEdit(m.id, text)}
                   onDelete={() => onDelete(m.id)}
                   onOpenProfile={onOpenProfile}
@@ -636,11 +706,11 @@ export function ImageLightbox({ attachment, onClose }) {
                   .then(() => setCopied('Copiada — pégala con Ctrl+V'))
                   .catch(() => setCopied('Tu navegador no permitió copiarla'))
               }}
-              className="ml-3 text-[#5B9BD9] hover:underline"
+              className="ml-3 text-[#E8C15A] hover:underline"
             >
               {copied || 'Copiar imagen'}
             </button>
-            <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#5B9BD9] hover:underline">
+            <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#E8C15A] hover:underline">
               Descargar
             </a>
           </>
@@ -909,7 +979,7 @@ export function Composer({ onSend, onError, onTyping, mentionCandidates = [], pl
         <button type="button" onClick={voice.cancel} className="text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">
           Cancelar
         </button>
-        <button type="button" onClick={voice.stop} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white" style={{ background: '#1E5FAD' }} title="Enviar nota de voz">
+        <button type="button" onClick={voice.stop} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white" style={{ background: '#B8860B' }} title="Enviar nota de voz">
           <ArrowRightIcon size={16} />
         </button>
       </div>
@@ -929,7 +999,7 @@ export function Composer({ onSend, onError, onTyping, mentionCandidates = [], pl
       onDrop={onDrop}
     >
       {dragging && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#5B9BD9]/60 bg-[#0A0A0A]/80 text-[13px] text-[#9CC4EC]">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#0A0A0A]/80 text-[13px] text-[#E8C15A]">
           Suelta la imagen para adjuntarla
         </div>
       )}
@@ -1091,7 +1161,7 @@ export function Composer({ onSend, onError, onTyping, mentionCandidates = [], pl
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
             className="ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#F5F5F5] transition-opacity duration-150 disabled:opacity-40"
-            style={{ background: '#1E5FAD' }}
+            style={{ background: '#B8860B' }}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />

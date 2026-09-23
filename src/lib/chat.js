@@ -319,3 +319,36 @@ export function dayBucket(ts, now = new Date()) {
   if (t >= start - 6 * 86400000) return 'Esta semana'
   return 'Anteriores'
 }
+
+// ---- Recordatorios ----
+// Quick choices for "Recuérdamelo", computed from now.
+export function reminderOptions(now = new Date()) {
+  const at = (d, h, m = 0) => {
+    const x = new Date(d)
+    x.setHours(h, m, 0, 0)
+    return x
+  }
+  const tomorrow = new Date(now)
+  tomorrow.setDate(now.getDate() + 1)
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + ((8 - now.getDay()) % 7 || 7))
+  return [
+    { id: '20m', label: 'En 20 min', at: new Date(now.getTime() + 20 * 60000) },
+    { id: '1h', label: 'En 1 hora', at: new Date(now.getTime() + 60 * 60000) },
+    { id: 'tarde', label: 'Hoy 17:00', at: at(now, 17), hidden: now.getHours() >= 16 },
+    { id: 'manana', label: 'Mañana 9:00', at: at(tomorrow, 9) },
+    { id: 'lunes', label: 'El lunes 9:00', at: at(monday, 9) },
+  ].filter((o) => !o.hidden)
+}
+
+export function formatReminderTime(date) {
+  const d = date instanceof Date ? date : date?.toDate?.()
+  if (!d) return ''
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+  const hm = d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+  if (d.toDateString() === today.toDateString()) return `hoy ${hm}`
+  if (d.toDateString() === tomorrow.toDateString()) return `mañana ${hm}`
+  return `${d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' })} ${hm}`
+}

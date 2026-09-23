@@ -8,6 +8,7 @@ import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
 import IncomingCallGate, { OutgoingCallBanner } from './IncomingCallGate'
+import ReminderGate from './ReminderGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 
@@ -58,7 +59,12 @@ const MODULE_LABELS = {
 }
 
 export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
-  const [activeModule, setActiveModule] = useState('inicio')
+  // Coming back from Google's consent screen with ?state=chat means the
+  // connection was started from Comunicación — reopen it there so its hook
+  // can finish the connection (Calendario's hook handles every other case).
+  const [activeModule, setActiveModule] = useState(() =>
+    new URLSearchParams(window.location.search).get('state') === 'chat' && new URLSearchParams(window.location.search).get('code') ? 'chat' : 'inicio'
+  )
   // Set alongside activeModule when a global-search result should also open
   // a specific client/task's detail panel once its module mounts — cleared
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).
@@ -158,7 +164,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'news' ? (
               <NewsModule key="news" user={user} />
             ) : activeModule === 'chat' ? (
-              <ChatModule key="chat" user={user} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} />
+              <ChatModule key="chat" user={user} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (
@@ -180,6 +186,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
       <IncomingCallGate user={user} />
       <OutgoingCallBanner user={user} />
+      <ReminderGate user={user} onNavigate={navigateTo} />
     </div>
   )
 }

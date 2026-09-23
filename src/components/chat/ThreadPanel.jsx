@@ -32,6 +32,9 @@ export default function ThreadPanel({
   onOpenImage,
   onRead,
   onError,
+  onRemind,
+  onCreateTask,
+  onOpenTask,
 }) {
   const [parent, setParent] = useState(undefined)
   const [replies, setReplies] = useState([])
@@ -76,6 +79,9 @@ export default function ThreadPanel({
     onOpenProfile,
     onToggleSave: () => onToggleSave(m, m.id === parentId ? null : parentId),
     onOpenImage,
+    onRemind: onRemind ? (at) => onRemind(m, at) : null,
+    onCreateTask: onCreateTask ? () => onCreateTask(m) : null,
+    onOpenTask,
   })
 
   return (
