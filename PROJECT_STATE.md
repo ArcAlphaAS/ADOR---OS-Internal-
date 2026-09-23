@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-time channels + DMs, then edit/delete, unread dots, date dividers, a search box, and fixes for a couple of real bugs found via direct testing. With this, every Phase 3 module has shipped in some form; only Firebase Storage-dependent file uploads and mobile/PWA access remain open). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long session — DMs, private groups, public/private channels with permissions, Slack-style threads, mentions, email-style Inbox, reactions, pins, reminders, message → task, voice notes and pasted images, Google Meet calls in one click with ringing on the other side, presence and availability statuses, search across all messages, a graphite-and-gold visual pass, and a free 90-day retention policy. One-click Meet calls confirmed working live by the user. Open items: lock private channels in Firestore rules before any non-founder gets a login, and a full two-account test of the rest). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -17,7 +17,7 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 | Phase 3 — Directorio (Personas, Organigrama, Equipos, Roles) | ✅ Done (2026-09-18) |
 | Phase 3 — Conocimiento (Markdown wiki: Estrategia/Marketing/Operaciones/Compañía tree) | ✅ Done (2026-09-22) |
 | Phase 3 — News + Comunidad (merged: Anuncios/Comunidad tabs in one module) | ✅ Done (2026-09-22) |
-| Phase 3 — Chat (real-time channels + DMs) | ✅ Done (2026-09-22) |
+| Phase 3 — Comunicación (antes Chat): DMs, grupos, canales con permisos, hilos, menciones, llamadas Meet, estados, búsqueda, retención | ✅ Done (2026-09-22, rebuilt 2026-09-23) — Meet calls confirmed live |
 | "Conoce ADOR OS" — first-login walkthrough | ✅ Done (2026-08-16) |
 
 ## What's actually built
@@ -372,16 +372,22 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Hilos estilo Slack (panel, resumen "N respuestas", vista Hilos, avisos a participantes), presencia (en línea / ausente / activo hace X), "escribiendo…", ✓/✓✓ leído en DMs y grupos, pegar (Ctrl+V) / arrastrar imágenes, copiar imagen (2026-09-23). See CLAUDE.md §34
 - [x] Inbox tipo email (No leídos / Todos, contador por conversación, marcar leído / no leído / todo) y llamadas estilo Teams (tarjeta en vivo: llamando / en curso / perdida / rechazada / cancelada / finalizada, aviso "Llamando a…" con Cancelar) (2026-09-23)
 - [x] Grafito y oro en todo el chat; fijar mensajes; "Recordármelo"; mensaje → tarea con confirmación (2026-09-23)
-- [x] Llamar en un clic con Google Meet — código listo (2026-09-23)
+- [x] Llamar en un clic con Google Meet — **confirmado funcionando en producción** por el usuario (2026-09-23)
 - [x] Solo se puede conectar la cuenta de Google de la empresa (mismo correo de ADOR OS, o dominios en `settings/google.allowedDomains`); modo manual detecta el enlace de Meet copiado y llama solo (2026-09-23)
-- [ ] **Activar Google Meet REST API + añadir el scope `meetings.space.created` en Cloud Console**, y que cada socio pulse "Conectar Google" una vez desde el chat — sin esto sigue el modo manual (abrir Meet y pegar enlace)
+- [x] Google Meet REST API habilitada en el proyecto de Google (610980815690) y scope `meetings.space.created` añadido (2026-09-23). Cada socio debe pulsar "Conectar Google" una vez desde el chat; quien no lo haga sigue en modo manual (abrir Meet y copiar el enlace — ADOR OS lo detecta solo)
 - [x] Avisos de mensajes fuera del chat: número dorado en el ícono de Comunicación, "(N) ADOR OS" en la pestaña, aviso emergente con sonido (y notificación del sistema si ADOR OS no está al frente) (2026-09-23)
 - [x] Código de Comunicación reorganizado en archivos por responsabilidad (sin cambios visibles) (2026-09-23)
 - [x] Estados: Disponible / No molestar (manual) / En reunión (automático desde Google Calendar); silencian llamadas y avisos (2026-09-23)
-- [x] Búsqueda en todos los mensajes (últimos 400 por conversación, sin tildes ni mayúsculas, filtros De/En, salta al mensaje) (2026-09-23)
+- [x] Búsqueda en todos los mensajes (sin tildes ni mayúsculas, filtros De/En, salta al mensaje) (2026-09-23) — ahora lee los últimos 150 por conversación con caché de 15 min, para no pasarse del límite gratis de lecturas
 - [x] Pase visual: mensajes agrupados con foto y nombre una vez, línea "Nuevos mensajes", barra lateral simplificada (estado en tu foto, accesos en fila de íconos), contraste y 4 tamaños de letra, fotos reales en todo el chat, paneles derechos unificados (2026-09-23)
-- [x] Retención gratis: imágenes y notas de voz se borran a los 90 días (queda "archivo expirado"), texto para siempre; limpieza diaria automática de llamadas, recordatorios hechos y menciones viejas; imágenes/voz más livianas; búsqueda con menos lecturas (2026-09-23)
-- [ ] Probar menciones/campana/voz/llamadas/avisos/estados entre dos cuentas reales
+- [x] Retención gratis (2026-09-23) — decidida con el usuario:
+  - Texto: **para siempre** (casi no ocupa; es la memoria de la empresa). Un límite por canal (ej. #direccion a 1 año) queda como opción futura, no pedida.
+  - Imágenes y notas de voz: **90 días**; después el mensaje muestra "Imagen expirada" / "Nota de voz expirada". Documentos de Drive: nunca (son enlaces).
+  - Llamadas: 7 días. Recordatorios hechos: se borran. Avisos de menciones/respuestas: 90 días.
+  - **Cómo corre sin servidor:** una vez al día, el primer socio que abre ADOR OS la ejecuta en segundo plano (~20 s después de abrir). Una "reserva" en `settings/maintenance.chatCleanupAt` asegura que solo una app la haga por día. Borra en tandas de 150 por tipo para no acercarse al límite de 20.000 borrados/día; lo que quede sigue al día siguiente. Si nadie abre la app un día, se hace al siguiente.
+  - Imágenes ahora 1280 px y voz a 24 kbps (≈ mitad de peso).
+  - Las pocas imágenes de las primeras pruebas (antes del índice de archivos) no caducan solas.
+- [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
@@ -397,6 +403,8 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 | Firebase project (`ador-os`) | Created |
 | Firebase Authentication | Enabled — **Email/Password only**. Google OAuth was enabled then removed 2026-08-14 (self-serve sign-in let any Google account in; invite-only model needs admin-provisioned accounts instead) |
 | Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region. Rules require `request.auth != null` AND the user's email to have a document in `allowedEmails/{email}` — access control enforced at the data layer, not just the login screen. Applied via a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule, so **every** collection is automatically covered, present and future — no per-collection rule edits are ever needed (confirmed 2026-08-15 by reviewing the actual rules in console). All 3 founder emails added as of 2026-08-14 |
+| Google Cloud (OAuth, Calendar API, **Meet REST API**) | ✅ Same project as Firebase (number 610980815690). OAuth scopes: `calendar.readonly` + `meetings.space.created`. Only the founder's own ADOR OS login email may be connected as their Google account (optional extra domains in `settings/google.allowedDomains`) |
+| Vercel functions | `api/google-calendar/exchange.js`, `api/google-calendar/refresh.js`, `api/google-meet/space.js` (creates Meet rooms), `api/ador-ia.js` (dormant Gemini path) |
 | Deployment | ✅ Vercel — `ador-os-internal.vercel.app`, auto-deploys on push to `main`. Firebase Hosting not used (redundant with Vercel) |
 | `.env` (Firebase config) | Present locally, gitignored. Same values set as Environment Variables in Vercel project settings |
 | Git repository | ✅ Initialized, initial commit made 2026-08-13 |
@@ -404,8 +412,12 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 
 ## Open blockers
 
-None. Auth + access control + deployment are all done and live.
+None blocking day-to-day use. **Before any non-founder gets an ADOR OS login:** lock private channels/groups in Firestore rules (today they're hidden in the UI only; see CLAUDE.md §34 for the exact rule change and the query split it needs).
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. Short version: Firestore rules were confirmed 2026-08-15 to already cover every collection via a blanket rule — that item is closed, no action needed. ADOR IA is done and live on its local rule-based engine (see above) — no Vercel step needed unless the user later decides to connect the already-built Gemini path. Calendario is done and confirmed working live as of 2026-09-17 — also closed. Chat, Comunidad (merged into News), and News are all done as of 2026-09-22 — every Phase 3 module has now shipped in some form. **Next up: enable Firebase Storage** for real Documentos/Comprobante/Conocimiento-attachment uploads — the one piece of infrastructure still open. Mobile/PWA access has an agreed direction (see "Scoped but not started" above) but the user wants it later, not now.
+See "Next recommended steps" in `CLAUDE.md` for the full reasoning. In order:
+1. **Two-account test of Comunicación** (≈20 min, two founders on two computers) — see the open checklist item above.
+2. **Lock private channels in Firestore rules** — required before anyone who isn't a founder gets access.
+3. **Firebase Storage** for real PDF/Excel uploads (Clientes → Documentos, Finanzas → Comprobante, chat "Otro archivo") — still deliberately deferred by the user.
+4. **Mobile/PWA** — agreed direction, parked by the user (see "Scoped but not started"). Its push-notification phase is also what would make calls ring with ADOR OS closed.
