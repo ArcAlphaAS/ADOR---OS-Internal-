@@ -117,7 +117,7 @@ function ViewNav({ view, counts, onSelectView }) {
   )
 }
 
-export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup }) {
+export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages }) {
   const [search, setSearch] = useState('')
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
@@ -127,7 +127,6 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const publicChannels = channels.filter((c) => !isPrivate(c) && match(c.name))
   const privateChannels = channels.filter((c) => isPrivate(c) && match(c.name))
   const searching = q.length > 0
-  const nothingFound = searching && !otherUsers.length && !visibleGroups.length && !publicChannels.length && !privateChannels.length
 
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
@@ -141,15 +140,27 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar personas o canales..."
+            onKeyDown={(e) => e.key === 'Enter' && search.trim() && onSearchMessages(search.trim())}
+            placeholder="Buscar…"
             className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
           />
         </div>
+        {searching && (
+          <button
+            type="button"
+            onClick={() => onSearchMessages(search.trim())}
+            className="mt-2 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E8C15A] hover:bg-white/[0.04]"
+          >
+            <SearchIcon size={12} />
+            <span className="truncate">Buscar “{search.trim()}” en todos los mensajes</span>
+            <span className="ml-auto text-[10.5px] text-[#666666]">Enter</span>
+          </button>
+        )}
       </div>
 
-      <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
+      <StatusPicker presence={presence[currentUid]} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
 
-      {nothingFound && <p className="px-2.5 text-[12px] text-[#444444]">Sin resultados para “{search}”.</p>}
+      <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
 
       <div>
         <SectionHeader label="Mensajes directos" />
@@ -243,6 +254,74 @@ function CallNotificationsPrompt() {
       >
         Activar avisos de llamada
       </button>
+    </div>
+  )
+}
+
+function dndOptions(now = new Date()) {
+  const tomorrow9 = new Date(now)
+  tomorrow9.setDate(now.getDate() + 1)
+  tomorrow9.setHours(9, 0, 0, 0)
+  return [
+    { label: '30 minutos', until: new Date(now.getTime() + 30 * 60000) },
+    { label: '1 hora', until: new Date(now.getTime() + 60 * 60000) },
+    { label: '2 horas', until: new Date(now.getTime() + 120 * 60000) },
+    { label: 'Hasta mañana 9:00', until: tomorrow9 },
+  ]
+}
+
+// "Mi estado": your own availability, which everyone sees on your dot.
+// Disponible (default) or No molestar for a while — calls don't ring and
+// messages don't pop up until it ends. "En reunión" isn't picked here: it
+// comes on its own from your Google Calendar while an event is happening.
+function StatusPicker({ presence, onSetDnd, calendarConnected }) {
+  const [open, setOpen] = useState(false)
+  const p = presenceOf(presence)
+  const current = p.status === 'dnd' || p.status === 'meeting' ? p : { status: 'available', label: 'Disponible', color: '#4CAF50' }
+
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left">
+        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: current.color }} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10.5px] uppercase tracking-[0.08em] text-[#555555]">Mi estado</span>
+          <span className="block truncate text-[12.5px] text-[#DDDDDD]">{current.label}</span>
+        </span>
+        <span className="text-[11px] text-[#666666]">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div className="flex flex-col gap-0.5 border-t border-white/[0.06] p-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              onSetDnd(null)
+              setOpen(false)
+            }}
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.05]"
+          >
+            <span className="h-2 w-2 rounded-full bg-[#4CAF50]" /> Disponible
+          </button>
+          <p className="px-2 pt-1 text-[10.5px] text-[#555555]">No molestar durante…</p>
+          {dndOptions().map((o) => (
+            <button
+              key={o.label}
+              type="button"
+              onClick={() => {
+                onSetDnd(o.until)
+                setOpen(false)
+              }}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.05]"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#EF5350]" /> {o.label}
+            </button>
+          ))}
+          <p className="px-2 pt-1.5 pb-1 text-[10.5px] leading-relaxed text-[#555555]">
+            {calendarConnected
+              ? '“En reunión” se pone solo mientras tengas un evento en tu Google Calendar.'
+              : 'Conecta Google (Calendario o Llamar) y “En reunión” se pondrá solo durante tus eventos.'}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

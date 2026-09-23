@@ -203,3 +203,28 @@ export async function fetchEvents(accessToken, { timeMin, timeMax }) {
     isMeeting: (e.attendees || []).some((a) => !a.self),
   }))
 }
+
+// For "En reunión" presence: is there a timed, busy event happening right
+// now on the primary calendar? Skips all-day events, events marked "free"
+// (transparency: transparent) and invitations the person declined.
+// Returns { until: Date, meeting: boolean } or null.
+export async function fetchCurrentBusy(accessToken) {
+  const now = new Date()
+  const params = new URLSearchParams({
+    timeMin: new Date(now.getTime() - 12 * 3600000).toISOString(),
+    timeMax: new Date(now.getTime() + 60000).toISOString(),
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '50',
+  })
+  const data = await callCalendarApi(`calendars/primary/events?${params.toString()}`, accessToken)
+  const current = (data.items || []).filter((e) => {
+    if (!e.start?.dateTime || !e.end?.dateTime || e.transparency === 'transparent') return false
+    const self = (e.attendees || []).find((a) => a.self)
+    if (self?.responseStatus === 'declined') return false
+    return new Date(e.start.dateTime) <= now && new Date(e.end.dateTime) > now
+  })
+  if (!current.length) return null
+  const until = new Date(Math.max(...current.map((e) => new Date(e.end.dateTime).getTime())))
+  return { until, meeting: current.some((e) => (e.attendees || []).some((a) => !a.self)) }
+}

@@ -230,7 +230,18 @@ function ago(ms) {
 
 // En línea = ADOR OS open and visible in the last ~2 min. Ausente = open
 // but in a background tab/window. Otherwise, when they were last active.
+//
+// Availability wins over connection: "No molestar" (set by hand) first,
+// then "En reunión" / "Ocupado" (from the person's own Google Calendar),
+// then en línea / ausente / activo hace X.
 export function presenceOf(p, now = Date.now()) {
+  const hm = (ts) => ts.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+  if (p?.dnd?.until?.toMillis && p.dnd.until.toMillis() > now) {
+    return { status: 'dnd', label: `No molestar hasta ${hm(p.dnd.until)}`, color: '#EF5350', quiet: true }
+  }
+  if (p?.calendar?.until?.toMillis && p.calendar.until.toMillis() > now) {
+    return { status: 'meeting', label: `${p.calendar.meeting ? 'En reunión' : 'Ocupado'} hasta ${hm(p.calendar.until)}`, color: '#A78BDA', muted: true }
+  }
   const at = p?.lastActiveAt?.toMillis?.()
   if (!at) return { status: 'offline', label: 'Sin actividad reciente', color: null }
   const age = now - at

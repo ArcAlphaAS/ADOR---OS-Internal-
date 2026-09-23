@@ -376,7 +376,10 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Solo se puede conectar la cuenta de Google de la empresa (mismo correo de ADOR OS, o dominios en `settings/google.allowedDomains`); modo manual detecta el enlace de Meet copiado y llama solo (2026-09-23)
 - [ ] **Activar Google Meet REST API + añadir el scope `meetings.space.created` en Cloud Console**, y que cada socio pulse "Conectar Google" una vez desde el chat — sin esto sigue el modo manual (abrir Meet y pegar enlace)
 - [x] Avisos de mensajes fuera del chat: número dorado en el ícono de Comunicación, "(N) ADOR OS" en la pestaña, aviso emergente con sonido (y notificación del sistema si ADOR OS no está al frente) (2026-09-23)
-- [ ] Probar menciones/campana/voz/llamadas/avisos entre dos cuentas reales
+- [x] Código de Comunicación reorganizado en archivos por responsabilidad (sin cambios visibles) (2026-09-23)
+- [x] Estados: Disponible / No molestar (manual) / En reunión (automático desde Google Calendar); silencian llamadas y avisos (2026-09-23)
+- [x] Búsqueda en todos los mensajes (últimos 400 por conversación, sin tildes ni mayúsculas, filtros De/En, salta al mensaje) (2026-09-23)
+- [ ] Probar menciones/campana/voz/llamadas/avisos/estados entre dos cuentas reales
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip

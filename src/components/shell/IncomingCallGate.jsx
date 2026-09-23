@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { subscribeIncomingCalls, respondToChatCall, subscribeUsers, subscribeOutgoingCalls, setChatCallStatus } from '../../lib/firestore'
-import { callState, RING_MS as CALL_RING_MS } from '../../lib/chat'
+import { subscribeIncomingCalls, respondToChatCall, subscribeUsers, subscribeOutgoingCalls, setChatCallStatus, subscribeMyPresence, subscribePresence } from '../../lib/firestore'
+import { callState, presenceOf, RING_MS as CALL_RING_MS } from '../../lib/chat'
 import Avatar from './Avatar'
 import { PhoneIcon, VideoIcon, CloseIcon } from '../icons'
 
@@ -101,7 +101,17 @@ export default function IncomingCallGate({ user }) {
   const [users, setUsers] = useState([])
   const [dismissed, setDismissed] = useState(() => new Set())
   const [now, setNow] = useState(() => Date.now())
+  const [myPresence, setMyPresence] = useState(null)
   const busyRef = useRef(false)
+
+  useEffect(() => {
+    if (!user?.uid || user.uid === 'preview') return
+    return subscribeMyPresence(user.uid, setMyPresence)
+  }, [user?.uid])
+  // No molestar: calls don't ring or pop up at all — they land as a missed
+  // call card and in the bell. En reunión: the screen still appears, but
+  // silently.
+  const availability = presenceOf(myPresence, now).status
 
   useEffect(() => {
     if (!user?.uid || user.uid === 'preview') return
@@ -112,7 +122,7 @@ export default function IncomingCallGate({ user }) {
   const ringing = calls
     .filter((c) => c.createdAt?.toMillis && now - c.createdAt.toMillis() < RING_MS && !c.responses?.[user.uid] && !dismissed.has(c.id) && c.status !== 'cancelled' && c.status !== 'ended')
     .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
-  const current = ringing[0] || null
+  const current = availability === 'dnd' ? null : ringing[0] || null
 
   // Re-evaluates the ring window every second while something might ring,
   // so a call expires on time even if no new Firestore snapshot arrives.
@@ -123,7 +133,7 @@ export default function IncomingCallGate({ user }) {
     return () => clearInterval(timer)
   }, [hasCandidates])
 
-  useRingtone(Boolean(current))
+  useRingtone(Boolean(current) && availability !== 'meeting')
   useBackgroundAlert(current)
 
   const respond = (response) => {
@@ -163,6 +173,7 @@ export default function IncomingCallGate({ user }) {
             {video ? <VideoIcon size={13} /> : <PhoneIcon size={12} />}
             {video ? 'Videollamada' : 'Llamada'} entrante · Google Meet
           </p>
+          {availability === 'meeting' && <p className="mt-1 text-[11px] text-[#A78BDA]">Sin sonido — estás en una reunión</p>}
           <p className="mt-0.5 text-[11.5px] text-[#555555]">{current.conversationLabel}</p>
           {ringing.length > 1 && <p className="mt-2 text-[11px] text-[#B8860B]">+{ringing.length - 1} llamada{ringing.length > 2 ? 's' : ''} más</p>}
 
@@ -194,6 +205,7 @@ export default function IncomingCallGate({ user }) {
 export function OutgoingCallBanner({ user }) {
   const [calls, setCalls] = useState([])
   const [users, setUsers] = useState([])
+  const [presence, setPresence] = useState({})
   const [dismissed, setDismissed] = useState(() => new Set())
   const [now, setNow] = useState(() => Date.now())
 
@@ -201,6 +213,7 @@ export function OutgoingCallBanner({ user }) {
     if (!user?.uid || user.uid === 'preview') return
     return subscribeOutgoingCalls(user.uid, setCalls)
   }, [user?.uid])
+  useEffect(() => subscribePresence(setPresence), [])
   useEffect(() => subscribeUsers(setUsers), [])
 
   const recent = calls
@@ -221,8 +234,11 @@ export function OutgoingCallBanner({ user }) {
   const who = names.length > 2 ? `${names.slice(0, 2).join(', ')} y ${names.length - 2} más` : names.join(' y ')
   const joined = (call.joinedUids || []).filter((x) => x !== user.uid).map(firstName)
 
+  const quietNames = (call.toUids || []).filter((uid) => presenceOf(presence[uid], now).status === 'dnd').map(firstName)
   const text =
-    state.key === 'ringing'
+    state.key === 'ringing' && quietNames.length === (call.toUids || []).length
+      ? `${who} ${quietNames.length === 1 ? 'está' : 'están'} en No molestar — verá${quietNames.length === 1 ? '' : 'n'} la llamada perdida`
+      : state.key === 'ringing'
       ? `Llamando a ${who}…`
       : state.key === 'active'
         ? `${joined.join(', ')} ${joined.length === 1 ? 'se unió' : 'se unieron'} a la llamada`

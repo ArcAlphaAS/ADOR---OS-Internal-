@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { useMessageSearch, normalize } from '../../hooks/useMessageSearch'
 import { dayBucket, formatReminderTime } from '../../lib/chat'
 import Avatar from '../shell/Avatar'
-import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon } from '../icons'
+import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon, SearchIcon } from '../icons'
 
 function timeAgo(ts) {
   if (!ts?.toDate) return ''
@@ -354,6 +355,133 @@ export function FilesView({ files, onOpen, onOpenImage }) {
               )}
             </div>
           </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+// Marks every searched word inside the text (gold), matching the same
+// accent/case-insensitive way the search does. NFD-stripping keeps
+// precomposed letters the same length, so indices line up with the original.
+function Highlight({ text, words }) {
+  const norm = normalize(text)
+  const marks = []
+  for (const w of words) {
+    let i = norm.indexOf(w)
+    while (i !== -1) {
+      marks.push([i, i + w.length])
+      i = norm.indexOf(w, i + w.length)
+    }
+  }
+  if (!marks.length) return text
+  marks.sort((a, b) => a[0] - b[0])
+  const parts = []
+  let last = 0
+  marks.forEach(([a, b], k) => {
+    if (a < last) return
+    if (a > last) parts.push(<span key={`t${k}`}>{text.slice(last, a)}</span>)
+    parts.push(
+      <mark key={`m${k}`} className="rounded bg-[#B8860B]/30 px-0.5 text-[#F2EBDD]">
+        {text.slice(a, b)}
+      </mark>
+    )
+    last = b
+  })
+  if (last < text.length) parts.push(<span key="end">{text.slice(last)}</span>)
+  return parts
+}
+
+// Long messages show the part around the first match, not the beginning.
+function snippetAround(text, words) {
+  const norm = normalize(text)
+  const first = Math.min(...words.map((w) => norm.indexOf(w)).filter((i) => i >= 0))
+  if (!Number.isFinite(first) || text.length <= 160) return text
+  const start = Math.max(0, first - 60)
+  return `${start > 0 ? '…' : ''}${text.slice(start, start + 160)}${start + 160 < text.length ? '…' : ''}`
+}
+
+// Search across every conversation you can see (see useMessageSearch for
+// how, and its limits). Filter by who wrote it and where; click a result to
+// open the conversation scrolled to that message.
+export function SearchView({ query, onQueryChange, conversations, onOpen }) {
+  const { loading, results, searched } = useMessageSearch(conversations, query)
+  const [author, setAuthor] = useState('')
+  const [where, setWhere] = useState('')
+  const words = normalize(query).split(/\s+/).filter(Boolean)
+  const authors = [...new Set(results.map((r) => r.message.authorName).filter(Boolean))]
+  const places = [...new Map(results.map((r) => [r.conv.convId, r.conv])).values()]
+  const shown = results.filter((r) => (!author || r.message.authorName === author) && (!where || r.conv.convId === where))
+
+  return (
+    <>
+      <div className="flex items-center gap-3 border-b border-white/[0.06] pb-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-[#AAAAAA]">
+          <SearchIcon size={14} />
+        </span>
+        <input
+          autoFocus
+          type="text"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Buscar en todos los mensajes…"
+          className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-[#F5F5F5] placeholder:font-normal placeholder:text-[#555555] outline-none"
+        />
+        {loading && <span className="text-[11.5px] text-[#777777]">Buscando…</span>}
+      </div>
+
+      {results.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+          <select value={author} onChange={(e) => setAuthor(e.target.value)} className="rounded-full border border-white/[0.1] bg-[#141414] px-3 py-1 text-[#CCCCCC] outline-none">
+            <option value="">De: cualquiera</option>
+            {authors.map((a) => (
+              <option key={a} value={a}>
+                De: {a}
+              </option>
+            ))}
+          </select>
+          <select value={where} onChange={(e) => setWhere(e.target.value)} className="rounded-full border border-white/[0.1] bg-[#141414] px-3 py-1 text-[#CCCCCC] outline-none">
+            <option value="">En: todas</option>
+            {places.map((c) => (
+              <option key={c.convId} value={c.convId}>
+                En: {c.label}
+              </option>
+            ))}
+          </select>
+          <span className="ml-auto text-[11.5px] text-[#666666]">
+            {shown.length} {shown.length === 1 ? 'resultado' : 'resultados'}
+          </span>
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
+        {!words.length ? (
+          <Empty icon={<SearchIcon size={22} />} text="Escribe una palabra, un nombre o una frase. Busca en mensajes directos, grupos y canales a los que perteneces." />
+        ) : !loading && searched && !shown.length ? (
+          <Empty icon={<SearchIcon size={22} />} text={`Nada coincide con “${searched}”. Se buscan los últimos 400 mensajes de cada conversación; las respuestas dentro de hilos no se incluyen.`} />
+        ) : (
+          shown.map(({ message, conv }) => (
+            <button
+              key={`${conv.convId}-${message.id}`}
+              type="button"
+              onClick={() => onOpen({ ...conv, messageId: message.id, deep: true })}
+              className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.04]"
+            >
+              <span className="mt-0.5 flex-shrink-0">
+                <Avatar displayName={message.authorName} size={30} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-[13px] font-medium text-[#DDDDDD]">{message.authorName}</span>
+                  <span className="truncate text-[11.5px] text-[#555555]">{conv.label}</span>
+                  <span className="ml-auto flex-shrink-0 text-[11px] text-[#555555]">{timeAgo(message.createdAt)}</span>
+                </span>
+                <span className="mt-0.5 block text-[12.5px] leading-relaxed text-[#999999]">
+                  <Highlight text={snippetAround(message.text || message.attachment?.name || '', words)} words={words} />
+                </span>
+              </span>
+            </button>
+          ))
         )}
       </div>
     </>

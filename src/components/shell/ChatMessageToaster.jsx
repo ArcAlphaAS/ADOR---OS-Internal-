@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useChatNotifications, useChatUnreadCount } from '../../hooks/useChatNotifications'
+import { subscribeMyPresence } from '../../lib/firestore'
+import { presenceOf } from '../../lib/chat'
 import Avatar from './Avatar'
 import { CloseIcon } from '../icons'
 
@@ -51,6 +53,12 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
   const unread = useChatUnreadCount(uid)
   const seenRef = useRef(null)
   const [toasts, setToasts] = useState([])
+  const [myPresence, setMyPresence] = useState(null)
+
+  useEffect(() => {
+    if (!uid || uid === 'preview') return
+    return subscribeMyPresence(uid, setMyPresence)
+  }, [uid])
 
   useEffect(() => {
     document.title = unread ? `(${unread}) ${BASE_TITLE}` : BASE_TITLE
@@ -68,13 +76,19 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
     if (!fresh.length) return
     fresh.forEach((i) => seenRef.current.add(i.key))
 
+    // No molestar: nothing pops or sounds — the badge, tab count and bell
+    // still collect everything for later. En reunión: shown, but silent.
+    const availability = presenceOf(myPresence).status
+    if (availability === 'dnd') return
+    const silent = availability === 'meeting'
+
     // ADOR OS not in front (background tab, or another app focused): OS
     // notification. Visible on screen: the in-app toast as well.
     const inFront = document.visibilityState === 'visible' && document.hasFocus()
     if (!inFront) {
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         for (const i of fresh.slice(0, 3)) {
-          const n = new Notification(i.from ? `${i.from} · ADOR OS` : 'Nuevo mensaje · ADOR OS', { body: i.text, tag: `ador-msg-${i.key}` })
+          const n = new Notification(i.from ? `${i.from} · ADOR OS` : 'Nuevo mensaje · ADOR OS', { body: i.text, tag: `ador-msg-${i.key}`, silent })
           n.onclick = () => {
             window.focus()
             i.onClick()
@@ -84,9 +98,9 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
       }
     }
     if (document.visibilityState !== 'visible' || activeModule === 'chat') return
-    chime()
+    if (!silent) chime()
     setToasts((prev) => [...fresh.map((i) => ({ ...i, shownAt: Date.now() })), ...prev].slice(0, 3))
-  }, [items, activeModule, uid])
+  }, [items, activeModule, uid, myPresence])
 
   useEffect(() => {
     if (!toasts.length) return

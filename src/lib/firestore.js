@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   Timestamp,
   limitToLast,
+  limit,
   increment,
   deleteField,
   runTransaction,
@@ -1000,6 +1001,14 @@ export function subscribeMessages(convType, convId, count, onData, parentId) {
   )
 }
 
+// One-off read (no listener) of a conversation's most recent messages,
+// newest first — what the cross-conversation search scans.
+export async function fetchRecentMessages(convType, convId, count) {
+  if (!db) return []
+  const snap = await getDocs(query(messagesCol(convType, convId), orderBy('createdAt', 'desc'), limit(count)))
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
 // Same emoji → [uids] map shape as Comunidad's reactions, but multiple
 // reactions per person are allowed here (Slack-style), so each emoji
 // toggles independently.
@@ -1170,6 +1179,30 @@ export function subscribeTyping(typingKey, onData) {
 export function writePresence(uid, state) {
   if (!db || !uid) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.presence, uid), { state, lastActiveAt: serverTimestamp() }, { merge: true })
+}
+
+// Manual "No molestar" until a given time (null = available again). Lives on
+// the same presence doc so everyone's sidebar dot picks it up instantly.
+export function setDoNotDisturb(uid, until) {
+  if (!db || !uid) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.presence, uid), { dnd: until ? { until: Timestamp.fromDate(until) } : null }, { merge: true })
+}
+
+// Written by the person's own ADOR OS from their Google Calendar (see
+// usePresenceHeartbeat): only "busy until HH:MM" and whether it's a
+// meeting — never the event's title or guests.
+export function setCalendarBusy(uid, busy) {
+  if (!db || !uid) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.presence, uid), { calendar: busy ? { until: Timestamp.fromDate(busy.until), meeting: busy.meeting } : null }, { merge: true })
+}
+
+export function subscribeMyPresence(uid, onData) {
+  if (!db || !uid) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.presence, uid),
+    (snap) => onData(snap.exists() ? snap.data() : null),
+    () => {}
+  )
 }
 
 export function subscribePresence(onData) {

@@ -35,6 +35,7 @@ import {
   createChatReminder,
   deleteChatReminder,
   createTask,
+  setDoNotDisturb,
 } from '../../lib/firestore'
 import {
   conversationKind,
@@ -48,6 +49,7 @@ import {
   typingLabel,
   receiptFor,
   formatReminderTime,
+  presenceOf,
 } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -56,7 +58,7 @@ import { MessageThread, ImageLightbox } from './ChatThread'
 import Composer from './Composer'
 import ChatSidebar from './ChatSidebar'
 import ConversationHeader, { PinnedBar } from './ConversationHeader'
-import { InboxView, ThreadsView, MentionsView, SavedView, FilesView } from './ChatViews'
+import { InboxView, ThreadsView, MentionsView, SavedView, FilesView, SearchView } from './ChatViews'
 import NewConversationModal from './NewConversationModal'
 import ConversationInfoPanel from './ConversationInfoPanel'
 import MeetPopover from './MeetPopover'
@@ -70,6 +72,8 @@ import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
 const PAGE_SIZE = 50
+// Matches useMessageSearch's depth, so any search result can be scrolled to.
+const SEARCH_DEPTH = 400
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -97,6 +101,10 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   const [callBusy, setCallBusy] = useState(null)
   const [taskDraft, setTaskDraft] = useState(null) // { message, parentId }
   const [pinsOpen, setPinsOpen] = useState(false)
+  const [messageSearch, setMessageSearch] = useState('')
+  // A jump from search can target a message older than the first page, so
+  // the conversation opens with a deeper history in that case.
+  const deepJumpRef = useRef(false)
   const meet = useGoogleMeet(user.uid)
   const jumpToRef = useRef(null)
   const showToast = useToast()
@@ -151,7 +159,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   // to"), the same way Slack's member panel does.
   useEffect(() => {
     setSearchQuery(null)
-    setMessageLimit(PAGE_SIZE)
+    setMessageLimit(deepJumpRef.current ? SEARCH_DEPTH : PAGE_SIZE)
+    deepJumpRef.current = false
     if (selected?.type === 'dm') setPanel((p) => (p?.type === 'profile' ? { type: 'profile', uid: selected.id } : p))
   }, [activeConversationId])
 
@@ -239,8 +248,12 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
 
   // Opens a conversation from any index entry (Inbox, Menciones,
   // Guardados, Archivos, the bell) and optionally jumps to one message.
-  const openConversation = ({ convType: type, convId, participantUids, messageId, threadParentId }) => {
+  const openConversation = ({ convType: type, convId, participantUids, messageId, threadParentId, deep }) => {
     jumpToRef.current = threadParentId || messageId || null
+    if (deep) {
+      deepJumpRef.current = true
+      if (convId === selectedConversationId) setMessageLimit((n) => Math.max(n, SEARCH_DEPTH))
+    }
     setView(null)
     if (threadParentId) setPanel({ type: 'thread', convId, parentId: threadParentId, jumpToId: messageId !== threadParentId ? messageId : null })
     if (type === 'dm') {
@@ -472,6 +485,12 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   }
 
   const toggleCall = (type, anchorRef) => {
+    // Heads-up before calling someone who asked not to be disturbed.
+    if (selected?.type === 'dm') {
+      const their = presenceOf(presence[selected.id])
+      if (their.status === 'dnd') showToast(`${nameOf(selected.id).split(' ')[0]} está en No molestar: no le sonará, verá la llamada perdida.`)
+      else if (their.status === 'meeting') showToast(`${nameOf(selected.id).split(' ')[0]} está ${their.label.toLowerCase()}: le llegará sin sonido.`)
+    }
     if (meet.status === 'ready' && !callBusy) return quickCall(type, anchorRef)
     setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
   }
@@ -519,6 +538,16 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
         onSelectView={setView}
         onNewChannel={() => setModal('channel')}
         onNewGroup={() => setModal('group')}
+        onSearchMessages={(q) => {
+          setMessageSearch(q)
+          setView('search')
+        }}
+        onSetDnd={(until) =>
+          withTimeout(setDoNotDisturb(user.uid, until))
+            .then(() => showToast(until ? `No molestar activado hasta ${until.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}` : 'Estás disponible'))
+            .catch(fail('cambiar tu estado'))
+        }
+        calendarConnected={meet.status === 'ready' || Boolean(profile?.googleCalendar?.refreshToken)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -529,6 +558,13 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
             onMarkRead={(c) => withTimeout(markChatRead(user.uid, c.key, c.messageCount)).catch(fail('marcar como leído'))}
             onMarkUnread={(c) => withTimeout(markChatUnread(user.uid, c.key, c.lastAt, c.messageCount)).catch(fail('marcar como no leído'))}
             onMarkAllRead={(list) => withTimeout(markManyChatRead(user.uid, list.map((c) => ({ key: c.key, count: c.messageCount })))).catch(fail('marcar todo como leído'))}
+          />
+        ) : view === 'search' ? (
+          <SearchView
+            query={messageSearch}
+            onQueryChange={setMessageSearch}
+            conversations={inboxConversations.map((c) => ({ convType: c.convType, convId: c.convId, participantUids: c.participantUids, label: c.convType === 'dm' ? `Mensaje directo · ${c.label.split(' ')[0]}` : labelFor(c.convType, c.convId) }))}
+            onOpen={openConversation}
           />
         ) : view === 'threads' ? (
           <ThreadsView threads={myThreads} onOpen={openConversation} />
