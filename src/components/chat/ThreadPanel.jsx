@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { subscribeMessage, subscribeMessages, subscribeTyping } from '../../lib/firestore'
 import { typingNames, typingLabel } from '../../lib/chat'
-import { MessageBubble, Composer } from './ChatThread'
+import { MessageBubble } from './MessageBubble'
+import Composer from './Composer'
 import { CloseIcon } from '../icons'
 
 const REPLY_PAGE = 100

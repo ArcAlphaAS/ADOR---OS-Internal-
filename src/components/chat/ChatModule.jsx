@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  subscribeChatChannels,
   createChatChannel,
   updateChatChannel,
   addChannelMembers,
@@ -9,23 +8,17 @@ import {
   sendChannelMessage,
   updateChannelMessage,
   deleteChannelMessage,
-  subscribeUsers,
   dmIdFor,
-  subscribeMyDms,
   sendDmMessage,
   updateDmMessage,
   deleteDmMessage,
   markChatRead,
-  subscribeUserProfile,
-  subscribeDirectoryPeople,
   setChatMuted,
   createChatCall,
   subscribeMessages,
   toggleMessageReaction,
   createMentions,
-  subscribeMyMentions,
   toggleSavedMessage,
-  subscribeMySaved,
   indexChatFile,
   subscribeChatFiles,
   createChatBlob,
@@ -35,22 +28,34 @@ import {
   deleteThreadReply,
   setTyping,
   subscribeTyping,
-  subscribePresence,
   markChatUnread,
   markManyChatRead,
   setMessagePinned,
   linkTaskToMessage,
   createChatReminder,
-  subscribeMyReminders,
   deleteChatReminder,
   createTask,
 } from '../../lib/firestore'
-import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor, unreadCountOf, formatReminderTime } from '../../lib/chat'
+import {
+  conversationKind,
+  isMember,
+  membersOf,
+  userLabel,
+  groupLabel,
+  findDriveLink,
+  driveDocType,
+  typingNames,
+  typingLabel,
+  receiptFor,
+  formatReminderTime,
+} from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import Avatar from '../shell/Avatar'
-import { MessageIcon, PlusIcon, SearchIcon, LockIcon, InfoIcon, PhoneIcon, VideoIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon } from '../icons'
-import { MessageThread, Composer, ImageLightbox } from './ChatThread'
+import { MessageIcon, SearchIcon } from '../icons'
+import { MessageThread, ImageLightbox } from './ChatThread'
+import Composer from './Composer'
+import ChatSidebar from './ChatSidebar'
+import ConversationHeader, { PinnedBar } from './ConversationHeader'
 import { InboxView, ThreadsView, MentionsView, SavedView, FilesView } from './ChatViews'
 import NewConversationModal from './NewConversationModal'
 import ConversationInfoPanel from './ConversationInfoPanel'
@@ -59,6 +64,8 @@ import ProfilePanel from './ProfilePanel'
 import ThreadPanel from './ThreadPanel'
 import { useGoogleMeet } from '../../hooks/useGoogleMeet'
 import TaskFromMessageModal from './TaskFromMessageModal'
+import { useChatData } from '../../hooks/useChatData'
+import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -68,422 +75,8 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
-// A conversation "has news" when its last message landed after the last
-// time this user marked it read (users/{uid}.chatLastRead, see
-// markChatRead in lib/firestore.js) — one timestamp per conversation, not
-// a per-message read receipt.
-function isUnread(lastMessageAt, lastReadAt) {
-  if (!lastMessageAt?.toMillis) return false
-  if (!lastReadAt?.toMillis) return true
-  return lastMessageAt.toMillis() > lastReadAt.toMillis()
-}
-
-function UnreadDot() {
-  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#B8860B' }} />
-}
-
-function SectionHeader({ label, onAdd, addTitle }) {
-  return (
-    <div className="mb-1 flex items-center justify-between px-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">{label}</p>
-      {onAdd && (
-        <button
-          type="button"
-          onClick={onAdd}
-          title={addTitle}
-          className="flex h-5 w-5 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
-        >
-          <PlusIcon size={12} />
-        </button>
-      )}
-    </div>
-  )
-}
-
-function SubLabel({ children }) {
-  return <p className="mt-1.5 mb-0.5 px-2.5 text-[10.5px] font-medium text-[#3A3A3A]">{children}</p>
-}
-
-function ConversationButton({ active, unread, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
-      style={{
-        background: active ? 'rgba(184,134,11,0.14)' : undefined,
-        color: active ? '#E8C15A' : unread ? '#F5F5F5' : '#CCCCCC',
-        fontWeight: unread ? 600 : 500,
-      }}
-    >
-      <span className="flex min-w-0 items-center gap-2">{children}</span>
-      {unread && <UnreadDot />}
-    </button>
-  )
-}
-
-// Order mirrors how the team actually talks: people first (DMs), then
-// ad-hoc groups, then the permanent channels — split into "Empresa"
-// (everyone in ADOR) and "Privados" (invitation only), so it's obvious at
-// a glance which rooms the whole firm can read.
-function ThreadsNavIcon({ size = 15, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 5.5h16v10H11l-4 3.5v-3.5H4v-10Z" />
-      <path d="M8 9.5h8M8 12.5h5" />
-    </svg>
-  )
-}
-
-// Online dot on an avatar: green = en línea, amber = ausente, none =
-// desconectado (no grey dot — absence of a signal is the signal).
-export function PresenceAvatar({ presence, size = 20, ...avatarProps }) {
-  const p = presenceOf(presence)
-  return (
-    <span className="relative inline-flex flex-shrink-0" title={p.label}>
-      <Avatar size={size} {...avatarProps} />
-      {p.color && (
-        <span
-          className="absolute rounded-full ring-2 ring-[#0A0A0A]"
-          style={{ background: p.color, width: Math.max(7, size * 0.3), height: Math.max(7, size * 0.3), right: -1, bottom: -1 }}
-        />
-      )}
-    </span>
-  )
-}
-
-// Pinned messages bar under the conversation header: the latest pin in one
-// line, click to expand the whole list (in normal flow, no popover). Each
-// entry jumps to its message or can be unpinned.
-function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
-  return (
-    <div className="mt-2 rounded-xl border border-[#B8860B]/25 bg-[#B8860B]/[0.05]">
-      <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 px-3 py-2 text-left">
-        <span className="text-[12px]">📌</span>
-        <span className="flex-shrink-0 text-[11.5px] font-medium text-[#E8C15A]">
-          {pins.length} {pins.length === 1 ? 'fijado' : 'fijados'}
-        </span>
-        {!open && (
-          <span className="truncate text-[12px] text-[#AAAAAA]">
-            {pins[0].authorName ? `${pins[0].authorName.split(' ')[0]}: ` : ''}
-            {pins[0].text}
-          </span>
-        )}
-        <span className="ml-auto flex-shrink-0 text-[11px] text-[#777777]">{open ? 'Cerrar' : 'Ver'}</span>
-      </button>
-      {open && (
-        <div className="flex flex-col gap-0.5 border-t border-[#B8860B]/15 px-1.5 py-1.5">
-          {pins.map((p) => (
-            <div key={p.id} className="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
-              <button type="button" onClick={() => onJump(p.id)} className="min-w-0 flex-1 text-left">
-                <span className="block truncate text-[12.5px] text-[#DDDDDD]">{p.text || 'Mensaje'}</span>
-                <span className="block text-[10.5px] text-[#666666]">
-                  {p.authorName} · fijado por {(p.pinnedBy || '').split(' ')[0]}
-                </span>
-              </button>
-              <button type="button" onClick={() => onUnpin(p.id)} className="flex-shrink-0 text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#F5F5F5] group-hover:opacity-100">
-                Desfijar
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-const VIEWS = [
-  { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
-  { id: 'threads', label: 'Hilos', Icon: ThreadsNavIcon },
-  { id: 'mentions', label: 'Menciones', Icon: AtIcon },
-  { id: 'saved', label: 'Mensajes guardados', Icon: BookmarkIcon },
-  { id: 'files', label: 'Archivos', Icon: FolderIcon },
-]
-
-function ViewNav({ view, counts, onSelectView }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      {VIEWS.map(({ id, label, Icon }) => {
-        const active = view === id
-        const count = counts[id]
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onSelectView(id)}
-            className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
-            style={{ background: active ? 'rgba(184,134,11,0.14)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#CCCCCC', fontWeight: count ? 600 : 500 }}
-          >
-            <Icon size={15} className="flex-shrink-0 opacity-80" />
-            <span className="flex-1 truncate">{label}</span>
-            {count > 0 && (
-              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold" style={{ background: id === 'mentions' ? '#B8860B' : 'rgba(255,255,255,0.12)', color: '#F5F5F5' }}>
-                {count}
-              </span>
-            )}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup }) {
-  const [search, setSearch] = useState('')
-  const q = search.trim().toLowerCase()
-  const match = (label) => !q || label.toLowerCase().includes(q)
-
-  const otherUsers = users.filter((u) => u.id !== currentUid && match(userLabel(u)))
-  const visibleGroups = groups.filter((g) => match(groupLabel(g, users, currentUid)))
-  const publicChannels = channels.filter((c) => !isPrivate(c) && match(c.name))
-  const privateChannels = channels.filter((c) => isPrivate(c) && match(c.name))
-  const searching = q.length > 0
-  const nothingFound = searching && !otherUsers.length && !visibleGroups.length && !publicChannels.length && !privateChannels.length
-
-  const isActive = (type, id) => !view && selected?.type === type && selected.id === id
-
-  return (
-    <div className="flex w-[230px] flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4">
-      <div>
-        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#666666]">Comunicación</p>
-        <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">
-          <SearchIcon size={12} className="text-[#666666]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar personas o canales..."
-            className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
-          />
-        </div>
-      </div>
-
-      <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
-
-      {nothingFound && <p className="px-2.5 text-[12px] text-[#444444]">Sin resultados para “{search}”.</p>}
-
-      <div>
-        <SectionHeader label="Mensajes directos" />
-        <div className="flex flex-col gap-0.5">
-          {users.filter((u) => u.id !== currentUid).length === 0 && (
-            <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">
-              Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
-            </p>
-          )}
-          {otherUsers.map((u) => {
-            const convId = dmIdFor(currentUid, u.id)
-            const active = isActive('dm', u.id)
-            return (
-              <ConversationButton key={u.id} active={active} unread={!active && unreadMap[convId]} onClick={() => onSelect({ type: 'dm', id: u.id })}>
-                <PresenceAvatar presence={presence[u.id]} displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
-                <span className="truncate">{userLabel(u)}</span>
-              </ConversationButton>
-            )
-          })}
-        </div>
-      </div>
-
-      <div>
-        <SectionHeader label="Grupos" onAdd={onNewGroup} addTitle="Nuevo grupo privado" />
-        <div className="flex flex-col gap-0.5">
-          {visibleGroups.map((g) => {
-            const active = isActive('conv', g.id)
-            return (
-              <ConversationButton key={g.id} active={active} unread={!active && unreadMap[g.id]} onClick={() => onSelect({ type: 'conv', id: g.id })}>
-                <UsersBadge count={(g.memberUids || []).length} />
-                <span className="truncate">{groupLabel(g, users, currentUid)}</span>
-              </ConversationButton>
-            )
-          })}
-          {groups.length === 0 && !searching && (
-            <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">Conversaciones privadas entre algunas personas, sin ser un área fija.</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <SectionHeader label="Canales" onAdd={onNewChannel} addTitle="Nuevo canal" />
-        <div className="flex flex-col gap-0.5">
-          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales todavía</p>}
-          {publicChannels.length > 0 && <SubLabel>Empresa</SubLabel>}
-          {publicChannels.map((c) => {
-            const active = isActive('conv', c.id)
-            return (
-              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
-                <span className="w-3 text-center text-[#666666]">#</span>
-                <span className="truncate">{c.name}</span>
-              </ConversationButton>
-            )
-          })}
-          {privateChannels.length > 0 && <SubLabel>Privados</SubLabel>}
-          {privateChannels.map((c) => {
-            const active = isActive('conv', c.id)
-            return (
-              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
-                <LockIcon size={11} className="w-3 flex-shrink-0 text-[#666666]" />
-                <span className="truncate">{c.name}</span>
-              </ConversationButton>
-            )
-          })}
-        </div>
-      </div>
-
-      <CallNotificationsPrompt />
-    </div>
-  )
-}
-
-// Browsers only let a page ask for notification permission in response to
-// a click, so this is an explicit one-time prompt rather than something
-// that fires on load. Hidden once answered either way; if denied, only the
-// browser's own site settings can undo it, so it says so once.
-function CallNotificationsPrompt() {
-  const supported = typeof Notification !== 'undefined'
-  const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported')
-  if (permission === 'granted' || permission === 'unsupported') return null
-  if (permission === 'denied') {
-    return <p className="px-1 text-[11px] leading-relaxed text-[#555555]">Avisos de llamada bloqueados en este navegador — actívalos desde la configuración del sitio.</p>
-  }
-  return (
-    <div className="rounded-xl border border-dashed border-white/[0.12] px-3 py-2.5">
-      <p className="text-[11.5px] leading-relaxed text-[#888888]">Recibe un aviso del sistema cuando te llamen y ADOR OS esté en otra pestaña.</p>
-      <button
-        type="button"
-        onClick={() => Notification.requestPermission().then(setPermission)}
-        className="mt-1.5 text-[12px] font-medium text-[#E8C15A] hover:underline"
-      >
-        Activar avisos de llamada
-      </button>
-    </div>
-  )
-}
-
-function UsersBadge({ count }) {
-  return (
-    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[10px] font-semibold text-[#888888]">
-      {count}
-    </span>
-  )
-}
-
-function HeaderButton({ title, onClick, active, children, buttonRef }) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] px-3 text-[12px] text-[#AAAAAA] transition-colors duration-150 hover:border-white/[0.16] hover:text-[#F5F5F5]"
-      style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
-    >
-      {children}
-    </button>
-  )
-}
-
-// Icon-only round buttons for calls, the way every messaging app's header
-// does it — labeled buttons crowded out the person's name once the
-// profile panel was open beside the thread. The tooltip still names them.
-function IconButton({ title, onClick, active, busy, children, buttonRef }) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-[#AAAAAA] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
-      style={{ ...(active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : {}), ...(busy ? { color: '#E8C15A', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
-    >
-      {children}
-    </button>
-  )
-}
-
-// Llamar / Videollamada both hand off to Google Meet — ADOR OS is where the
-// call starts, Meet is the call's infrastructure. No in-app video. The
-// popover's open state lives in ChatModule so the same flow can be started
-// from here or from the profile panel's buttons.
-function CallButtons({ openCall, onCall, busy }) {
-  const audioRef = useRef(null)
-  const videoRef = useRef(null)
-  return (
-    <>
-      <IconButton title={busy === 'audio' ? 'Creando reunión…' : 'Llamar (Google Meet)'} busy={busy === 'audio'} buttonRef={audioRef} active={openCall?.anchorRef === audioRef} onClick={() => onCall('audio', audioRef)}>
-        <PhoneIcon size={15} />
-      </IconButton>
-      <IconButton title={busy === 'video' ? 'Creando reunión…' : 'Videollamada (Google Meet)'} busy={busy === 'video'} buttonRef={videoRef} active={openCall?.anchorRef === videoRef} onClick={() => onCall('video', videoRef)}>
-        <VideoIcon size={16} />
-      </IconButton>
-    </>
-  )
-}
-
-function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy }) {
-  if (selected.type === 'dm') {
-    return (
-      <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-        <button
-          type="button"
-          onClick={onToggleProfile}
-          title="Ver perfil"
-          className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
-          style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
-        >
-          <PresenceAvatar presence={dmPresence} displayName={dmEntry?.name || userLabel(dmUser)} photoURL={dmEntry?.photoDataUrl || dmUser?.photoDataUrl} size={30} />
-          <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
-            <p className="truncate text-[11.5px] text-[#555555]">
-              <span style={{ color: presenceOf(dmPresence).color || undefined }}>{presenceOf(dmPresence).label}</span>
-              {[dmEntry?.role, dmEntry?.area].filter(Boolean).length ? ` · ${[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')}` : ''}
-            </p>
-          </div>
-        </button>
-        <div className="flex flex-shrink-0 items-center gap-1">
-          <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />
-        </div>
-      </div>
-    )
-  }
-
-  const kind = conversationKind(conversation)
-  const priv = isPrivate(conversation)
-  const memberCount = membersOf(conversation, users).length
-  const title = kind === 'group' ? groupLabel(conversation, users, currentUid) : conversation.name
-  const subtitle =
-    kind === 'group'
-      ? `Grupo privado · ${memberCount} personas`
-      : priv
-        ? `Canal privado · ${memberCount} ${memberCount === 1 ? 'miembro' : 'miembros'}`
-        : 'Canal de toda la empresa'
-
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-      <div className="min-w-0">
-        <p className="flex items-center gap-1.5 truncate text-[15px] font-semibold text-[#F5F5F5]">
-          {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#666666]">#</span>)}
-          <span className="truncate">{title}</span>
-        </p>
-        <p className="truncate text-[11.5px] text-[#555555]">
-          {subtitle}
-          {conversation.description ? ` · ${conversation.description}` : ''}
-        </p>
-      </div>
-      <div className="flex flex-shrink-0 items-center gap-2">
-        {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />}
-        <HeaderButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
-          <InfoIcon size={14} /> Detalles
-        </HeaderButton>
-      </div>
-    </div>
-  )
-}
-
 export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) {
-  const [allChannels, setAllChannels] = useState([])
-  const [users, setUsers] = useState([])
-  const [myDms, setMyDms] = useState([])
-  const [profile, setProfile] = useState(null)
+  const { allChannels, users, myDms, profile, directory, mentions, saved, presence, reminders } = useChatData(user.uid)
   const [selected, setSelected] = useState(null) // {type:'conv', id} | {type:'dm', id: otherUid}
   const [messages, setMessages] = useState([])
   const [modal, setModal] = useState(null) // 'channel' | 'group' | null
@@ -492,37 +85,23 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   const [panel, setPanel] = useState(null) // {type:'info'} | {type:'profile', uid} | null
   const [openCall, setOpenCall] = useState(null) // {type, anchorRef} | null
   const [searchQuery, setSearchQuery] = useState(null) // null = search bar closed
-  const [directory, setDirectory] = useState([])
   // The sidebar's top section: Inbox / Menciones / Guardados / Archivos.
   // While one is open, no conversation is "open" — nothing streams and
   // nothing gets marked read behind the reader's back.
   const [view, setView] = useState(null)
-  const [mentions, setMentions] = useState([])
-  const [saved, setSaved] = useState([])
   const [files, setFiles] = useState([])
   const [messageLimit, setMessageLimit] = useState(PAGE_SIZE)
   const [lightbox, setLightbox] = useState(null)
-  const [presence, setPresence] = useState({})
   const [typingDoc, setTypingDoc] = useState({})
   const [, setTick] = useState(0)
   const [callBusy, setCallBusy] = useState(null)
   const [taskDraft, setTaskDraft] = useState(null) // { message, parentId }
-  const [reminders, setReminders] = useState([])
   const [pinsOpen, setPinsOpen] = useState(false)
   const meet = useGoogleMeet(user.uid)
   const jumpToRef = useRef(null)
   const showToast = useToast()
   const actorName = actorNameFor(user)
 
-  useEffect(() => subscribeChatChannels(setAllChannels), [])
-  useEffect(() => subscribeUsers(setUsers), [])
-  useEffect(() => subscribeMyDms(user.uid, setMyDms), [user.uid])
-  useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
-  useEffect(() => subscribeDirectoryPeople(setDirectory), [])
-  useEffect(() => subscribeMyMentions(user.uid, setMentions), [user.uid])
-  useEffect(() => subscribeMySaved(user.uid, setSaved), [user.uid])
-  useEffect(() => subscribePresence(setPresence), [])
-  useEffect(() => subscribeMyReminders(user.uid, setReminders), [user.uid])
   useEffect(() => {
     if (!meet.connectError) return
     showToast(meet.connectError)
@@ -585,7 +164,6 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
     return subscribeMessages(convType, activeConversationId, messageLimit, setMessages)
   }, [activeConversationId, messageLimit])
 
-
   // Jump-to-message from Menciones / Guardados / the bell: once the target
   // conversation's messages are on screen, scroll to it and flash it.
   useEffect(() => {
@@ -632,27 +210,22 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
 
   useEffect(() => subscribeTyping(activeConversationId, setTypingDoc), [activeConversationId])
 
-  const lastReadFor = (convId) => profile?.chatLastRead?.[convId]
-  const isMuted = (convId) => Boolean(profile?.chatMuted?.[convId])
-  const unreadMap = {}
-  for (const c of visible) unreadMap[c.id] = !isMuted(c.id) && isUnread(c.lastMessageAt, lastReadFor(c.id))
-  for (const d of myDms) unreadMap[d.id] = !isMuted(d.id) && isUnread(d.updatedAt, lastReadFor(d.id))
-
   const fail = (verb) => (error) => showToast(`No se pudo ${verb}: ${error.message}`)
 
   const nameOf = (uid) => userLabel(users.find((u) => u.id === uid))
-
-  // Human label for any conversation, resolved from live data (so a
-  // renamed channel or group shows its current name everywhere).
-  const labelFor = (type, convId, participantUids) => {
-    if (type === 'dm') {
-      const other = (participantUids || []).find((uid) => uid !== user.uid)
-      return other ? nameOf(other) : 'Mensaje directo'
-    }
-    const c = allChannels.find((x) => x.id === convId)
-    if (!c) return 'Conversación'
-    return conversationKind(c) === 'group' ? groupLabel(c, users, user.uid) : `#${c.name}`
-  }
+  const isMuted = (key) => Boolean(profile?.chatMuted?.[key])
+  const labelFor = makeLabelFor({ uid: user.uid, users, allChannels })
+  const { unreadMap, myMentions, myThreads, mySaved, savedIds, myFiles, inboxConversations, viewCounts } = buildChatIndexes({
+    uid: user.uid,
+    users,
+    visible,
+    myDms,
+    profile,
+    mentions,
+    saved,
+    files,
+    labelFor,
+  })
 
   // Everything the index collections (mentions, saved, files) need to
   // point back at the open conversation.
@@ -689,70 +262,6 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
     else openConversation(focus)
     onFocusHandled?.()
   }, [focus, allChannels.length])
-
-  const lastReadMs = (key) => lastReadFor(key)?.toMillis?.() || 0
-  const visibleKeys = new Set([...visible.map((c) => c.id), ...myDms.map((d) => d.id)])
-  // A mention or reply inside a thread is read once that thread is opened
-  // (`thread_{parentId}`), not the conversation around it.
-  const readKeyOf = (m) => (m.threadParentId ? `thread_${m.threadParentId}` : m.conversationKey)
-  const indexed = mentions
-    .filter((m) => visibleKeys.has(m.conversationKey))
-    .map((m) => ({ ...m, conversationLabel: labelFor(m.convType, m.convId, m.participantUids), unread: (m.createdAt?.toMillis?.() || 0) > lastReadMs(readKeyOf(m)) }))
-    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
-  const myMentions = indexed.filter((m) => m.kind !== 'reply')
-  // Hilos: one row per thread you take part in, its latest reply first.
-  const myThreads = []
-  const seenThreads = new Set()
-  for (const m of indexed) {
-    if (m.kind !== 'reply' || seenThreads.has(m.threadParentId)) continue
-    seenThreads.add(m.threadParentId)
-    myThreads.push({ ...m, unread: indexed.some((x) => x.kind === 'reply' && x.threadParentId === m.threadParentId && x.unread) })
-  }
-  const mySaved = saved
-    .map((x) => ({ ...x, conversationLabel: labelFor(x.convType, x.convId, x.participantUids) }))
-    .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0))
-  const savedIds = new Set(saved.map((x) => x.messageId))
-  const myFiles = files.filter((f) => visibleKeys.has(f.conversationKey)).map((f) => ({ ...f, conversationLabel: labelFor(f.convType, f.convId, f.participantUids) }))
-
-  const inboxConversations = [
-    ...visible.map((c) => ({
-      key: c.id,
-      convType: 'conv',
-      convId: c.id,
-      kind: conversationKind(c),
-      private: isPrivate(c),
-      memberCount: (c.memberUids || []).length,
-      label: conversationKind(c) === 'group' ? groupLabel(c, users, user.uid) : c.name,
-      lastMessage: c.lastMessage,
-      lastAt: c.lastMessageAt,
-      messageCount: c.messageCount,
-      unread: unreadMap[c.id],
-      unreadCount: unreadMap[c.id] ? unreadCountOf(c.messageCount, profile?.chatReadCount?.[c.id]) : 0,
-    })),
-    ...myDms.map((d) => {
-      const other = (d.participantUids || []).find((uid) => uid !== user.uid)
-      const otherUser = users.find((u) => u.id === other)
-      return {
-        key: d.id,
-        convType: 'dm',
-        convId: d.id,
-        participantUids: d.participantUids,
-        label: otherUser ? userLabel(otherUser) : d.participantNames?.[other] || 'Mensaje directo',
-        photo: otherUser?.photoDataUrl,
-        lastMessage: d.lastMessage,
-        lastAt: d.updatedAt,
-        messageCount: d.messageCount,
-        unread: unreadMap[d.id],
-        unreadCount: unreadMap[d.id] ? unreadCountOf(d.messageCount, profile?.chatReadCount?.[d.id]) : 0,
-      }
-    }),
-  ].sort((a, b) => (b.lastAt?.toMillis?.() || 0) - (a.lastAt?.toMillis?.() || 0))
-
-  const viewCounts = {
-    inbox: inboxConversations.filter((c) => c.unread && c.lastMessage).length,
-    mentions: myMentions.filter((m) => m.unread).length,
-    threads: myThreads.filter((t) => t.unread).length,
-  }
 
   const typers = typingNames(typingDoc, user.uid)
 
