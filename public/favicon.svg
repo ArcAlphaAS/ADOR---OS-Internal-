@@ -1,19 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- ADOR OS app icon: the ADOR Λ mark in gold on a graphite tile, so the
-       internal tool is told apart at a glance from the public website
-       (white mark) in a browser's tab bar. -->
+  <!-- ADOR OS app icon: the ADOR Λ in off-white with a soft blue glow on a
+       near-black navy tile — its own look in the tab bar, distinct from the
+       public website's icon. -->
   <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F2D27A" />
-      <stop offset="1" stop-color="#B8860B" />
-    </linearGradient>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#26231E" />
-      <stop offset="1" stop-color="#12110E" />
-    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1522"/><stop offset="1" stop-color="#05090F"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1E5FAD" stop-opacity="0.22"/><stop offset="1" stop-color="#1E5FAD" stop-opacity="0"/></radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="b"/>
+      <feFlood flood-color="#3F7FCC" flood-opacity="0.45"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#tile)" stroke="#B8860B" stroke-opacity="0.45" stroke-width="1.5" />
-  <g transform="translate(12.2 13.4) scale(0.52)">
-    <path fill="url(#gold)" d="M11.768,71.039H0L35.985,5.471C37.947,1.984,41.602-.093,45.545.003c3.945.096,7.492,2.349,9.257,5.879l20.174,40.349c2.126,4.251,1.675,9.254-1.177,13.056l-4.848,6.465c-2.377,3.169-6.013,4.987-9.975,4.987s-7.597-1.818-9.974-4.987l-6.011-8.015h-10.828l5.233-10.316h10.753l9.106,12.142c.562.749,1.32.861,1.721.861s1.16-.112,1.722-.861l4.848-6.464c.492-.656.57-1.52.203-2.253L45.576,10.495c-.039-.078-.088-.175-.283-.179-.176.008-.248.09-.291.166L11.768,71.039Z" />
-  </g>
+  <rect width="64" height="64" rx="15" fill="url(#tile)"/>
+  <circle cx="32" cy="33" r="26" fill="url(#halo)"/>
+  <g transform="translate(12.2 13.4) scale(0.52)"><path fill="#EDE9E1" filter="url(#glow)" d="M11.768,71.039H0L35.985,5.471C37.947,1.984,41.602-.093,45.545.003c3.945.096,7.492,2.349,9.257,5.879l20.174,40.349c2.126,4.251,1.675,9.254-1.177,13.056l-4.848,6.465c-2.377,3.169-6.013,4.987-9.975,4.987s-7.597-1.818-9.974-4.987l-6.011-8.015h-10.828l5.233-10.316h10.753l9.106,12.142c.562.749,1.32.861,1.721.861s1.16-.112,1.722-.861l4.848-6.464c.492-.656.57-1.52.203-2.253L45.576,10.495c-.039-.078-.088-.175-.283-.179-.176.008-.248.09-.291.166L11.768,71.039Z"/></g>
 </svg>
