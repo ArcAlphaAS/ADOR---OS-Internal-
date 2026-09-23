@@ -7,7 +7,7 @@ import HomeScreen from '../home/HomeScreen'
 import OnboardingTour from '../onboarding/OnboardingTour'
 import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
-import IncomingCallGate from './IncomingCallGate'
+import IncomingCallGate, { OutgoingCallBanner } from './IncomingCallGate'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 
@@ -179,6 +179,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       {activeModule !== 'chat' && <GlobalCapture user={user} actorName={actorNameFor(user)} />}
       <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
       <IncomingCallGate user={user} />
+      <OutgoingCallBanner user={user} />
     </div>
   )
 }

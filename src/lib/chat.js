@@ -264,3 +264,58 @@ export function receiptFor(message, readerUids, users, conversationKey) {
   })
   return { state: readerUids.length && readers.length === readerUids.length ? 'read' : 'sent', readers }
 }
+
+// ---- Llamadas: estado estilo Teams ----
+export const RING_MS = 45_000
+const STALE_CALL_MS = 3 * 60 * 60 * 1000 // a call nobody closed stops showing "en curso" after 3h
+
+function minutesLabel(ms) {
+  const min = Math.max(1, Math.round(ms / 60000))
+  return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`
+}
+
+// One place that turns a chatCalls doc into what every surface shows:
+//   ringing   → "Llamando…"          (first 45s, nobody else in yet)
+//   active    → "En curso"           (someone besides the caller joined)
+//   missed    → "Llamada perdida" / "Sin respuesta" (caller's view)
+//   declined  → everyone invited said no
+//   cancelled → the caller hung up before anyone joined
+//   ended     → someone pressed Finalizar (or it went stale)
+export function callState(call, uid, now = Date.now()) {
+  if (!call) return { key: 'unknown', label: 'Llamada' }
+  const created = call.createdAt?.toMillis?.() || now
+  const age = now - created
+  const others = (call.joinedUids || []).filter((x) => x !== call.fromUid)
+  // `label` completes "Llamada …" / "Videollamada …" in the call card.
+  if (call.status === 'cancelled') return { key: 'cancelled', label: 'cancelada' }
+  if (call.status === 'ended') {
+    const end = call.statusAt?.toMillis?.() || now
+    return { key: 'ended', label: others.length ? `finalizada · ${minutesLabel(end - created)}` : 'finalizada' }
+  }
+  if (others.length) {
+    if (age > STALE_CALL_MS) return { key: 'ended', label: 'finalizada' }
+    return { key: 'active', label: 'en curso', joined: call.joinedUids || [] }
+  }
+  if (age < RING_MS) return { key: 'ringing', label: '· llamando…' }
+  const declined = (call.toUids || []).length && (call.toUids || []).every((x) => call.responses?.[x] === 'declined')
+  if (declined) return { key: 'declined', label: 'rechazada' }
+  return { key: 'missed', label: uid === call.fromUid ? 'sin respuesta' : 'perdida' }
+}
+
+// ---- Inbox como email ----
+export function unreadCountOf(messageCount, readCount) {
+  if (typeof messageCount !== 'number' || typeof readCount !== 'number') return null
+  return Math.max(0, messageCount - readCount)
+}
+
+// Email-client day buckets for the Inbox list.
+export function dayBucket(ts, now = new Date()) {
+  if (!ts?.toDate) return 'Anteriores'
+  const d = ts.toDate()
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const t = d.getTime()
+  if (t >= start) return 'Hoy'
+  if (t >= start - 86400000) return 'Ayer'
+  if (t >= start - 6 * 86400000) return 'Esta semana'
+  return 'Anteriores'
+}

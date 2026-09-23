@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { dayBucket } from '../../lib/chat'
 import Avatar from '../shell/Avatar'
 import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon } from '../icons'
 
@@ -64,34 +66,121 @@ function ConvGlyph({ conv }) {
   )
 }
 
-// Everything with activity, one list: DMs, groups and channels together,
-// newest first, unread in bold — the "what happened while I was away"
-// screen. Built from each conversation's `lastMessage` preview, so it
-// never loads a single message history.
-export function InboxView({ conversations, onOpen }) {
+// Inbox works like an email client: it opens on "No leídos" — only the
+// conversations with something you haven't seen, each with how many
+// messages are new — grouped by day. "Todos" shows every conversation with
+// activity. Hover a row to mark it read / unread; "Marcar todo como leído"
+// clears the list in one write. Built from each conversation's
+// `lastMessage` + `messageCount`, so it never loads a message history.
+export function InboxView({ conversations, onOpen, onMarkRead, onMarkUnread, onMarkAllRead }) {
+  const [tab, setTab] = useState('unread')
   const withActivity = conversations.filter((c) => c.lastMessage)
-  const unreadCount = withActivity.filter((c) => c.unread).length
+  const unread = withActivity.filter((c) => c.unread)
+  const list = tab === 'unread' ? unread : withActivity
+  const groups = []
+  for (const c of list) {
+    const bucket = dayBucket(c.lastAt)
+    const g = groups.find((x) => x.bucket === bucket)
+    if (g) g.items.push(c)
+    else groups.push({ bucket, items: [c] })
+  }
+
   return (
     <>
-      <ViewHeader icon={<InboxIcon size={15} />} title="Inbox" subtitle={unreadCount ? `${unreadCount} ${unreadCount === 1 ? 'conversación con novedades' : 'conversaciones con novedades'}` : 'Todo leído'} />
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
-        {withActivity.length === 0 ? (
-          <Empty icon={<InboxIcon size={22} />} text="Aquí aparecerá la actividad de todas tus conversaciones — mensajes directos, grupos y canales." />
+      <div className="flex items-center gap-3 border-b border-white/[0.06] pb-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-[#AAAAAA]">
+          <InboxIcon size={15} />
+        </span>
+        <div className="flex-1">
+          <p className="text-[15px] font-semibold text-[#F5F5F5]">Inbox</p>
+          <p className="text-[11.5px] text-[#555555]">{unread.length ? `${unread.length} ${unread.length === 1 ? 'conversación sin leer' : 'conversaciones sin leer'}` : 'Todo leído'}</p>
+        </div>
+        {unread.length > 0 && (
+          <button type="button" onClick={() => onMarkAllRead(unread)} className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[11.5px] text-[#AAAAAA] hover:text-[#F5F5F5]">
+            Marcar todo como leído
+          </button>
+        )}
+      </div>
+
+      <div className="mt-3 flex gap-1">
+        {[
+          { id: 'unread', label: `No leídos${unread.length ? ` · ${unread.length}` : ''}` },
+          { id: 'all', label: 'Todos' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className="rounded-full px-3 py-1 text-[12px] transition-colors"
+            style={tab === t.id ? { background: 'rgba(255,255,255,0.09)', color: '#F5F5F5' } : { color: '#777777' }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-2">
+        {list.length === 0 ? (
+          <Empty
+            icon={<InboxIcon size={22} />}
+            text={tab === 'unread' ? 'Bandeja al día — no hay mensajes sin leer.' : 'Aquí aparecerá la actividad de todas tus conversaciones.'}
+          />
         ) : (
-          withActivity.map((c) => (
-            <Row
-              key={c.key}
-              unread={c.unread}
-              onClick={() => onOpen(c)}
-              leading={<ConvGlyph conv={c} />}
-              title={c.convType === 'dm' ? c.label : c.kind === 'group' ? c.label : `#${c.label}`}
-              meta={timeAgo(c.lastAt)}
-              preview={`${c.lastMessage.authorName ? `${c.lastMessage.authorName.split(' ')[0]}: ` : ''}${c.lastMessage.text}`}
-            />
+          groups.map((g) => (
+            <div key={g.bucket} className="mb-2">
+              <p className="px-3 pt-2 pb-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#444444]">{g.bucket}</p>
+              {g.items.map((c) => (
+                <InboxRow key={c.key} c={c} onOpen={onOpen} onMarkRead={onMarkRead} onMarkUnread={onMarkUnread} />
+              ))}
+            </div>
           ))
         )}
       </div>
     </>
+  )
+}
+
+function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
+  const sender = c.lastMessage.authorName || ''
+  const where = c.convType === 'dm' ? 'Mensaje directo' : c.kind === 'group' ? `Grupo · ${c.label}` : `#${c.label}`
+  return (
+    <div className="group relative flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-white/[0.04]">
+      <span className="absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-full" style={{ background: c.unread ? '#B8860B' : 'transparent' }} />
+      <button type="button" onClick={() => onOpen(c)} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+        <span className="mt-0.5 flex-shrink-0">
+          <ConvGlyph conv={c} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-[13px]" style={{ color: c.unread ? '#F5F5F5' : '#AAAAAA', fontWeight: c.unread ? 600 : 500 }}>
+              {c.convType === 'dm' ? c.label : sender}
+            </span>
+            <span className="truncate text-[11.5px] text-[#555555]">{c.convType === 'dm' ? '' : where}</span>
+            <span className="ml-auto flex-shrink-0 text-[11px]" style={{ color: c.unread ? '#CCCCCC' : '#555555' }}>
+              {timeAgo(c.lastAt)}
+            </span>
+          </span>
+          <span className="mt-0.5 flex items-center gap-2">
+            <span className="truncate text-[12.5px]" style={{ color: c.unread ? '#BBBBBB' : '#666666' }}>
+              {c.lastMessage.text}
+            </span>
+            {c.unread && (
+              <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold text-[#0A0A0A]" style={{ background: '#E8C15A' }}>
+                {c.unreadCount || '•'}
+              </span>
+            )}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => (c.unread ? onMarkRead(c) : onMarkUnread(c))}
+        title={c.unread ? 'Marcar como leído' : 'Marcar como no leído'}
+        className="mt-0.5 flex-shrink-0 rounded-full px-2 py-1 text-[11px] text-[#666666] opacity-0 transition-opacity hover:bg-white/[0.06] hover:text-[#F5F5F5] group-hover:opacity-100"
+      >
+        {c.unread ? 'Leído' : 'No leído'}
+      </button>
+    </div>
   )
 }
 

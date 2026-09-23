@@ -36,8 +36,10 @@ import {
   setTyping,
   subscribeTyping,
   subscribePresence,
+  markChatUnread,
+  markManyChatRead,
 } from '../../lib/firestore'
-import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor } from '../../lib/chat'
+import { conversationKind, isPrivate, isMember, membersOf, userLabel, groupLabel, findDriveLink, driveDocType, presenceOf, typingNames, typingLabel, receiptFor, unreadCountOf } from '../../lib/chat'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
@@ -539,13 +541,18 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   // Only while the window is actually in front of the person — otherwise a
   // background tab would mark things read (and flip the other person's ✓✓)
   // without anyone having seen them. Coming back to the tab marks it then.
+  const countFor = (key) => (allChannels.find((c) => c.id === key) || myDms.find((d) => d.id === key))?.messageCount
   const markReadIfVisible = (key) => {
     if (!key || document.visibilityState !== 'visible' || !document.hasFocus()) return
-    markChatRead(user.uid, key)
+    markChatRead(user.uid, key, key.startsWith('thread_') ? undefined : countFor(key))
   }
+  // Also re-runs when the open conversation's own doc changes (its
+  // counter/last-message land a moment after the message itself), so a
+  // conversation you're looking at never shows as unread in Inbox or the bell.
+  const activeDoc = activeConversationId && (allChannels.find((c) => c.id === activeConversationId) || myDms.find((d) => d.id === activeConversationId))
   useEffect(() => {
     markReadIfVisible(activeConversationId)
-  }, [activeConversationId, messages, user.uid])
+  }, [activeConversationId, messages, user.uid, activeDoc?.messageCount])
   useEffect(() => {
     const onFocus = () => {
       markReadIfVisible(activeConversationId)
@@ -654,7 +661,9 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
       label: conversationKind(c) === 'group' ? groupLabel(c, users, user.uid) : c.name,
       lastMessage: c.lastMessage,
       lastAt: c.lastMessageAt,
+      messageCount: c.messageCount,
       unread: unreadMap[c.id],
+      unreadCount: unreadMap[c.id] ? unreadCountOf(c.messageCount, profile?.chatReadCount?.[c.id]) : 0,
     })),
     ...myDms.map((d) => {
       const other = (d.participantUids || []).find((uid) => uid !== user.uid)
@@ -668,7 +677,9 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
         photo: otherUser?.photoDataUrl,
         lastMessage: d.lastMessage,
         lastAt: d.updatedAt,
+        messageCount: d.messageCount,
         unread: unreadMap[d.id],
+        unreadCount: unreadMap[d.id] ? unreadCountOf(d.messageCount, profile?.chatReadCount?.[d.id]) : 0,
       }
     }),
   ].sort((a, b) => (b.lastAt?.toMillis?.() || 0) - (a.lastAt?.toMillis?.() || 0))
@@ -795,12 +806,29 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
   // Besides the call card in the thread, a call also writes a short-lived
   // chatCalls doc so the other person's ADOR OS rings wherever they are in
   // the app (IncomingCallGate.jsx). Calls only start from DMs and groups.
-  const ringRecipients = (type, url) => {
+  //
+  // The call doc is created first so the card posted in the thread can
+  // carry its id and follow the call's live state (CallCard in ChatThread).
+  const startCall = async (type, url) => {
     const isDm = selected.type === 'dm'
     const toUids = isDm ? [selected.id] : (conversation?.memberUids || []).filter((uid) => uid !== user.uid)
-    if (!toUids.length) return
-    const conversationLabel = isDm ? 'Mensaje directo' : `Grupo · ${groupLabel(conversation, users, user.uid)}`
-    withTimeout(createChatCall({ type, url, toUids, conversationLabel, conversationKey: activeConversationId }, user.uid, actorName)).catch(fail('avisar la llamada'))
+    let callId = null
+    if (toUids.length) {
+      const conversationLabel = isDm ? 'Mensaje directo' : `Grupo · ${groupLabel(conversation, users, user.uid)}`
+      try {
+        const ref = await withTimeout(
+          createChatCall(
+            { type, url, toUids, conversationLabel, conversationKey: selectedConversationId, convType, convId: selectedConversationId, participantUids: isDm ? [user.uid, selected.id] : null },
+            user.uid,
+            actorName
+          )
+        )
+        callId = ref.id
+      } catch (error) {
+        fail('avisar la llamada')(error)
+      }
+    }
+    handleSend({ call: { type, url, ...(callId ? { callId } : {}) } })
   }
 
   const toggleCall = (type, anchorRef) => setOpenCall((cur) => (cur?.anchorRef === anchorRef ? null : { type, anchorRef }))
@@ -840,7 +868,13 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {view === 'inbox' ? (
-          <InboxView conversations={inboxConversations} onOpen={openConversation} />
+          <InboxView
+            conversations={inboxConversations}
+            onOpen={openConversation}
+            onMarkRead={(c) => withTimeout(markChatRead(user.uid, c.key, c.messageCount)).catch(fail('marcar como leído'))}
+            onMarkUnread={(c) => withTimeout(markChatUnread(user.uid, c.key, c.lastAt, c.messageCount)).catch(fail('marcar como no leído'))}
+            onMarkAllRead={(list) => withTimeout(markManyChatRead(user.uid, list.map((c) => ({ key: c.key, count: c.messageCount })))).catch(fail('marcar todo como leído'))}
+          />
         ) : view === 'threads' ? (
           <ThreadsView threads={myThreads} onOpen={openConversation} />
         ) : view === 'mentions' ? (
@@ -994,8 +1028,7 @@ export default function ChatModule({ user, focus, onFocusHandled }) {
           anchorRef={openCall.anchorRef}
           onClose={() => setOpenCall(null)}
           onSend={(url) => {
-            handleSend({ call: { type: openCall.type, url } })
-            ringRecipients(openCall.type, url)
+            startCall(openCall.type, url)
             setOpenCall(null)
           }}
         />

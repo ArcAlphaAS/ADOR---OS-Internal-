@@ -13,6 +13,7 @@ import {
   deleteDoc,
   getDocs,
   serverTimestamp,
+  Timestamp,
   limitToLast,
   increment,
   deleteField,
@@ -1019,7 +1020,7 @@ export function sendChannelMessage(channelId, payload, uid, name) {
     authorName: name,
     createdAt: serverTimestamp(),
   }).then((ref) =>
-    updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp(), lastMessage: previewOf(payload, uid, name) }).then(() => ref)
+    updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp(), lastMessage: previewOf(payload, uid, name), messageCount: increment(1) }).then(() => ref)
   )
 }
 
@@ -1071,6 +1072,7 @@ export function sendDmMessage(dmId, participants, payload, uid, name) {
       participantNames: Object.fromEntries(participants.map((p) => [p.uid, p.name])),
       updatedAt: serverTimestamp(),
       lastMessage: previewOf(payload, uid, name),
+      messageCount: increment(1),
     },
     { merge: true }
   ).then(() =>
@@ -1265,7 +1267,15 @@ export async function cleanupMessageIndexes(messageId) {
 // `toUids` = everyone who should ring (never the caller). Each recipient's
 // answer goes in `responses.{uid}` ('joined' | 'declined') so it stops
 // ringing for them without affecting anyone else in a group call.
-export function createChatCall({ type, url, toUids, conversationLabel, conversationKey }, fromUid, fromName) {
+//
+// Teams-style call state lives on the same doc, so the call card in the
+// thread, the caller's "Llamando…" banner and the callee's ringing screen
+// all read one source: `joinedUids` (who clicked Unirse — the caller is in
+// from the start), `responses` (per-person 'joined'/'declined'), and
+// `status` ('ringing' → 'cancelled' by the caller, or 'ended' via
+// Finalizar). Everything else (missed, en curso, duration) is derived in
+// lib/chat.js callState().
+export function createChatCall({ type, url, toUids, conversationLabel, conversationKey, convType, convId, participantUids }, fromUid, fromName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return addDoc(collection(db, COLLECTIONS.chatCalls), {
     type,
@@ -1273,11 +1283,36 @@ export function createChatCall({ type, url, toUids, conversationLabel, conversat
     toUids,
     conversationLabel,
     conversationKey,
+    convType: convType || null,
+    convId: convId || null,
+    participantUids: participantUids || null,
     fromUid,
     fromName,
     responses: {},
+    joinedUids: [fromUid],
+    status: 'ringing',
     createdAt: serverTimestamp(),
   })
+}
+
+export function subscribeChatCall(callId, onData) {
+  if (!db || !callId) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.chatCalls, callId),
+    (snap) => onData(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+    () => {}
+  )
+}
+
+// Calls I started — powers the caller's "Llamando a…" banner.
+export function subscribeOutgoingCalls(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.chatCalls, [where('fromUid', '==', uid)], onData)
+}
+
+export function setChatCallStatus(callId, status, uid) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.chatCalls, callId), { status, statusBy: uid, statusAt: serverTimestamp() })
 }
 
 // No orderBy on purpose: array-contains alone needs no composite index.
@@ -1288,7 +1323,9 @@ export function subscribeIncomingCalls(uid, onData) {
 
 export function respondToChatCall(callId, uid, response) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
-  return updateDoc(doc(db, COLLECTIONS.chatCalls, callId), { [`responses.${uid}`]: response })
+  const patch = { [`responses.${uid}`]: response }
+  if (response === 'joined') patch.joinedUids = arrayUnion(uid)
+  return updateDoc(doc(db, COLLECTIONS.chatCalls, callId), patch)
 }
 
 // Per-user mute, same one-map-field-on-the-profile shape as chatLastRead:
@@ -1305,7 +1342,34 @@ export function setChatMuted(uid, conversationId, muted) {
 // spirit as `users/{uid}.weeklyGoal`/`birthday`. Written via a dotted
 // field path (updateDoc, not a merged setDoc) so marking one conversation
 // read never touches any other conversation's stored timestamp.
-export function markChatRead(uid, conversationId) {
+//
+// `messageCount` (a running counter on each channel/DM doc, bumped on every
+// send) is copied into `chatReadCount` alongside, so Inbox can say "3 sin
+// leer" like an email client does — unread = messageCount - chatReadCount.
+// Conversations from before the counter existed just show a dot.
+export function markChatRead(uid, conversationId, messageCount) {
   if (!db) return Promise.resolve()
-  return updateDoc(doc(db, COLLECTIONS.users, uid), { [`chatLastRead.${conversationId}`]: serverTimestamp() })
+  const patch = { [`chatLastRead.${conversationId}`]: serverTimestamp() }
+  if (typeof messageCount === 'number') patch[`chatReadCount.${conversationId}`] = messageCount
+  return updateDoc(doc(db, COLLECTIONS.users, uid), patch)
+}
+
+// Email's "Marcar como no leído": move the read marker to just before the
+// last message, so it's unread again everywhere (sidebar, Inbox, bell).
+export function markChatUnread(uid, conversationId, lastMessageAt, messageCount) {
+  if (!db || !lastMessageAt?.toMillis) return Promise.resolve()
+  const patch = { [`chatLastRead.${conversationId}`]: Timestamp.fromMillis(lastMessageAt.toMillis() - 1) }
+  if (typeof messageCount === 'number') patch[`chatReadCount.${conversationId}`] = Math.max(0, messageCount - 1)
+  return updateDoc(doc(db, COLLECTIONS.users, uid), patch)
+}
+
+// "Marcar todo como leído" — one write for the whole list.
+export function markManyChatRead(uid, entries) {
+  if (!db || !entries.length) return Promise.resolve()
+  const patch = {}
+  for (const { key, count } of entries) {
+    patch[`chatLastRead.${key}`] = serverTimestamp()
+    if (typeof count === 'number') patch[`chatReadCount.${key}`] = count
+  }
+  return updateDoc(doc(db, COLLECTIONS.users, uid), patch)
 }

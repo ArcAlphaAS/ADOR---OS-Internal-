@@ -10,8 +10,9 @@ import {
   EMOJIS,
   QUICK_REACTIONS,
   FORMATS,
+  callState,
 } from '../../lib/chat'
-import { getChatBlob } from '../../lib/firestore'
+import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { resizeImageToDataUrl } from '../../lib/image'
 import Avatar from '../shell/Avatar'
 import {
@@ -185,20 +186,86 @@ function VoiceNote({ attachment, mine }) {
   )
 }
 
-function CallCard({ call, authorName, mine }) {
+const CALL_TONE = {
+  ringing: { color: '#4CAF50', bg: 'rgba(76,175,80,0.14)' },
+  active: { color: '#4CAF50', bg: 'rgba(76,175,80,0.14)' },
+  missed: { color: '#EF5350', bg: 'rgba(239,83,80,0.12)' },
+  declined: { color: '#EF5350', bg: 'rgba(239,83,80,0.12)' },
+  cancelled: { color: '#888888', bg: 'rgba(255,255,255,0.05)' },
+  ended: { color: '#888888', bg: 'rgba(255,255,255,0.05)' },
+  unknown: { color: '#888888', bg: 'rgba(255,255,255,0.05)' },
+}
+
+// Only recent calls keep a live listener on their chatCalls doc; older
+// cards in a long thread render from the message alone.
+const LIVE_CALL_MS = 6 * 60 * 60 * 1000
+
+// Teams-style call card: its state changes live in the thread —
+// Llamando… → En curso (with who's in) → Finalizada · 12 min, or
+// Perdida / Rechazada / Cancelada. Unirse from the card also counts you in.
+function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
+  const [callDoc, setCallDoc] = useState(null)
+  const [, setTick] = useState(0)
+  const live = call.callId && (!createdAt?.toMillis || Date.now() - createdAt.toMillis() < LIVE_CALL_MS)
+
+  useEffect(() => (live ? subscribeChatCall(call.callId, setCallDoc) : undefined), [live, call.callId])
+
+  const state = callDoc ? callState(callDoc, currentUid) : { key: call.callId ? 'unknown' : 'legacy', label: '' }
+  // Re-check every few seconds while ringing so it flips to "perdida" on time.
+  useEffect(() => {
+    if (state.key !== 'ringing') return
+    const t = setInterval(() => setTick((n) => n + 1), 3000)
+    return () => clearInterval(t)
+  }, [state.key])
+
   const video = call.type === 'video'
+  const tone = CALL_TONE[state.key] || CALL_TONE.unknown
+  const canJoin = !callDoc || state.key === 'ringing' || state.key === 'active'
+  const joined = callDoc?.joinedUids?.includes(currentUid)
+  const title = `${video ? 'Videollamada' : 'Llamada'}${state.label && state.key !== 'unknown' ? ` ${state.label}` : ''}`
+  const subtitle =
+    state.key === 'active'
+      ? `${(state.joined || []).map((uid) => (userName(uid) || '').split(' ')[0]).join(', ')} ${state.joined.length === 1 ? 'está' : 'están'} en la llamada`
+      : `${mine ? 'Iniciaste' : `${authorName} inició`} una reunión en Google Meet`
+
+  const join = () => {
+    if (call.callId && !joined) respondToChatCall(call.callId, currentUid, 'joined').catch(() => {})
+    window.open(call.url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
-    <div className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3">
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(76,175,80,0.14)', color: '#4CAF50' }}>
-        {video ? <VideoIcon size={16} /> : <PhoneIcon size={15} />}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-[#F5F5F5]">{video ? 'Videollamada' : 'Llamada'}</span>
-        <span className="block truncate text-[11px] text-[#666666]">{mine ? 'Iniciaste' : `${authorName} inició`} una reunión en Google Meet</span>
-      </span>
-      <a href={call.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium text-white" style={{ background: '#1E5FAD' }}>
-        Unirse
-      </a>
+    <div className="flex w-[300px] flex-col gap-2.5 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3">
+      <div className="flex items-center gap-3">
+        <span className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full" style={{ background: tone.bg, color: tone.color }}>
+          {state.key === 'ringing' && <span className="absolute inset-0 rounded-full" style={{ background: tone.bg, animation: 'ador-pulse 1.4s ease-in-out infinite' }} />}
+          {video ? <VideoIcon size={16} /> : <PhoneIcon size={15} />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[12.5px] font-medium" style={{ color: state.key === 'missed' || state.key === 'declined' ? '#EF8A88' : '#F5F5F5' }}>
+            {title}
+          </span>
+          <span className="block truncate text-[11px] text-[#666666]">{subtitle}</span>
+        </span>
+      </div>
+      {(canJoin || (mine && state.key === 'ringing')) && (
+        <div className="flex items-center gap-2">
+          {canJoin && (
+            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12px] font-medium text-white" style={{ background: '#4CAF50' }}>
+              {joined ? 'Volver a la llamada' : 'Unirse'}
+            </button>
+          )}
+          {mine && state.key === 'ringing' && (
+            <button type="button" onClick={() => setChatCallStatus(call.callId, 'cancelled', currentUid).catch(() => {})} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12px] text-[#CCCCCC] hover:text-[#F5F5F5]">
+              Cancelar
+            </button>
+          )}
+          {state.key === 'active' && joined && (
+            <button type="button" onClick={() => setChatCallStatus(call.callId, 'ended', currentUid).catch(() => {})} className="ml-auto rounded-full border border-[#EF5350]/40 px-3 py-1.5 text-[12px] text-[#EF8A88] hover:bg-[#EF5350]/10">
+              Finalizar
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -386,7 +453,7 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
       <div className={`flex items-center gap-1.5 ${mine ? '' : 'flex-row-reverse'}`}>
         {actions}
         <div className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'}`}>
-          {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} />}
+          {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
           {showBubble && (

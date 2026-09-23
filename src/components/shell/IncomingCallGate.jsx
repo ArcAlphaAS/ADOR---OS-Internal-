@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { subscribeIncomingCalls, respondToChatCall, subscribeUsers } from '../../lib/firestore'
+import { subscribeIncomingCalls, respondToChatCall, subscribeUsers, subscribeOutgoingCalls, setChatCallStatus } from '../../lib/firestore'
+import { callState, RING_MS as CALL_RING_MS } from '../../lib/chat'
 import Avatar from './Avatar'
 import { PhoneIcon, VideoIcon, CloseIcon } from '../icons'
 
@@ -109,7 +110,7 @@ export default function IncomingCallGate({ user }) {
   useEffect(() => subscribeUsers(setUsers), [])
 
   const ringing = calls
-    .filter((c) => c.createdAt?.toMillis && now - c.createdAt.toMillis() < RING_MS && !c.responses?.[user.uid] && !dismissed.has(c.id))
+    .filter((c) => c.createdAt?.toMillis && now - c.createdAt.toMillis() < RING_MS && !c.responses?.[user.uid] && !dismissed.has(c.id) && c.status !== 'cancelled' && c.status !== 'ended')
     .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
   const current = ringing[0] || null
 
@@ -181,6 +182,85 @@ export default function IncomingCallGate({ user }) {
           </div>
         </div>
       </motion.div>
+    </motion.div>,
+    document.body
+  )
+}
+
+// The caller's side (Teams-style): a small banner while the other side is
+// ringing — "Llamando a Leonardo…" with Cancelar — that turns into "se unió"
+// or "rechazó la llamada" / "sin respuesta", then clears itself. Mounted
+// app-wide next to the ringing gate so it follows you between modules.
+export function OutgoingCallBanner({ user }) {
+  const [calls, setCalls] = useState([])
+  const [users, setUsers] = useState([])
+  const [dismissed, setDismissed] = useState(() => new Set())
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!user?.uid || user.uid === 'preview') return
+    return subscribeOutgoingCalls(user.uid, setCalls)
+  }, [user?.uid])
+  useEffect(() => subscribeUsers(setUsers), [])
+
+  const recent = calls
+    .filter((c) => c.createdAt?.toMillis && now - c.createdAt.toMillis() < CALL_RING_MS + 15_000 && !dismissed.has(c.id))
+    .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+  const call = recent[0] || null
+
+  useEffect(() => {
+    if (!call) return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [call?.id])
+
+  if (!call || call.status === 'cancelled') return null
+  const state = callState(call, user.uid, now)
+  const firstName = (uid) => (users.find((u) => u.id === uid)?.displayName || 'Alguien').split(' ')[0]
+  const names = (call.toUids || []).map(firstName)
+  const who = names.length > 2 ? `${names.slice(0, 2).join(', ')} y ${names.length - 2} más` : names.join(' y ')
+  const joined = (call.joinedUids || []).filter((x) => x !== user.uid).map(firstName)
+
+  const text =
+    state.key === 'ringing'
+      ? `Llamando a ${who}…`
+      : state.key === 'active'
+        ? `${joined.join(', ')} ${joined.length === 1 ? 'se unió' : 'se unieron'} a la llamada`
+        : state.key === 'declined'
+          ? `${who} rechazó la llamada`
+          : state.key === 'missed'
+            ? `${who} no respondió`
+            : null
+  if (!text) return null
+  const tone = state.key === 'ringing' || state.key === 'active' ? '#4CAF50' : '#EF5350'
+
+  return createPortal(
+    // Top-right, just under the bell — out of the way of any module's own
+    // header and of the chat composer.
+    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="fixed top-[72px] right-5 z-[65]">
+      <div className="ador-glass ador-grain flex items-center gap-3 rounded-full py-2 pr-2 pl-4">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inset-0 rounded-full" style={{ background: tone, animation: state.key === 'ringing' ? 'ador-pulse 1.2s ease-in-out infinite' : undefined }} />
+        </span>
+        <span className="flex items-center gap-1.5 text-[12.5px] text-[#F5F5F5]">
+          {call.type === 'video' ? <VideoIcon size={13} /> : <PhoneIcon size={12} />}
+          {text}
+        </span>
+        {state.key === 'ringing' ? (
+          <button
+            type="button"
+            onClick={() => setChatCallStatus(call.id, 'cancelled', user.uid).catch(() => {})}
+            className="rounded-full px-3 py-1.5 text-[12px] font-medium text-white"
+            style={{ background: '#EF5350' }}
+          >
+            Cancelar
+          </button>
+        ) : (
+          <button type="button" onClick={() => setDismissed((prev) => new Set(prev).add(call.id))} className="flex h-7 w-7 items-center justify-center rounded-full text-[#888888] hover:text-[#F5F5F5]">
+            <CloseIcon size={11} />
+          </button>
+        )}
+      </div>
     </motion.div>,
     document.body
   )
