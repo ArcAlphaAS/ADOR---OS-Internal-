@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { dmIdFor } from '../../lib/firestore'
 import { isPrivate, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import Avatar from '../shell/Avatar'
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon } from '../icons'
+import PersonAvatar from './PersonAvatar'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
 // Archivos views, DMs, groups and channels. Split out of ChatModule.jsx.
@@ -14,13 +14,13 @@ function UnreadDot() {
 function SectionHeader({ label, onAdd, addTitle }) {
   return (
     <div className="mb-1 flex items-center justify-between px-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#444444]">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">{label}</p>
       {onAdd && (
         <button
           type="button"
           onClick={onAdd}
           title={addTitle}
-          className="flex h-5 w-5 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+          className="flex h-5 w-5 items-center justify-center rounded-full text-[#858585] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
         >
           <PlusIcon size={12} />
         </button>
@@ -30,7 +30,7 @@ function SectionHeader({ label, onAdd, addTitle }) {
 }
 
 function SubLabel({ children }) {
-  return <p className="mt-1.5 mb-0.5 px-2.5 text-[10.5px] font-medium text-[#3A3A3A]">{children}</p>
+  return <p className="mt-1.5 mb-0.5 px-2.5 text-[11px] font-medium text-[#767676]">{children}</p>
 }
 
 function ConversationButton({ active, unread, onClick, children }) {
@@ -38,7 +38,7 @@ function ConversationButton({ active, unread, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
+      className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13.5px] transition-colors duration-150 hover:bg-white/[0.04]"
       style={{
         background: active ? 'rgba(184,134,11,0.14)' : undefined,
         color: active ? '#E8C15A' : unread ? '#F5F5F5' : '#CCCCCC',
@@ -64,23 +64,6 @@ function ThreadsNavIcon({ size = 15, className }) {
   )
 }
 
-// Online dot on an avatar: green = en línea, amber = ausente, none =
-// desconectado (no grey dot — absence of a signal is the signal).
-export function PresenceAvatar({ presence, size = 20, ...avatarProps }) {
-  const p = presenceOf(presence)
-  return (
-    <span className="relative inline-flex flex-shrink-0" title={p.label}>
-      <Avatar size={size} {...avatarProps} />
-      {p.color && (
-        <span
-          className="absolute rounded-full ring-2 ring-[#0A0A0A]"
-          style={{ background: p.color, width: Math.max(7, size * 0.3), height: Math.max(7, size * 0.3), right: -1, bottom: -1 }}
-        />
-      )}
-    </span>
-  )
-}
-
 const VIEWS = [
   { id: 'inbox', label: 'Inbox', Icon: InboxIcon },
   { id: 'threads', label: 'Hilos', Icon: ThreadsNavIcon },
@@ -89,9 +72,13 @@ const VIEWS = [
   { id: 'files', label: 'Archivos', Icon: FolderIcon },
 ]
 
+// Inbox · Hilos · Menciones · Guardados · Archivos as one compact row of
+// icons (with their counts) instead of five full-width rows — the sidebar
+// was carrying too much at the same visual weight. Native tooltips name
+// each one; the open view is gold.
 function ViewNav({ view, counts, onSelectView }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
       {VIEWS.map(({ id, label, Icon }) => {
         const active = view === id
         const count = counts[id]
@@ -99,15 +86,19 @@ function ViewNav({ view, counts, onSelectView }) {
           <button
             key={id}
             type="button"
+            title={count ? `${label} · ${count} sin leer` : label}
+            aria-label={label}
             onClick={() => onSelectView(id)}
-            className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.04]"
-            style={{ background: active ? 'rgba(184,134,11,0.14)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#CCCCCC', fontWeight: count ? 600 : 500 }}
+            className="relative flex h-9 flex-1 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-white/[0.05]"
+            style={{ background: active ? 'rgba(184,134,11,0.16)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#9A9A9A' }}
           >
-            <Icon size={15} className="flex-shrink-0 opacity-80" />
-            <span className="flex-1 truncate">{label}</span>
+            <Icon size={17} />
             {count > 0 && (
-              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold" style={{ background: id === 'mentions' ? '#B8860B' : 'rgba(255,255,255,0.12)', color: '#F5F5F5' }}>
-                {count}
+              <span
+                className="absolute top-0.5 right-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold"
+                style={{ background: id === 'mentions' ? '#E8C15A' : '#F2EBDD', color: '#1C1A16' }}
+              >
+                {count > 9 ? '9+' : count}
               </span>
             )}
           </button>
@@ -133,16 +124,16 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   return (
     <div className="flex w-[230px] flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4">
       <div>
-        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#666666]">Comunicación</p>
+        <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
         <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">
-          <SearchIcon size={12} className="text-[#666666]" />
+          <SearchIcon size={12} className="text-[#858585]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && search.trim() && onSearchMessages(search.trim())}
             placeholder="Buscar…"
-            className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+            className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#858585] outline-none"
           />
         </div>
         {searching && (
@@ -153,12 +144,10 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           >
             <SearchIcon size={12} />
             <span className="truncate">Buscar “{search.trim()}” en todos los mensajes</span>
-            <span className="ml-auto text-[10.5px] text-[#666666]">Enter</span>
+            <span className="ml-auto text-[11px] text-[#858585]">Enter</span>
           </button>
         )}
       </div>
-
-      <StatusPicker presence={presence[currentUid]} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
 
       <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
 
@@ -166,7 +155,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         <SectionHeader label="Mensajes directos" />
         <div className="flex flex-col gap-0.5">
           {users.filter((u) => u.id !== currentUid).length === 0 && (
-            <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">
+            <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#767676]">
               Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
             </p>
           )}
@@ -175,7 +164,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             const active = isActive('dm', u.id)
             return (
               <ConversationButton key={u.id} active={active} unread={!active && unreadMap[convId]} onClick={() => onSelect({ type: 'dm', id: u.id })}>
-                <PresenceAvatar presence={presence[u.id]} displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
+                <PersonAvatar uid={u.id} name={userLabel(u)} size={20} showPresence />
                 <span className="truncate">{userLabel(u)}</span>
               </ConversationButton>
             )
@@ -196,7 +185,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             )
           })}
           {groups.length === 0 && !searching && (
-            <p className="px-2.5 py-1 text-[11.5px] leading-relaxed text-[#444444]">Conversaciones privadas entre algunas personas, sin ser un área fija.</p>
+            <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#767676]">Conversaciones privadas entre algunas personas, sin ser un área fija.</p>
           )}
         </div>
       </div>
@@ -204,13 +193,13 @@ export default function ChatSidebar({ channels, groups, users, presence, current
       <div>
         <SectionHeader label="Canales" onAdd={onNewChannel} addTitle="Nuevo canal" />
         <div className="flex flex-col gap-0.5">
-          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12px] text-[#444444]">Sin canales todavía</p>}
+          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12.5px] text-[#767676]">Sin canales todavía</p>}
           {publicChannels.length > 0 && <SubLabel>Empresa</SubLabel>}
           {publicChannels.map((c) => {
             const active = isActive('conv', c.id)
             return (
               <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
-                <span className="w-3 text-center text-[#666666]">#</span>
+                <span className="w-3 text-center text-[#858585]">#</span>
                 <span className="truncate">{c.name}</span>
               </ConversationButton>
             )
@@ -220,7 +209,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             const active = isActive('conv', c.id)
             return (
               <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
-                <LockIcon size={11} className="w-3 flex-shrink-0 text-[#666666]" />
+                <LockIcon size={11} className="w-3 flex-shrink-0 text-[#858585]" />
                 <span className="truncate">{c.name}</span>
               </ConversationButton>
             )
@@ -237,23 +226,51 @@ export default function ChatSidebar({ channels, groups, users, presence, current
 // a click, so this is an explicit one-time prompt rather than something
 // that fires on load. Hidden once answered either way; if denied, only the
 // browser's own site settings can undo it, so it says so once.
+const PROMPT_KEY = 'ador_call_prompt_dismissed'
+
+function wasDismissed() {
+  try {
+    return localStorage.getItem(PROMPT_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 function CallNotificationsPrompt() {
   const supported = typeof Notification !== 'undefined'
   const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported')
-  if (permission === 'granted' || permission === 'unsupported') return null
+  const [dismissed, setDismissed] = useState(wasDismissed)
+  const dismiss = () => {
+    setDismissed(true)
+    try {
+      localStorage.setItem(PROMPT_KEY, '1')
+    } catch {
+      // private mode — it just shows again next time
+    }
+  }
+  // Shown until answered or dismissed once — never a permanent fixture.
+  if (dismissed || permission === 'granted' || permission === 'unsupported') return null
   if (permission === 'denied') {
-    return <p className="px-1 text-[11px] leading-relaxed text-[#555555]">Avisos de llamada bloqueados en este navegador — actívalos desde la configuración del sitio.</p>
+    return (
+      <p className="px-1 text-[11px] leading-relaxed text-[#8A8A8A]">
+        Avisos del sistema bloqueados en este navegador — actívalos desde la configuración del sitio.{' '}
+        <button type="button" onClick={dismiss} className="text-[#9A9A9A] underline hover:text-[#F5F5F5]">
+          Ocultar
+        </button>
+      </p>
+    )
   }
   return (
     <div className="rounded-xl border border-dashed border-white/[0.12] px-3 py-2.5">
-      <p className="text-[11.5px] leading-relaxed text-[#888888]">Recibe un aviso del sistema cuando te llamen y ADOR OS esté en otra pestaña.</p>
-      <button
-        type="button"
-        onClick={() => Notification.requestPermission().then(setPermission)}
-        className="mt-1.5 text-[12px] font-medium text-[#E8C15A] hover:underline"
-      >
-        Activar avisos de llamada
-      </button>
+      <p className="text-[12.5px] leading-relaxed text-[#9A9A9A]">Recibe un aviso del sistema cuando te llamen o te escriban y ADOR OS esté en otra pestaña.</p>
+      <div className="mt-1.5 flex items-center gap-3">
+        <button type="button" onClick={() => Notification.requestPermission().then(setPermission)} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline">
+          Activar avisos
+        </button>
+        <button type="button" onClick={dismiss} className="text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
+          Ahora no
+        </button>
+      </div>
     </div>
   )
 }
@@ -270,52 +287,48 @@ function dndOptions(now = new Date()) {
   ]
 }
 
-// "Mi estado": your own availability, which everyone sees on your dot.
-// Disponible (default) or No molestar for a while — calls don't ring and
-// messages don't pop up until it ends. "En reunión" isn't picked here: it
+// The top of the sidebar: "Comunicación" with your own status under it, and
+// your face on the right — click it to change your status (Slack's
+// pattern). Disponible, or No molestar for a while: calls don't ring and
+// messages don't pop up until it ends. "En reunión" isn't picked here — it
 // comes on its own from your Google Calendar while an event is happening.
-function StatusPicker({ presence, onSetDnd, calendarConnected }) {
+function MeHeader({ presence, uid, onSetDnd, calendarConnected }) {
   const [open, setOpen] = useState(false)
   const p = presenceOf(presence)
   const current = p.status === 'dnd' || p.status === 'meeting' ? p : { status: 'available', label: 'Disponible', color: '#4CAF50' }
+  const pick = (until) => {
+    onSetDnd(until)
+    setOpen(false)
+  }
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left">
-        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: current.color }} />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[10.5px] uppercase tracking-[0.08em] text-[#555555]">Mi estado</span>
-          <span className="block truncate text-[12.5px] text-[#DDDDDD]">{current.label}</span>
-        </span>
-        <span className="text-[11px] text-[#666666]">{open ? '▴' : '▾'}</span>
-      </button>
+    <div>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-[#F5F5F5]">Comunicación</p>
+          <button type="button" onClick={() => setOpen((v) => !v)} className="flex max-w-full items-center gap-1.5 text-[11px] text-[#9A9A9A] hover:text-[#F5F5F5]">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: current.color }} />
+            <span className="truncate">{current.label}</span>
+            <span>{open ? '▴' : '▾'}</span>
+          </button>
+        </div>
+        <button type="button" onClick={() => setOpen((v) => !v)} title="Cambiar mi estado" className="flex-shrink-0 rounded-full">
+          <PersonAvatar uid={uid} size={32} showPresence />
+        </button>
+      </div>
+
       {open && (
-        <div className="flex flex-col gap-0.5 border-t border-white/[0.06] p-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              onSetDnd(null)
-              setOpen(false)
-            }}
-            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.05]"
-          >
+        <div className="mt-3 flex flex-col gap-0.5 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5">
+          <button type="button" onClick={() => pick(null)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#DDDDDD] hover:bg-white/[0.05]">
             <span className="h-2 w-2 rounded-full bg-[#4CAF50]" /> Disponible
           </button>
-          <p className="px-2 pt-1 text-[10.5px] text-[#555555]">No molestar durante…</p>
+          <p className="px-2 pt-1 text-[11px] text-[#8A8A8A]">No molestar durante…</p>
           {dndOptions().map((o) => (
-            <button
-              key={o.label}
-              type="button"
-              onClick={() => {
-                onSetDnd(o.until)
-                setOpen(false)
-              }}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.05]"
-            >
+            <button key={o.label} type="button" onClick={() => pick(o.until)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#DDDDDD] hover:bg-white/[0.05]">
               <span className="h-2 w-2 rounded-full bg-[#EF5350]" /> {o.label}
             </button>
           ))}
-          <p className="px-2 pt-1.5 pb-1 text-[10.5px] leading-relaxed text-[#555555]">
+          <p className="px-2 pt-1.5 pb-1 text-[11px] leading-relaxed text-[#8A8A8A]">
             {calendarConnected
               ? '“En reunión” se pone solo mientras tengas un evento en tu Google Calendar.'
               : 'Conecta Google (Calendario o Llamar) y “En reunión” se pondrá solo durante tus eventos.'}

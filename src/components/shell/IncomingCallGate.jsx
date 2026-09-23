@@ -174,7 +174,7 @@ export default function IncomingCallGate({ user }) {
             {video ? 'Videollamada' : 'Llamada'} entrante · Google Meet
           </p>
           {availability === 'meeting' && <p className="mt-1 text-[11px] text-[#A78BDA]">Sin sonido — estás en una reunión</p>}
-          <p className="mt-0.5 text-[11.5px] text-[#555555]">{current.conversationLabel}</p>
+          <p className="mt-0.5 text-[12.5px] text-[#7A7A7A]">{current.conversationLabel}</p>
           {ringing.length > 1 && <p className="mt-2 text-[11px] text-[#B8860B]">+{ringing.length - 1} llamada{ringing.length > 2 ? 's' : ''} más</p>}
 
           <div className="mt-8 flex w-full items-start justify-center gap-12">
@@ -182,13 +182,13 @@ export default function IncomingCallGate({ user }) {
               <span className="flex h-14 w-14 items-center justify-center rounded-full text-white" style={{ background: '#EF5350' }}>
                 <CloseIcon size={18} />
               </span>
-              <span className="text-[11.5px] text-[#888888]">Rechazar</span>
+              <span className="text-[12.5px] text-[#888888]">Rechazar</span>
             </button>
             <button type="button" onClick={() => respond('joined')} className="flex flex-col items-center gap-2">
               <span className="flex h-14 w-14 items-center justify-center rounded-full text-white" style={{ background: '#4CAF50' }}>
                 {video ? <VideoIcon size={20} /> : <PhoneIcon size={18} />}
               </span>
-              <span className="text-[11.5px] text-[#888888]">Unirse</span>
+              <span className="text-[12.5px] text-[#888888]">Unirse</span>
             </button>
           </div>
         </div>
@@ -266,7 +266,7 @@ export function OutgoingCallBanner({ user }) {
           <button
             type="button"
             onClick={() => setChatCallStatus(call.id, 'cancelled', user.uid).catch(() => {})}
-            className="rounded-full px-3 py-1.5 text-[12px] font-medium text-white"
+            className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-white"
             style={{ background: '#EF5350' }}
           >
             Cancelar

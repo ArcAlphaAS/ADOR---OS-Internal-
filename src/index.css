@@ -197,6 +197,15 @@ input:-webkit-autofill:focus {
   opacity: 0.6;
 }
 
+/* A message that just arrived settles into place (Comunicación). */
+@keyframes ador-msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ador-msg-in {
+  animation: ador-msg-in 220ms ease-out both;
+}
+
 @keyframes ador-shimmer {
   0% {
     background-position: -150% 0;

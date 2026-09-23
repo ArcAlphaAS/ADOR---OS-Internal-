@@ -1,22 +1,23 @@
 import { useState } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, normalizeChannelName } from '../../lib/chat'
-import Avatar from '../shell/Avatar'
-import { CloseIcon, LockIcon, GlobeIcon } from '../icons'
+import { LockIcon, GlobeIcon } from '../icons'
 import { MemberPicker, VisibilityToggle } from './NewConversationModal'
+import PersonAvatar from './PersonAvatar'
+import SidePanel from './SidePanel'
 
 function Row({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-3 py-2">
-      <span className="text-[12px] text-[#666666]">{label}</span>
-      <span className="text-right text-[12px] font-medium text-[#DDDDDD]">{value}</span>
+      <span className="text-[12.5px] text-[#858585]">{label}</span>
+      <span className="text-right text-[12.5px] font-medium text-[#DDDDDD]">{value}</span>
     </div>
   )
 }
 
 function Section({ title, children }) {
   return (
-    <div className="border-t border-white/[0.06] pt-4">
-      <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#444444]">{title}</p>
+    <div className="border-t border-white/[0.06] pt-4 first:border-t-0 first:pt-0">
+      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{title}</p>
       {children}
     </div>
   )
@@ -48,17 +49,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
   }
 
   return (
-    <aside className="flex w-[280px] flex-shrink-0 flex-col overflow-y-auto">
-      <div className="ador-glass ador-grain flex flex-col gap-4 rounded-2xl p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-[#F5F5F5]">{title}</p>
-            {conversation.description && <p className="mt-0.5 text-[11.5px] leading-relaxed text-[#666666]">{conversation.description}</p>}
-          </div>
-          <button type="button" onClick={onClose} className="flex-shrink-0 text-[#666666] hover:text-[#F5F5F5]">
-            <CloseIcon size={12} />
-          </button>
-        </div>
+    <SidePanel title={title} subtitle={conversation.description} onClose={onClose}>
 
         <Section title="Permisos">
           <Row
@@ -96,16 +87,16 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                 const u = users.find((x) => x.id === uid)
                 return (
                   <div key={uid} className="group flex items-center gap-2.5 rounded-lg px-1.5 py-1.5">
-                    <Avatar displayName={userLabel(u)} photoURL={u?.photoDataUrl} size={22} />
+                    <PersonAvatar uid={uid} name={userLabel(u)} size={22} showPresence />
                     <span className="truncate text-[12.5px] text-[#DDDDDD]">{userLabel(u)}</span>
                     {uid === currentUid ? (
-                      <span className="ml-auto text-[10.5px] text-[#555555]">tú</span>
+                      <span className="ml-auto text-[11px] text-[#7A7A7A]">tú</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => onRemoveMember(uid)}
                         title="Quitar del canal"
-                        className="ml-auto text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#EF5350] group-hover:opacity-100"
+                        className="ml-auto text-[11px] text-[#858585] opacity-0 transition-opacity hover:text-[#EF5350] group-hover:opacity-100"
                       >
                         Quitar
                       </button>
@@ -119,13 +110,13 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   {candidates.length ? (
                     <MemberPicker users={candidates} currentUid={null} selected={toAdd} onToggle={(uid) => setToAdd((m) => (m.includes(uid) ? m.filter((x) => x !== uid) : [...m, uid]))} />
                   ) : (
-                    <p className="text-[11.5px] text-[#555555]">Todos los usuarios de ADOR OS ya están aquí.</p>
+                    <p className="text-[12.5px] text-[#7A7A7A]">Todos los usuarios de ADOR OS ya están aquí.</p>
                   )}
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setAdding(false)} className="text-[12px] text-[#666666] hover:text-[#F5F5F5]">
+                    <button type="button" onClick={() => setAdding(false)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
                       Cancelar
                     </button>
-                    <button type="button" disabled={!toAdd.length} onClick={addSelected} className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12px] font-medium">
+                    <button type="button" disabled={!toAdd.length} onClick={addSelected} className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12.5px] font-medium">
                       Invitar
                     </button>
                   </div>
@@ -137,7 +128,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
               )}
             </div>
           ) : (
-            <p className="text-[12px] leading-relaxed text-[#666666]">
+            <p className="text-[12.5px] leading-relaxed text-[#858585]">
               Todos en ADOR están en este canal automáticamente — incluida cualquier persona que entre a ADOR OS en el futuro.
             </p>
           )}
@@ -153,19 +144,19 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Nombre del canal"
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#555555] outline-none"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none"
                 />
                 {nameTaken && <p className="text-[11px] text-[#EF5350]">Ya existe #{normalized}.</p>}
                 <VisibilityToggle value={newVisibility} onChange={setNewVisibility} />
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setConverting(false)} className="text-[12px] text-[#666666] hover:text-[#F5F5F5]">
+                  <button type="button" onClick={() => setConverting(false)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
                     Cancelar
                   </button>
                   <button
                     type="button"
                     disabled={!normalized || nameTaken}
                     onClick={() => onConvert(normalized, newVisibility)}
-                    className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12px] font-medium"
+                    className="ador-btn-primary rounded-lg px-3 py-1.5 text-[12.5px] font-medium"
                   >
                     Convertir
                   </button>
@@ -173,7 +164,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
               </div>
             ) : (
               <>
-                <p className="text-[12px] leading-relaxed text-[#666666]">Si este grupo ya es un espacio fijo de trabajo, conviértelo en canal — se conservan los mensajes.</p>
+                <p className="text-[12.5px] leading-relaxed text-[#858585]">Si este grupo ya es un espacio fijo de trabajo, conviértelo en canal — se conservan los mensajes.</p>
                 <button type="button" onClick={() => setConverting(true)} className="mt-2 text-[12.5px] text-[#E8C15A] hover:underline">
                   Convertir en canal
                 </button>
@@ -188,14 +179,13 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
               type="button"
               onClick={() => (confirmLeave ? onRemoveMember(currentUid) : setConfirmLeave(true))}
               onBlur={() => setConfirmLeave(false)}
-              className="text-[12px] transition-colors"
-              style={{ color: confirmLeave ? '#EF5350' : '#666666' }}
+              className="text-[12.5px] transition-colors"
+              style={{ color: confirmLeave ? '#EF5350' : '#858585' }}
             >
               {confirmLeave ? 'Clic otra vez para salir' : kind === 'group' ? 'Salir del grupo' : 'Salir del canal'}
             </button>
           </div>
         )}
-      </div>
-    </aside>
+    </SidePanel>
   )
 }

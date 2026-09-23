@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, presenceOf } from '../../lib/chat'
 import { LockIcon, InfoIcon, PhoneIcon, VideoIcon } from '../icons'
-import { PresenceAvatar } from './ChatSidebar'
+import PersonAvatar from './PersonAvatar'
 
 // The strip above a conversation: who/what it is, presence, call buttons,
 // Detalles, and the pinned-messages bar. Split out of ChatModule.jsx.
@@ -13,12 +13,12 @@ export function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
   return (
     <div className="mt-2 rounded-xl border border-[#B8860B]/25 bg-[#B8860B]/[0.05]">
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 px-3 py-2 text-left">
-        <span className="text-[12px]">📌</span>
-        <span className="flex-shrink-0 text-[11.5px] font-medium text-[#E8C15A]">
+        <span className="text-[12.5px]">📌</span>
+        <span className="flex-shrink-0 text-[12.5px] font-medium text-[#E8C15A]">
           {pins.length} {pins.length === 1 ? 'fijado' : 'fijados'}
         </span>
         {!open && (
-          <span className="truncate text-[12px] text-[#AAAAAA]">
+          <span className="truncate text-[12.5px] text-[#AAAAAA]">
             {pins[0].authorName ? `${pins[0].authorName.split(' ')[0]}: ` : ''}
             {pins[0].text}
           </span>
@@ -31,11 +31,11 @@ export function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
             <div key={p.id} className="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
               <button type="button" onClick={() => onJump(p.id)} className="min-w-0 flex-1 text-left">
                 <span className="block truncate text-[12.5px] text-[#DDDDDD]">{p.text || 'Mensaje'}</span>
-                <span className="block text-[10.5px] text-[#666666]">
+                <span className="block text-[11px] text-[#858585]">
                   {p.authorName} · fijado por {(p.pinnedBy || '').split(' ')[0]}
                 </span>
               </button>
-              <button type="button" onClick={() => onUnpin(p.id)} className="flex-shrink-0 text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#F5F5F5] group-hover:opacity-100">
+              <button type="button" onClick={() => onUnpin(p.id)} className="flex-shrink-0 text-[11px] text-[#858585] opacity-0 transition-opacity hover:text-[#F5F5F5] group-hover:opacity-100">
                 Desfijar
               </button>
             </div>
@@ -53,7 +53,7 @@ function HeaderButton({ title, onClick, active, children, buttonRef }) {
       type="button"
       title={title}
       onClick={onClick}
-      className="flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] px-3 text-[12px] text-[#AAAAAA] transition-colors duration-150 hover:border-white/[0.16] hover:text-[#F5F5F5]"
+      className="flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] px-3 text-[12.5px] text-[#AAAAAA] transition-colors duration-150 hover:border-white/[0.16] hover:text-[#F5F5F5]"
       style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
     >
       {children}
@@ -110,10 +110,10 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
           className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
           style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
         >
-          <PresenceAvatar presence={dmPresence} displayName={dmEntry?.name || userLabel(dmUser)} photoURL={dmEntry?.photoDataUrl || dmUser?.photoDataUrl} size={30} />
+          <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={30} showPresence />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
-            <p className="truncate text-[11.5px] text-[#555555]">
+            <p className="truncate text-[12.5px] text-[#7A7A7A]">
               <span style={{ color: presenceOf(dmPresence).color || undefined }}>{presenceOf(dmPresence).label}</span>
               {[dmEntry?.role, dmEntry?.area].filter(Boolean).length ? ` · ${[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')}` : ''}
             </p>
@@ -141,10 +141,10 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
     <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
       <div className="min-w-0">
         <p className="flex items-center gap-1.5 truncate text-[15px] font-semibold text-[#F5F5F5]">
-          {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#666666]">#</span>)}
+          {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#858585]">#</span>)}
           <span className="truncate">{title}</span>
         </p>
-        <p className="truncate text-[11.5px] text-[#555555]">
+        <p className="truncate text-[12.5px] text-[#7A7A7A]">
           {subtitle}
           {conversation.description ? ` · ${conversation.description}` : ''}
         </p>

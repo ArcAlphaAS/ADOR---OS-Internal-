@@ -379,6 +379,7 @@ Last updated: 2026-09-22 (Chat module shipped and polished same-day — real-tim
 - [x] Código de Comunicación reorganizado en archivos por responsabilidad (sin cambios visibles) (2026-09-23)
 - [x] Estados: Disponible / No molestar (manual) / En reunión (automático desde Google Calendar); silencian llamadas y avisos (2026-09-23)
 - [x] Búsqueda en todos los mensajes (últimos 400 por conversación, sin tildes ni mayúsculas, filtros De/En, salta al mensaje) (2026-09-23)
+- [x] Pase visual: mensajes agrupados con foto y nombre una vez, línea "Nuevos mensajes", barra lateral simplificada (estado en tu foto, accesos en fila de íconos), contraste y 4 tamaños de letra, fotos reales en todo el chat, paneles derechos unificados (2026-09-23)
 - [ ] Probar menciones/campana/voz/llamadas/avisos/estados entre dos cuentas reales
 
 **Not built yet**

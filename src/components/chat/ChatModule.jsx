@@ -66,6 +66,7 @@ import ProfilePanel from './ProfilePanel'
 import ThreadPanel from './ThreadPanel'
 import { useGoogleMeet } from '../../hooks/useGoogleMeet'
 import TaskFromMessageModal from './TaskFromMessageModal'
+import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
 import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 
@@ -193,6 +194,13 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   // background tab would mark things read (and flip the other person's ✓✓)
   // without anyone having seen them. Coming back to the tab marks it then.
   const countFor = (key) => (allChannels.find((c) => c.id === key) || myDms.find((d) => d.id === key))?.messageCount
+  // Where "Nuevos mensajes" goes: the read marker as it was the moment the
+  // conversation opened — captured before opening it marks it read.
+  const [newSince, setNewSince] = useState(null)
+  useEffect(() => {
+    setNewSince(activeConversationId ? profile?.chatLastRead?.[activeConversationId]?.toMillis?.() ?? null : null)
+  }, [activeConversationId])
+
   const markReadIfVisible = (key) => {
     if (!key || document.visibilityState !== 'visible' || !document.hasFocus()) return
     markChatRead(user.uid, key, key.startsWith('thread_') ? undefined : countFor(key))
@@ -520,6 +528,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   const profileInDm = selected?.type === 'dm' && selected.id === profileUid
 
   return (
+    <ChatPeopleContext.Provider value={{ users, directory, presence }}>
     <div className={`mx-auto flex h-full w-full max-w-[1320px] py-8 ${panel && !view ? 'gap-5 px-8' : 'gap-8 px-12'}`}>
       <ChatSidebar
         channels={channels}
@@ -612,7 +621,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
             )}
             {searchQuery !== null && (
               <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3.5 py-2">
-                <SearchIcon size={12} className="text-[#666666]" />
+                <SearchIcon size={12} className="text-[#858585]" />
                 <input
                   autoFocus
                   type="text"
@@ -620,14 +629,17 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Escape' && setSearchQuery(null)}
                   placeholder="Buscar en esta conversación..."
-                  className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#858585] outline-none"
                 />
-                <button type="button" onClick={() => setSearchQuery(null)} className="text-[11.5px] text-[#666666] hover:text-[#F5F5F5]">
+                <button type="button" onClick={() => setSearchQuery(null)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
                   Cerrar
                 </button>
               </div>
             )}
             <MessageThread
+              conversationKey={activeConversationId}
+              isDm={selected.type === 'dm'}
+              newSince={newSince}
               messages={messages}
               currentUid={user.uid}
               query={searchQuery}
@@ -662,8 +674,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-            <MessageIcon size={20} className="text-[#333333]" />
-            <p className="max-w-[360px] text-[13px] leading-relaxed text-[#444444]">
+            <MessageIcon size={20} className="text-[#5A5A5A]" />
+            <p className="max-w-[360px] text-[13.5px] leading-relaxed text-[#767676]">
               Escribe un mensaje directo a alguien, abre un grupo privado, o crea el primer canal — empieza por <span className="text-[#888888]">#general</span>.
             </p>
             <button type="button" onClick={() => setModal('channel')} className="ador-btn-primary mt-3 rounded-xl px-4 py-2 text-[12.5px] font-medium">
@@ -773,5 +785,6 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
         />
       )}
     </div>
+    </ChatPeopleContext.Provider>
   )
 }

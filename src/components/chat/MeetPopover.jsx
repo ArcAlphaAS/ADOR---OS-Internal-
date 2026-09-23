@@ -87,7 +87,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
       style={{ top: rect.bottom + 8, left, width: WIDTH }}
     >
       <div className="ador-glass ador-grain rounded-2xl p-4">
-        <p className="flex items-center gap-2 text-[13px] font-semibold text-[#F5F5F5]">
+        <p className="flex items-center gap-2 text-[13.5px] font-semibold text-[#F5F5F5]">
           {video ? <VideoIcon size={14} /> : <PhoneIcon size={13} />}
           {video ? 'Videollamada' : 'Llamada'} con Google Meet
         </p>
@@ -95,13 +95,13 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
         {canConnect && (
           <div className="mt-3 rounded-xl border border-[#B8860B]/35 bg-[#B8860B]/[0.07] p-3">
             <p className="text-[12.5px] font-medium text-[#F2EBDD]">Llama en un clic</p>
-            <p className="mt-0.5 text-[11.5px] leading-relaxed text-[#999999]">Conecta tu cuenta de Google una sola vez: ADOR OS crea la reunión, le suena a la otra persona y te abre Meet.</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#999999]">Conecta tu cuenta de Google una sola vez: ADOR OS crea la reunión, le suena a la otra persona y te abre Meet.</p>
             <button type="button" onClick={onConnect} className="mt-2 w-full rounded-lg px-3 py-2 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
               Conectar Google
             </button>
           </div>
         )}
-        {canConnect && <p className="mt-3 text-[11px] text-[#555555]">O hazlo manual esta vez:</p>}
+        {canConnect && <p className="mt-3 text-[11px] text-[#7A7A7A]">O hazlo manual esta vez:</p>}
 
         <div className="mt-3 flex flex-col gap-2.5">
           <div className="flex items-start gap-2.5">
@@ -114,7 +114,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
               >
                 Abrir Google Meet
               </button>
-              {!video && <p className="mt-1 text-[10.5px] leading-snug text-[#666666]">Para solo audio, entra con la cámara apagada.</p>}
+              {!video && <p className="mt-1 text-[11px] leading-snug text-[#858585]">Para solo audio, entra con la cámara apagada.</p>}
             </div>
           </div>
 
@@ -128,12 +128,12 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && valid && onSend(link)}
                 placeholder="Pega el enlace: meet.google.com/..."
-                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12px] text-[#F5F5F5] placeholder:text-[#555555] outline-none focus:border-white/[0.2]"
+                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none focus:border-white/[0.2]"
               />
-              {url.trim() && !valid && <p className="mt-1 text-[10.5px] text-[#EF5350]">Eso no parece un enlace de Google Meet.</p>}
-              {detected && <p className="mt-1 text-[10.5px] text-[#4CAF50]">Enlace detectado — llamando…</p>}
+              {url.trim() && !valid && <p className="mt-1 text-[11px] text-[#EF5350]">Eso no parece un enlace de Google Meet.</p>}
+              {detected && <p className="mt-1 text-[11px] text-[#4CAF50]">Enlace detectado — llamando…</p>}
               {opened && !detected && !url && (
-                <p className="mt-1 text-[10.5px] leading-snug text-[#666666]">En Meet copia el enlace (o “Copiar información de la reunión”) y vuelve aquí: la llamada sale sola.</p>
+                <p className="mt-1 text-[11px] leading-snug text-[#858585]">En Meet copia el enlace (o “Copiar información de la reunión”) y vuelve aquí: la llamada sale sola.</p>
               )}
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
 function Step({ n, done }) {
   return (
     <span
-      className="mt-1.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold"
+      className="mt-1.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
       style={{ background: done ? 'rgba(76,175,80,0.18)' : 'rgba(255,255,255,0.06)', color: done ? '#4CAF50' : '#888888' }}
     >
       {done ? '✓' : n}

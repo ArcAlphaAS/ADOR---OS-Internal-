@@ -135,7 +135,7 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
                   <span className="mt-0.5 line-clamp-2 block text-[12.5px] leading-relaxed text-[#DDDDDD]">{t.text}</span>
                 </span>
               </button>
-              <button type="button" onClick={() => setToasts((prev) => prev.filter((x) => x.key !== t.key))} className="flex-shrink-0 text-[#666666] hover:text-[#F5F5F5]">
+              <button type="button" onClick={() => setToasts((prev) => prev.filter((x) => x.key !== t.key))} className="flex-shrink-0 text-[#858585] hover:text-[#F5F5F5]">
                 <CloseIcon size={11} />
               </button>
             </div>

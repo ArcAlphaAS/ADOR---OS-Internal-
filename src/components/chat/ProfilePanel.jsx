@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { sharedInConversation, userLabel, presenceOf } from '../../lib/chat'
-import Avatar from '../shell/Avatar'
-import { CloseIcon, PhoneIcon, VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
+import { PhoneIcon, VideoIcon, SearchIcon, MessageIcon, FileIcon, GlobeIcon } from '../icons'
+import PersonAvatar from './PersonAvatar'
+import SidePanel from './SidePanel'
 
 function shortDate(ts) {
   if (!ts?.toDate) return ''
@@ -36,12 +37,12 @@ function ListSection({ title, items, render, empty }) {
       <div className="mb-2 flex items-center justify-between">
         <p className="text-[12.5px] font-semibold text-[#DDDDDD]">{title}</p>
         {items.length > 4 && (
-          <button type="button" onClick={() => setAll((v) => !v)} className="text-[11.5px] text-[#E8C15A] hover:underline">
+          <button type="button" onClick={() => setAll((v) => !v)} className="text-[12.5px] text-[#E8C15A] hover:underline">
             {all ? 'Ver menos' : `Ver todos (${items.length})`}
           </button>
         )}
       </div>
-      {items.length === 0 ? <p className="text-[11.5px] leading-relaxed text-[#555555]">{empty}</p> : <div className="flex flex-col gap-1">{shown.map(render)}</div>}
+      {items.length === 0 ? <p className="text-[12.5px] leading-relaxed text-[#7A7A7A]">{empty}</p> : <div className="flex flex-col gap-1">{shown.map(render)}</div>}
     </div>
   )
 }
@@ -65,28 +66,21 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
   const { files, links } = inDm ? sharedInConversation(messages) : { files: [], links: [] }
 
   return (
-    <aside className="flex w-[290px] flex-shrink-0 flex-col overflow-y-auto">
-      <div className="ador-glass ador-grain flex flex-col gap-5 rounded-2xl p-5">
-        <div className="flex justify-end">
-          <button type="button" onClick={onClose} className="text-[#666666] hover:text-[#F5F5F5]">
-            <CloseIcon size={12} />
-          </button>
-        </div>
-
-        <div className="-mt-3 flex flex-col items-center text-center">
+    <SidePanel title="Perfil" onClose={onClose}>
+        <div className="flex flex-col items-center text-center">
           <span className="relative">
-            <Avatar displayName={name} photoURL={photo} size={84} />
+            <PersonAvatar uid={person?.id} name={name} photo={photo} size={84} />
             {presenceOf(presence).color && (
               <span className="absolute right-1 bottom-1 h-4 w-4 rounded-full ring-[3px] ring-[#121212]" style={{ background: presenceOf(presence).color }} />
             )}
           </span>
-          <p className="mt-3 text-[16px] font-semibold text-[#F5F5F5]">{name}</p>
-          <p className="text-[11.5px]" style={{ color: presenceOf(presence).color || '#666666' }}>
+          <p className="mt-3 text-[17px] font-semibold text-[#F5F5F5]">{name}</p>
+          <p className="text-[12.5px]" style={{ color: presenceOf(presence).color || '#858585' }}>
             {presenceOf(presence).label}
           </p>
-          {subtitle && <p className="mt-0.5 text-[12px] text-[#888888]">{subtitle}</p>}
-          {directoryEntry?.about && <p className="mt-2 text-[12px] leading-relaxed text-[#666666]">{directoryEntry.about}</p>}
-          {person?.email && <p className="mt-2 text-[11px] text-[#555555]">{person.email}</p>}
+          {subtitle && <p className="mt-0.5 text-[12.5px] text-[#888888]">{subtitle}</p>}
+          {directoryEntry?.about && <p className="mt-2 text-[12.5px] leading-relaxed text-[#858585]">{directoryEntry.about}</p>}
+          {person?.email && <p className="mt-2 text-[11px] text-[#7A7A7A]">{person.email}</p>}
         </div>
 
         <div className="flex justify-center gap-1">
@@ -107,7 +101,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                   <img src={f.src} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-[#DDDDDD]">{f.name}</span>
-                    <span className="block text-[11px] text-[#555555]">Archivo de conversación · {shortDate(f.createdAt)}</span>
+                    <span className="block text-[11px] text-[#7A7A7A]">Archivo de conversación · {shortDate(f.createdAt)}</span>
                   </span>
                 </button>
               )}
@@ -127,7 +121,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-[#DDDDDD]">{l.label}</span>
-                    <span className="block truncate text-[11px]" style={{ color: l.drive ? '#B8860B' : '#555555' }}>
+                    <span className="block truncate text-[11px]" style={{ color: l.drive ? '#B8860B' : '#7A7A7A' }}>
                       {l.drive ? 'Documento oficial' : l.url.replace(/^https?:\/\/(www\.)?/, '')} · {shortDate(l.createdAt)}
                     </span>
                   </span>
@@ -138,7 +132,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
             <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
               <div>
                 <p className="text-[12.5px] font-semibold text-[#DDDDDD]">Silenciar</p>
-                <p className="text-[11px] text-[#555555]">Sin punto de no leído en la barra</p>
+                <p className="text-[11px] text-[#7A7A7A]">Sin punto de no leído en la barra</p>
               </div>
               <button
                 type="button"
@@ -153,7 +147,6 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
             </div>
           </>
         )}
-      </div>
-    </aside>
+    </SidePanel>
   )
 }

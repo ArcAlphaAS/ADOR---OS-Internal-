@@ -3,7 +3,7 @@ import { subscribeMessage, subscribeMessages, subscribeTyping } from '../../lib/
 import { typingNames, typingLabel } from '../../lib/chat'
 import { MessageBubble } from './MessageBubble'
 import Composer from './Composer'
-import { CloseIcon } from '../icons'
+import SidePanel from './SidePanel'
 
 const REPLY_PAGE = 100
 
@@ -73,6 +73,7 @@ export default function ThreadPanel({
   const bubbleProps = (m) => ({
     message: m,
     mine: m.authorUid === currentUid,
+    showAvatar: true,
     currentUid,
     saved: savedIds.has(m.id),
     userName,
@@ -86,21 +87,11 @@ export default function ThreadPanel({
   })
 
   return (
-    <aside className="flex w-[340px] flex-shrink-0 flex-col">
-      <div className="ador-glass ador-grain flex min-h-0 flex-1 flex-col rounded-2xl p-4">
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-          <div>
-            <p className="text-[14px] font-semibold text-[#F5F5F5]">Hilo</p>
-            <p className="text-[11.5px] text-[#555555]">{conversationLabel}</p>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#666666] hover:text-[#F5F5F5]">
-            <CloseIcon size={12} />
-          </button>
-        </div>
+    <SidePanel title="Hilo" subtitle={conversationLabel} onClose={onClose} bodyClassName="flex min-h-0 flex-1 flex-col px-5 pb-4">
 
         <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-3">
           {parent === null ? (
-            <p className="py-10 text-center text-[12.5px] text-[#555555]">Este mensaje ya no existe.</p>
+            <p className="py-10 text-center text-[12.5px] text-[#7A7A7A]">Este mensaje ya no existe.</p>
           ) : parent ? (
             <>
               <div className="flex">
@@ -115,7 +106,7 @@ export default function ThreadPanel({
                 />
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[11px] text-[#555555]">
+                <span className="text-[11px] text-[#7A7A7A]">
                   {replies.length} {replies.length === 1 ? 'respuesta' : 'respuestas'}
                 </span>
                 <div className="h-px flex-1 bg-white/[0.06]" />
@@ -138,7 +129,6 @@ export default function ThreadPanel({
         {parent !== null && (
           <Composer compact key={parentId} onSend={(draft) => onSend(draft, parent)} onTyping={onTyping} mentionCandidates={mentionCandidates} placeholder="Responder en el hilo..." onError={onError} />
         )}
-      </div>
-    </aside>
+    </SidePanel>
   )
 }

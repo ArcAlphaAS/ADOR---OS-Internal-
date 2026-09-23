@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
-import Avatar from '../shell/Avatar'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon } from '../icons'
+import PersonAvatar from './PersonAvatar'
 
 // One message in a conversation: its bubble, attachments (image, voice,
 // call card, Drive document), reactions, receipts, thread summary and the
@@ -106,7 +106,7 @@ function ImageAttachment({ attachment, onOpen }) {
   return (
     <button type="button" onClick={() => onOpen(attachment)} className="block text-left">
       <img src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[240px] max-w-[300px] rounded-xl border border-white/[0.08] object-cover" />
-      <span className="mt-1 block px-1 text-[10.5px] text-[#555555]">Archivo de conversación · {attachment.name}</span>
+      <span className="mt-1 block px-1 text-[11px] text-[#7A7A7A]">Archivo de conversación · {attachment.name}</span>
     </button>
   )
 }
@@ -211,23 +211,23 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
           <span className="block text-[12.5px] font-medium" style={{ color: state.key === 'missed' || state.key === 'declined' ? '#EF8A88' : '#F5F5F5' }}>
             {title}
           </span>
-          <span className="block truncate text-[11px] text-[#666666]">{subtitle}</span>
+          <span className="block truncate text-[11px] text-[#858585]">{subtitle}</span>
         </span>
       </div>
       {(canJoin || (mine && state.key === 'ringing')) && (
         <div className="flex items-center gap-2">
           {canJoin && (
-            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12px] font-medium text-white" style={{ background: '#4CAF50' }}>
+            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-white" style={{ background: '#4CAF50' }}>
               {joined ? 'Volver a la llamada' : 'Unirse'}
             </button>
           )}
           {mine && state.key === 'ringing' && (
-            <button type="button" onClick={() => setChatCallStatus(call.callId, 'cancelled', currentUid).catch(() => {})} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12px] text-[#CCCCCC] hover:text-[#F5F5F5]">
+            <button type="button" onClick={() => setChatCallStatus(call.callId, 'cancelled', currentUid).catch(() => {})} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]">
               Cancelar
             </button>
           )}
           {state.key === 'active' && joined && (
-            <button type="button" onClick={() => setChatCallStatus(call.callId, 'ended', currentUid).catch(() => {})} className="ml-auto rounded-full border border-[#EF5350]/40 px-3 py-1.5 text-[12px] text-[#EF8A88] hover:bg-[#EF5350]/10">
+            <button type="button" onClick={() => setChatCallStatus(call.callId, 'ended', currentUid).catch(() => {})} className="ml-auto rounded-full border border-[#EF5350]/40 px-3 py-1.5 text-[12.5px] text-[#EF8A88] hover:bg-[#EF5350]/10">
               Finalizar
             </button>
           )}
@@ -250,7 +250,7 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
             type="button"
             title={uids.map(userName).join(', ')}
             onClick={() => onReact(emoji, mine)}
-            className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition-colors"
+            className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12.5px] transition-colors"
             style={{
               borderColor: mine ? 'rgba(184,134,11,0.6)' : 'rgba(255,255,255,0.1)',
               background: mine ? 'rgba(184,134,11,0.18)' : 'rgba(255,255,255,0.03)',
@@ -269,11 +269,11 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
 // confirmed it yet. Hover says who has read it in a group.
 function Ticks({ receipt, userName }) {
   if (!receipt) return null
-  if (receipt.state === 'sending') return <span className="text-[10px] text-[#555555]" title="Enviando">◷</span>
+  if (receipt.state === 'sending') return <span className="text-[10px] text-[#7A7A7A]" title="Enviando">◷</span>
   const read = receipt.state === 'read'
   const title = read ? 'Leído' : receipt.readers.length ? `Leído por ${receipt.readers.map(userName).join(', ')}` : 'Enviado'
   return (
-    <span title={title} className="inline-flex items-center" style={{ color: read ? '#E8C15A' : '#666666' }}>
+    <span title={title} className="inline-flex items-center" style={{ color: read ? '#E8C15A' : '#858585' }}>
       <svg width={read ? 16 : 11} height="10" viewBox={read ? '0 0 16 10' : '0 0 11 10'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 5.2 3.8 8 10 1.8" />
         {read && <path d="M6.5 7.3 7.2 8 13.4 1.8" />}
@@ -293,7 +293,7 @@ function timeAgoShort(ts) {
 
 // Slack's thread summary under a message: who's in it, how many replies,
 // when the last one landed. Click opens the thread panel.
-function ThreadSummary({ message, userPhoto, userName, onOpen }) {
+function ThreadSummary({ message, userName, onOpen }) {
   if (!message.replyCount) return null
   const uids = (message.replyUids || []).slice(0, 4)
   return (
@@ -301,14 +301,14 @@ function ThreadSummary({ message, userPhoto, userName, onOpen }) {
       <span className="flex -space-x-1.5">
         {uids.map((uid) => (
           <span key={uid} className="rounded-full ring-2 ring-[#0A0A0A]">
-            <Avatar displayName={userName(uid)} photoURL={userPhoto(uid)} size={18} />
+            <PersonAvatar uid={uid} name={userName(uid)} size={18} />
           </span>
         ))}
       </span>
-      <span className="whitespace-nowrap text-[12px] font-medium text-[#E8C15A] group-hover/thread:underline">
+      <span className="whitespace-nowrap text-[12.5px] font-medium text-[#E8C15A] group-hover/thread:underline">
         {message.replyCount} {message.replyCount === 1 ? 'respuesta' : 'respuestas'}
       </span>
-      <span className="whitespace-nowrap text-[11px] text-[#555555]">Última {timeAgoShort(message.lastReplyAt)}</span>
+      <span className="whitespace-nowrap text-[11px] text-[#7A7A7A]">Última {timeAgoShort(message.lastReplyAt)}</span>
     </button>
   )
 }
@@ -330,7 +330,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -361,20 +361,20 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
           }}
           className="w-[360px] resize-none rounded-2xl border border-white/[0.2] bg-[#141414] px-3.5 py-2 text-[13.5px] text-[#F5F5F5] outline-none"
         />
-        <p className="px-1 text-[10.5px] text-[#666666]">Enter para guardar · Esc para cancelar</p>
+        <p className="px-1 text-[11px] text-[#858585]">Enter para guardar · Esc para cancelar</p>
       </div>
     )
   }
 
   const menuButton = (label, onClick) => (
-    <button type="button" onClick={onClick} className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] text-[#CCCCCC] hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+    <button type="button" onClick={onClick} className="whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.08] hover:text-[#F5F5F5]">
       {label}
     </button>
   )
 
   const actions = menu ? (
     // Inline, in the row itself — never a floating menu (no portal needed).
-    <span className="flex items-center gap-0.5 rounded-full border border-white/[0.1] bg-[#141414] px-1 py-0.5">
+    <span className="flex flex-wrap items-center gap-0.5 rounded-2xl border border-white/[0.1] bg-[#141414] px-1 py-0.5 shadow-[0_6px_20px_rgba(0,0,0,0.45)]">
       {menu === 'more' ? (
         <>
           {onTogglePin &&
@@ -398,12 +398,15 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
           })
         )
       )}
-      <button type="button" onClick={() => setMenu(null)} className="flex h-6 w-6 items-center justify-center rounded-full text-[#666666] hover:text-[#F5F5F5]">
+      <button type="button" onClick={() => setMenu(null)} className="flex h-6 w-6 items-center justify-center rounded-full text-[#858585] hover:text-[#F5F5F5]">
         <CloseIcon size={10} />
       </button>
     </span>
   ) : (
-    <span className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+    <span className="flex items-center gap-0.5 whitespace-nowrap rounded-full border border-white/[0.08] bg-[#141414] px-1 py-0.5 opacity-0 shadow-[0_6px_20px_rgba(0,0,0,0.45)] transition-opacity duration-150 group-hover:opacity-100">
+      {/* Inside a group only the last message shows its time; the others
+          reveal theirs on hover, like Slack. */}
+      {!groupEnd && <span className="px-1 text-[11px] text-[#8A8A8A]">{formatTime(message.createdAt)}</span>}
       {picking ? (
         <span className="flex items-center gap-0.5 rounded-full border border-white/[0.1] bg-[#141414] px-1 py-0.5">
           {QUICK_REACTIONS.map((e) => (
@@ -414,7 +417,7 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
                 onReact(e, (message.reactions?.[e] || []).includes(currentUid))
                 setPicking(false)
               }}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-[14px] hover:bg-white/[0.08]"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-[15px] hover:bg-white/[0.08]"
             >
               {e}
             </button>
@@ -435,7 +438,7 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
       </ActionIcon>
       {(onTogglePin || onRemind || onCreateTask) && (
         <ActionIcon title="Más: fijar, recordármelo, crear tarea" onClick={() => setMenu('more')}>
-          <span className="text-[14px] leading-none">⋯</span>
+          <span className="text-[15px] leading-none">⋯</span>
         </ActionIcon>
       )}
       {mine && hasText && !message.call && (
@@ -453,18 +456,42 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
     </span>
   )
 
+  // Others' messages in channels and groups carry the author's face at the
+  // top of each block (a spacer keeps the rest of the block aligned); DMs
+  // skip it — it's always the same person.
+  const avatarColumn =
+    !mine && showAvatar ? (
+      groupStart ? (
+        <button type="button" onClick={() => onOpenProfile(message.authorUid)} className="mt-0.5 flex-shrink-0" title={message.authorName}>
+          <PersonAvatar uid={message.authorUid} name={message.authorName} size={28} />
+        </button>
+      ) : (
+        <span className="w-7 flex-shrink-0" />
+      )
+    ) : null
+
   return (
-    <div className={`group flex max-w-[75%] flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`} onMouseLeave={() => {
+    <div className={`group flex max-w-[75%] gap-2 ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
         setPicking(false)
         setMenu(null)
       }}>
-      {!mine && (
-        <button type="button" onClick={() => onOpenProfile(message.authorUid)} className="px-1 text-[11px] font-medium text-[#666666] hover:text-[#F5F5F5] hover:underline">
+      {avatarColumn}
+      <div className={`flex min-w-0 flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`}>
+      {!mine && groupStart && showAvatar && (
+        <button type="button" onClick={() => onOpenProfile(message.authorUid)} className="px-1 text-[12.5px] font-semibold text-[#CFC6B8] hover:underline">
           {message.authorName}
         </button>
       )}
-      <div className={`flex items-center gap-1.5 ${mine ? '' : 'flex-row-reverse'}`}>
-        {actions}
+      {/* Slack-style: the hover actions float over the bubble's top edge
+          (absolute), anchored to the side with room — they used to sit in
+          the row and took width even while invisible, squeezing the bubble
+          in narrow layouts. */}
+      <div className="relative flex items-center">
+        <div
+          className={`absolute -top-4 z-10 max-w-[420px] ${mine ? 'right-0' : 'left-0'} ${menu ? '' : 'pointer-events-none group-hover:pointer-events-auto'}`}
+        >
+          {actions}
+        </div>
         <div className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'}`}>
           {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
@@ -476,8 +503,12 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
                 background: mine ? MINE_BG : 'rgba(255,255,255,0.06)',
                 border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent',
                 color: mine ? '#F2EBDD' : '#DDDDDD',
-                borderBottomRightRadius: mine ? 4 : undefined,
-                borderBottomLeftRadius: mine ? undefined : 4,
+                // Only the last bubble of a block gets the "tail" corner;
+                // bubbles inside a block keep softer inner corners.
+                borderTopRightRadius: mine && !groupStart ? 6 : undefined,
+                borderBottomRightRadius: mine ? (groupEnd ? 4 : 6) : undefined,
+                borderTopLeftRadius: !mine && !groupStart ? 6 : undefined,
+                borderBottomLeftRadius: !mine ? (groupEnd ? 4 : 6) : undefined,
               }}
             >
               <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
@@ -498,12 +529,15 @@ export function MessageBubble({ message, mine, currentUid, saved, userName, user
       </div>
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
       {onOpenThread && <ThreadSummary message={message} userPhoto={userPhoto} userName={userName} onOpen={onOpenThread} />}
-      <p className="flex items-center gap-1.5 px-1 text-[10.5px] text-[#444444]">
-        {formatTime(message.createdAt)}
-        {message.editedAt ? ' (editado)' : ''}
-        {pinned && <span className="text-[#E8C15A]" title="Mensaje fijado">📌</span>}
-        {mine && <Ticks receipt={receipt} userName={userName} />}
-      </p>
+      {(groupEnd || message.editedAt || pinned) && (
+        <p className="flex items-center gap-1.5 px-1 text-[11px] text-[#8A8A8A]">
+          {groupEnd && formatTime(message.createdAt)}
+          {message.editedAt ? `${groupEnd ? ' ' : ''}(editado)` : ''}
+          {pinned && <span className="text-[#E8C15A]" title="Mensaje fijado">📌</span>}
+          {mine && <Ticks receipt={receipt} userName={userName} />}
+        </p>
+      )}
+      </div>
     </div>
   )
 }

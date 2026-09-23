@@ -4,12 +4,12 @@ import { motion } from 'framer-motion'
 import { subscribeProyectosInternos, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { workstreamId } from '../../lib/workspace'
 import { userLabel } from '../../lib/chat'
-import Avatar from '../shell/Avatar'
+import PersonAvatar from './PersonAvatar'
 
-const labelClass = 'mb-1.5 block font-medium text-[#444444]'
+const labelClass = 'mb-1.5 block font-medium text-[#767676]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 const PRIORITIES = [
   { id: 'alta', label: 'Alta', color: '#EF5350' },
@@ -75,7 +75,7 @@ export default function TaskFromMessageModal({ message, conversationLabel, users
       >
         <div className="ador-modal-surface ador-grain w-[460px] rounded-[28px] p-8">
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Crear tarea desde este mensaje</h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-[#666666]">Revisa los datos — la tarea aparecerá en Workspace y quedará enlazada al mensaje.</p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[#858585]">Revisa los datos — la tarea aparecerá en Workspace y quedará enlazada al mensaje.</p>
 
           <div className="mt-6 flex flex-col gap-4">
             <div>
@@ -124,7 +124,7 @@ export default function TaskFromMessageModal({ message, conversationLabel, users
                       key={p.id}
                       type="button"
                       onClick={() => setPriority(p.id)}
-                      className="flex-1 rounded-lg border px-2 py-2 text-[12px] transition-colors"
+                      className="flex-1 rounded-lg border px-2 py-2 text-[12.5px] transition-colors"
                       style={{
                         borderColor: priority === p.id ? `${p.color}99` : 'rgba(255,255,255,0.08)',
                         background: priority === p.id ? `${p.color}1f` : 'transparent',
@@ -154,22 +154,22 @@ export default function TaskFromMessageModal({ message, conversationLabel, users
             </div>
 
             {other && (
-              <p className="flex items-center gap-2 rounded-xl border border-[#FFC107]/25 bg-[#FFC107]/[0.06] px-3 py-2 text-[11.5px] leading-relaxed text-[#D9C27A]">
-                <Avatar displayName={userLabel(other)} photoURL={other.photoDataUrl} size={18} />
+              <p className="flex items-center gap-2 rounded-xl border border-[#FFC107]/25 bg-[#FFC107]/[0.06] px-3 py-2 text-[12.5px] leading-relaxed text-[#D9C27A]">
+                <PersonAvatar uid={other.id} name={userLabel(other)} size={18} />
                 {userLabel(other).split(' ')[0]} recibirá la tarea para aceptarla o rechazarla antes de que cuente como suya.
               </p>
             )}
           </div>
 
           <div className="mt-7 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13px] text-[#888888] transition-colors hover:text-[#F5F5F5]">
+            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13.5px] text-[#888888] transition-colors hover:text-[#F5F5F5]">
               Cancelar
             </button>
             <button
               type="button"
               disabled={!title.trim() || saving}
               onClick={confirm}
-              className="rounded-xl px-5 py-2 text-[13px] font-medium text-[#1C1A16] transition-opacity disabled:opacity-40"
+              className="rounded-xl px-5 py-2 text-[13.5px] font-medium text-[#1C1A16] transition-opacity disabled:opacity-40"
               style={{ background: '#E8C15A' }}
             >
               {saving ? 'Creando…' : 'Crear tarea'}

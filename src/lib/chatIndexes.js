@@ -88,6 +88,7 @@ export function buildChatIndexes({ uid, users, visible, myDms, profile, mentions
         convType: 'dm',
         convId: d.id,
         participantUids: d.participantUids,
+        otherUid: other,
         label: otherUser ? userLabel(otherUser) : d.participantNames?.[other] || 'Mensaje directo',
         photo: otherUser?.photoDataUrl,
         lastMessage: d.lastMessage,

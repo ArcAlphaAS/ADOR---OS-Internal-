@@ -74,15 +74,15 @@ export default function ReminderGate({ user, onNavigate }) {
               {current.text || 'Mensaje'}
             </p>
           </div>
-          <button type="button" onClick={done} title="Listo" className="flex-shrink-0 text-[#666666] hover:text-[#F5F5F5]">
+          <button type="button" onClick={done} title="Listo" className="flex-shrink-0 text-[#858585] hover:text-[#F5F5F5]">
             <CloseIcon size={11} />
           </button>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <button type="button" onClick={open} className="rounded-full px-3 py-1.5 text-[12px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+          <button type="button" onClick={open} className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
             Ver mensaje
           </button>
-          <button type="button" onClick={snooze} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12px] text-[#CCCCCC] hover:text-[#F5F5F5]">
+          <button type="button" onClick={snooze} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]">
             Posponer 1 h
           </button>
           {due.length > 1 && <span className="ml-auto text-[11px] text-[#777777]">+{due.length - 1}</span>}

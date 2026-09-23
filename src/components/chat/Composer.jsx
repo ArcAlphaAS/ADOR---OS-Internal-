@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS } from '../../lib/chat'
 import { resizeImageToDataUrl } from '../../lib/image'
-import Avatar from '../shell/Avatar'
 import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, FileIcon, SmileIcon, MicIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
+import PersonAvatar from './PersonAvatar'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
 // in their own chatBlobs doc, so each can use most of that on its own.
@@ -255,7 +255,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       <div className="flex items-center gap-3 border-t border-white/[0.06] pt-3">
         <div className="flex flex-1 items-center gap-3 rounded-full border border-[#EF5350]/40 bg-[#EF5350]/[0.06] px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#EF5350]" style={{ animation: 'ador-pulse 1.2s ease-in-out infinite' }} />
-          <span className="text-[13px] text-[#F5F5F5]">Grabando nota de voz</span>
+          <span className="text-[13.5px] text-[#F5F5F5]">Grabando nota de voz</span>
           <span className="ml-auto font-mono text-[12.5px] text-[#AAAAAA]">
             {formatDuration(voice.seconds)} / {formatDuration(MAX_VOICE_SECONDS)}
           </span>
@@ -283,13 +283,13 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       onDrop={onDrop}
     >
       {dragging && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#0A0A0A]/80 text-[13px] text-[#E8C15A]">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#0A0A0A]/80 text-[13.5px] text-[#E8C15A]">
           Suelta la imagen para adjuntarla
         </div>
       )}
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-0.5 rounded-xl border border-white/[0.1] bg-[#141414] p-1.5">
-          <p className="px-2 pb-1 text-[10.5px] uppercase tracking-[0.08em] text-[#555555]">Mencionar</p>
+          <p className="px-2 pb-1 text-[11px] uppercase tracking-[0.08em] text-[#7A7A7A]">Mencionar</p>
           {suggestions.map((c, i) => (
             <button
               key={c.uid}
@@ -301,7 +301,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#DDDDDD]"
               style={i === mentionIndex ? { background: 'rgba(255,255,255,0.06)' } : undefined}
             >
-              <Avatar displayName={c.name} photoURL={c.photo} size={20} />
+              <PersonAvatar uid={c.uid} name={c.name} size={20} />
               {c.name}
             </button>
           ))}
@@ -319,13 +319,13 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
                 e.preventDefault()
                 applyFormat(f.wrap)
               }}
-              className="flex h-7 min-w-7 items-center justify-center rounded-md border border-white/[0.08] px-2 text-[12px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
+              className="flex h-7 min-w-7 items-center justify-center rounded-md border border-white/[0.08] px-2 text-[12.5px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
               style={{ fontWeight: f.id === 'bold' ? 700 : 400, fontStyle: f.id === 'italic' ? 'italic' : 'normal', textDecoration: f.id === 'strike' ? 'line-through' : 'none', fontFamily: f.id === 'code' ? 'monospace' : undefined }}
             >
               {f.label}
             </button>
           ))}
-          <span className="ml-2 text-[11px] text-[#555555]">Selecciona texto y aplica · Shift+Enter para nueva línea</span>
+          <span className="ml-2 text-[11px] text-[#7A7A7A]">Selecciona texto y aplica · Shift+Enter para nueva línea</span>
         </div>
       )}
 
@@ -357,11 +357,11 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               setPanel(null)
               inputRef.current?.focus()
             }}
-            className="flex items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
+            className="flex items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
           >
             <FileIcon size={13} /> Documento de Drive
           </button>
-          <button type="button" disabled title="Requiere activar Firebase Storage — todavía no está habilitado" className="flex cursor-not-allowed items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12px] text-[#CCCCCC] opacity-40">
+          <button type="button" disabled title="Requiere activar Firebase Storage — todavía no está habilitado" className="flex cursor-not-allowed items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] opacity-40">
             <PaperclipIcon size={13} /> Otro archivo (PDF, Excel…)
           </button>
         </div>
@@ -372,9 +372,9 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <img src={pendingImage.thumbUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12.5px] text-[#DDDDDD]">{pendingImage.name}</p>
-            <p className="text-[11px] text-[#555555]">Archivo de conversación — añade un mensaje o envíalo solo</p>
+            <p className="text-[11px] text-[#7A7A7A]">Archivo de conversación — añade un mensaje o envíalo solo</p>
           </div>
-          <button type="button" onClick={() => setPendingImage(null)} className="text-[#666666] hover:text-[#F5F5F5]">
+          <button type="button" onClick={() => setPendingImage(null)} className="text-[#858585] hover:text-[#F5F5F5]">
             <CloseIcon size={12} />
           </button>
         </div>
@@ -382,8 +382,8 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
 
       {driveMode && (
         <div className="flex items-center justify-between gap-3 px-1">
-          <p className="text-[11.5px] text-[#888888]">Pega el enlace del documento en Drive — el oficial se queda allá, aquí solo compartes el acceso.</p>
-          <button type="button" onClick={() => setDriveMode(false)} className="flex-shrink-0 text-[11.5px] text-[#666666] hover:text-[#F5F5F5]">
+          <p className="text-[12.5px] text-[#888888]">Pega el enlace del documento en Drive — el oficial se queda allá, aquí solo compartes el acceso.</p>
+          <button type="button" onClick={() => setDriveMode(false)} className="flex-shrink-0 text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
             Cancelar
           </button>
         </div>
@@ -422,11 +422,11 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             if (e.key === 'Escape') reset()
           }}
           placeholder={driveMode ? 'https://docs.google.com/...' : placeholder || 'Escribe un mensaje...'}
-          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#666666] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
+          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
         />
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
           <ToolButton title="Formato" active={panel === 'format'} onClick={() => togglePanel('format')}>
-            <span className="text-[13px] font-medium">Aa</span>
+            <span className="text-[13.5px] font-medium">Aa</span>
           </ToolButton>
           <ToolButton title="Emoji" active={panel === 'emoji'} onClick={() => togglePanel('emoji')}>
             <SmileIcon size={17} />

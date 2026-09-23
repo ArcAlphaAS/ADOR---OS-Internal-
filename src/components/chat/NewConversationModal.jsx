@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { SUGGESTED_CHANNELS, normalizeChannelName, userLabel } from '../../lib/chat'
-import Avatar from '../shell/Avatar'
 import { LockIcon, GlobeIcon } from '../icons'
+import PersonAvatar from './PersonAvatar'
 
-const labelClass = 'mb-1.5 block font-medium text-[#444444]'
+const labelClass = 'mb-1.5 block font-medium text-[#767676]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids = [] }) {
   return (
@@ -22,9 +22,9 @@ export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids
             className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] ${locked ? 'text-[#888888]' : 'cursor-pointer text-[#DDDDDD] hover:bg-white/[0.04]'}`}
           >
             <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#B8860B]" />
-            <Avatar displayName={userLabel(u)} photoURL={u.photoDataUrl} size={20} />
+            <PersonAvatar uid={u.id} name={userLabel(u)} size={20} />
             <span className="truncate">{userLabel(u)}</span>
-            {u.id === currentUid && <span className="ml-auto text-[10.5px] text-[#555555]">tú</span>}
+            {u.id === currentUid && <span className="ml-auto text-[11px] text-[#7A7A7A]">tú</span>}
           </label>
         )
       })}
@@ -57,7 +57,7 @@ export function VisibilityToggle({ value, onChange }) {
           </button>
         ))}
       </div>
-      <p className="mt-1.5 text-[11.5px] text-[#666666]">{current.hint}</p>
+      <p className="mt-1.5 text-[12.5px] text-[#858585]">{current.hint}</p>
     </div>
   )
 }
@@ -115,7 +115,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
       >
         <div className="ador-modal-surface ador-grain w-[460px] rounded-[28px] p-8">
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">{isGroup ? 'Nuevo grupo privado' : 'Nuevo canal'}</h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-[#666666]">
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[#858585]">
             {isGroup
               ? 'Una conversación entre algunas personas, sin ser un área fija. Si se vuelve recurrente, puedes convertirla en canal.'
               : 'Un espacio permanente para un área, función o asunto.'}
@@ -133,7 +133,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
                       key={s.name}
                       type="button"
                       onClick={() => applySuggestion(s)}
-                      className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[11.5px] text-[#AAAAAA] transition-colors hover:border-white/[0.2] hover:text-[#F5F5F5]"
+                      className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[12.5px] text-[#AAAAAA] transition-colors hover:border-white/[0.2] hover:text-[#F5F5F5]"
                       style={normalized === s.name ? { borderColor: 'rgba(184,134,11,0.6)', color: '#E8C15A' } : undefined}
                     >
                       {s.visibility === 'private' ? <LockIcon size={10} /> : '#'} {s.name}
@@ -156,7 +156,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
                 placeholder={isGroup ? 'Opcional — ej. Propuesta ACME' : 'ej. estrategia'}
                 className={inputClass}
               />
-              {!isGroup && name && normalized !== name.trim() && !duplicate && <p className="mt-1 text-[11px] text-[#666666]">Se creará como #{normalized}</p>}
+              {!isGroup && name && normalized !== name.trim() && !duplicate && <p className="mt-1 text-[11px] text-[#858585]">Se creará como #{normalized}</p>}
               {duplicate && <p className="mt-1 text-[11px] text-[#EF5350]">Ya existe #{normalized}.</p>}
             </div>
 
@@ -188,10 +188,10 @@ export default function NewConversationModal({ kind, users, currentUid, existing
           </div>
 
           <div className="mt-7 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13px] text-[#888888] transition-colors hover:text-[#F5F5F5]">
+            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13.5px] text-[#888888] transition-colors hover:text-[#F5F5F5]">
               Cancelar
             </button>
-            <button type="button" disabled={!canSave || saving} onClick={save} className="ador-btn-primary rounded-xl px-5 py-2 text-[13px] font-medium">
+            <button type="button" disabled={!canSave || saving} onClick={save} className="ador-btn-primary rounded-xl px-5 py-2 text-[13.5px] font-medium">
               {isGroup ? 'Crear grupo' : 'Crear canal'}
             </button>
           </div>

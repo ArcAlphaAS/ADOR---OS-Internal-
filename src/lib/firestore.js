@@ -1311,6 +1311,7 @@ export function toggleSavedMessage(uid, message, meta, saved) {
     messageId: message.id,
     text: message.text || '',
     authorName: message.authorName || '',
+    authorUid: message.authorUid || null,
     messageCreatedAt: message.createdAt || null,
     ...meta,
     savedAt: serverTimestamp(),
