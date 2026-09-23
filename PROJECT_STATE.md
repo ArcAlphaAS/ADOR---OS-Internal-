@@ -8,9 +8,9 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 |---|---|
 | Phase 1 — Splash, Login, Welcome | ✅ Done |
 | Phase 2 — Shell + Home | ✅ Done |
-| Phase 3 — Clientes module | ✅ Done (2026-08-14, extended 2026-08-15) |
-| Phase 3 — Finanzas module | ✅ Done (2026-08-14, extended 2026-08-15) |
-| Phase 3 — Workspace module (Hoy + Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16, 2026-09-17) |
+| Phase 3 — Clientes module | ✅ Done (2026-08-14, extended 2026-08-15, Pipeline + CRM panels 2026-09-18) |
+| Phase 3 — Finanzas module | ✅ Done (2026-08-14, extended 2026-08-15, redesigned 2026-09-18) |
+| Phase 3 — Workspace module (Hoy + Lista + Kanban + Timeline) | ✅ Done (2026-08-14, extended 2026-08-15, 2026-09-16, 2026-09-17, 2026-09-18) |
 | Phase 3 — Objetivos module | ✅ Done (2026-08-15) |
 | Phase 3 — ADOR IA (chat over live data, rule-based local engine — Gemini built but deferred by user choice) | ✅ Done (2026-08-16) |
 | Phase 3 — Calendario (read-only Google Calendar reflection) | ✅ Done, confirmed live with a real account (2026-09-17) |
@@ -29,17 +29,17 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 
 **Phase 2 — Shell**
 - [x] Top bar — centered pill-tab nav (Inicio, Workspace, Objetivos, Clientes, Finanzas), no background of its own
-- [x] Sidebar — floating capsule (Calendario, Conocimiento, Comunidad, Chat, News, Directorio, ADOR IA) — Calendario moved here from the top bar 2026-08-14
-- [x] Search icon → expands to input (non-functional placeholder, real UI)
+- [x] Sidebar — floating capsule (Calendario, Conocimiento, News (with Comunidad as a tab inside it), Comunicación, Directorio, ADOR IA) — Calendario moved here from the top bar 2026-08-14; Comunidad merged into News 2026-09-22; Chat renamed Comunicación 2026-09-23
+- [x] Search icon → expands to input — real global search since 2026-08-15 (see "Top bar — extended 2026-08-15" below)
 - [x] Notification bell → dropdown, now with real live notifications: SPCs sin contacto +7 días (Clientes) and overdue/due-today tasks assigned to the signed-in user (Workspace)
 - [x] Profile avatar → hover reveals name/role (smooth push-reflow animation, no overlap), click opens compact dropdown (Mi Perfil / Configuración / Cerrar Sesión — all three wired)
 - [x] Mi Perfil modal — edit and save display name (Firebase `updateProfile`)
 - [x] Configuración modal — change password via reset email
-- [x] Module placeholders for everything except Inicio ("En construcción")
+- [ ] ~~Module placeholders for everything except Inicio ("En construcción")~~ — superseded: every module is built now (see the phase table above)
 
-**Phase 2 — Home (only module with real content)**
+**Phase 2 — Home**
 - [x] Greeting block — 56px gradient text, rotating subtext, live clock-independent date
-- [x] Metrics row (3 cards) — shimmer skeletons, no real values
+- [x] Metrics row (3 cards) — shimmer skeletons while there's no data; reads real Clientes data since 2026-08-14 (see the ADOR-vocabulary line below)
 - [x] Interventions card — pulsing live-dot, shimmer empty state
 - [x] Meeting + Decision cards — breathing icons, empty-state copy
 - [x] Finance block — latest monthly revenue, % change vs. prior month, hand-drawn SVG sparkline (last 6 months), shimmer empty state. **Derives from real client payment records** (`clients/{id}.pago1`/`pago2`), not a manually-entered collection — see below
@@ -59,10 +59,10 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 
 **Phase 3 — Finanzas module (2026-08-14)**
 - [x] Asymmetric dashboard layout (68% left / 32% right, per direct user reference)
-- [x] Hero numbers (Ingresos del mes, Gastos del mes, Utilidad Neta) — no cards, typography only, count-up animation, delta pill vs. previous month
-- [x] Hand-drawn SVG area+line chart, last 6 months, Ingresos/Gastos/Ambos toggle, hover tooltip, active-month highlight band. Built hand-drawn (no Recharts/Chart.js) to match the project's existing "no charting library" convention (see `FinanceBlock.jsx`'s Sparkline) instead of the literal prompt suggestion — consistent with "no UI component libraries" project-wide
-- [x] Últimos Ingresos / Últimos Gastos — merges real SP payments (`clients/{id}.pago1`/`pago2` marked Recibido) with manual entries; "Ver todos" expands the list in place rather than linking to a page that doesn't exist yet
-- [x] Meta del Trimestre — editable target (pencil icon, inline input), animated progress bar, stored in `settings/finanzas`
+- [ ] ~~Hero numbers (Ingresos del mes, Gastos del mes, Utilidad Neta) — no cards, typography only, count-up animation, delta pill vs. previous month~~ — superseded: became `MetricCards.jsx` (2026-08-14), then `SituacionActualCard.jsx` (2026-09-18)
+- [x] ~~Hand-drawn SVG area+line chart~~ — now a hand-drawn bar chart (same-day redesign, CLAUDE.md §9). Original: last 6 months, Ingresos/Gastos/Ambos toggle, hover tooltip, active-month highlight band. Built hand-drawn (no Recharts/Chart.js) to match the project's existing "no charting library" convention (see `FinanceBlock.jsx`'s Sparkline) instead of the literal prompt suggestion — consistent with "no UI component libraries" project-wide
+- [x] ~~Últimos Ingresos / Últimos Gastos~~ — now one searchable Movimientos table (`MovimientosTable.jsx`); same data sources. Original: merges real SP payments (`clients/{id}.pago1`/`pago2` marked Recibido) with manual entries; "Ver todos" expands the list in place rather than linking to a page that doesn't exist yet
+- [x] ~~Meta del Trimestre — editable target (pencil icon, inline input), animated progress bar, stored in `settings/finanzas`~~ — now `MetasCard.jsx` with a Trimestre/Año toggle (2026-09-18, see below)
 - [x] Gastos por Categoría — current-month breakdown across 6 fixed categories (Salarios, Operaciones, Herramientas, Marketing, Desplazamientos, Otros)
 - [x] Registrar — "+ Ingreso Manual" and "+ Gasto" modals, both wired to Firestore (`incomes`, `expenses` collections)
 - [x] Gasto's "Comprobante" field is metadata-only (name/type/size), same pattern and same reason as Clientes → Documentos — Firebase Storage isn't enabled yet
@@ -76,11 +76,11 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] Empty Workspace (zero Intervenciones + zero Proyectos) shows a synthetic "General" group instead of a blank message — first task added through it auto-provisions a real `proyectosInternos` doc
 - [x] Kanban view — 4 status columns (Por Hacer / En Progreso / Completado / Bloqueado), hand-built Framer Motion drag-and-drop reusing Clientes' rect hit-test pattern
 - [x] Timeline view — pixel-mapped date axis, "Hoy" line, rounded date-bounded bars, diamond milestones for due-date-only tasks. **5 zoom levels** (Día/Semana/Mes/Trimestre/Año), each controlling pixel scale, default window, and tick granularity; auto-scrolls to center "Hoy" on range change. Tasks carry an optional `startDate` (set via the Estimación cell or Task Detail Panel) to give them real duration
-- [x] "Mis tareas" — sidebar toggle filtering all three views to tasks assigned to the signed-in user, independent of the workstream selector, with a live open-task count badge
+- [x] "Mis tareas" (now called **Personal**) — sidebar toggle filtering all three views to tasks assigned to the signed-in user, independent of the workstream selector, with a live open-task count badge
 - [x] Task Detail Panel — slide-in 440px, editable title/descripción/status/priority/start+due date/multi-assignee, delete with a second confirming click (no native browser `confirm()`), read-only **Historial** section at the bottom
 - [x] Per-task activity history — `tasks/{id}/history` subcollection (same shape as Clientes'), auto-logged (no manual entry) from every edit surface via `applyTaskUpdate()` — Lista's cells, the Task Detail Panel, and Kanban drag-and-drop all funnel through it
 - [x] Overdue/due-today tasks assigned to the signed-in user now surface in the top bar bell (`useTaskNotifications.js`), alongside the existing "SPC sin contacto" alerts
-- [x] Decisiones panel — fixed right rail, last 3 decisions, "+ Registrar Decisión" (new `createDecision()` — decisions collection existed for reads only before this). Shows up in Home's "Última Decisión" automatically, same collection
+- [ ] ~~Decisiones panel — fixed right rail, last 3 decisions~~ — superseded 2026-09-17: moved to Objetivos as `DecisionesCard.jsx`. Original: "+ Registrar Decisión" (new `createDecision()` — decisions collection existed for reads only before this). Shows up in Home's "Última Decisión" automatically, same collection
 - [x] Tasks schema: `workstreamId`, `description`, `assignedTo` (array), `priority`, `startDate`/`dueDate`, and a 4-state `status` (`por_hacer`/`en_progreso`/`completado`/`bloqueado`) — `TasksTodayBlock.jsx`/`useHomeData.js` updated to match the 4-state vocabulary
 - [x] Every write (create/update) now shows a toast on failure and times out after 8s instead of hanging silently forever — found and fixed after a report of "+ Agregar tarea no funciona" that turned out to be a write with no valid auth token never resolving
 - [x] **Bug fixed while building Timeline:** `.ador-grain`'s `position: relative` was unlayered CSS silently beating Tailwind's layered `.fixed` utility, breaking every panel combining the two (Task Detail Panel, and pre-existing `ClientDetailPanel` in Clientes) — panels rendered off-screen instead of sliding in. Fixed in `index.css` via `@layer components`; see CLAUDE.md §10. Worth a quick manual check next time Clientes → Ficha is touched
@@ -134,7 +134,7 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 
 **Workspace — assignment confirmation + "Mis Pendientes" (2026-09-16, same-day follow-up)**
 - [x] Assigning a task to someone other than yourself now requires their confirmation — `tasks/{id}.pendingConfirmations` (subset of `assignedTo`), populated by `createTask`/`applyTaskUpdate` in `lib/firestore.js`. A pending task doesn't count as "yours" anywhere (Hoy, Personal filter, the bell, Home's Tareas Hoy, the workload panel) until accepted
-- [x] `AssignmentConfirmGate.jsx` — new, mounted once in `AppShell.jsx` — shows a blocking popup (no close button, no backdrop-dismiss) naming who assigned the task and a "habla con {nombre}" hint, with Aceptar/Rechazar. See CLAUDE.md §20 for the full mechanism and why "comunícate" is just a text hint (Chat is still a placeholder module)
+- [x] `AssignmentConfirmGate.jsx` — new, mounted once in `AppShell.jsx` — shows a blocking popup (no close button, no backdrop-dismiss) naming who assigned the task and a "habla con {nombre}" hint, with Aceptar/Rechazar. See CLAUDE.md §20 for the full mechanism and why "comunícate" is just a text hint (Chat was still a placeholder when this shipped — Comunicación exists now, but the popup isn't linked to it yet)
 - [x] Pending assignments get a small amber ring on the avatar (`AvatarStack.jsx`) and a "pendiente" tag in the assignee picker, visible to the whole team on Lista/Kanban
 - [x] **Mis Pendientes** — a third section in `HoyView.jsx` (alongside Vencidas/Para hoy): everything open and assigned to you with no date or a future date, with an always-visible inline "+ Agregar pendiente" row so there's always a way to add something, even from an empty board
 - [x] Restored the "+ Crear tarea" note→task conversion that was accidentally dropped when Notas got folded into Hoy (§19) — real regression, not intentional
@@ -207,11 +207,6 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] Global search is real now (`useGlobalSearch.js`, `SearchResults.jsx`) — searches clients/tasks/decisions across their live subscriptions (no server-side text index; fine at 3-founder scale) and clicking a result navigates to the right module *and* opens that record's detail panel via a new `focus` state lifted to `AppShell.jsx` (`focusClientId`/`focusTaskId` props consumed by `ClientesModule`/`WorkspaceModule`, cleared via `onFocusHandled`)
 - [x] Team-wide birthday banner + notification (`BirthdayBanner.jsx` on Home, `useTodaysBirthdays.js`) — reads the `users/{uid}.birthday` field `ProfileModal.jsx` already captured but never used until now
 
-**Home — Resumen Semanal (2026-08-15) — new**
-- [x] `WeeklySummaryCard.jsx` on Home — a synthesized Monday-Sunday digest, not just numbers restated. `lib/weeklySummary.js`'s `buildWeeklyNarrative()` turns raw aggregates into named callouts ("Bloqueados: {objetivo real}", not "1 objetivo bloqueado") and a prioritized TL;DR (blocked Objetivos first, then at-risk signals — stale client, overloaded teammate, revenue drop ≥20%). Click opens `WeeklySummaryPanel.jsx`, a full slide-in breakdown by Finanzas/Objetivos/Workspace/Clientes, plus birthdays that week
-- [x] The one piece of real quantitative reasoning: compares the North Star objetivo's progress % against how much of the quarter has actually elapsed (`quarterElapsedPct()`) and says "al ritmo esperado" or "por debajo" — the only place in the app that answers "are we on track" instead of just showing a raw number
-- [x] New field `tasks/{id}.completedAt` (set by `toggleTaskComplete`/`applyTaskUpdate` in `lib/firestore.js`, cleared on reopen) — needed for "tasks completed this week"; tasks completed before this shipped won't retroactively count in past weeks, which is expected
-
 **ADOR IA (2026-08-15/16) — first backend code in this project, currently running on a local engine instead**
 - [x] `api/ador-ia.js` (Vercel serverless function, the **only** server-side code in the repo) proxies to Gemini's free tier (`gemini-2.5-flash`) and is fully built and working — but it's **not what's live**. The API key is deliberately **not** a `VITE_` env var (a `VITE_` var compiles straight into the shipped client JS, readable by anyone in devtools); `GEMINI_API_KEY` would live only in Vercel's server-side env vars.
 - [x] **What's actually live (2026-08-16):** a zero-cost, zero-API local rule-based engine — `answerLocally()` in `lib/adorIA.js`, called directly from `AdorIAModule.jsx`, no network call at all. User has a real free Gemini key already created in Google AI Studio but chose **not** to add it to Vercel, explicitly to avoid any perceived risk of a surprise charge — even after confirming the Free tier has no billing account attached and structurally cannot charge without one. This is a standing preference, not a one-time no; don't re-pitch connecting Gemini unless the user brings it up first.
@@ -232,19 +227,19 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 
 **Bug fixed broadly, 2026-08-15: Chromium drops `backdrop-filter` blur when the same element also has a `transform`.** Discovered on `NotificationCenter.jsx` (Framer Motion's `animate={{y,scale}}` leaves an inline `transform` even at rest, which is enough to trigger it — not just mid-animation) and turned out to be present in **13 files**: every portaled dropdown/popover/modal/slide-in-panel that combined a `.ador-glass`/`.ador-modal-surface` class with a Framer Motion transform on the *same* element. Fixed everywhere by splitting the transform-animated wrapper from the backdrop-filter surface into two nested elements — see the comment on `NotificationCenter.jsx` for the full explanation. Also reverted an overcorrection: dropdowns/menus (`ProfileMenu`, `NotificationCenter`, Sidebar tooltip, `CellPopover`) must stay on `.ador-glass` (translucent, ~5% tint) — `.ador-modal-surface` (~88% opaque) was tried first and made them read as solid black instead of frosted glass; modals/slide-in panels correctly keep `.ador-modal-surface`, that distinction was already correct before this bug hunt.
 
-**Workspace → Notas tab (2026-09-16) — quick-capture notebook**
+**Workspace → Notas tab (2026-09-16) — quick-capture notebook (the tab itself was folded into Hoy the same day; capture + `lib/notes.js` still live)**
 - [x] User asked for a digital replacement for jotting things down on paper that "understands and categorizes" instead of requiring manual filing — same live-AI-suggestion ambition raised for ADOR IA (§16/§17 in CLAUDE.md), and the user again confirmed (twice, in this same conversation) they're not comfortable connecting Gemini even with the billing mechanism explained. Built as the honest zero-cost equivalent instead of blocking on that decision.
 - [x] `GlobalCapture.jsx` — a floating "+" button mounted once in `AppShell.jsx` (not per-module), always reachable regardless of which screen is open. Saves immediately via `createNote()`; `lib/notes.js`'s `suggestCategory()` (keyword rules — tarea/gasto/ingreso/objetivo/cliente/nota, same family as ADOR IA's local engine, §17) never blocks the save, it's just a hint attached after the fact.
 - [x] **Initially built as its own "Conocimiento" module, then moved into Workspace as a 4th view (`NotasView.jsx`, alongside Lista/Kanban/Timeline) the same day** — the user clarified Conocimiento should stay reserved for a real future document/knowledge-base module ("mejor que Notion"), and these are personal/daily jottings that belong next to the team's task views instead. `ConocimientoModule.jsx` was deleted; the `conocimiento` sidebar item is back to the plain placeholder.
 - [x] **Superseded later the same day:** `NotasView.jsx` as a separate tab was folded into the new `HoyView.jsx` landing screen once "Hoy" shipped — see the redesign entry above. `GlobalCapture.jsx` and `lib/notes.js` are unchanged; only the standalone tab is gone.
-- [x] Lists notes split into Sin revisar/Revisadas, each with its suggested category as a colored chip and a manual "Revisada" (archive) action.
+- [ ] ~~Lists notes split into Sin revisar/Revisadas~~ — superseded: Hoy only shows unreviewed notes. Original: each with its suggested category as a colored chip and a manual "Revisada" (archive) action.
 - [ ] **Deliberately scoped down:** "+ Crear tarea" is the only conversion actually wired end-to-end (reuses Workspace's find-or-create "General" Proyecto Interno pattern from `ListaView.jsx`, via new `findOrCreateGeneralProyecto()` in `lib/firestore.js`). Gasto/Objetivo/Cliente suggestions are informational only — no conversion modal yet. Build these as their own follow-up when there's a concrete need, not preemptively (this project's standing rule).
 - [x] New Firestore collection `notes` — already covered by the existing blanket security rule (§15 note in CLAUDE.md), no console change needed.
 
 **Workspace sidebar redesign + Decisiones reframe (2026-09-16, same day) — the "Hoy" toggle described below was superseded hours later, see CLAUDE.md §19**
 - [ ] ~~`WorkspaceSidebar.jsx` restructured into three sections: **Hoy** (due today, mine — `todayOnly` filter), **Personal**, **Equipo**~~ — superseded the same day: "Hoy" was promoted out of the sidebar entirely into its own top-level tab/landing view (`HoyView.jsx`), and the sidebar itself went through three more names for its team-scope item since (Todo → Panorama → Trabajo → **Grupo**, §25). Left here for history only — current sidebar structure is documented at the top of the Workspace entries above.
-- [x] `DecisionesPanel.jsx` renamed to "Decisiones de Dirección" with an explicit "Registro compartido — visible para todo el equipo" subtitle, and now shows the latest 6 instead of 3. It was already a shared Firestore collection (not siloed per user) — the fix was framing/copy, not the data model. **This part shipped and is still current.**
-- [ ] **Not done, flagged as a possible follow-up:** Decisiones is still a side-panel with only the latest few, not a full searchable log/history view. Revisit if the team wants to browse past decisions, not just see the newest ones.
+- [ ] ~~`DecisionesPanel.jsx` renamed to "Decisiones de Dirección"~~ — superseded 2026-09-17: `DecisionesPanel.jsx` was deleted and Decisiones now lives in Objetivos as `DecisionesCard.jsx` (same shared `decisions` collection). Left here for history only.
+- [ ] **Not done, flagged as a possible follow-up:** Decisiones (now a card in Objetivos) still shows only the latest few, not a full searchable log/history view. Revisit if the team wants to browse past decisions, not just see the newest ones.
 
 **Workspace — "Personal" redesigned into a real dashboard, `PersonalOverview.jsx` (2026-09-17)**
 - [x] Personal scope (`view === 'lista' && onlyMine`) now renders `PersonalOverview.jsx` instead of the filtered `ListaView` table — stats row (active projects, pending tasks, completed this week), "Mis proyectos" cards (only workstreams with ≥1 of your tasks, progress from your tasks only), a 4-tab task table (Hoy/Próximas/Sin fecha/Completadas), and a right rail (Enfoque actual — reuses `pickFocusTask()`, Progreso semanal donut, Calendario de hoy — its own independent `useGoogleCalendar` instance, Acciones rápidas). Kanban/Timeline still just filter as before, unchanged. Built from a user-shared reference image; see CLAUDE.md §28 for what was trimmed (no per-task duration field, no Plantillas) vs. restored on follow-up (Calendario de hoy, Nueva tarea/Nueva nota actions)
@@ -288,13 +283,13 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 **Splash screen — logo simplified (2026-09-18)**
 - [x] Removed the small secondary `AdorMark` that sat below the main logo — one focal mark instead of two, per direct request. Glow brightened from 2 to 3 layered drop-shadows with a noticeably brighter innermost layer so it reads at a glance instead of only on close inspection
 
-**Calendario — read-only Google Calendar reflection (2026-09-17) — new, pending Cloud setup**
+**Calendario — read-only Google Calendar reflection (2026-09-17) — live, confirmed with a real account**
 - [x] Per-founder connection (OAuth), personal only — no combined team view, since Google Calendar itself already merges invited events into each person's own calendar. Read-only scope, not read/write — chosen deliberately: full calendar access is a Google "restricted" scope that's a real pain to get out of 7-day Testing-mode token expiry (heavier verification process); read-only is "sensitive," with a much lighter path to a persistent connection later. See CLAUDE.md §27 for the full reasoning
 - [x] Two new Vercel serverless functions, `api/google-calendar/exchange.js` and `api/google-calendar/refresh.js` — the only two steps that need the OAuth client secret. Listing events happens directly from the browser against Google's API, no proxy needed
-- [x] `useGoogleCalendar.js` hook + `CalendarioModule.jsx` — connect/disconnect, agenda list grouped by day for the next 14 days, an honest "tu conexión venció, reconecta" state for the expected 7-day Testing-mode expiry (not treated as a generic error)
-- [x] New field `users/{uid}.googleCalendar = {refreshToken, connectedEmail, connectedAt}` — covered by the existing blanket Firestore rule, no console change needed. Access tokens are never persisted, kept in memory only
+- [x] `useGoogleCalendar.js` hook + `CalendarioModule.jsx` — connect/disconnect, Día/Semana/Mes/Agenda views (`CalendarioGrid.jsx`, `MonthGrid.jsx`) loading whatever range is on screen via `loadRange()`, events in their real Google colors, a right rail (`CalendarioRightRail.jsx`: mini month, today's events, today's tasks), and an honest "tu conexión venció, reconecta" state (not treated as a generic error). "Nuevo evento" is visible but disabled (read-only scope)
+- [x] New field `users/{uid}.googleCalendar = {refreshToken, connectedEmail, connectedAt, scopes}` (now shared with Comunicación's Meet calls) — covered by the existing blanket Firestore rule, no console change needed. Access tokens are never persisted, kept in memory only
 - [x] **Google Cloud Console setup done and confirmed live (2026-09-17)** — Calendar API enabled, `calendar.readonly` scope added, OAuth Client ID created, `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set in `.env` + Vercel. Tested end-to-end with a real founder account — connects, shows real upcoming events. The project's OAuth consent screen was already "In production" (leftover from the removed Google Sign-In provider), so the 7-day Testing-mode reconnect concern doesn't apply here — see CLAUDE.md §27 for details and one real bug hit along the way (a dropped character in the pasted Client Secret)
-- [ ] Design pass deferred on purpose — this is a functional first pass (plain agenda list), a more elaborate visual treatment is a deliberate follow-up, not done here
+- [x] ~~Design pass deferred on purpose~~ — done the same day: redesigned from a reference image into the Día/Semana/Mes/Agenda calendar above (CLAUDE.md §27)
 
 **Directorio — Personas, Organigrama, Equipos, Roles (2026-09-18) — new**
 - [x] Built from two reference images combined per direct instruction — see CLAUDE.md §30 for the full reasoning on what came from which image and what was deliberately cut
@@ -343,10 +338,10 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] Comunidad is deliberately **not** admin-gated, unlike every other write in this app (News, Conocimiento, Directorio) — open posting/reacting is the whole point of "informal team pulse." Delete is scoped to the post's own author or an admin, not admin-only
 - [x] **Verification note:** checked via `?preview=1` — the tab switcher slides correctly between Anuncios/Comunidad, header copy changes per tab, Comunidad's composer and empty state render correctly. Could not verify posting/reacting against real data — `?preview=1` has no real Firebase Auth session, same documented limitation as every other write in this app
 
-**Chat module (2026-09-22) — new, real-time channels + DMs**
+**Chat module (2026-09-22) — first version, since rebuilt as Comunicación (see "Chat → Comunicación" below)**
 - [x] Direct follow-up: user asked how Chat would be made functional, then confirmed two scope calls before building — anyone can create a channel (no isAdmin gate, same "open" posture as Comunidad) rather than a fixed admin-defined list, and DMs are included in v1 rather than deferred
-- [x] Reuses the exact `onSnapshot` pattern every other live list in this app already uses — no chat library/SDK. Deliberately scoped down: no threads, no message reactions, no typing indicators, no edit/read-receipts, no file attachments (Storage still isn't enabled)
-- [x] New collections: `chatChannels/{id}` (+ `/messages` subcollection); `chatDms/{id}` keyed by `dmIdFor(uidA, uidB)` — the two participants' sorted+joined uids, so opening a DM is a direct doc lookup, never a "does this conversation exist" query. The DM doc is written lazily (`setDoc` merge) on first message, not eagerly when the screen opens. `subscribeMyDms` (array-contains) exists for a future richer "active conversations" list, but v1's sidebar just lists every teammate as a DM target directly — at most 2 possible DM partners each in a 3-founder team, not worth a second layer yet
+- [x] Reuses the exact `onSnapshot` pattern every other live list in this app already uses — no chat library/SDK. v1 was deliberately scoped down (no threads, reactions, typing indicators, read receipts or attachments) — **all of these were added on 2026-09-23**, see below
+- [x] New collections: `chatChannels/{id}` (+ `/messages` subcollection); `chatDms/{id}` keyed by `dmIdFor(uidA, uidB)` — the two participants' sorted+joined uids, so opening a DM is a direct doc lookup, never a "does this conversation exist" query. The DM doc is written lazily (`setDoc` merge) on first message, not eagerly when the screen opens. `subscribeMyDms` (array-contains) exists for a future richer "active conversations" list, v1's sidebar listed every teammate as a DM target directly (Comunicación's Inbox now lists active conversations)
 - [x] `ChatModule.jsx` — a channel/DM sidebar, an auto-scrolling message thread, and a plain text composer (Enter to send). Defaults to the first available channel on load instead of a dead "nothing selected" screen
 - [x] **Verification note:** checked via `?preview=1` — sidebar renders (Canales/Mensajes directos), the inline "+ Nuevo canal" input opens, empty states render with no console errors. Could not verify real-time message exchange or DM lookup against real accounts — no real users/messages exist under `?preview=1`'s permission-denied subscriptions, same documented limitation as every other module's preview testing
 
@@ -404,6 +399,7 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 | Firebase Authentication | Enabled — **Email/Password only**. Google OAuth was enabled then removed 2026-08-14 (self-serve sign-in let any Google account in; invite-only model needs admin-provisioned accounts instead) |
 | Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region. Rules require `request.auth != null` AND the user's email to have a document in `allowedEmails/{email}` — access control enforced at the data layer, not just the login screen. Applied via a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule, so **every** collection is automatically covered, present and future — no per-collection rule edits are ever needed (confirmed 2026-08-15 by reviewing the actual rules in console). All 3 founder emails added as of 2026-08-14 |
 | Google Cloud (OAuth, Calendar API, **Meet REST API**) | ✅ Same project as Firebase (number 610980815690). OAuth scopes: `calendar.readonly` + `meetings.space.created`. Only the founder's own ADOR OS login email may be connected as their Google account (optional extra domains in `settings/google.allowedDomains`) |
+| Firebase Storage | ❌ Not enabled (deliberately deferred by the user) — Clientes → Documentos, Finanzas → Comprobante and chat "Otro archivo" store metadata only / are disabled |
 | Vercel functions | `api/google-calendar/exchange.js`, `api/google-calendar/refresh.js`, `api/google-meet/space.js` (creates Meet rooms), `api/ador-ia.js` (dormant Gemini path) |
 | Deployment | ✅ Vercel — `ador-os-internal.vercel.app`, auto-deploys on push to `main`. Firebase Hosting not used (redundant with Vercel) |
 | `.env` (Firebase config) | Present locally, gitignored. Same values set as Environment Variables in Vercel project settings |
@@ -416,8 +412,9 @@ None blocking day-to-day use. **Before any non-founder gets an ADOR OS login:** 
 
 ## Next steps
 
-See "Next recommended steps" in `CLAUDE.md` for the full reasoning. In order:
+Same list as "Next recommended steps" in `CLAUDE.md` (keep both in sync). In order:
 1. **Two-account test of Comunicación** (≈20 min, two founders on two computers) — see the open checklist item above.
 2. **Lock private channels in Firestore rules** — required before anyone who isn't a founder gets access.
 3. **Firebase Storage** for real PDF/Excel uploads (Clientes → Documentos, Finanzas → Comprobante, chat "Otro archivo") — still deliberately deferred by the user.
 4. **Mobile/PWA** — agreed direction, parked by the user (see "Scoped but not started"). Its push-notification phase is also what would make calls ring with ADOR OS closed.
+5. **Clients created before 2026-08-15 have no `code`** (show "—") — ask the user before writing a backfill script.
