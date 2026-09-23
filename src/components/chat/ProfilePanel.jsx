@@ -74,9 +74,11 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
             )}
           </span>
           <p className="mt-3 text-[17px] font-semibold text-[#F5F5F5]">{name}</p>
-          <p className="text-[12.5px]" style={{ color: presenceOf(presence).color || '#858585' }}>
-            {presenceOf(presence).label}
-          </p>
+          {presenceOf(presence).label && (
+            <p className="text-[12.5px]" style={{ color: presenceOf(presence).color || '#858585' }}>
+              {presenceOf(presence).label}
+            </p>
+          )}
           {subtitle && <p className="mt-0.5 text-[12.5px] text-[#888888]">{subtitle}</p>}
           {directoryEntry?.about && <p className="mt-2 text-[12.5px] leading-relaxed text-[#858585]">{directoryEntry.about}</p>}
           {person?.email && <p className="mt-2 text-[11px] text-[#7A7A7A]">{person.email}</p>}

@@ -498,3 +498,23 @@ export function PauseIcon(props) {
     </svg>
   )
 }
+
+// Responder citando (WhatsApp-style curved arrow back).
+export function ReplyIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </svg>
+  )
+}
+
+// Reenviar (arrow out, mirror of Reply).
+export function ForwardIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 16} height={props.size ?? 16} {...base} className={props.className} style={props.style}>
+      <path d="m15 14 5-5-5-5" />
+      <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+    </svg>
+  )
+}

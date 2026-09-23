@@ -5,11 +5,9 @@ import {
   addChannelMembers,
   removeChannelMember,
   convertGroupToChannel,
-  sendChannelMessage,
   updateChannelMessage,
   deleteChannelMessage,
   dmIdFor,
-  sendDmMessage,
   updateDmMessage,
   deleteDmMessage,
   markChatRead,
@@ -19,11 +17,9 @@ import {
   toggleMessageReaction,
   createMentions,
   toggleSavedMessage,
-  indexChatFile,
   subscribeChatFiles,
   createChatBlob,
   cleanupMessageIndexes,
-  sendThreadReply,
   updateThreadReply,
   deleteThreadReply,
   setTyping,
@@ -36,6 +32,9 @@ import {
   deleteChatReminder,
   createTask,
   setDoNotDisturb,
+  setChatNotify,
+  createScheduledMessage,
+  deleteScheduledMessage,
 } from '../../lib/firestore'
 import {
   conversationKind,
@@ -43,17 +42,19 @@ import {
   membersOf,
   userLabel,
   groupLabel,
-  findDriveLink,
-  driveDocType,
   typingNames,
   typingLabel,
   receiptFor,
   formatReminderTime,
   presenceOf,
+  isPrivate,
+  quoteOf,
+  notifyLevel,
 } from '../../lib/chat'
+import { deliverMessage } from '../../lib/chatSend'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import { MessageIcon, SearchIcon } from '../icons'
+import { MessageIcon, SearchIcon, ClockIcon } from '../icons'
 import { MessageThread, ImageLightbox } from './ChatThread'
 import Composer from './Composer'
 import ChatSidebar from './ChatSidebar'
@@ -66,6 +67,7 @@ import ProfilePanel from './ProfilePanel'
 import ThreadPanel from './ThreadPanel'
 import { useGoogleMeet } from '../../hooks/useGoogleMeet'
 import TaskFromMessageModal from './TaskFromMessageModal'
+import ForwardModal from './ForwardModal'
 import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
 import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
@@ -80,7 +82,7 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
-export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) {
+export default function ChatModule({ user, focus, onFocusHandled, onNavigate, scheduledMessages = [] }) {
   const { allChannels, users, myDms, profile, directory, mentions, saved, presence, reminders } = useChatData(user.uid)
   const [selected, setSelected] = useState(null) // {type:'conv', id} | {type:'dm', id: otherUid}
   const [messages, setMessages] = useState([])
@@ -103,6 +105,9 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   const [taskDraft, setTaskDraft] = useState(null) // { message, parentId }
   const [pinsOpen, setPinsOpen] = useState(false)
   const [messageSearch, setMessageSearch] = useState('')
+  // "Responder citando": the message being replied to (a quoteOf() snapshot).
+  const [replyTo, setReplyTo] = useState(null)
+  const [forwarding, setForwarding] = useState(null) // the message being forwarded
   // A jump from search can target a message older than the first page, so
   // the conversation opens with a deeper history in that case.
   const deepJumpRef = useRef(false)
@@ -160,6 +165,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   // to"), the same way Slack's member panel does.
   useEffect(() => {
     setSearchQuery(null)
+    setReplyTo(null)
     setMessageLimit(deepJumpRef.current ? SEARCH_DEPTH : PAGE_SIZE)
     deepJumpRef.current = false
     if (selected?.type === 'dm') setPanel((p) => (p?.type === 'profile' ? { type: 'profile', uid: selected.id } : p))
@@ -314,6 +320,11 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
   // One send path for everything the composer produces. Heavy media goes
   // to chatBlobs first (only a thumbnail rides in the message), then the
   // message, then the small index docs (mentions, files) pointing at it.
+  const dmParticipantsWith = (otherUid) => [
+    { uid: user.uid, name: actorName },
+    { uid: otherUid, name: userLabel(users.find((u) => u.id === otherUid)) },
+  ]
+
   const handleSend = async (draft, parentId = null, parentMsg = null) => {
     const meta = convMeta()
     try {
@@ -325,18 +336,20 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
         const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
         attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
       }
-      const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions }
-      const ref = parentId
-        ? await withTimeout(sendThreadReply(convType, selectedConversationId, parentId, payload, user.uid, actorName))
-        : convType === 'conv'
-          ? await withTimeout(sendChannelMessage(selected.id, payload, user.uid, actorName))
-          : await withTimeout(
-              sendDmMessage(selectedConversationId, [{ uid: user.uid, name: actorName }, { uid: selected.id, name: userLabel(dmUser) }], payload, user.uid, actorName)
-            )
-
-      const pointer = { ...meta, messageId: ref.id, authorName: actorName, authorUid: user.uid, ...(parentId ? { threadParentId: parentId } : {}) }
-      const snippet = (draft.text || (attachment ? '📎 Archivo' : '')).slice(0, 200)
-      if (convType === 'conv' && draft.mentions?.length) createMentions(draft.mentions, { ...pointer, kind: 'mention', text: snippet }, user.uid, actorName).catch(() => {})
+      const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions, replyTo: draft.replyTo }
+      const { pointer, snippet } = await withTimeout(
+        deliverMessage({
+          convType,
+          convId: selectedConversationId,
+          dmParticipants: convType === 'dm' ? dmParticipantsWith(selected.id) : undefined,
+          participantUids: meta.participantUids,
+          conversationLabel: meta.conversationLabel,
+          payload,
+          authorUid: user.uid,
+          authorName: actorName,
+          parentId,
+        })
+      )
       // Slack's rule: everyone taking part in a thread (whoever wrote the
       // original + anyone who has replied) is notified of new replies —
       // except people already @mentioned in this reply, who get that instead.
@@ -348,14 +361,68 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
       }
       if (parentId) setTyping(`${selectedConversationId}_thread_${parentId}`, user.uid, actorName, false).catch(() => {})
       else setTyping(selectedConversationId, user.uid, actorName, false).catch(() => {})
-      if (attachment?.kind === 'image') indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})
-      if (attachment?.kind === 'voice') indexChatFile({ ...pointer, kind: 'voice', blobId: attachment.blobId, duration: attachment.duration, name: 'Nota de voz' }).catch(() => {})
-      const drive = findDriveLink(draft.text)
-      if (drive) indexChatFile({ ...pointer, kind: 'drive', url: drive, name: `${driveDocType(drive)} de Drive` }).catch(() => {})
     } catch (error) {
       fail('enviar')(error)
     }
   }
+
+  // "Reenviar": a labeled copy of the message in another conversation, then
+  // the optional note as a normal message right after it.
+  const handleForward = async (target, note) => {
+    const m = forwarding
+    const isDm = target.convType === 'dm'
+    const convId = isDm ? dmIdFor(user.uid, target.otherUid) : target.convId
+    const participantUids = isDm ? [user.uid, target.otherUid] : undefined
+    const base = {
+      convType: target.convType,
+      convId,
+      dmParticipants: isDm ? dmParticipantsWith(target.otherUid) : undefined,
+      participantUids,
+      conversationLabel: labelFor(target.convType, convId, participantUids),
+      authorUid: user.uid,
+      authorName: actorName,
+    }
+    const from = convType === 'dm' ? 'un mensaje directo' : labelFor(convType, selectedConversationId, null)
+    try {
+      await withTimeout(
+        deliverMessage({ ...base, payload: { text: m.text || '', attachment: m.attachment, forwarded: { authorUid: m.authorUid || '', authorName: m.authorName || '', from } } })
+      )
+      if (note) await withTimeout(deliverMessage({ ...base, payload: { text: note } }))
+      setForwarding(null)
+      showToast(`Reenviado a ${isDm ? nameOf(target.otherUid) : base.conversationLabel}`)
+    } catch (error) {
+      fail('reenviar')(error)
+    }
+  }
+
+  // "Enviar más tarde": stored in chatScheduled and sent at that time by
+  // whichever open ADOR OS gets to it first — see hooks/useScheduledSender.js.
+  const handleSchedule = (draft, at) => {
+    const isDm = selected.type === 'dm'
+    const meta = convMeta()
+    const payload = { text: draft.text, mentions: draft.mentions || [] }
+    if (replyTo) payload.replyTo = replyTo
+    const data = {
+      authorUid: user.uid,
+      authorName: actorName,
+      sendAt: at,
+      convType,
+      convId: selectedConversationId,
+      conversationLabel: meta.conversationLabel,
+      payload,
+      isPublic: !isDm && !isPrivate(conversation),
+      audienceUids: isDm ? [user.uid, selected.id] : isPrivate(conversation) ? Array.from(new Set([...(conversation.memberUids || []), user.uid])) : [user.uid],
+      ...(isDm ? { dmParticipants: dmParticipantsWith(selected.id), participantUids: [user.uid, selected.id] } : {}),
+    }
+    setReplyTo(null)
+    withTimeout(createScheduledMessage(data))
+      .then(() => showToast(`Se enviará ${formatReminderTime(at)}`))
+      .catch(fail('programar el mensaje'))
+  }
+
+  const myScheduled = scheduledMessages
+    .filter((x) => x.authorUid === user.uid && x.convId === selectedConversationId && x.status === 'pending')
+    .sort((a, b) => (a.sendAt?.toMillis?.() || 0) - (b.sendAt?.toMillis?.() || 0))
 
   const handleReact = (messageId, emoji, has, parentId = null) =>
     withTimeout(toggleMessageReaction(convType, selectedConversationId, messageId, emoji, user.uid, has, parentId)).catch(fail('reaccionar'))
@@ -606,6 +673,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
               openCall={openCall}
               onCall={toggleCall}
               callBusy={callBusy}
+              searching={searchQuery !== null}
+              onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
             />
             {pinnedList.length > 0 && (
               <PinnedBar
@@ -661,11 +730,47 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
               onReact={handleReact}
               onToggleSave={handleToggleSave}
               onOpenImage={setLightbox}
+              onReply={(m) => setReplyTo(quoteOf(m))}
+              onForward={(m) => setForwarding(m)}
+              onJump={jumpToMessage}
             />
             <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
+            {myScheduled.length > 0 && (
+              <div className="mb-1 flex flex-col gap-1">
+                {myScheduled.map((x) => (
+                  <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">
+                    <ClockIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#AAAAAA]">
+                      <span className="font-medium text-[#E8C15A]">Programado · {formatReminderTime(x.sendAt)}</span> {x.payload?.text}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        withTimeout(deleteScheduledMessage(x.id))
+                          .then(() => handleSend({ text: x.payload?.text || '', mentions: x.payload?.mentions || [], replyTo: x.payload?.replyTo }))
+                          .catch(fail('enviar'))
+                      }
+                      className="flex-shrink-0 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]"
+                    >
+                      Enviar ahora
+                    </button>
+                    <button type="button" onClick={() => withTimeout(deleteScheduledMessage(x.id)).catch(fail('cancelar'))} className="flex-shrink-0 text-[12.5px] text-[#858585] hover:text-[#EF8A88]">
+                      Cancelar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <Composer
               key={selectedConversationId}
-              onSend={(draft) => handleSend(draft)}
+              draftKey={selectedConversationId}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+              onSchedule={handleSchedule}
+              onSend={(draft) => {
+                handleSend({ ...draft, replyTo: replyTo || undefined })
+                setReplyTo(null)
+              }}
               onTyping={(typing) => setTyping(selectedConversationId, user.uid, actorName, typing).catch(() => {})}
               onError={showToast}
               mentionCandidates={mentionCandidates}
@@ -697,6 +802,19 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
         />
       )}
 
+      {forwarding && (
+        <ForwardModal
+          message={forwarding}
+          fromLabel={convType === 'dm' ? `chat con ${userLabel(dmUser)}` : labelFor(convType, selectedConversationId, null)}
+          users={users}
+          groups={groups}
+          channels={channels}
+          currentUid={user.uid}
+          onClose={() => setForwarding(null)}
+          onForward={handleForward}
+        />
+      )}
+
       {lightbox && <ImageLightbox attachment={lightbox} onClose={() => setLightbox(null)} />}
 
       {showInfo && !view && (
@@ -705,6 +823,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
           users={users}
           currentUid={user.uid}
           existingNames={channels.map((c) => c.name)}
+          notify={notifyLevel(profile, conversation.id, conversationKind(conversation))}
+          onSetNotify={(level) => withTimeout(setChatNotify(user.uid, conversation.id, level)).catch(fail('cambiar los avisos'))}
           onClose={() => setPanel(null)}
           {...infoActions}
         />

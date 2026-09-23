@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import { LockIcon, InfoIcon, PhoneIcon } from '../icons'
+import { LockIcon, InfoIcon, PhoneIcon, SearchIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // The strip above a conversation: who/what it is, presence, call buttons,
@@ -93,8 +93,20 @@ function CallButtons({ openCall, onCall, busy }) {
   )
 }
 
-export default function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy }) {
+// "Buscar en esta conversación" — every conversation has it in the header
+// now (it used to be reachable only from a person's profile panel).
+function SearchButton({ active, onClick }) {
+  return (
+    <IconButton title="Buscar en esta conversación" active={active} onClick={onClick}>
+      <SearchIcon size={15} />
+    </IconButton>
+  )
+}
+
+export default function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy, searching, onToggleSearch }) {
   if (selected.type === 'dm') {
+    const presence = presenceOf(dmPresence)
+    const role = [dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')
     return (
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
         <button
@@ -107,13 +119,17 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
           <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={30} showPresence />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
-            <p className="truncate text-[12.5px] text-[#7A7A7A]">
-              <span style={{ color: presenceOf(dmPresence).color || undefined }}>{presenceOf(dmPresence).label}</span>
-              {[dmEntry?.role, dmEntry?.area].filter(Boolean).length ? ` · ${[dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')}` : ''}
-            </p>
+            {(presence.label || role) && (
+              <p className="truncate text-[12.5px] text-[#7A7A7A]">
+                {presence.label && <span style={{ color: presence.color || undefined }}>{presence.label}</span>}
+                {presence.label && role ? ' · ' : ''}
+                {role}
+              </p>
+            )}
           </div>
         </button>
         <div className="flex flex-shrink-0 items-center gap-1">
+          <SearchButton active={searching} onClick={onToggleSearch} />
           <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />
         </div>
       </div>
@@ -138,12 +154,13 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
           {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#858585]">#</span>)}
           <span className="truncate">{title}</span>
         </p>
-        <p className="truncate text-[12.5px] text-[#7A7A7A]">
-          {subtitle}
-          {conversation.description ? ` · ${conversation.description}` : ''}
+        <p className="truncate text-[12.5px] text-[#7A7A7A]" title={conversation.description || undefined}>
+          {conversation.description ? <span className="text-[#AAAAAA]">{conversation.description}</span> : subtitle}
+          {conversation.description ? ` · ${subtitle}` : ''}
         </p>
       </div>
-      <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <SearchButton active={searching} onClick={onToggleSearch} />
         {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />}
         <HeaderButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
           <InfoIcon size={14} /> Detalles

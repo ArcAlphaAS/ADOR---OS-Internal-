@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { dmIdFor } from '../../lib/firestore'
 import { isPrivate, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon } from '../icons'
+import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon } from '../icons'
+import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
@@ -33,7 +34,16 @@ function SubLabel({ children }) {
   return <p className="mt-1.5 mb-0.5 px-2.5 text-[11px] font-medium text-[#767676]">{children}</p>
 }
 
-function ConversationButton({ active, unread, onClick, children }) {
+// A half-written message waiting in a conversation you're not looking at.
+function DraftMark() {
+  return (
+    <span title="Tienes un borrador aquí" className="flex flex-shrink-0 items-center text-[#E8C15A]">
+      <EditIcon size={11} />
+    </span>
+  )
+}
+
+function ConversationButton({ active, unread, draft, onClick, children }) {
   return (
     <button
       type="button"
@@ -46,7 +56,12 @@ function ConversationButton({ active, unread, onClick, children }) {
       }}
     >
       <span className="flex min-w-0 items-center gap-2">{children}</span>
-      {unread && <UnreadDot />}
+      {(unread || (draft && !active)) && (
+        <span className="flex flex-shrink-0 items-center gap-1.5">
+          {draft && !active && <DraftMark />}
+          {unread && <UnreadDot />}
+        </span>
+      )}
     </button>
   )
 }
@@ -110,6 +125,7 @@ function ViewNav({ view, counts, onSelectView }) {
 
 export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages }) {
   const [search, setSearch] = useState('')
+  const drafts = useChatDrafts()
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
 
@@ -163,7 +179,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             const convId = dmIdFor(currentUid, u.id)
             const active = isActive('dm', u.id)
             return (
-              <ConversationButton key={u.id} active={active} unread={!active && unreadMap[convId]} onClick={() => onSelect({ type: 'dm', id: u.id })}>
+              <ConversationButton key={u.id} active={active} unread={!active && unreadMap[convId]} draft={Boolean(drafts[convId])} onClick={() => onSelect({ type: 'dm', id: u.id })}>
                 <PersonAvatar uid={u.id} name={userLabel(u)} size={20} showPresence />
                 <span className="truncate">{userLabel(u)}</span>
               </ConversationButton>
@@ -178,7 +194,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           {visibleGroups.map((g) => {
             const active = isActive('conv', g.id)
             return (
-              <ConversationButton key={g.id} active={active} unread={!active && unreadMap[g.id]} onClick={() => onSelect({ type: 'conv', id: g.id })}>
+              <ConversationButton key={g.id} active={active} unread={!active && unreadMap[g.id]} draft={Boolean(drafts[g.id])} onClick={() => onSelect({ type: 'conv', id: g.id })}>
                 <UsersBadge count={(g.memberUids || []).length} />
                 <span className="truncate">{groupLabel(g, users, currentUid)}</span>
               </ConversationButton>
@@ -198,7 +214,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           {publicChannels.map((c) => {
             const active = isActive('conv', c.id)
             return (
-              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
+              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} draft={Boolean(drafts[c.id])} onClick={() => onSelect({ type: 'conv', id: c.id })}>
                 <span className="w-3 text-center text-[#858585]">#</span>
                 <span className="truncate">{c.name}</span>
               </ConversationButton>
@@ -208,7 +224,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           {privateChannels.map((c) => {
             const active = isActive('conv', c.id)
             return (
-              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} onClick={() => onSelect({ type: 'conv', id: c.id })}>
+              <ConversationButton key={c.id} active={active} unread={!active && unreadMap[c.id]} draft={Boolean(drafts[c.id])} onClick={() => onSelect({ type: 'conv', id: c.id })}>
                 <LockIcon size={11} className="w-3 flex-shrink-0 text-[#858585]" />
                 <span className="truncate">{c.name}</span>
               </ConversationButton>

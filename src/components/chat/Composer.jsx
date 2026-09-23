@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS } from '../../lib/chat'
+import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime } from '../../lib/chat'
+import { getDraft, setDraft } from '../../lib/chatDrafts'
 import { resizeImageToDataUrl } from '../../lib/image'
-import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, FileIcon, SmileIcon, MicIcon } from '../icons'
+import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 
@@ -104,9 +105,14 @@ function useVoiceRecorder({ onDone, onError }) {
 // suggestions) sits in normal flow directly above the input — nothing
 // floats, so nothing needs a portal. The reference's separate "+" was left
 // out: it duplicated the paperclip.
-export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact }) {
-  const [text, setText] = useState('')
-  const [panel, setPanel] = useState(null) // 'format' | 'emoji' | 'attach' | null
+//
+// `draftKey` keeps what you half-wrote per conversation (lib/chatDrafts.js).
+// `replyTo` shows "Respondiendo a…" above the box. `onSchedule(draft, at)`
+// enables "Enviar más tarde" (text only — images and voice go now).
+export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact, draftKey, replyTo, onCancelReply, onSchedule }) {
+  const [text, setText] = useState(() => getDraft(draftKey))
+  const [panel, setPanel] = useState(null) // 'format' | 'emoji' | 'schedule' | null
+  const [customAt, setCustomAt] = useState('')
   const [driveMode, setDriveMode] = useState(false)
   const [pendingImage, setPendingImage] = useState(null)
   const [processing, setProcessing] = useState(false)
@@ -143,6 +149,14 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`
   }
   useEffect(fitHeight, [text])
+  // Drive-link mode is a transient state, not a draft worth keeping.
+  useEffect(() => {
+    if (!driveMode) setDraft(draftKey, text)
+  }, [text, draftKey, driveMode])
+  // "Responder" on a message puts the cursor here, ready to type.
+  useEffect(() => {
+    if (replyTo) inputRef.current?.focus()
+  }, [replyTo?.id])
   useEffect(() => {
     const el = inputRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
@@ -175,6 +189,16 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
     onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions })
     reset()
+  }
+
+  const schedule = (at) => {
+    if (!text.trim()) return onError('Escribe el mensaje antes de programarlo.')
+    if (pendingImage) return onError('Las imágenes se envían al momento — quita la imagen para programar el texto.')
+    if (!(at instanceof Date) || Number.isNaN(at.getTime()) || at.getTime() < Date.now() + 60_000) return onError('Elige una hora al menos un minuto en el futuro.')
+    const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
+    onSchedule({ text: text.trim(), mentions: finalMentions }, at)
+    reset()
+    setCustomAt('')
   }
 
   const updateText = (value, cursor) => {
@@ -362,22 +386,48 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         </div>
       )}
 
-      {panel === 'attach' && (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            title="El documento oficial vive en Google Drive — compártelo como enlace"
-            onClick={() => {
-              setDriveMode(true)
-              setPanel(null)
-              inputRef.current?.focus()
-            }}
-            className="flex items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
-          >
-            <FileIcon size={13} /> Documento de Drive
-          </button>
-          <button type="button" disabled title="Requiere activar Firebase Storage — todavía no está habilitado" className="flex cursor-not-allowed items-center gap-2 rounded-full border border-white/[0.1] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] opacity-40">
-            <PaperclipIcon size={13} /> Otro archivo (PDF, Excel…)
+      {panel === 'schedule' && (
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5">
+          <span className="px-1.5 text-[11px] text-[#8A8A8A]">Enviar</span>
+          {scheduleOptions().map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                schedule(o.at)
+              }}
+              className="rounded-full border border-white/[0.1] px-2.5 py-1 text-[12.5px] text-[#CCCCCC] hover:border-white/[0.2] hover:text-[#F5F5F5]"
+            >
+              {o.label}
+            </button>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <input
+              type="datetime-local"
+              value={customAt}
+              onChange={(e) => setCustomAt(e.target.value)}
+              className="rounded-full border border-white/[0.1] bg-transparent px-2.5 py-1 text-[12.5px] text-[#CCCCCC] outline-none [color-scheme:dark]"
+            />
+            {customAt && (
+              <button type="button" onClick={() => schedule(new Date(customAt))} className="rounded-full px-2.5 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+                Programar {formatReminderTime(new Date(customAt))}
+              </button>
+            )}
+          </span>
+          <span className="basis-full px-1.5 text-[11px] text-[#7A7A7A]">Sale solo a esa hora desde el ADOR OS de quien esté conectado — tú o quien lo recibe.</span>
+        </div>
+      )}
+
+      {replyTo && (
+        <div className="flex items-center gap-2.5 rounded-xl border-l-2 border-[#B8860B] bg-white/[0.03] py-1.5 pr-2 pl-3">
+          <ReplyIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-medium text-[#E8C15A]">Respondiendo a {replyTo.authorName}</span>
+            <span className="block truncate text-[12.5px] text-[#AAAAAA]">{replyTo.text}</span>
+          </span>
+          <button type="button" onClick={onCancelReply} title="Cancelar respuesta" className="flex-shrink-0 text-[#858585] hover:text-[#F5F5F5]">
+            <CloseIcon size={11} />
           </button>
         </div>
       )}
@@ -434,7 +484,10 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               e.preventDefault()
               submit()
             }
-            if (e.key === 'Escape') reset()
+            if (e.key === 'Escape') {
+              if (replyTo && onCancelReply) return onCancelReply()
+              reset()
+            }
           }}
           placeholder={driveMode ? 'https://docs.google.com/...' : placeholder || 'Escribe un mensaje...'}
           className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
@@ -446,7 +499,17 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <ToolButton title="Emoji" active={panel === 'emoji'} onClick={() => togglePanel('emoji')}>
             <SmileIcon size={17} />
           </ToolButton>
-          <ToolButton title="Adjuntar documento" active={panel === 'attach' || driveMode} onClick={() => togglePanel('attach')}>
+          {/* The official document stays in Google Drive — here you share
+              its link. (Other files need Firebase Storage, not enabled.) */}
+          <ToolButton
+            title="Compartir documento de Google Drive"
+            active={driveMode}
+            onClick={() => {
+              setDriveMode((v) => !v)
+              setPanel(null)
+              inputRef.current?.focus()
+            }}
+          >
             <PaperclipIcon size={16} />
           </ToolButton>
           <ToolButton title={processing ? 'Procesando imagen…' : 'Imagen'} disabled={processing} onClick={() => fileRef.current?.click()}>
@@ -455,6 +518,11 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           <ToolButton title="Nota de voz (máx. 1 min)" onClick={voice.start}>
             <MicIcon size={16} />
           </ToolButton>
+          {onSchedule && (
+            <ToolButton title="Enviar más tarde" active={panel === 'schedule'} onClick={() => togglePanel('schedule')}>
+              <ClockIcon size={15} />
+            </ToolButton>
+          )}
           <button
             type="button"
             onClick={submit}

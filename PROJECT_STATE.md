@@ -382,7 +382,8 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
   - **Cómo corre sin servidor:** una vez al día, el primer socio que abre ADOR OS la ejecuta en segundo plano (~20 s después de abrir). Una "reserva" en `settings/maintenance.chatCleanupAt` asegura que solo una app la haga por día. Borra en tandas de 150 por tipo para no acercarse al límite de 20.000 borrados/día; lo que quede sigue al día siguiente. Si nadie abre la app un día, se hace al siguiente.
   - Imágenes ahora 1280 px y voz a 24 kbps (≈ mitad de peso).
   - Las pocas imágenes de las primeras pruebas (antes del índice de archivos) no caducan solas.
-- [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
+- [x] Borradores por conversación, responder citando, reenviar, avisos por conversación (todos / solo menciones / nada), descripción editable del canal, enviar más tarde, y arreglos de interfaz (sin "Sin actividad reciente", buscar en el encabezado, clip directo a Drive, botón "↓ mensajes nuevos") (2026-09-23). See CLAUDE.md §34
+- [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: reenviar, enviar más tarde (que salga a la hora aunque el autor tenga ADOR OS cerrado), avisos por canal, menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip

@@ -3,6 +3,7 @@ import { useMessageSearch, normalize } from '../../hooks/useMessageSearch'
 import { dayBucket, formatReminderTime } from '../../lib/chat'
 import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon, SearchIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import { useChatDrafts } from '../../lib/chatDrafts'
 
 function timeAgo(ts) {
   if (!ts?.toDate) return ''
@@ -142,6 +143,7 @@ export function InboxView({ conversations, onOpen, onMarkRead, onMarkUnread, onM
 }
 
 function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
+  const draft = useChatDrafts()[c.key]
   const sender = c.lastMessage.authorName || ''
   const where = c.convType === 'dm' ? 'Mensaje directo' : c.kind === 'group' ? `Grupo · ${c.label}` : `#${c.label}`
   return (
@@ -162,9 +164,17 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
             </span>
           </span>
           <span className="mt-0.5 flex items-center gap-2">
-            <span className="truncate text-[12.5px]" style={{ color: c.unread ? '#BBBBBB' : '#858585' }}>
-              {c.lastMessage.text}
-            </span>
+            {/* Like an email client: your unsent draft shows instead of the
+                last message, so you remember you were in the middle of it. */}
+            {draft ? (
+              <span className="truncate text-[12.5px] text-[#858585]">
+                <span className="font-medium text-[#E8C15A]">Borrador:</span> {draft}
+              </span>
+            ) : (
+              <span className="truncate text-[12.5px]" style={{ color: c.unread ? '#BBBBBB' : '#858585' }}>
+                {c.lastMessage.text}
+              </span>
+            )}
             {c.unread && (
               <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-[#0A0A0A]" style={{ background: '#E8C15A' }}>
                 {c.unreadCount || '•'}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
-import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon } from '../icons'
+import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -334,6 +334,23 @@ function ThreadSummary({ message, userName, onOpen }) {
   )
 }
 
+// "Responder citando": the quoted message sits on top of the reply, inside
+// the same bubble column, WhatsApp-style. Click jumps to the original.
+function QuoteBlock({ quote, mine, onJump }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onJump?.(quote.id)}
+      title="Ir al mensaje original"
+      className="block max-w-[360px] rounded-xl border-l-2 px-3 py-1.5 text-left transition-colors hover:bg-white/[0.06]"
+      style={{ borderColor: '#B8860B', background: mine ? 'rgba(184,134,11,0.08)' : 'rgba(255,255,255,0.04)' }}
+    >
+      <span className="block text-[11px] font-medium text-[#E8C15A]">{quote.authorName || 'Mensaje'}</span>
+      <span className="line-clamp-2 block text-[12.5px] text-[#AAAAAA]">{quote.text}</span>
+    </button>
+  )
+}
+
 function ActionIcon({ title, onClick, children, danger, active }) {
   return (
     <button
@@ -351,7 +368,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -398,6 +415,12 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
     <span className="flex flex-wrap items-center gap-0.5 rounded-2xl border border-white/[0.1] bg-[#141414] px-1 py-0.5 shadow-[0_6px_20px_rgba(0,0,0,0.45)]">
       {menu === 'more' ? (
         <>
+          {onForward &&
+            !message.call &&
+            menuButton('Reenviar', () => {
+              onForward()
+              setMenu(null)
+            })}
           {onTogglePin &&
             menuButton(pinned ? 'Desfijar' : 'Fijar', () => {
               onTogglePin()
@@ -449,6 +472,11 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           <SmileIcon size={14} />
         </ActionIcon>
       )}
+      {onReply && (
+        <ActionIcon title="Responder citando" onClick={onReply}>
+          <ReplyIcon size={14} />
+        </ActionIcon>
+      )}
       {onOpenThread && (
         <ActionIcon title="Responder en hilo" onClick={onOpenThread}>
           <ThreadIcon />
@@ -457,8 +485,8 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       <ActionIcon title={saved ? 'Quitar de guardados' : 'Guardar mensaje'} onClick={onToggleSave} active={saved}>
         <BookmarkIcon size={13} filled={saved} />
       </ActionIcon>
-      {(onTogglePin || onRemind || onCreateTask) && (
-        <ActionIcon title="Más: fijar, recordármelo, crear tarea" onClick={() => setMenu('more')}>
+      {(onForward || onTogglePin || onRemind || onCreateTask) && (
+        <ActionIcon title="Más: reenviar, fijar, recordármelo, crear tarea" onClick={() => setMenu('more')}>
           <span className="text-[15px] leading-none">⋯</span>
         </ActionIcon>
       )}
@@ -514,6 +542,13 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {actions}
         </div>
         <div className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'}`}>
+          {message.forwarded && (
+            <span className="flex items-center gap-1 px-1 text-[11px] italic text-[#8A8A8A]">
+              <ForwardIcon size={11} /> Reenviado{message.forwarded.authorName ? ` · de ${message.forwarded.authorName.split(' ')[0]}` : ''}
+              {message.forwarded.from ? ` en ${message.forwarded.from}` : ''}
+            </span>
+          )}
+          {message.replyTo && <QuoteBlock quote={message.replyTo} mine={mine} onJump={onJump} />}
           {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}

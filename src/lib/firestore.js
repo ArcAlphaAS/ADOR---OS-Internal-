@@ -79,6 +79,7 @@ export const COLLECTIONS = {
   chatTyping: 'chatTyping',
   presence: 'presence',
   chatReminders: 'chatReminders',
+  chatScheduled: 'chatScheduled',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -951,12 +952,18 @@ export function convertGroupToChannel(channelId, name, visibility) {
 //     documents are never uploaded here: they live in Google Drive and are
 //     shared as a Drive link, which the UI renders as its own card.
 //   call: {type:'audio'|'video', url} — a Google Meet invitation.
+//   replyTo / forwarded — see below.
 // Accepts a bare string too, for callers that only ever send text.
 function messageFields(payload) {
   const p = typeof payload === 'string' ? { text: payload } : payload
   const fields = { text: p.text || '' }
   if (p.attachment) fields.attachment = p.attachment
   if (p.call) fields.call = p.call
+  // replyTo: {id, authorUid, authorName, text} — "Responder citando".
+  // forwarded: {authorUid, authorName, from} — "Reenviar" (from = where the
+  // original was, e.g. "#general").
+  if (p.replyTo) fields.replyTo = p.replyTo
+  if (p.forwarded) fields.forwarded = p.forwarded
   if (p.mentions?.length) {
     fields.mentions = p.mentions
     fields.mentionUids = p.mentions.map((m) => m.uid)
@@ -1489,6 +1496,75 @@ export function respondToChatCall(callId, uid, response) {
 export function setChatMuted(uid, conversationId, muted) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return updateDoc(doc(db, COLLECTIONS.users, uid), { [`chatMuted.${conversationId}`]: muted })
+}
+
+// Avisos por conversación (lib/chat.js notifyLevel): 'all' | 'mentions' |
+// 'none'. chatMuted is kept in step so everything that already reads it
+// (unread dots, the badge, the bell) treats "Nada" as muted.
+export function setChatNotify(uid, conversationId, level) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.users, uid), { [`chatNotify.${conversationId}`]: level, [`chatMuted.${conversationId}`]: level === 'none' })
+}
+
+// ---- Enviar más tarde ----
+// One chatScheduled doc per scheduled message. No server: whichever ADOR OS
+// is open when it's due sends it (hooks/useScheduledSender.js) — the
+// author's, or any person the message is for, so it lands on time for
+// anyone who's looking. Only those people's apps listen for it:
+// `audienceUids` (DM participants / group or private-channel members), or
+// `isPublic` for a public channel. A transaction claims it first so two
+// open apps never send it twice.
+export function createScheduledMessage(data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.chatScheduled), { ...data, sendAt: Timestamp.fromDate(data.sendAt), status: 'pending', createdAt: serverTimestamp() })
+}
+
+export function subscribeScheduledFor(uid, onData) {
+  if (!db || !uid) return () => {}
+  const results = { mine: [], public: [] }
+  const emit = () => {
+    const byId = new Map()
+    for (const x of [...results.mine, ...results.public]) byId.set(x.id, x)
+    onData([...byId.values()])
+  }
+  const listen = (key, q) =>
+    onSnapshot(
+      q,
+      (snap) => {
+        results[key] = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        emit()
+      },
+      (error) => console.error('Firestore subscription to scheduled messages failed:', error.message)
+    )
+  const col = collection(db, COLLECTIONS.chatScheduled)
+  const a = listen('mine', query(col, where('audienceUids', 'array-contains', uid)))
+  const b = listen('public', query(col, where('isPublic', '==', true)))
+  return () => {
+    a()
+    b()
+  }
+}
+
+export function deleteScheduledMessage(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.chatScheduled, id))
+}
+
+// Returns the doc's data if this app won the right to send it, else null.
+// A claim older than 5 minutes (the app that took it closed mid-send) can
+// be taken over.
+export async function claimScheduledMessage(id) {
+  if (!db) return null
+  const ref = doc(db, COLLECTIONS.chatScheduled, id)
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) return null
+    const data = snap.data()
+    const stale = data.status === 'sending' && Date.now() - (data.claimedAt?.toMillis?.() || 0) > 5 * 60 * 1000
+    if (data.status !== 'pending' && !stale) return null
+    tx.update(ref, { status: 'sending', claimedAt: Timestamp.now() })
+    return { id: snap.id, ...data }
+  })
 }
 
 // Read tracking for the sidebar's unread dots — one map field on the

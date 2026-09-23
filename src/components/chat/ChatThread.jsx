@@ -58,7 +58,7 @@ function groupFlags(list) {
   })
 }
 
-export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask }) {
+export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const positionedRef = useRef(null) // conversationKey already positioned on open
@@ -67,6 +67,13 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
   const shown = q ? messages.filter((m) => (m.text || '').toLowerCase().includes(q) || (m.attachment?.name || '').toLowerCase().includes(q)) : messages
   const lastId = messages[messages.length - 1]?.id
   const flags = groupFlags(shown)
+  // Whether the reader is at (or near) the bottom. While they're reading
+  // further up, a new message from someone else doesn't yank them down —
+  // a "↓ N mensajes nuevos" button appears instead (Slack/WhatsApp).
+  const atBottomRef = useRef(true)
+  const [atBottom, setAtBottom] = useState(true)
+  const [anchorId, setAnchorId] = useState(null) // last message seen at the bottom
+  const prevQRef = useRef(q)
 
   // First unread message from someone else, if the conversation had any.
   const firstNewIndex = !q && newSince ? shown.findIndex((m) => m.authorUid !== currentUid && ms(m.createdAt) > newSince) : -1
@@ -96,16 +103,42 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
       loadingOlderRef.current = null
       return
     }
-    if (messages.length && positionedRef.current !== conversationKey) {
+    const opening = messages.length && positionedRef.current !== conversationKey
+    if (opening) {
       positionedRef.current = conversationKey
+      setAnchorId(lastId)
       const divider = document.getElementById('chat-new-divider')
       if (divider) {
         divider.scrollIntoView({ block: 'center' })
         return
       }
     }
-    el.scrollTop = el.scrollHeight
+    const searchChanged = prevQRef.current !== q
+    prevQRef.current = q
+    const last = messages[messages.length - 1]
+    if (opening || searchChanged || atBottomRef.current || last?.authorUid === currentUid) {
+      el.scrollTop = el.scrollHeight
+      setAnchorId(lastId)
+    }
   }, [lastId, messages.length, q, conversationKey])
+
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const bottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    atBottomRef.current = bottom
+    setAtBottom(bottom)
+    if (bottom && anchorId !== lastId) setAnchorId(lastId)
+  }
+
+  const anchorIndex = anchorId ? messages.findIndex((m) => m.id === anchorId) : -1
+  const unseen = anchorIndex >= 0 ? messages.slice(anchorIndex + 1).filter((m) => m.authorUid !== currentUid).length : 0
+
+  const scrollToBottom = () => {
+    const el = scrollRef.current
+    el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    setAnchorId(lastId)
+  }
 
   const loadOlder = () => {
     loadingOlderRef.current = scrollRef.current.scrollHeight - scrollRef.current.scrollTop
@@ -115,7 +148,8 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
   let lastDay = null
 
   return (
-    <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 py-4">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div ref={scrollRef} onScroll={onScroll} className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 py-4">
       {hasMore && !q && (
         <button type="button" onClick={loadOlder} className="mx-auto mb-3 rounded-full border border-white/[0.1] px-3 py-1 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
           Cargar mensajes anteriores
@@ -161,6 +195,9 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
                   onRemind={onRemind ? (at) => onRemind(m, at) : null}
                   onCreateTask={onCreateTask ? () => onCreateTask(m) : null}
                   onOpenTask={onOpenTask}
+                  onReply={onReply ? () => onReply(m) : null}
+                  onForward={onForward ? () => onForward(m) : null}
+                  onJump={onJump}
                   onEdit={(text) => onEdit(m.id, text)}
                   onDelete={() => onDelete(m.id)}
                   onOpenProfile={onOpenProfile}
@@ -173,6 +210,16 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
           )
         })
       )}
+    </div>
+    {!atBottom && unseen > 0 && !q && (
+      <button
+        type="button"
+        onClick={scrollToBottom}
+        className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[#B8860B]/50 bg-[#1C1A16] px-3.5 py-1.5 text-[12.5px] font-medium text-[#E8C15A] shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-colors hover:bg-[#26231E]"
+      >
+        ↓ {unseen} {unseen === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}
+      </button>
+    )}
     </div>
   )
 }

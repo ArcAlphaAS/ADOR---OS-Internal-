@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeUserProfile, subscribeMyDms, subscribeChatChannels, subscribeMyMentions, subscribeUsers, subscribeMyReminders, updateChatReminder } from '../lib/firestore'
-import { conversationKind, isMember, groupLabel, userLabel } from '../lib/chat'
+import { conversationKind, isMember, groupLabel, userLabel, notifyLevel } from '../lib/chat'
 
 function newerThan(ts, lastRead) {
   const t = ts?.toMillis?.() || 0
@@ -16,12 +16,13 @@ function timeAgo(ts) {
   return `${Math.floor(diff / 1440)} d`
 }
 
-// Comunicación's contribution to the top-bar bell. Deliberately only the
+// Comunicación's contribution to the top-bar bell. By default only the
 // things addressed to *you*: @mentions, direct messages, and your private
 // groups, plus replies in threads you take part in. Ordinary channel
-// chatter never reaches the bell — that's what
-// the sidebar's unread dots and Inbox are for; ringing the bell for every
-// #general message would train everyone to ignore it.
+// chatter doesn't reach the bell — that's what the sidebar's unread dots
+// and Inbox are for — unless you set that channel to "Todos los mensajes"
+// (and a group set to "Solo menciones" stops ringing for every message).
+// See notifyLevel() in lib/chat.js.
 //
 // "Unread" reuses users/{uid}.chatLastRead (the same timestamps the chat
 // sidebar uses), so opening a conversation clears it here too, with no
@@ -108,14 +109,14 @@ export function useChatNotifications(uid, onNavigate) {
     })
   }
 
-  for (const g of mine.filter((c) => conversationKind(c) === 'group')) {
+  for (const g of mine.filter((c) => notifyLevel(profile, c.id, conversationKind(c)) === 'all')) {
     const last = g.lastMessage
-    if (!last || last.authorUid === uid || muted[g.id] || !newerThan(g.lastMessageAt, lastRead[g.id])) continue
+    if (!last || last.authorUid === uid || !newerThan(g.lastMessageAt, lastRead[g.id])) continue
     items.push({
       key: `g:${g.id}:${g.lastMessageAt?.toMillis?.() || 0}`,
       from: last.authorName,
       at: g.lastMessageAt?.toMillis?.() || 0,
-      text: `${groupLabel(g, users, uid)} · ${(last.authorName || '').split(' ')[0]}: ${last.text || 'Nuevo mensaje'}`,
+      text: `${labelOf(g.id)} · ${(last.authorName || '').split(' ')[0]}: ${last.text || 'Nuevo mensaje'}`,
       time: timeAgo(g.lastMessageAt),
       onClick: () => onNavigate('chat', { type: 'chat', convType: 'conv', convId: g.id }),
     })

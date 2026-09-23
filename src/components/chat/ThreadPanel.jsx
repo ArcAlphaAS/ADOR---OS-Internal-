@@ -127,7 +127,7 @@ export default function ThreadPanel({
 
         <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
         {parent !== null && (
-          <Composer compact key={parentId} onSend={(draft) => onSend(draft, parent)} onTyping={onTyping} mentionCandidates={mentionCandidates} placeholder="Responder en el hilo..." onError={onError} />
+          <Composer compact key={parentId} draftKey={`thread_${parentId}`} onSend={(draft) => onSend(draft, parent)} onTyping={onTyping} mentionCandidates={mentionCandidates} placeholder="Responder en el hilo..." onError={onError} />
         )}
     </SidePanel>
   )

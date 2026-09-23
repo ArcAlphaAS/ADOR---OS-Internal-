@@ -243,7 +243,10 @@ export function presenceOf(p, now = Date.now()) {
     return { status: 'meeting', label: `${p.calendar.meeting ? 'En reunión' : 'Ocupado'} hasta ${hm(p.calendar.until)}`, color: '#A78BDA', muted: true }
   }
   const at = p?.lastActiveAt?.toMillis?.()
-  if (!at) return { status: 'offline', label: 'Sin actividad reciente', color: null }
+  // No connection data at all (never opened ADOR OS since presence
+  // existed) — say nothing rather than a vague "sin actividad reciente"
+  // that reads as if the person were inactive.
+  if (!at) return { status: 'offline', label: '', color: null }
   const age = now - at
   if (p.state === 'online' && age < ONLINE_MS) return { status: 'online', label: 'En línea', color: '#4CAF50' }
   if (p.state === 'away' && age < AWAY_MS) return { status: 'away', label: 'Ausente', color: '#FFC107' }
@@ -368,4 +371,50 @@ export function formatReminderTime(date) {
   if (d.toDateString() === today.toDateString()) return `hoy ${hm}`
   if (d.toDateString() === tomorrow.toDateString()) return `mañana ${hm}`
   return `${d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' })} ${hm}`
+}
+
+// ---- Avisos por conversación ----
+// What reaches the bell, the pop-up toast and the OS notification, per
+// conversation (users/{uid}.chatNotify[key]). Unread dots and the sidebar
+// badge follow the conversation either way, except "Nada".
+//   all      → every new message
+//   mentions → only @mentions of you and replies in your threads
+//   none     → nothing at all (= silenciado; also clears unread dots)
+// Defaults keep the behavior from before this setting existed: DMs and
+// private groups notify on everything, channels only on mentions. A mute
+// set before (chatMuted) still reads as "none".
+export const NOTIFY_LEVELS = [
+  { id: 'all', label: 'Todos los mensajes', hint: 'Aviso por cada mensaje nuevo' },
+  { id: 'mentions', label: 'Solo menciones', hint: 'Cuando te mencionan o responden en tus hilos' },
+  { id: 'none', label: 'Nada', hint: 'Silenciado — sin avisos ni punto de no leído' },
+]
+
+export function notifyLevel(profile, key, kind) {
+  const explicit = profile?.chatNotify?.[key]
+  if (explicit) return explicit
+  if (profile?.chatMuted?.[key]) return 'none'
+  return kind === 'channel' ? 'mentions' : 'all'
+}
+
+// ---- Responder citando / reenviar ----
+// A one-line stand-in for a message, used by the quote block above a reply
+// and by the forward preview.
+export function messageSnippet(m, max = 160) {
+  if (!m) return ''
+  if (m.text) return m.text.slice(0, max)
+  if (m.attachment?.kind === 'image') return '📷 Imagen'
+  if (m.attachment?.kind === 'voice') return '🎤 Nota de voz'
+  if (m.call) return '📞 Llamada'
+  return 'Mensaje'
+}
+
+// What travels with a reply: just enough to draw the quote and jump to the
+// original — never a live link that breaks if the original is edited.
+export function quoteOf(m) {
+  return { id: m.id, authorUid: m.authorUid || '', authorName: m.authorName || '', text: messageSnippet(m) }
+}
+
+// ---- Enviar más tarde ----
+export function scheduleOptions(now = new Date()) {
+  return reminderOptions(now).filter((o) => o.id !== '20m')
 }

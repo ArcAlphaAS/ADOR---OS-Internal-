@@ -14,6 +14,7 @@ import { useChatUnreadCount } from '../../hooks/useChatNotifications'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 import { useChatRetention } from '../../hooks/useChatRetention'
+import { useScheduledSender } from '../../hooks/useScheduledSender'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -76,6 +77,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const [showOnboarding, setShowOnboarding] = useState(false)
   usePresenceHeartbeat(user?.uid)
   useChatRetention(user?.uid)
+  // Sends due "Enviar más tarde" messages from wherever ADOR OS is open.
+  const scheduledMessages = useScheduledSender(user?.uid)
   const chatUnread = useChatUnreadCount(user?.uid)
 
   const navigateTo = (moduleId, focusTarget = null) => {
@@ -170,7 +173,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'news' ? (
               <NewsModule key="news" user={user} />
             ) : activeModule === 'chat' ? (
-              <ChatModule key="chat" user={user} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
+              <ChatModule key="chat" user={user} scheduledMessages={scheduledMessages} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
             ) : activeModule === 'ador-ia' ? (
               <AdorIAModule key="ador-ia" user={user} />
             ) : (
