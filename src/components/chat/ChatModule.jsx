@@ -485,7 +485,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate }) 
       await startCall(type, uri)
     } catch (error) {
       win?.close()
-      showToast(`No se pudo crear la reunión automáticamente: ${error.message}`)
+      showToast(error.message)
       setOpenCall({ type, anchorRef })
     } finally {
       setCallBusy(null)

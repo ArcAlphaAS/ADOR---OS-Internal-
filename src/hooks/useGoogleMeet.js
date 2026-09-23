@@ -83,7 +83,7 @@ export function useGoogleMeet(userId) {
       return await createMeetSpace(cached.token)
     } catch (error) {
       // Missing scope on an old token → reconnect once.
-      if (/insufficient|scope|PERMISSION_DENIED/i.test(error.message)) setStatus('needsConnect')
+      if (/no incluye Meet/i.test(error.message)) setStatus('needsConnect')
       throw error
     }
   }, [])

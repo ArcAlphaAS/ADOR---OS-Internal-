@@ -121,7 +121,15 @@ export function hasMeetScope(saved) {
 export async function createMeetSpace(accessToken) {
   const res = await fetch('/api/google-meet/space', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'No se pudo crear la reunión de Meet.')
+  if (!res.ok) {
+    const raw = data.error || ''
+    // Google's own messages are long and in English; say what to do instead.
+    if (/has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(raw)) {
+      throw new Error('Falta activar "Google Meet REST API" en la consola de Google (proyecto de ADOR OS). Mientras tanto, llama en modo manual.')
+    }
+    if (/insufficient|scope/i.test(raw)) throw new Error('Tu conexión con Google no incluye Meet. Pulsa "Conectar Google" una vez más.')
+    throw new Error(raw || 'No se pudo crear la reunión de Meet.')
+  }
   return data.meetingUri
 }
 
