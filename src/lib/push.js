@@ -119,6 +119,11 @@ export function sendPush(event, sender) {
     .then((token) =>
       fetch('/api/push/send', {
         method: 'POST',
+        // keepalive: the request still goes out if the sender locks the phone
+        // or switches app right after sending. Without it, a phone could
+        // suspend the page mid-request and the notification would only
+        // leave when they came back to ADOR OS (minutes late).
+        keepalive: true,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ event, senderUid: sender.uid, senderName: sender.name || '' }),
       })
