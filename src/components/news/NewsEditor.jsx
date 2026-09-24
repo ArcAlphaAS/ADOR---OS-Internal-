@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { renderMarkdown } from '../../lib/knowledge'
 import NewsHeroCard from './NewsHeroCard'
+import { NEWS_CATEGORIES } from './NewsLayout'
+import { resizeImageToDataUrl } from '../../lib/image'
 
 // Title + subtitle (the hero card's teaser text) + a Markdown body (the
 // full post, shown once opened) + an optional cover image — no category
@@ -16,6 +18,26 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl || '')
   const [body, setBody] = useState(initial?.body || '')
   const [pinned, setPinned] = useState(initial?.pinned || false)
+  const [category, setCategory] = useState(initial?.category || '')
+  const [imageError, setImageError] = useState('')
+  // A photo from the device, shrunk to 1400px and stored in the post
+  // itself (same Storage-free approach as profile photos, lib/image.js).
+  // Capped well under Firestore's 1MB-per-document limit.
+  const pickImage = async (file) => {
+    if (!file) return
+    setImageError('')
+    try {
+      const url = await resizeImageToDataUrl(file, 1400, 0.78)
+      if (url.length > 700_000) {
+        const smaller = await resizeImageToDataUrl(file, 1000, 0.7)
+        if (smaller.length > 700_000) return setImageError('La imagen es demasiado pesada — prueba con otra.')
+        return setCoverImageUrl(smaller)
+      }
+      setCoverImageUrl(url)
+    } catch {
+      setImageError('No se pudo leer esa imagen.')
+    }
+  }
   const [tab, setTab] = useState('editar')
 
   const canSave = title.trim() && body.trim() && !saving
@@ -37,16 +59,47 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
         placeholder="Subtítulo corto (se muestra en la tarjeta)"
         className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
       />
-      <input
-        type="text"
-        value={coverImageUrl}
-        onChange={(e) => setCoverImageUrl(e.target.value)}
-        placeholder="URL de imagen de portada (opcional)"
-        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-[#8A8A8A]">Categoría</span>
+        {NEWS_CATEGORIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setCategory(category === c ? '' : c)}
+            className="rounded-full border px-3 py-1 text-[12px] transition-colors"
+            style={{ borderColor: category === c ? '#E8C15A' : 'rgba(255,255,255,0.1)', color: category === c ? '#E8C15A' : '#AAAAAA', background: category === c ? 'rgba(232,193,90,0.1)' : 'transparent' }}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="cursor-pointer rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#DDDDDD] hover:bg-white/[0.06]">
+            {coverImageUrl ? 'Cambiar foto de portada' : 'Subir foto de portada'}
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => pickImage(e.target.files?.[0])} />
+          </label>
+          {coverImageUrl && (
+            <button type="button" onClick={() => setCoverImageUrl('')} className="px-2 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
+              Quitar
+            </button>
+          )}
+          {!coverImageUrl.startsWith('data:') && (
+            <input
+              type="text"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              placeholder="…o pega el enlace de una imagen"
+              className="min-w-[200px] flex-1 rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+            />
+          )}
+        </div>
+        {imageError && <p className="text-[12px] text-[#EF8A88]">{imageError}</p>}
+      </div>
 
       {(title || subtitle || coverImageUrl) && (
-        <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, pinned, createdAt: null }} />
+        <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, pinned, category, createdAt: null }} />
       )}
 
       <div className="flex items-center justify-between">
@@ -90,7 +143,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
         <button
           type="button"
           disabled={!canSave}
-          onClick={() => onSave({ title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), body, pinned })}
+          onClick={() => onSave({ title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), body, pinned, category })}
           className="ador-btn-primary rounded-lg px-4 py-2 text-[13px] font-medium disabled:opacity-50"
         >
           {saving ? 'Publicando...' : 'Publicar'}

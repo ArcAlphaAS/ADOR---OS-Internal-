@@ -7,9 +7,10 @@ import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import NewsEditor from './NewsEditor'
 import NewsHeroCard from './NewsHeroCard'
+import { FeaturedStory, LatestList, EditorialRow, SERIF } from './NewsLayout'
 import CommunityFeed from './CommunityFeed'
 import Avatar from '../shell/Avatar'
-import { GlobeIcon, PlusIcon, EditIcon, ArrowLeftIcon } from '../icons'
+import { GlobeIcon, PlusIcon, EditIcon, ArrowLeftIcon, SearchIcon } from '../icons'
 
 // One module, two tabs — direct user request to merge News and Comunidad:
 // the only real difference between them was ever tone (formal press-
@@ -52,6 +53,7 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
       </button>
 
       <NewsHeroCard post={post} />
+      {post.category && <p className="-mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{post.category}</p>}
 
       <div className="ador-glass ador-grain flex flex-col gap-5 rounded-2xl p-7">
         <div className="flex items-start justify-between gap-4">
@@ -88,8 +90,16 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   )
 }
 
-function AnunciosTab({ user, isAdminUser, focusPostId }) {
-  const [posts, setPosts] = useState([])
+// Every word must appear somewhere in the post (accent/case-insensitive).
+const fold = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+function matches(post, query) {
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  if (!words.length) return true
+  const hay = fold([post.title, post.subtitle, post.body, post.category, post.createdBy].join(' '))
+  return words.every((w) => hay.includes(w))
+}
+
+function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequest }) {
   const [openPostId, setOpenPostId] = useState(focusPostId || null)
   useEffect(() => {
     if (focusPostId) setOpenPostId(focusPostId)
@@ -99,9 +109,12 @@ function AnunciosTab({ user, isAdminUser, focusPostId }) {
   const showToast = useToast()
   const actorName = actorNameFor(user)
 
-  useEffect(() => subscribeNews(setPosts), [])
+  // "Nueva publicación" lives in the page header (NewsModule).
+  useEffect(() => {
+    if (composeRequest) setComposing('new')
+  }, [composeRequest])
 
-  const sorted = sortPosts(posts)
+  const sorted = sortPosts(posts).filter((p) => matches(p, query))
   const openPost = posts.find((p) => p.id === openPostId) || null
 
   const handleSave = async (data) => {
@@ -129,18 +142,6 @@ function AnunciosTab({ user, isAdminUser, focusPostId }) {
 
   return (
     <>
-      {isAdminUser && !composing && !openPost && (
-        <div className="mb-5 flex justify-end">
-          <button
-            type="button"
-            onClick={() => setComposing('new')}
-            className="ador-btn-primary flex flex-shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
-          >
-            <PlusIcon size={14} /> Nuevo anuncio
-          </button>
-        </div>
-      )}
-
       {composing ? (
         <NewsEditor initial={composing === 'new' ? null : openPost} onSave={handleSave} onCancel={() => setComposing(false)} saving={saving} />
       ) : openPost ? (
@@ -157,17 +158,20 @@ function AnunciosTab({ user, isAdminUser, focusPostId }) {
         </AnimatePresence>
       ) : sorted.length === 0 ? (
         <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
-          <GlobeIcon size={20} className="text-[#333333]" />
-          <p className="text-[14px] font-medium text-[#888888]">Sin anuncios todavía</p>
-          <p className="text-[13px] text-[#444444]">
-            {isAdminUser ? 'Usa "+ Nuevo anuncio" para publicar el primero.' : 'El equipo todavía no ha publicado ningún anuncio.'}
+          <GlobeIcon size={20} className="text-[#5A5A5A]" />
+          <p className="text-[14px] font-medium text-[#AAAAAA]">{query ? 'Nada coincide con tu búsqueda' : 'Sin anuncios todavía'}</p>
+          <p className="text-[13px] text-[#7A7A7A]">
+            {query ? 'Prueba con otras palabras.' : isAdminUser ? 'Usa "Nueva publicación" para publicar el primero.' : 'El equipo todavía no ha publicado ningún anuncio.'}
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-5">
-          {sorted.map((post) => (
-            <NewsHeroCard key={post.id} post={post} onOpen={() => setOpenPostId(post.id)} />
-          ))}
+        // Featured (pinned or newest) + "Lo último" (next 4) + Editorial (the rest).
+        <div className="flex flex-col gap-10">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
+            <FeaturedStory post={sorted[0]} onOpen={() => setOpenPostId(sorted[0].id)} />
+            <LatestList posts={sorted.slice(1, 5)} onOpen={setOpenPostId} />
+          </div>
+          {sorted.length > 5 && <EditorialRow posts={sorted.slice(5)} onOpen={setOpenPostId} />}
         </div>
       )}
     </>
@@ -189,6 +193,10 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
   const [communityPosts, setCommunityPosts] = useState([])
   const isAdminUser = isAdmin(profile)
 
+  const [posts, setPosts] = useState([])
+  const [query, setQuery] = useState('')
+  const [composeRequest, setComposeRequest] = useState(0)
+  useEffect(() => subscribeNews(setPosts), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
   useEffect(() => subscribeCommunityPosts(setCommunityPosts), [])
 
@@ -197,18 +205,44 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[880px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
+      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
-      <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">
-          {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
-        </p>
-        <h1 className="ador-title mt-1">News</h1>
-        <p className="mt-1 text-[13px] text-[#888888]">
-          {tab === 'anuncios'
-            ? 'Lo formal — decisiones, hitos y anuncios de ADOR, escritos por el equipo.'
-            : 'Lo informal — avances, ideas y momentos que el equipo quiere compartir.'}
-        </p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">
+            {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
+          </p>
+          <h1 className="mt-1 text-[38px] leading-none text-[#F5F5F5] md:text-[46px]" style={SERIF}>
+            News
+          </h1>
+          <p className="mt-2 text-[13.5px] text-[#9A9A9A]">
+            {tab === 'anuncios'
+              ? 'Decisiones, hitos y anuncios de ADOR, escritos por el equipo.'
+              : 'Avances, ideas y momentos que el equipo quiere compartir.'}
+          </p>
+        </div>
+        {tab === 'anuncios' && (
+          <div className="flex items-center gap-2.5">
+            <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.03] px-4 md:w-[260px] md:flex-none">
+              <SearchIcon size={15} className="flex-shrink-0 text-[#8A8A8A]" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar noticias…"
+                className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
+              />
+            </label>
+            {isAdminUser && (
+              <button
+                type="button"
+                onClick={() => setComposeRequest((n) => n + 1)}
+                className="flex h-11 flex-shrink-0 items-center gap-1.5 rounded-full bg-[#F2EDE4] px-5 text-[13px] font-medium text-[#141414] transition-colors hover:bg-white"
+              >
+                <PlusIcon size={14} /> <span className="hidden sm:inline">Nueva publicación</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="ador-glass flex w-fit items-center gap-1 rounded-full p-1">
@@ -230,8 +264,8 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
             )}
             <span className="relative flex items-center gap-1.5">
               {t.label}
-              {t.id === 'comunidad' && communityPosts.length > 0 && (
-                <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] leading-none">{communityPosts.length}</span>
+              {(t.id === 'comunidad' ? communityPosts.length : posts.length) > 0 && (
+                <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] leading-none">{t.id === 'comunidad' ? communityPosts.length : posts.length}</span>
               )}
             </span>
           </button>
@@ -239,7 +273,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       </div>
 
       {tab === 'anuncios' ? (
-        <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} />
+        <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} />
       ) : (
         <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} />
       )}

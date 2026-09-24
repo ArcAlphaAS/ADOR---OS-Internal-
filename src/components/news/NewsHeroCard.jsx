@@ -1,5 +1,6 @@
 import Logo from '../Logo'
 import { PinIcon } from '../icons'
+import { SERIF } from './NewsLayout'
 
 function formatDate(ts) {
   if (!ts?.toDate) return null
@@ -60,7 +61,7 @@ export default function NewsHeroCard({ post, onOpen }) {
 
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5">
         <div className="min-w-0">
-          <h2 className="text-[22px] font-semibold leading-tight text-white drop-shadow-sm">{post.title}</h2>
+          <h2 className="text-[26px] leading-tight text-white drop-shadow-sm md:text-[32px]" style={SERIF}>{post.title}</h2>
           {post.subtitle && <p className="mt-1 line-clamp-2 text-[13px] text-white/75">{post.subtitle}</p>}
         </div>
         {onOpen && (

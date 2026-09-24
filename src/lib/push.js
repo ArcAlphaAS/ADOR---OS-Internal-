@@ -163,7 +163,7 @@ export function sendPush(event, sender) {
 // same [module, focus] AppShell's navigateTo already understands.
 // Also /?open=<module> alone — the app icon's shortcuts (manifest
 // "shortcuts": Comunicación, Hoy, Calendario, Clientes).
-const SHORTCUT_MODULES = ['chat', 'workspace', 'calendario', 'clientes', 'inicio']
+const SHORTCUT_MODULES = ['chat', 'workspace', 'calendario', 'clientes', 'inicio', 'news', 'objetivos', 'finanzas', 'conocimiento', 'directorio']
 export function parseOpenLink(search) {
   const p = new URLSearchParams(search)
   const open = p.get('open')
