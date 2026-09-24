@@ -132,7 +132,7 @@ function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminU
 
           {!isPublished(post) && (
             <p className="mt-4 inline-block rounded-full bg-[#E8C15A]/15 px-3 py-1 text-[12px] text-[#E8C15A]">
-              {post.status === 'scheduled' ? `Programado para ${post.publishAt?.toDate?.().toLocaleString('es', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` : 'Borrador — solo lo ven los administradores'}
+              {post.status === 'scheduled' ? `Programado para ${post.publishAt?.toDate?.().toLocaleString('es', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} · sale si algún administrador tiene ADOR OS abierto (si no, al entrar alguien)` : 'Borrador — solo lo ven los administradores'}
             </p>
           )}
           {post.subtitle && <p className="mt-6 text-[16px] leading-relaxed text-[#CFCFCF]">{post.subtitle}</p>}
@@ -340,6 +340,9 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
           {unpublished.length > 0 && (
             <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-white/[0.12] p-4">
               <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Borradores y programados · solo administradores</p>
+              {unpublished.some((p) => p.status === 'scheduled') && (
+                <p className="text-[12px] leading-relaxed text-[#9A9A9A]">Los programados salen a su hora si algún administrador tiene ADOR OS abierto; si no, en cuanto alguien entre.</p>
+              )}
               {unpublished.map((p) => (
                 <button key={p.id} type="button" onClick={() => setOpenPostId(p.id)} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-white/[0.04]">
                   <span className="min-w-0 truncate text-[14px] text-[#EDEDED]">{p.title || 'Sin título'}</span>

@@ -241,7 +241,9 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#E8C15A]/25 bg-[#E8C15A]/[0.05] p-3">
           <span className="text-[12.5px] text-[#E8C15A]">Publicar el</span>
           <input type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} className="rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-1.5 text-[13px] text-[#F5F5F5] outline-none [color-scheme:dark]" />
-          <span className="text-[11.5px] text-[#8A8A8A]">Se publica sola y avisa al equipo.</span>
+          <span className="basis-full text-[11.5px] leading-relaxed text-[#9A9A9A]">
+            Se publica y avisa al equipo a esa hora <strong className="text-[#CFC6B8]">si algún administrador tiene ADOR OS abierto</strong>. Si nadie lo tiene abierto, sale en cuanto alguien entre.
+          </span>
         </div>
       )}
 
