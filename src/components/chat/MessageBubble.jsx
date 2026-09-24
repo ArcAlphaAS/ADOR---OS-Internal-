@@ -3,6 +3,7 @@ import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import { driveFileKind } from '../../lib/googleDrive'
 
 // One message in a conversation: its bubble, attachments (image, voice,
 // call card, Drive document), reactions, receipts, thread summary and the
@@ -78,6 +79,27 @@ function RichText({ text, mentions, currentUid }) {
 // The official version of a document lives in Google Drive — this card is
 // how that distinction shows up in the thread: a Drive link reads as "the
 // record," a pasted image reads as "part of the conversation."
+// A file picked from Google Drive (attachment.kind 'drive'): its real name
+// and type, opening in Drive.
+function DriveFileCard({ attachment }) {
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.2]"
+    >
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
+        {attachment.iconUrl ? <img src={attachment.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={16} />}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[12.5px] font-medium text-[#F5F5F5]">{attachment.name}</span>
+        <span className="block text-[11px] text-[#B8860B]">{driveFileKind(attachment.mimeType)} en Google Drive · abrir</span>
+      </span>
+    </a>
+  )
+}
+
 function DriveCard({ url }) {
   const type = driveDocType(url)
   return (
@@ -648,6 +670,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
+          {message.attachment?.kind === 'drive' && <DriveFileCard attachment={message.attachment} />}
           {showBubble && (
             <div
               className="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"

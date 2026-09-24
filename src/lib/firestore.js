@@ -998,6 +998,7 @@ function previewOf(payload, authorUid, authorName) {
   if (!text && p.call) text = p.call.type === 'video' ? '📞 Videollamada' : '📞 Llamada'
   if (!text && p.attachment?.kind === 'image') text = '📷 Imagen'
   if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
+  if (!text && p.attachment?.kind === 'drive') text = `📎 ${p.attachment.name}`
   if (!text && p.poll) text = `📊 Encuesta: ${p.poll.question}`.slice(0, 140)
   if (p.important) text = `❗ ${text}`
   return { text, authorUid, authorName }
@@ -1429,6 +1430,22 @@ export async function claimDailyCleanup() {
     tx.set(ref, { chatCleanupAt: serverTimestamp() }, { merge: true })
     return true
   })
+}
+
+// "Exportar todo": remembered on settings/maintenance so Configuración
+// can say when the last backup was made, by whom, and link to it.
+export function recordBackup({ by, link, documentCount }) {
+  if (!db) return Promise.resolve()
+  return setDoc(doc(db, COLLECTIONS.settings, 'maintenance'), { lastBackup: { at: serverTimestamp(), by, link: link || null, documentCount } }, { merge: true })
+}
+
+export function subscribeMaintenance(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.settings, 'maintenance'),
+    (snap) => onData(snap.exists() ? snap.data({ serverTimestamps: 'estimate' }) : {}),
+    (error) => console.error('Firestore subscription to settings/maintenance failed:', error.message)
+  )
 }
 
 export async function queryOlderThan(collectionName, field, cutoff, max) {

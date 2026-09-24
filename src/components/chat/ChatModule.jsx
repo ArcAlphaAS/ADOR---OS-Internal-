@@ -339,6 +339,9 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       } else if (draft.voice) {
         const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
         attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
+      } else if (draft.driveFile) {
+        const f = draft.driveFile
+        attachment = { kind: 'drive', name: f.name, url: f.url, fileId: f.fileId, mimeType: f.mimeType || '', iconUrl: f.iconUrl || null }
       }
       const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions, replyTo: draft.replyTo, poll: draft.poll, important: draft.important }
       const { pointer, snippet } = await withTimeout(

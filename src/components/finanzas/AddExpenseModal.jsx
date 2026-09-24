@@ -5,6 +5,8 @@ import { addExpense } from '../../lib/firestore'
 import { EXPENSE_CATEGORIES } from '../../lib/finance'
 import { useToast } from '../../hooks/useToast'
 import { UploadIcon, FileIcon } from '../icons'
+import { useDrivePicker } from '../../hooks/useDrivePicker'
+import { driveFileKind } from '../../lib/googleDrive'
 
 const labelClass = 'mb-1.5 block font-medium text-[#444444]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -20,6 +22,12 @@ export default function AddExpenseModal({ actorName, onClose }) {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
+  // The receipt itself lives in Google Drive; the expense keeps its link.
+  const drive = useDrivePicker('finanzas')
+  const pickReceipt = async () => {
+    const [file] = await drive.pick({ title: 'Comprobante del gasto' })
+    if (file) setReceipt(file)
+  }
 
   const canSave = description.trim() && Number(amount) > 0 && date
 
@@ -32,7 +40,7 @@ export default function AddExpenseModal({ actorName, onClose }) {
           description: description.trim(),
           amount: Number(amount),
           date,
-          receipt: receipt ? { name: receipt.name, type: receipt.type, size: receipt.size } : null,
+          receipt: receipt ? { name: receipt.name, type: driveFileKind(receipt.mimeType), url: receipt.url, fileId: receipt.fileId } : null,
           notes: notes.trim(),
         },
         actorName
@@ -115,26 +123,26 @@ export default function AddExpenseModal({ actorName, onClose }) {
             {receipt ? (
               <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px]">
                 <FileIcon size={16} style={{ color: '#888888' }} />
-                <span className="min-w-0 flex-1 truncate text-[13px] text-[#F5F5F5]">{receipt.name}</span>
+                <a href={receipt.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate text-[13px] text-[#F5F5F5] hover:underline">
+                  {receipt.name}
+                </a>
                 <button type="button" onClick={() => setReceipt(null)} className="text-[12px] text-[#888888] hover:text-[#F5F5F5]">
                   Quitar
                 </button>
               </div>
             ) : (
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/[0.12] px-3.5 py-[10px] text-[13px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2]">
+              <button
+                type="button"
+                onClick={pickReceipt}
+                disabled={drive.busy}
+                className="flex w-full items-center gap-2 rounded-xl border border-dashed border-white/[0.12] px-3.5 py-[10px] text-left text-[13px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] disabled:opacity-60"
+              >
                 <UploadIcon size={15} />
-                Adjuntar PDF o imagen
-                <input
-                  type="file"
-                  accept="application/pdf,image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && setReceipt(e.target.files[0])}
-                />
-              </label>
+                {drive.busy ? 'Abriendo Google Drive…' : 'Adjuntar desde Google Drive (PDF o foto)'}
+              </button>
             )}
-            <p className="mt-1 text-[11px] text-[#444444]">
-              Solo se guarda el nombre del archivo — el almacenamiento de comprobantes aún no está habilitado.
-            </p>
+            <p className="mt-1 text-[11px] text-[#555555]">El comprobante queda en el Drive de la empresa; aquí se guarda el enlace.</p>
+            {drive.prompt}
           </div>
           <div>
             <label className={labelClass} style={labelStyle}>

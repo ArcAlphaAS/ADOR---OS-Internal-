@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { renderMarkdown } from '../../lib/knowledge'
+import { useDrivePicker } from '../../hooks/useDrivePicker'
+import { driveFileKind } from '../../lib/googleDrive'
 
 // Plain-textarea markdown editor with an Editar/Vista previa toggle — no
 // block editor, no rich-text toolbar. Shared between "+ Nuevo documento"
@@ -10,6 +12,16 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   const [title, setTitle] = useState(initial?.title || '')
   const [subcategory, setSubcategory] = useState(initial?.subcategory || tree[0].subcategories[0].id)
   const [content, setContent] = useState(initial?.content || '')
+  // "Adjuntar de Drive": the file stays in Drive; the document gets a
+  // Markdown link to it, e.g. "📎 [Contrato QANLLA](…) — PDF".
+  const drive = useDrivePicker('conocimiento')
+  const attachFromDrive = async () => {
+    const files = await drive.pick({ multiple: true, title: 'Adjuntar al documento' })
+    if (!files.length) return
+    const lines = files.map((f) => `📎 [${f.name.replace(/[[\]]/g, '')}](${f.url}) — ${driveFileKind(f.mimeType)}`).join('\n')
+    setContent((c) => `${c.trimEnd()}${c.trim() ? '\n\n' : ''}${lines}\n`)
+    setTab('editar')
+  }
   const [tab, setTab] = useState('editar')
 
   const activeCategoryId = tree.find((cat) => cat.subcategories.some((s) => s.id === subcategory))?.id || tree[0].id
@@ -64,6 +76,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
         </div>
       </div>
 
+      <div className="flex items-center gap-3">
       <div className="flex items-center gap-1 self-start rounded-full bg-white/[0.04] p-1">
         {['editar', 'vista previa'].map((t) => (
           <button
@@ -77,6 +90,11 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
           </button>
         ))}
       </div>
+        <button type="button" onClick={attachFromDrive} disabled={drive.busy} className="ml-auto rounded-full border border-white/[0.1] px-3 py-1 text-[11.5px] text-[#AAAAAA] hover:border-white/[0.2] hover:text-[#F5F5F5] disabled:opacity-50">
+          📎 {drive.busy ? 'Abriendo Drive…' : 'Adjuntar de Google Drive'}
+        </button>
+      </div>
+      {drive.prompt}
 
       {tab === 'editar' ? (
         <textarea

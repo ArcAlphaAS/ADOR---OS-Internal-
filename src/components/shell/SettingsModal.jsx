@@ -1,6 +1,101 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import { subscribeUserProfile, subscribeMaintenance, recordBackup } from '../../lib/firestore'
+import { isAdmin } from '../../lib/permissions'
+import { exportAllData, backupFileName } from '../../lib/backup'
+import { uploadBackupToDrive, connectDrive, DriveNeedsConnectError } from '../../lib/googleDrive'
+
+const COLLECTION_LABELS = {
+  clients: 'clientes',
+  tasks: 'tareas',
+  chatChannels: 'canales',
+  chatDms: 'mensajes directos',
+  knowledgeDocs: 'documentos',
+  expenses: 'gastos',
+  incomes: 'ingresos',
+  objetivos: 'objetivos',
+  directoryPeople: 'directorio',
+}
+
+// "Exportar todo" (admins only): reads every collection and saves one JSON
+// file to "ADOR OS — Respaldos" in your Google Drive. See lib/backup.js
+// for what's in it and what's deliberately left out.
+function BackupSection({ user }) {
+  const [profile, setProfile] = useState(null)
+  const [maintenance, setMaintenance] = useState({})
+  const [state, setState] = useState({ phase: 'idle' }) // idle | working | done | needsConnect | error
+
+  useEffect(() => (user?.uid && user.uid !== 'preview' ? subscribeUserProfile(user.uid, setProfile) : undefined), [user?.uid])
+  useEffect(() => subscribeMaintenance(setMaintenance), [])
+
+  if (!profile || !isAdmin(profile)) return null
+  const last = maintenance.lastBackup
+  const lastAt = last?.at?.toDate?.()
+
+  const run = async () => {
+    setState({ phase: 'working', label: 'Leyendo datos…' })
+    try {
+      const backup = await exportAllData((name) => setState({ phase: 'working', label: `Leyendo ${COLLECTION_LABELS[name] || name}…` }))
+      setState({ phase: 'working', label: 'Guardando en tu Google Drive…' })
+      const file = await uploadBackupToDrive(user.uid, backupFileName(), JSON.stringify(backup, null, 1))
+      await recordBackup({ by: user.displayName || user.email, link: file.webViewLink, documentCount: backup.documentCount }).catch(() => {})
+      setState({ phase: 'done', link: file.webViewLink, count: backup.documentCount })
+    } catch (error) {
+      if (error instanceof DriveNeedsConnectError) setState({ phase: 'needsConnect', message: error.message })
+      else setState({ phase: 'error', message: error.message })
+    }
+  }
+
+  return (
+    <div className="ador-glass w-full rounded-xl px-4 py-3">
+      <span className="block text-[13px] font-medium text-[#F5F5F5]">Respaldo de datos</span>
+      <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">
+        Guarda una copia completa de ADOR OS en tu Google Drive (carpeta “ADOR OS — Respaldos”).
+      </span>
+      {lastAt && (
+        <span className="mt-1.5 block text-[11px] text-[#777777]">
+          Último: {lastAt.toLocaleDateString('es', { day: 'numeric', month: 'short' })} {lastAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} · {last.by}
+          {last.link && (
+            <a href={last.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 text-[#6FA3E0] hover:underline">
+              abrir
+            </a>
+          )}
+        </span>
+      )}
+
+      <div className="mt-2.5">
+        {state.phase === 'working' ? (
+          <span className="flex items-center gap-2 text-[12px] text-[#AAAAAA]">
+            <span className="h-3 w-3 animate-spin rounded-full border border-white/60 border-t-transparent" /> {state.label}
+          </span>
+        ) : state.phase === 'needsConnect' ? (
+          <span className="flex flex-col gap-1.5">
+            <span className="text-[12px] text-[#AAAAAA]">{state.message} Solo pide permiso para los archivos que ADOR OS crea o que tú eliges.</span>
+            <button type="button" onClick={() => connectDrive(user.uid, 'inicio')} className="self-start rounded-lg bg-[#1E5FAD] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#2A6FC2]">
+              Conectar Google Drive
+            </button>
+          </span>
+        ) : (
+          <button type="button" onClick={run} className="rounded-lg bg-[#1E5FAD] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#2A6FC2]">
+            Exportar todo a Drive
+          </button>
+        )}
+        {state.phase === 'done' && (
+          <p className="mt-2 text-[12px] text-[#8FD19A]">
+            Listo — {state.count} registros guardados.{' '}
+            {state.link && (
+              <a href={state.link} target="_blank" rel="noopener noreferrer" className="underline">
+                Ver en Drive
+              </a>
+            )}
+          </p>
+        )}
+        {state.phase === 'error' && <p className="mt-2 text-[12px] text-[#EF8A88]">{state.message}</p>}
+      </div>
+    </div>
+  )
+}
 
 export default function SettingsModal({ user, onClose, onResetPassword, onShowOnboarding }) {
   const [status, setStatus] = useState('')
@@ -66,6 +161,8 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
                 Te enviaremos un correo para restablecerla
               </span>
             </button>
+
+            <BackupSection user={user} />
 
             {status && <p className="mt-1 px-1 text-[12px] text-[#888888]">{status}</p>}
             {error && <p className="mt-1 px-1 text-[12px] text-[#888888]">{error}</p>}

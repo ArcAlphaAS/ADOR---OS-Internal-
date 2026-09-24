@@ -81,6 +81,17 @@ export default function MovimientosTable({ movements }) {
                 <tr key={`${m.type}-${m.id}`}>
                   <td className="py-2.5 pr-3 text-[13px] text-[#F5F5F5]">
                     {m.type === 'ingreso' ? m.name : m.description}
+                    {m.receipt?.url && (
+                      <a
+                        href={m.receipt.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Comprobante: ${m.receipt.name}`}
+                        className="ml-2 text-[11px] text-[#6FA3E0] hover:underline"
+                      >
+                        comprobante ↗
+                      </a>
+                    )}
                   </td>
                   <td className="py-2.5 pr-3 text-[12px] text-[#444444]">{formatDate(m.date)}</td>
                   <td

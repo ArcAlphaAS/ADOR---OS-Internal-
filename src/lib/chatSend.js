@@ -56,6 +56,7 @@ export async function deliverMessage({ convType, convId, dmParticipants, partici
   if (attachment?.kind === 'image' && !attachment.expired)
     indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})
   if (attachment?.kind === 'voice' && !attachment.expired) indexChatFile({ ...pointer, kind: 'voice', blobId: attachment.blobId, duration: attachment.duration, name: 'Nota de voz' }).catch(() => {})
+  if (attachment?.kind === 'drive') indexChatFile({ ...pointer, kind: 'drive', url: attachment.url, name: attachment.name }).catch(() => {})
   const drive = findDriveLink(payload.text)
   if (drive) indexChatFile({ ...pointer, kind: 'drive', url: drive, name: `${driveDocType(drive)} de Drive` }).catch(() => {})
 

@@ -38,7 +38,12 @@
 // account. Connections made before Meet was added lack that scope; the
 // chat detects it (hasMeetScope) and asks to reconnect once.
 export const MEET_SCOPE = 'https://www.googleapis.com/auth/meetings.space.created'
-const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${MEET_SCOPE}`
+// Google Drive, "drive.file": ADOR OS only ever sees the files you pick in
+// Google's own file picker or the ones it creates itself (the backups) —
+// never the rest of your Drive. Google classifies it as non-sensitive.
+// Older connections lack it; lib/googleDrive.js asks to reconnect once.
+export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${MEET_SCOPE} ${DRIVE_SCOPE}`
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 

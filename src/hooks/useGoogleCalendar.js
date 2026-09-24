@@ -94,8 +94,10 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
     const url = new URL(window.location.href)
     const code = url.searchParams.get('code')
     // A connection started from the chat (state=chat) is finished by
-    // useGoogleMeet instead — only one hook may spend the one-time code.
-    const startedHere = url.searchParams.get('state') !== 'chat'
+    // useGoogleMeet, one started for Drive (state=drive:…) by AppShell —
+    // only one place may spend the one-time code.
+    const state = url.searchParams.get('state') || ''
+    const startedHere = state !== 'chat' && !state.startsWith('drive:')
 
     if (code && startedHere && !oauthHandledRef.current) {
       oauthHandledRef.current = true

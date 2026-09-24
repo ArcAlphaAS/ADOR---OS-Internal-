@@ -123,6 +123,7 @@ export function sharedInConversation(messages) {
   const files = []
   const links = []
   for (const m of [...messages].reverse()) {
+    if (m.attachment?.kind === 'drive') links.push({ id: `${m.id}-file`, url: m.attachment.url, host: 'drive.google.com', label: m.attachment.name, drive: true, createdAt: m.createdAt })
     if (m.attachment?.kind === 'image') files.push({ id: m.id, attachment: m.attachment, name: m.attachment.name, src: m.attachment.thumbUrl || m.attachment.dataUrl, createdAt: m.createdAt })
     for (const part of splitLinks(m.text || '')) {
       if (part.type !== 'link' || isMeetLink(part.value)) continue
@@ -404,6 +405,7 @@ export function messageSnippet(m, max = 160) {
   if (m.text) return m.text.slice(0, max)
   if (m.attachment?.kind === 'image') return '📷 Imagen'
   if (m.attachment?.kind === 'voice') return '🎤 Nota de voz'
+  if (m.attachment?.kind === 'drive') return `📎 ${m.attachment.name}`
   if (m.call) return '📞 Llamada'
   if (m.poll) return `📊 Encuesta: ${m.poll.question}`.slice(0, max)
   return 'Mensaje'

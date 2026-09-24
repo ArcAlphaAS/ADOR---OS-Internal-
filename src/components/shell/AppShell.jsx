@@ -15,6 +15,8 @@ import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 import { useChatRetention } from '../../hooks/useChatRetention'
 import { useScheduledSender } from '../../hooks/useScheduledSender'
+import { finishDriveConnect } from '../../lib/googleDrive'
+import { useToast } from '../../hooks/useToast'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -68,7 +70,10 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const [activeModule, setActiveModule] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     if (!params.get('code')) return 'inicio'
-    return params.get('state') === 'chat' ? 'chat' : params.get('state') === 'calendario' ? 'calendario' : 'inicio'
+    const state = params.get('state') || ''
+    // Drive connections carry the module that started them: "drive:clientes".
+    if (state.startsWith('drive:')) return state.slice(6) || 'inicio'
+    return state === 'chat' ? 'chat' : state === 'calendario' ? 'calendario' : 'inicio'
   })
   // Set alongside activeModule when a global-search result should also open
   // a specific client/task's detail panel once its module mounts — cleared
@@ -79,6 +84,16 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   useChatRetention(user?.uid)
   // Sends due "Enviar más tarde" messages from wherever ADOR OS is open.
   const scheduledMessages = useScheduledSender(user?.uid)
+  const showToast = useToast()
+  // Back from Google's consent screen for Drive: finish it here, whichever
+  // module is open (lib/googleDrive.js).
+  useEffect(() => {
+    if (!user?.uid) return
+    finishDriveConnect(user.uid).then((r) => {
+      if (!r.handled) return
+      showToast(r.ok ? 'Google Drive conectado — ya puedes adjuntar archivos y exportar.' : r.error)
+    })
+  }, [user?.uid])
   const chatUnread = useChatUnreadCount(user?.uid)
 
   const navigateTo = (moduleId, focusTarget = null) => {

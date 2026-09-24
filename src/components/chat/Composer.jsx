@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
+import { mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
 import { getDraft, setDraft } from '../../lib/chatDrafts'
+import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { resizeImageToDataUrl } from '../../lib/image'
 import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
@@ -116,7 +117,9 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   const [panel, setPanel] = useState(null) // 'more' | 'format' | 'emoji' | 'schedule' | 'poll' | null
   const [customAt, setCustomAt] = useState('')
   const [important, setImportant] = useState(false)
-  const [driveMode, setDriveMode] = useState(false)
+  // "Archivo de Google Drive": files stay in the company's Drive; the
+  // message carries a link card (a pasted Drive link still works too).
+  const drive = useDrivePicker('chat')
   const [pendingImage, setPendingImage] = useState(null)
   const [processing, setProcessing] = useState(false)
   const [mentions, setMentions] = useState([])
@@ -152,10 +155,9 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`
   }
   useEffect(fitHeight, [text])
-  // Drive-link mode is a transient state, not a draft worth keeping.
   useEffect(() => {
-    if (!driveMode) setDraft(draftKey, text)
-  }, [text, draftKey, driveMode])
+    setDraft(draftKey, text)
+  }, [text, draftKey])
   // "Responder" on a message puts the cursor here, ready to type.
   useEffect(() => {
     if (replyTo) inputRef.current?.focus()
@@ -180,7 +182,6 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     }
     setText('')
     setPendingImage(null)
-    setDriveMode(false)
     setPanel(null)
     setMentions([])
     setMentionQuery(null)
@@ -188,7 +189,6 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   }
 
   const submit = () => {
-    if (driveMode && !findDriveLink(text)) return onError('Pega un enlace de Google Drive, Docs, Sheets o Slides.')
     if (!text.trim() && !pendingImage) return
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
     onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions, important: important || undefined })
@@ -359,13 +359,12 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             {
               id: 'drive',
               icon: <PaperclipIcon size={14} />,
-              label: 'Documento de Drive',
-              hint: 'Comparte el enlace — el oficial sigue en Drive',
-              active: driveMode,
-              onPick: () => {
-                setDriveMode((v) => !v)
+              label: drive.busy ? 'Abriendo Google Drive…' : 'Archivo de Google Drive',
+              hint: 'PDF, Excel, contratos… o súbelo desde tu computadora',
+              onPick: async () => {
                 setPanel(null)
-                inputRef.current?.focus()
+                const files = await drive.pick({ multiple: true, title: 'Compartir en la conversación' })
+                for (const f of files) onSend({ driveFile: f })
               },
             },
             canPoll && { id: 'poll', icon: <PollIcon size={14} />, label: 'Encuesta', hint: 'Pregunta rápida, todos votan con un clic', onPick: () => setPanel('poll') },
@@ -526,14 +525,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         </div>
       )}
 
-      {driveMode && (
-        <div className="flex items-center justify-between gap-3 px-1">
-          <p className="text-[12.5px] text-[#888888]">Pega el enlace del documento en Drive — el oficial se queda allá, aquí solo compartes el acceso.</p>
-          <button type="button" onClick={() => setDriveMode(false)} className="flex-shrink-0 text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
-            Cancelar
-          </button>
-        </div>
-      )}
+      {drive.prompt}
 
       {/* Tools wrap onto their own line under the text when the column is
           narrow (a side panel open, or the thread composer), instead of
@@ -570,7 +562,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               reset()
             }
           }}
-          placeholder={driveMode ? 'https://docs.google.com/...' : placeholder || 'Escribe un mensaje...'}
+          placeholder={placeholder || 'Escribe un mensaje...'}
           className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
         />
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
@@ -581,7 +573,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             <ToolButton title="Más opciones" active={panel === 'more'} onClick={() => togglePanel('more')}>
               <PlusIcon size={16} />
             </ToolButton>
-            {(important || driveMode || panel === 'format' || panel === 'poll' || panel === 'schedule') && panel !== 'more' && (
+            {(important || panel === 'format' || panel === 'poll' || panel === 'schedule') && panel !== 'more' && (
               <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#E8C15A' }} />
             )}
           </span>

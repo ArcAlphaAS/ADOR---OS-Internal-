@@ -387,6 +387,13 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] Pase de diseño: menú "+" en la caja de escribir (solo emoji, imagen y voz a la vista), burbujas con ancho máximo legible, "Importante" como borde dorado, Detalles como icono, nombre de la vista activa en la barra lateral, aviso de notificaciones bloqueadas solo una vez (2026-09-23)
 - [ ] Probar entre dos cuentas reales lo que aún no se vio en vivo: votar en una encuesta, confirmar un mensaje importante, reenviar, enviar más tarde (que salga a la hora aunque el autor tenga ADOR OS cerrado), avisos por canal, menciones, campana, hilos, ✓/✓✓, "escribiendo…", avisos emergentes, No molestar silenciando una llamada, "En reunión" desde Calendario, y confirmar que la limpieza diaria corre (ver `settings/maintenance.chatCleanupAt` en Firestore)
 
+**Plataforma — ronda de mejoras (2026-09-23).** Orden acordado: 1 Inicio · 2–4 Google Drive (conexión, respaldo, archivos) · 5 búsqueda global · 6 registro de errores · 7 permisos + Administración · 8 celular/iPad. See CLAUDE.md §35
+- [x] Inicio: Próxima reunión desde Google Calendar; Resumen financiero con los mismos datos que Finanzas
+- [x] Archivos desde Google Drive (selector de Google, con opción de subir): Clientes → Documentos, Finanzas → comprobante, Comunicación, Conocimiento
+- [x] "Exportar todo a Drive" en Configuración (solo administradores), carpeta "ADOR OS — Respaldos"
+- [ ] **Pendiente del usuario (consola de Google, una vez):** activar Google Drive API + Google Picker API, añadir el permiso `drive.file`, crear la clave de API y ponerla en Vercel como `VITE_GOOGLE_API_KEY`. Luego cada socio pulsa "Conectar Google" una vez
+- [ ] 5 Búsqueda global · 6 Registro de errores · 7 Permisos + Administración · 8 Celular/iPad
+
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
 
