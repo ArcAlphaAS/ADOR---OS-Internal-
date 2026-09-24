@@ -149,7 +149,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-    <div ref={scrollRef} onScroll={onScroll} className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 py-4">
+    <div ref={scrollRef} onScroll={onScroll} data-keep-scroll className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 py-4">
       {hasMore && !q && (
         <button type="button" onClick={loadOlder} className="mx-auto mb-3 rounded-full border border-white/[0.1] px-3 py-1 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
           Cargar mensajes anteriores

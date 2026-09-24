@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { SHEET, swipeToClose } from '../../lib/motion'
 import {
   HomeIcon,
   LayersIcon,
@@ -65,8 +66,11 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
   const more = MORE.filter((m) => canSee(m.id))
   const moreActive = more.some((m) => m.id === activeModule)
 
+  // Tapping the tab you're already on scrolls back to the top, like every
+  // iPhone app — the page itself and any list inside it that's scrolled.
   const go = (id) => {
     setMoreOpen(false)
+    if (id === activeModule) return scrollToTop()
     onNavigate(id)
   }
 
@@ -79,7 +83,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
         style={{ bottom: 'max(12px, calc(env(safe-area-inset-bottom) - 8px))' }}
       >
         {primary.map((m) => (
-          <Tab key={m.id} {...m} active={activeModule === m.id} badge={badges[m.id]} onClick={() => go(m.id)} />
+          <Tab key={m.id} {...m} active={activeModule === m.id && !moreOpen} badge={badges[m.id]} onClick={() => go(m.id)} />
         ))}
         {more.length > 0 && <Tab label="Más" Icon={MoreIcon} active={moreActive || moreOpen} onClick={() => setMoreOpen((v) => !v)} />}
       </nav>
@@ -92,7 +96,8 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 initial={{ y: 40 }}
                 animate={{ y: 0 }}
                 exit={{ y: 40 }}
-                transition={{ duration: 0.22, ease: 'easeOut' }}
+                transition={SHEET}
+                {...swipeToClose('y', () => setMoreOpen(false))}
                 onClick={(e) => e.stopPropagation()}
                 className="absolute inset-x-0 bottom-0"
               >
@@ -121,4 +126,12 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
       )}
     </>
   )
+}
+
+function scrollToTop() {
+  const main = document.querySelector('main')
+  if (!main) return
+  // Message threads read bottom-up — they're marked data-keep-scroll and left alone.
+  const scrolled = [main, ...main.querySelectorAll('*')].filter((el) => el.scrollTop > 0 && !el.closest('[data-keep-scroll]'))
+  for (const el of scrolled) el.scrollTo({ top: 0, behavior: 'smooth' })
 }

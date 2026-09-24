@@ -23,6 +23,7 @@ import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
+import { SPRING } from '../../lib/motion'
 
 // The landing screen for Workspace — added 2026-09-16 after direct feedback
 // that opening on "Todo" (every Intervención/Proyecto) made the module read
@@ -295,7 +296,7 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
         initial={{ opacity: 0, y: 16, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.97 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[520px] px-6"
       >

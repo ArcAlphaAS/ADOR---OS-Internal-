@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { SUGGESTED_CHANNELS, normalizeChannelName, userLabel } from '../../lib/chat'
 import { LockIcon, GlobeIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import { SPRING } from '../../lib/motion'
 
 const labelClass = 'mb-1.5 block font-medium text-[#767676]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -109,7 +110,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
       <motion.div
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
       >

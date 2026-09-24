@@ -5,6 +5,7 @@ import { OBJETIVO_METRICS, OBJETIVO_TYPES, FOCO_SUGGESTIONS } from '../../lib/ob
 import { createObjetivo } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 
 const labelClass = 'mb-1.5 block font-medium text-[#444444]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -70,7 +71,7 @@ export default function NewObjetivoModal({ quarterKey, actorName, users, preset,
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ador-modal-surface ador-grain w-[420px] rounded-[28px] p-8">

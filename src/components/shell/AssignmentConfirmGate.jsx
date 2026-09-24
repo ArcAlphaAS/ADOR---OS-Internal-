@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { subscribeAssignedPending, subscribeClients, subscribeProyectosInternos, respondToAssignment } from '../../lib/firestore'
 import { workstreamId } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 
 // The blocking accept/reject popup for a task someone else assigned to you —
 // direct request (2026-09-16): assigning a teammate shouldn't just silently
@@ -67,7 +68,7 @@ export default function AssignmentConfirmGate({ user, actorName }) {
       transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[10px]"
     >
-      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING}>
         <div className="ador-modal-surface ador-grain w-[420px] rounded-[28px] p-8">
           <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Nueva asignación

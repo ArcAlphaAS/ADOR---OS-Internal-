@@ -7,6 +7,7 @@ import { withTimeout } from '../../lib/workspace'
 import { STATUSES } from '../../lib/directorio'
 import Avatar from '../shell/Avatar'
 import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 
 // Create/edit form for a Directorio entry — same portal + split-transform
 // pattern as every centered modal in the app (CLAUDE.md §11), same
@@ -110,7 +111,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[480px]"
       >

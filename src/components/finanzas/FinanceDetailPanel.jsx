@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { currencyPEN } from '../../lib/clientStages'
 import { EXPENSE_CATEGORIES } from '../../lib/finance'
 import { CloseIcon, ArrowRightIcon } from '../icons'
+import { SHEET, swipeToClose } from '../../lib/motion'
 
 // Slide-in drill-down for the two clickable Salud Financiera metrics — same
 // portal + transform-split pattern as every other panel in the app
@@ -25,7 +26,8 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 40, opacity: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        transition={SHEET}
+        {...swipeToClose('x', onClose)}
         onClick={(e) => e.stopPropagation()}
         className="fixed right-0 top-0 h-full w-full max-w-[420px]"
       >

@@ -6,6 +6,7 @@ import { STATUSES, PRIORITIES } from '../../lib/workspace'
 import { quarterKey } from '../../lib/finance'
 import { CloseIcon } from '../icons'
 import AvatarStack from './AvatarStack'
+import { SHEET, swipeToClose } from '../../lib/motion'
 
 function formatHistoryDate(value) {
   const date = value?.toDate?.()
@@ -95,7 +96,8 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
         initial={{ x: 440, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 440, opacity: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        transition={SHEET}
+        {...swipeToClose('x', onClose)}
         className="fixed right-0 top-0 z-50 h-full w-[440px]"
         onClick={(e) => e.stopPropagation()}
       >

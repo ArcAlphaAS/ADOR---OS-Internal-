@@ -89,7 +89,7 @@ export default function ThreadPanel({
   return (
     <SidePanel title="Hilo" subtitle={conversationLabel} onClose={onClose} bodyClassName="flex min-h-0 flex-1 flex-col px-5 pb-4">
 
-        <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-3">
+        <div ref={scrollRef} data-keep-scroll className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-3">
           {parent === null ? (
             <p className="py-10 text-center text-[12.5px] text-[#7A7A7A]">Este mensaje ya no existe.</p>
           ) : parent ? (

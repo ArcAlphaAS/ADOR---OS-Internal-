@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { eventColor } from '../../lib/googleCalendar'
 import { ArrowRightIcon } from '../icons'
+import { SPRING } from '../../lib/motion'
 
 // Quick-view for a Google Calendar event — clicking an event used to always
 // open a new tab to Google Calendar, which yanked you out of ADOR OS for
@@ -36,7 +37,7 @@ export default function EventDetailModal({ event, onClose }) {
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ador-modal-surface ador-grain w-[420px] max-w-[90vw] rounded-[28px] p-7">

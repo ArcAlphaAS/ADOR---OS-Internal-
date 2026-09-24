@@ -5,6 +5,7 @@ import { PlusIcon, CloseIcon } from '../icons'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 
 // The "always have your notebook open" capture point — a floating button
 // present across the whole shell (mounted once in AppShell, not per-module)
@@ -80,7 +81,7 @@ export default function GlobalCapture({ user, actorName }) {
                 initial={{ opacity: 0, y: 16, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={SPRING}
                 className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-4 sm:inset-0 sm:items-center sm:pb-0"
                 onClick={(e) => e.stopPropagation()}
               >

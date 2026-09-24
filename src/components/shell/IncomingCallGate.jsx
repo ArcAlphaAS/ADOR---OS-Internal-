@@ -6,6 +6,7 @@ import { callState, presenceOf, RING_MS as CALL_RING_MS } from '../../lib/chat'
 import Avatar from './Avatar'
 import { PhoneIcon, VideoIcon, CloseIcon } from '../icons'
 import { isPushOnHere } from '../../lib/push'
+import { SPRING } from '../../lib/motion'
 
 // How long a call rings before it quietly becomes "missed" — the call card
 // in the conversation stays either way, this only controls the ringing.
@@ -163,7 +164,7 @@ export default function IncomingCallGate({ user }) {
       transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-[10px]"
     >
-      <motion.div initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.22, ease: 'easeOut' }}>
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING}>
         <div className="ador-modal-surface ador-grain flex w-[340px] flex-col items-center rounded-[28px] px-8 pt-9 pb-8 text-center">
           <div className="relative flex items-center justify-center">
             <span className="absolute h-[96px] w-[96px] rounded-full" style={{ background: 'rgba(76,175,80,0.18)', animation: 'ador-pulse 1.6s ease-in-out infinite' }} />

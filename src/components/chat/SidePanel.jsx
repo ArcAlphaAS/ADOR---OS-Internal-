@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import { CloseIcon } from '../icons'
+import { swipeToClose } from '../../lib/motion'
 
 // The one frame every right-hand panel in Comunicación uses — Perfil,
 // Detalles, Hilo — so they share width, padding, header and close button
@@ -8,8 +10,11 @@ import { CloseIcon } from '../icons'
 // On phones it covers the conversation full-screen (above the bottom bar's
 // space) instead of squeezing in beside it.
 export default function SidePanel({ title, subtitle, onClose, children, bodyClassName }) {
+  // Phones only (where it's full-screen): swipe right to close, like going
+  // back in an iPhone app. On larger screens it sits beside the chat.
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches
   return (
-    <aside className="fixed inset-0 z-[46] flex flex-col bg-[#0A0A0A] p-3 pb-[calc(92px+env(safe-area-inset-bottom))] md:static md:z-auto md:w-[320px] md:flex-shrink-0 md:bg-transparent md:p-0">
+    <motion.aside {...(phone ? swipeToClose('x', onClose) : {})} className="fixed inset-0 z-[46] flex flex-col bg-[#0A0A0A] p-3 pb-[calc(92px+env(safe-area-inset-bottom))] md:static md:z-auto md:w-[320px] md:flex-shrink-0 md:bg-transparent md:p-0">
       <div className="ador-glass ador-grain flex min-h-0 flex-1 flex-col rounded-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-5 pt-4 pb-3.5">
           <div className="min-w-0">
@@ -22,6 +27,6 @@ export default function SidePanel({ title, subtitle, onClose, children, bodyClas
         </div>
         <div className={bodyClassName || 'flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4'}>{children}</div>
       </div>
-    </aside>
+    </motion.aside>
   )
 }

@@ -5,6 +5,7 @@ import { getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { resizeImageToDataUrl } from '../../lib/image'
 import Avatar from './Avatar'
 import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 
 const inputClass =
   'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
@@ -81,7 +82,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ador-modal-surface ador-grain w-[380px] rounded-[28px] p-8">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   createChatChannel,
   updateChatChannel,
@@ -77,6 +78,7 @@ import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
 import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 import { createPortal } from 'react-dom'
+import { SHEET, swipeToClose } from '../../lib/motion'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -1046,7 +1048,11 @@ function ReadyCallSheet({ call, onClose }) {
   const video = call.type === 'video'
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end bg-black/50" onClick={onClose}>
-      <div
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={SHEET}
+        {...swipeToClose('y', onClose)}
         onClick={(e) => e.stopPropagation()}
         className="ador-modal-surface w-full rounded-t-[24px] px-5 pt-3"
         style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}
@@ -1067,7 +1073,7 @@ function ReadyCallSheet({ call, onClose }) {
         <button type="button" onClick={onClose} className="mt-2 w-full py-3 text-[14px] text-[#9A9A9A]">
           Quedarme en el chat
         </button>
-      </div>
+      </motion.div>
     </div>,
     document.body
   )

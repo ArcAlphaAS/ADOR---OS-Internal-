@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { isPrivate, userLabel, groupLabel, messageSnippet } from '../../lib/chat'
 import { LockIcon, SearchIcon, ForwardIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import { SPRING } from '../../lib/motion'
 
 // "Reenviar": pick one conversation — a person, a group or a channel — and
 // the message goes there as a copy labeled "Reenviado · de X en #canal",
@@ -55,7 +56,7 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
       <motion.div
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={SPRING}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
       >

@@ -8,6 +8,7 @@ import GeneralTab from './tabs/GeneralTab'
 import PagosTab from './tabs/PagosTab'
 import DocumentosTab from './tabs/DocumentosTab'
 import HistorialTab from './tabs/HistorialTab'
+import { SHEET, swipeToClose } from '../../lib/motion'
 
 const TABS = [
   { id: 'general', label: 'General' },
@@ -117,7 +118,8 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
         initial={origin ? { x: origin.x, y: origin.y, scaleX: origin.scaleX, scaleY: origin.scaleY, opacity: 0 } : { x: 480, opacity: 0 }}
         animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
         exit={origin ? { x: origin.x, y: origin.y, scaleX: origin.scaleX, scaleY: origin.scaleY, opacity: 0 } : { x: 480, opacity: 0 }}
-        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+        transition={SHEET}
+        {...swipeToClose('x', onClose)}
         style={{ transformOrigin: '0 0', width: PANEL_WIDTH }}
         className="fixed right-0 top-0 z-50 h-full"
         onClick={(e) => e.stopPropagation()}
