@@ -393,7 +393,8 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] "Exportar todo a Drive" en Configuración (solo administradores), carpeta "ADOR OS — Respaldos"
 - [x] Consola de Google terminada (Drive API, Picker API, permisos, clave) y **Drive probado en vivo** (2026-09-23)
 - [x] **Migración a Cloudflare Workers** (Vercel gratis no permite uso comercial): `ador-os.adorfirm.workers.dev` funcionando. See CLAUDE.md §36
-- [ ] Apagar Vercel: pasar la dirección nueva a los socios, borrar/pausar el proyecto, quitar sus direcciones de Firebase/Google, borrar `api/`
+- [x] Vercel **pausado** (2026-09-23). Si algún día se borra del todo: quitar sus direcciones de Firebase/Google y borrar `api/` + `server/vercel.js`
+- [ ] Pasar la dirección nueva a Leonardo y Mateo
 - [ ] Decidir la carpeta "ADOR" de la empresa en Drive (hoy cada archivo/respaldo va al Drive de quien lo sube)
 - [ ] 5 Búsqueda global · 6 Registro de errores · 7 Permisos + Administración · 8 Celular/iPad
 
@@ -414,7 +415,7 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 | Google Cloud (OAuth, Calendar API, **Meet REST API**) | ✅ Same project as Firebase (number 610980815690). OAuth scopes: `calendar.readonly` + `meetings.space.created`. Only the founder's own ADOR OS login email may be connected as their Google account (optional extra domains in `settings/google.allowedDomains`) |
 | Firebase Storage | ❌ Not enabled (deliberately deferred by the user) — Clientes → Documentos, Finanzas → Comprobante and chat "Otro archivo" store metadata only / are disabled |
 | Server functions | `server/handlers.js` (Google connect/refresh, Meet rooms, dormant Gemini), served by `server/worker.js` on Cloudflare; `api/` = old Vercel adapters, delete once Vercel is off |
-| Deployment | ✅ **Cloudflare Workers** (free, commercial use allowed) — `https://ador-os.adorfirm.workers.dev`, auto-deploys on push to `main` (Workers Builds). Vercel (`ador-os-internal.vercel.app`) still running until switched off — see CLAUDE.md §36 |
+| Deployment | ✅ **Cloudflare Workers** (free, commercial use allowed) — `https://ador-os.adorfirm.workers.dev`, auto-deploys on push to `main` (Workers Builds). Vercel (`ador-os-internal.vercel.app`) paused 2026-09-23 — see CLAUDE.md §36 |
 | `.env` (Firebase config) | Present locally, gitignored. Same values set as Environment Variables in Vercel project settings |
 | Git repository | ✅ Initialized, initial commit made 2026-08-13 |
 | GitHub | ✅ Private repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` pushed and tracked, connected to Vercel for CI deploys |
