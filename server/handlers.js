@@ -3,7 +3,7 @@
 // or a server hop (Meet's API). Written once here, host-independent: each
 // handler takes a plain request { method, headers, body } plus the env vars
 // and returns { status, json }. Thin adapters expose them on each host:
-//   functions/api/…  → Cloudflare Pages Functions (where ADOR OS runs)
+//   server/worker.js → Cloudflare Workers (where ADOR OS runs)
 //   api/…            → Vercel (kept while the move to Cloudflare is tested)
 // None of them touch Firestore or store anything.
 

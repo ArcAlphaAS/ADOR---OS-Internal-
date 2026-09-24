@@ -1,0 +1,17 @@
+// Cloudflare Workers config for ADOR OS. Built from GitHub by Workers
+// Builds: build command `npm run build`, deploy command `npx wrangler deploy`.
+// Env: VITE_* go in the *build* variables (Vite bakes them into the app);
+// VITE_GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET also go in the Worker's
+// runtime Variables and Secrets (the /api handlers read them).
+{
+  "name": "ador-os",
+  "main": "server/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true }
+}

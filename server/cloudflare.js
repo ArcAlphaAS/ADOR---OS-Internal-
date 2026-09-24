@@ -1,6 +1,6 @@
-// Cloudflare Pages Functions adapter: turns a Pages request into the plain
+// Cloudflare adapter: turns a Workers request into the plain
 // { method, headers, body } the shared handlers in ./handlers.js expect.
-// Env vars come from the Cloudflare project settings (context.env).
+// Env vars come from the Worker's Variables and Secrets (env).
 export function cloudflare(handler) {
   return async ({ request, env }) => {
     let body = null
