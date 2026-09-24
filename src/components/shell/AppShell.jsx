@@ -16,6 +16,8 @@ import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 import { useChatRetention } from '../../hooks/useChatRetention'
 import { useScheduledSender } from '../../hooks/useScheduledSender'
 import { finishDriveConnect } from '../../lib/googleDrive'
+import { installErrorLogging, setErrorContext } from '../../lib/errorLog'
+import ModuleErrorBoundary from './ModuleErrorBoundary'
 import { useToast } from '../../hooks/useToast'
 
 // Every module except Home is its own code-split chunk, downloaded the
@@ -85,6 +87,13 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // Sends due "Enviar más tarde" messages from wherever ADOR OS is open.
   const scheduledMessages = useScheduledSender(user?.uid)
   const showToast = useToast()
+  // Registro de errores (lib/errorLog.js): report unexpected failures to
+  // Administración → Errores, with who and which screen.
+  useEffect(() => {
+    installErrorLogging()
+    setErrorContext({ uid: user?.uid || null, name: user?.displayName || user?.email || null })
+  }, [user?.uid])
+  useEffect(() => setErrorContext({ module: activeModule }), [activeModule])
   // Back from Google's consent screen for Drive: finish it here, whichever
   // module is open (lib/googleDrive.js).
   useEffect(() => {
@@ -151,6 +160,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} />
 
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <ModuleErrorBoundary resetKey={activeModule}>
           <Suspense fallback={null}>
           <AnimatePresence mode="wait">
             {activeModule === 'inicio' ? (
@@ -196,6 +206,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             )}
           </AnimatePresence>
           </Suspense>
+          </ModuleErrorBoundary>
         </main>
       </div>
 

@@ -80,6 +80,7 @@ export const COLLECTIONS = {
   presence: 'presence',
   chatReminders: 'chatReminders',
   chatScheduled: 'chatScheduled',
+  errorLogs: 'errorLogs',
 }
 
 export const db = isFirebaseConfigured ? getFirestore(app) : null
@@ -1435,6 +1436,21 @@ export async function cleanupMessageIndexes(messageId) {
     snap.forEach((d) => batch.delete(d.ref))
   }
   return batch.commit()
+}
+
+// ---- Registro de errores (lib/errorLog.js) ----
+export function writeErrorLog(entry) {
+  if (!db) return Promise.resolve()
+  return addDoc(collection(db, COLLECTIONS.errorLogs), { ...entry, resolved: false, createdAt: serverTimestamp() })
+}
+
+export function subscribeErrorLogs(onData) {
+  return subscribeToCollection(COLLECTIONS.errorLogs, [orderBy('createdAt', 'desc'), limit(100)], onData)
+}
+
+export function resolveErrorLog(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.errorLogs, id))
 }
 
 // ---- Retención (limpieza diaria, gratis, sin servidor) ----
