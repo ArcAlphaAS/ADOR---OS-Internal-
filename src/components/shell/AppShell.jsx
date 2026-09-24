@@ -177,7 +177,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'calendario' ? (
               <CalendarioModule key="calendario" user={user} />
             ) : activeModule === 'directorio' ? (
-              <DirectorioModule key="directorio" user={user} />
+              <DirectorioModule key="directorio" user={user} focus={focus?.type === 'person' ? focus : null} onFocusHandled={() => setFocus(null)} />
             ) : activeModule === 'conocimiento' ? (
               <ConocimientoModule
                 key="conocimiento"
@@ -186,7 +186,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
                 onFocusHandled={() => setFocus(null)}
               />
             ) : activeModule === 'news' ? (
-              <NewsModule key="news" user={user} />
+              <NewsModule key="news" user={user} focus={focus?.type === 'news' || focus?.type === 'community' ? focus : null} onFocusHandled={() => setFocus(null)} />
             ) : activeModule === 'chat' ? (
               <ChatModule key="chat" user={user} scheduledMessages={scheduledMessages} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
             ) : activeModule === 'ador-ia' ? (

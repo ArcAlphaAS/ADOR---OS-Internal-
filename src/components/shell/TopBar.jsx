@@ -67,12 +67,14 @@ function PillTabs({ activeModule, onNavigate }) {
   )
 }
 
-function SearchToggle({ onNavigate }) {
+function SearchToggle({ onNavigate, uid }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [rect, setRect] = useState(null)
+  const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef(null)
-  const results = useGlobalSearch(query)
+  const results = useGlobalSearch(query, uid)
+  const flat = results.groups.flatMap((g) => g.items)
 
   const close = () => {
     setOpen(false)
@@ -99,6 +101,7 @@ function SearchToggle({ onNavigate }) {
     onNavigate(moduleId, focus)
     close()
   }
+  const choose = (item) => goTo(item.target[0], item.target[1])
 
   return (
     <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center">
@@ -114,10 +117,26 @@ function SearchToggle({ onNavigate }) {
             autoFocus
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar en ADOR OS..."
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setActiveIndex(0)
+            }}
+            placeholder="Buscar en todo ADOR OS…"
             onBlur={close}
-            onKeyDown={(e) => e.key === 'Escape' && close()}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') return close()
+              if (!flat.length) return
+              if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setActiveIndex((i) => (i + 1) % flat.length)
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setActiveIndex((i) => (i - 1 + flat.length) % flat.length)
+              } else if (e.key === 'Enter') {
+                e.preventDefault()
+                choose(flat[Math.min(activeIndex, flat.length - 1)])
+              }
+            }}
             className="ador-glass mr-2 rounded-full px-4 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
           />
         )}
@@ -135,10 +154,8 @@ function SearchToggle({ onNavigate }) {
           <SearchResults
             results={results}
             anchorRect={rect}
-            onSelectClient={(id) => goTo('clientes', { type: 'client', id })}
-            onSelectTask={(id) => goTo('workspace', { type: 'task', id })}
-            onSelectDecision={() => goTo('workspace', null)}
-            onSelectKnowledge={(id) => goTo('conocimiento', { type: 'knowledge', id })}
+            activeIndex={activeIndex}
+            onSelect={choose}
           />
         )}
       </AnimatePresence>
@@ -348,7 +365,7 @@ export default function TopBar({
       </div>
 
       <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
-        <SearchToggle onNavigate={onNavigate} />
+        <SearchToggle onNavigate={onNavigate} uid={user?.uid} />
 
         <motion.div layout="position" transition={REFLOW_TRANSITION} className="relative">
           <button

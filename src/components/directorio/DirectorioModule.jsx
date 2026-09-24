@@ -417,7 +417,8 @@ function DefaultSidebar({ people, teams }) {
   )
 }
 
-export default function DirectorioModule({ user }) {
+// `focus` (top-bar search): {type:'person', id} opens that person's panel.
+export default function DirectorioModule({ user, focus, onFocusHandled }) {
   const [people, setPeople] = useState([])
   const [teams, setTeams] = useState([])
   const [users, setUsers] = useState([])
@@ -436,6 +437,13 @@ export default function DirectorioModule({ user }) {
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId) || null
+
+  useEffect(() => {
+    if (focus?.type !== 'person') return
+    setTab('personas')
+    setSelectedPersonId(focus.id)
+    onFocusHandled?.()
+  }, [focus])
 
   const handleDeletePerson = (person) => {
     withTimeout(deleteDirectoryPerson(person.id)).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))

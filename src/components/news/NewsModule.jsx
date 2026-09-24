@@ -88,9 +88,12 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   )
 }
 
-function AnunciosTab({ user, isAdminUser }) {
+function AnunciosTab({ user, isAdminUser, focusPostId }) {
   const [posts, setPosts] = useState([])
-  const [openPostId, setOpenPostId] = useState(null)
+  const [openPostId, setOpenPostId] = useState(focusPostId || null)
+  useEffect(() => {
+    if (focusPostId) setOpenPostId(focusPostId)
+  }, [focusPostId])
   const [composing, setComposing] = useState(false) // false | true (editing open post) | 'new'
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
@@ -171,8 +174,17 @@ function AnunciosTab({ user, isAdminUser }) {
   )
 }
 
-export default function NewsModule({ user }) {
-  const [tab, setTab] = useState('anuncios')
+// `focus` (from the top-bar search): {type:'news', id} opens that post,
+// {type:'community'} opens the Comunidad tab.
+export default function NewsModule({ user, focus, onFocusHandled }) {
+  const [tab, setTab] = useState(focus?.type === 'community' ? 'comunidad' : 'anuncios')
+  const [focusPostId, setFocusPostId] = useState(focus?.type === 'news' ? focus.id : null)
+  useEffect(() => {
+    if (!focus) return
+    setTab(focus.type === 'community' ? 'comunidad' : 'anuncios')
+    if (focus.type === 'news') setFocusPostId(focus.id)
+    onFocusHandled?.()
+  }, [focus])
   const [profile, setProfile] = useState(null)
   const [communityPosts, setCommunityPosts] = useState([])
   const isAdminUser = isAdmin(profile)
@@ -227,7 +239,7 @@ export default function NewsModule({ user }) {
       </div>
 
       {tab === 'anuncios' ? (
-        <AnunciosTab user={user} isAdminUser={isAdminUser} />
+        <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} />
       ) : (
         <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} />
       )}

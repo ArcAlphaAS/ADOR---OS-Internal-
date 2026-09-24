@@ -2,45 +2,21 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import useDeferredReveal from '../../hooks/useDeferredReveal'
 
-function ResultGroup({ label, items, onSelect }) {
-  if (items.length === 0) return null
-  return (
-    <div>
-      <span
-        className="block px-4 pb-1 pt-3 font-medium text-[#444444]"
-        style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-      >
-        {label}
-      </span>
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => onSelect(item.id)}
-          className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left transition-colors duration-150 hover:bg-white/[0.06]"
-        >
-          <span className="min-w-0 flex-1 truncate text-[13px] text-[#F5F5F5]">{item.title}</span>
-          <span className="flex-shrink-0 text-[11px] text-[#666666]">{item.code || item.subtitle}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // Same portal + split-wrapper pattern as NotificationCenter.jsx: the
 // transform-animated wrapper and the ador-glass surface are two separate
 // elements, otherwise Chromium drops the backdrop blur (see that file for
 // the full explanation). `animate` waits for `useDeferredReveal`'s `ready`
 // flag so the freshly-mounted blur layer has a couple of frames to
-// composite before anything becomes visible (see that hook — without it
-// this popped in transparent-then-blurred). onMouseDown/preventDefault on
-// each result button stops the input's onBlur from closing this dropdown
-// before the click's own onClick has a chance to fire — the same race
-// flagged in CLAUDE.md's Clientes testing notes.
-export default function SearchResults({ results, anchorRect, onSelectClient, onSelectTask, onSelectDecision, onSelectKnowledge }) {
+// composite before anything becomes visible. onMouseDown/preventDefault on
+// each result stops the input's onBlur from closing this dropdown before
+// the click's own onClick fires.
+//
+// `activeIndex` is the keyboard-highlighted result (↑/↓ in the search box,
+// Enter opens it) — counted across all groups in display order.
+export default function SearchResults({ results, anchorRect, activeIndex, onSelect }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
+  let index = -1
 
   return createPortal(
     <motion.div
@@ -52,19 +28,40 @@ export default function SearchResults({ results, anchorRect, onSelectClient, onS
       style={{
         position: 'fixed',
         top: anchorRect.bottom + 8,
-        left: anchorRect.left,
-        width: Math.max(anchorRect.width, 260),
+        left: Math.max(12, anchorRect.right - 380),
+        width: 380,
       }}
     >
-      <div className="ador-glass ador-grain max-h-[360px] overflow-y-auto rounded-2xl py-2">
+      <div className="ador-glass ador-grain max-h-[460px] overflow-y-auto rounded-2xl py-2">
         {!results.hasResults ? (
-          <p className="px-4 py-6 text-center text-[13px] font-light text-[#444444]">Sin resultados</p>
+          <p className="px-4 py-6 text-center text-[13px] font-light text-[#666666]">{results.loadingMessages ? 'Buscando también en los mensajes…' : 'Sin resultados'}</p>
         ) : (
           <>
-            <ResultGroup label="Clientes" items={results.clients} onSelect={onSelectClient} />
-            <ResultGroup label="Tareas" items={results.tasks} onSelect={onSelectTask} />
-            <ResultGroup label="Decisiones" items={results.decisions} onSelect={onSelectDecision} />
-            <ResultGroup label="Conocimiento" items={results.knowledge} onSelect={onSelectKnowledge} />
+            {results.groups.map((group) => (
+              <div key={group.key}>
+                <span className="block px-4 pb-1 pt-3 font-medium text-[#666666]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  {group.label}
+                </span>
+                {group.items.map((item) => {
+                  index += 1
+                  const active = index === activeIndex
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => onSelect(item)}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition-colors duration-150 hover:bg-white/[0.06]"
+                      style={active ? { background: 'rgba(255,255,255,0.08)' } : undefined}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-[#F5F5F5]">{item.title}</span>
+                      <span className="max-w-[45%] flex-shrink-0 truncate text-[11px] text-[#777777]">{item.meta}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+            {results.loadingMessages && <p className="px-4 pt-2 pb-1 text-[11px] text-[#666666]">Buscando también en los mensajes…</p>}
           </>
         )}
       </div>
