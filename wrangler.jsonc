@@ -9,6 +9,10 @@
   "compatibility_date": "2026-09-01",
   // Keep the variables set in the Cloudflare dashboard on every deploy.
   "keep_vars": true,
+  // The free public address, ador-os.<account>.workers.dev — ADOR OS's main
+  // URL (independent of any paid domain). Preview URLs for other branches.
+  "workers_dev": true,
+  "preview_urls": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
