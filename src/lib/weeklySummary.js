@@ -143,7 +143,9 @@ export function buildWeeklyNarrative(data) {
       ? 'Semana tranquila — sin bloqueos ni vencidos pendientes.'
       : ordered.slice(0, 2).map((h) => h.text).join('; ') + '.'
 
-  return { tldr: tldr.charAt(0).toUpperCase() + tldr.slice(1), sections, birthdaysThisWeek }
+  // How loud the card on Inicio should be: 'urgent' | 'warn' | 'calm'.
+  const level = ordered[0]?.level || 'calm'
+  return { tldr: tldr.charAt(0).toUpperCase() + tldr.slice(1), sections, birthdaysThisWeek, level }
 }
 
 export function inWeek(date, range) {

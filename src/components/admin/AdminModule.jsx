@@ -290,7 +290,7 @@ export default function AdminModule({ user }) {
     >
       <div>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Solo administradores</p>
-        <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">Administración</h1>
+        <h1 className="ador-title mt-1">Administración</h1>
         <p className="mt-1 text-[13.5px] text-[#888888]">Quién entra a ADOR OS, qué puede ver cada rol, errores y datos de la empresa.</p>
       </div>
 

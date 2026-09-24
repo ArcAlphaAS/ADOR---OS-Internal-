@@ -358,9 +358,12 @@ export default function TopBar({
       className="relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
       style={{ height: 64, backgroundColor: '#0A0A0A' }}
     >
-      <div className="flex items-baseline gap-[6px] justify-self-start">
+      {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline
+          (see Logo.jsx), so "OS" sits on the same line. It used to have
+          0.3em tracking, which read as "O S". */}
+      <div className="flex items-baseline gap-[5px] justify-self-start" aria-label="ADOR OS">
         <Logo size={13} />
-        <span className="font-semibold text-[#F5F5F5]" style={{ fontSize: 13, letterSpacing: '0.3em' }}>
+        <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
           OS
         </span>
       </div>

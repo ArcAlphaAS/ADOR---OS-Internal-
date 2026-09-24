@@ -35,11 +35,11 @@ export default function FinanzasModule({ user, onNavigate }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto max-w-[1400px] px-4 py-6 md:px-8 md:py-8"
+      className="mx-auto max-w-[1400px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Finanzas</h1>
+          <h1 className="ador-title">Finanzas</h1>
           <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
         </div>
         <div className="flex items-center gap-2">

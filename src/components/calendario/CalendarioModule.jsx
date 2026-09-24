@@ -238,12 +238,12 @@ export default function CalendarioModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 pb-16 pt-6 md:px-8 lg:px-10 lg:pt-12"
+      className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div className="flex items-start justify-between gap-6">
         <div>
           <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">Calendario</span>
-          <h1 className="text-[30px] font-semibold tracking-[-0.02em] text-[#F5F5F5]">Calendario</h1>
+          <h1 className="ador-title">Calendario</h1>
           <p className="mt-0.5 text-[13px] text-[#888888]">
             {connectedEmail ? `Reflejo de tu Google Calendar — conectado como ${connectedEmail}` : 'Tu tiempo también es una decisión.'}
           </p>

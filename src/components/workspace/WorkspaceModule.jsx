@@ -142,7 +142,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
         />
       )}
 
-      <div className="min-w-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-8">
+      <div className="min-w-0 flex-1 overflow-y-auto px-4 pb-16 pt-6 md:px-8 lg:pt-10">
         {/* Hoy renders its own richer header (date, rotating quote, live
             stats — see HoyHeader in HoyView.jsx), so the generic
             title/subtitle here would just be a redundant second "Hoy"
@@ -172,7 +172,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
           )}
           {view !== 'hoy' && (
             <div>
-              <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
+              <h1 className="ador-title">{title}</h1>
               <p className="text-[13px] text-[#888888]">{subtitle}</p>
             </div>
           )}

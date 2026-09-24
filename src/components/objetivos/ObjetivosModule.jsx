@@ -96,7 +96,7 @@ export default function ObjetivosModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-16"
+      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       {/* Cabecera — title/countdown row + the North Star hero. Always
           rendered as its own section, never mixed into the objetivo grid
@@ -104,7 +104,7 @@ export default function ObjetivosModule({ user }) {
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Objetivos</h1>
+            <h1 className="ador-title">Objetivos</h1>
             <p className="text-[13px] text-[#888888]">
               Metas de ADOR para {quarterLabel(quarterKey)} — conectadas a Finanzas, Clientes y Workspace
               {daysLeft > 0 && ` · ${daysLeft} días restantes`}

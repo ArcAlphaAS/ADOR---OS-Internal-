@@ -325,7 +325,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Clientes</h1>
+          <h1 className="ador-title">Clientes</h1>
           <p className="mt-1 text-[13px] text-[#888888]">
             {activeClients.filter((c) => c.stage !== 'intervencion_activa').length} SPC en pipeline ·{' '}
             {activeClients.filter((c) => c.stage === 'intervencion_activa').length} SP activos

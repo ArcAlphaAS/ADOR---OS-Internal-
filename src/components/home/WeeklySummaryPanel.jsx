@@ -75,7 +75,7 @@ export default function WeeklySummaryPanel({ summary, onClose }) {
               {SECTIONS.map(({ key, label }) => (
                 <div key={key}>
                   <span
-                    className="font-medium text-[#444444]"
+                    className="font-medium text-[#7A7A7A]"
                     style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   >
                     {label}

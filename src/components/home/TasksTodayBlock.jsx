@@ -9,10 +9,10 @@ const STATUS_STYLE = {
 
 export default function TasksTodayBlock({ tasks = [] }) {
   return (
-    <div className="ador-glass ador-grain ador-card-hover rounded-[20px] px-7 py-6">
+    <div className={`ador-glass ador-grain ador-card-hover rounded-[20px] px-7 py-6 ${tasks.some((t) => t.status === 'bloqueado') ? 'ador-card-urgent' : tasks.some((t) => t.status !== 'completado') ? 'ador-card-attention' : ''}`}>
       <div className="flex items-center gap-2">
         <span
-          className="font-medium text-[#444444]"
+          className="font-medium text-[#7A7A7A]"
           style={{ fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}
         >
           Tareas Hoy

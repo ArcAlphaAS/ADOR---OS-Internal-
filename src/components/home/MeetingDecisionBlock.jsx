@@ -7,7 +7,7 @@ function InfoCard({ Icon, iconColor, title, content, onClick }) {
       <div className="flex items-center gap-2">
         <Icon size={16} style={{ color: iconColor, animation: 'ador-pulse 3s ease-in-out infinite' }} />
         <span
-          className="font-medium text-[#444444]"
+          className="font-medium text-[#7A7A7A]"
           style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
         >
           {title}

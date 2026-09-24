@@ -629,7 +629,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
         <div className="mb-8 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Base de conocimiento</p>
-            <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">Conocimiento</h1>
+            <h1 className="ador-title mt-1">Conocimiento</h1>
             <p className="mt-1 text-[13px] text-[#888888]">Documentación, marcos, investigación y reglas. Todo en un mismo lugar.</p>
           </div>
           {isAdminUser && !editing && (

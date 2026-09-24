@@ -39,7 +39,7 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
     <button type="button" onClick={onOpen} className="ador-glass ador-grain ador-card-hover block w-full rounded-[20px] px-7 py-6 text-left">
       <div className="flex items-center gap-2">
         <span
-          className="font-medium text-[#444444]"
+          className="font-medium text-[#7A7A7A]"
           style={{ fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}
         >
           Resumen Financiero

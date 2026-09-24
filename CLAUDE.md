@@ -754,6 +754,12 @@ Standard Web Push, free, no Firebase Cloud Messaging: the system notification ba
 
 - **Offline (same day):** (1) Firestore uses `persistentLocalCache` + `persistentMultipleTabManager` (`createDb()` in lib/firestore.js, falls back to the memory cache if IndexedDB isn't allowed). Data shows with no connection, and offline writes survive closing the app and go out on reconnect. (2) `withTimeout` (lib/workspace.js, used by every write) no longer fails while `navigator.onLine === false`: it waits for `online` and restarts the clock. Before this, an offline message showed "Tardó demasiado" and an offline image send was aborted, even though Firestore would have delivered it. (3) `OfflineBanner.jsx`: a "Sin conexión — lo que envíes saldrá al volver la señal" pill, then "Conectado de nuevo" for 2.5s. Messages sent offline keep showing ◷ until confirmed. Checked in the preview by faking `navigator.onLine` + the events.
 
+### 42. Interface pass: logo, card hierarchy, one title style (2026-09-24)
+
+- **"ADOR OS" in the top bar:** the "OS" had `letterSpacing: 0.3em` and read as "O S". Now 0.04em, muted grey `#9A9A9A`, 5px gap, baseline-aligned with the wordmark (TopBar.jsx).
+- **Card hierarchy (index.css, unlayered after `.ador-glass`):** `.ador-card-attention` (gold `#E8C15A` inset left edge + warm tint) and `.ador-card-urgent` (same in red), via a `--attn` color-mix. On Inicio: `WeeklySummaryCard` follows the new `level` from `buildWeeklyNarrative()` ('urgent' | 'warn' | 'calm', from the worst highlight), and its dot and text weight follow it too. `TasksTodayBlock` is attention when there are open tasks today and urgent when one is blocked. Informational cards stay plain. Inicio's card labels went from `#444` (barely readable) to `#7A7A7A`. Reuse these two classes elsewhere when a card holds something to act on.
+- **One page title everywhere:** `.ador-title` (`@layer components`): 26px on phones, 30px from md, semibold, -0.02em. It replaced 18/22/28/30/34px h1s in every module (Calendario, Conocimiento, Finanzas, Hoy, Directorio, Workspace, Administración, Objetivos, News, ADOR IA, Clientes). Top spacing is unified to `pt-6 … lg:pt-10`, `pb-16`, `lg:px-12` (Calendario, ADOR IA, Objetivos, Finanzas and Workspace were off). Inicio keeps its own larger greeting.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

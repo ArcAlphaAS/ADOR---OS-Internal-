@@ -186,7 +186,7 @@ function HoyHeader({ total, completedCount, overdueCount }) {
   return (
     <div className="flex items-start justify-between gap-6">
       <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-[#F5F5F5]">Hoy</h1>
+        <h1 className="ador-title">Hoy</h1>
         <p className="mt-0.5 text-[13px] capitalize text-[#888888]">{dateLabel}</p>
         <p className="mt-2 text-[12px] text-[#666666]">
           {total} tarea{total === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}

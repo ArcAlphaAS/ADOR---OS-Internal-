@@ -463,7 +463,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Organización</p>
-          <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">Directorio</h1>
+          <h1 className="ador-title mt-1">Directorio</h1>
           <p className="mt-1 text-[13px] text-[#888888]">Personas, estructura y equipos que hacen posible ADOR.</p>
         </div>
         <div className="flex flex-col items-end gap-3">

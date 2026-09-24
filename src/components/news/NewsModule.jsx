@@ -203,7 +203,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">
           {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
         </p>
-        <h1 className="mt-1 text-[28px] font-semibold text-[#F5F5F5]">News</h1>
+        <h1 className="ador-title mt-1">News</h1>
         <p className="mt-1 text-[13px] text-[#888888]">
           {tab === 'anuncios'
             ? 'Lo formal — decisiones, hitos y anuncios de ADOR, escritos por el equipo.'

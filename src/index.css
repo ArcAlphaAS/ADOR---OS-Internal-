@@ -22,6 +22,24 @@ body,
   overscroll-behavior: none;
 }
 
+/* The one page-title style every module uses (iOS "large title"):
+   same size, weight and tracking on every screen, a touch smaller on
+   phones. In @layer components so a utility on the same element wins. */
+@layer components {
+  .ador-title {
+    font-size: 26px;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #f5f5f5;
+  }
+  @media (min-width: 768px) {
+    .ador-title {
+      font-size: 30px;
+    }
+  }
+}
+
 /* Phones: the app is exactly as tall as the visible screen, keyboard
    included (lib/keyboard.js sets --app-h). While the keyboard is up the
    bottom tab bar hides and its reserved space goes away. */
@@ -290,4 +308,27 @@ input:-webkit-autofill:focus {
   );
   background-size: 250% 100%;
   animation: ador-shimmer 2.6s ease-in-out infinite;
+}
+
+/* Card hierarchy (Apple-style: the one that needs you stands out, the rest
+   stay calm). Add to an .ador-glass card:
+     .ador-card-attention — something to act on (gold edge + warm tint)
+     .ador-card-urgent    — same, in red, when it's blocking or overdue
+   Unlayered and after .ador-glass on purpose, so they override its
+   border/background/shadow. */
+.ador-card-attention,
+.ador-card-urgent {
+  --attn: #e8c15a;
+  border-color: color-mix(in srgb, var(--attn) 32%, transparent);
+  background: color-mix(in srgb, var(--attn) 6%, rgba(255, 255, 255, 0.04));
+  box-shadow: inset 3px 0 0 var(--attn), 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+.ador-card-urgent {
+  --attn: #ef5350;
+}
+.ador-card-attention.ador-card-hover:hover,
+.ador-card-urgent.ador-card-hover:hover {
+  background: color-mix(in srgb, var(--attn) 9%, rgba(255, 255, 255, 0.05));
+  border-color: color-mix(in srgb, var(--attn) 45%, transparent);
+  box-shadow: inset 3px 0 0 var(--attn), 0 8px 30px rgba(0, 0, 0, 0.35);
 }
