@@ -76,6 +76,7 @@ import ForwardModal from './ForwardModal'
 import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
 import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
+import { createPortal } from 'react-dom'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -586,7 +587,14 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   // the Meet room, point the tab at it, then post the card + ring the
   // other side. Anything fails → close the tab and fall back to the
   // manual popover, so a call is never a dead end.
+  //
+  // On phones/tablets it works differently: a pre-opened tab there is a
+  // black "Creando la reunión…" page you can't get back from. Instead the
+  // room is created here, then a sheet offers "Unirse" as a real link —
+  // tapped by you, so iOS/Android hand it to the Meet app — and ADOR OS
+  // stays on the chat underneath.
   const quickCall = async (type, anchorRef, preOpened) => {
+    if (isTouchDevice()) return quickCallTouch(type, anchorRef)
     const win = preOpened || window.open('', '_blank')
     try {
       win?.document.write('<title>Google Meet</title><body style="background:#0A0A0A;color:#999;font:14px system-ui;display:grid;place-items:center;height:100vh;margin:0">Creando la reunión…</body>')
@@ -603,6 +611,21 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       await startCall(type, uri)
     } catch (error) {
       win?.close()
+      showToast(error.message)
+      setOpenCall({ type, anchorRef })
+    } finally {
+      setCallBusy(null)
+    }
+  }
+
+  const [readyCall, setReadyCall] = useState(null)
+  const quickCallTouch = async (type, anchorRef) => {
+    setCallBusy(type)
+    try {
+      const uri = await meet.createRoom()
+      await startCall(type, uri)
+      setReadyCall({ type, uri })
+    } catch (error) {
       showToast(error.message)
       setOpenCall({ type, anchorRef })
     } finally {
@@ -628,7 +651,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   const pendingCallRef = useRef(null)
   const callFromProfile = (uid, type, anchorRef) => {
     if (selected?.type === 'dm' && selected.id === uid) return toggleCall(type, anchorRef)
-    const preOpened = meet.status === 'ready' ? window.open('', '_blank') : null
+    const preOpened = meet.status === 'ready' && !isTouchDevice() ? window.open('', '_blank') : null
     pendingCallRef.current = { type, anchorRef, preOpened }
     setSelected({ type: 'dm', id: uid })
   }
@@ -636,7 +659,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     const pending = pendingCallRef.current
     if (!pending || selected?.type !== 'dm') return
     pendingCallRef.current = null
-    if (pending.preOpened) quickCall(pending.type, pending.anchorRef, pending.preOpened)
+    if (pending.preOpened || (meet.status === 'ready' && isTouchDevice())) quickCall(pending.type, pending.anchorRef, pending.preOpened)
     else setOpenCall({ type: pending.type, anchorRef: pending.anchorRef })
   }, [selectedConversationId])
 
@@ -983,6 +1006,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         />
       )}
 
+      {readyCall && <ReadyCallSheet call={readyCall} onClose={() => setReadyCall(null)} />}
       {openCall && (
         <MeetPopover
           key={openCall.type}
@@ -1010,5 +1034,41 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       )}
     </div>
     </ChatPeopleContext.Provider>
+  )
+}
+
+
+const isTouchDevice = () => window.matchMedia?.('(pointer: coarse)').matches && window.matchMedia('(max-width: 1023px)').matches
+
+// Phones: the call is posted and ringing; joining is a real link the
+// person taps, so the OS opens the Meet app. Closing leaves you in the chat.
+function ReadyCallSheet({ call, onClose }) {
+  const video = call.type === 'video'
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end bg-black/50" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="ador-modal-surface w-full rounded-t-[24px] px-5 pt-3"
+        style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}
+      >
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+        <p className="text-[15px] font-semibold text-[#F5F5F5]">{video ? 'Videollamada lista' : 'Llamada lista'}</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[#9A9A9A]">Ya le está sonando. Se abrirá Google Meet; para volver al chat, regresa a ADOR OS.</p>
+        <a
+          href={call.uri}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onClose}
+          className="mt-4 flex w-full items-center justify-center rounded-2xl py-3.5 text-[15px] font-semibold text-[#1C1A16] active:opacity-80"
+          style={{ background: '#E8C15A' }}
+        >
+          Unirse a Meet
+        </a>
+        <button type="button" onClick={onClose} className="mt-2 w-full py-3 text-[14px] text-[#9A9A9A]">
+          Quedarme en el chat
+        </button>
+      </div>
+    </div>,
+    document.body
   )
 }

@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+@theme {
+  --font-sans: 'Satoshi', -apple-system, system-ui, sans-serif;
+}
+
 :root {
   color-scheme: dark;
 }
@@ -19,10 +23,46 @@ body,
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Satoshi', -apple-system, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
+}
+
+/* Feels like an iPhone app, not a web page (touch screens only — the
+   computer version is untouched): no grey flash when tapping, no
+   double-tap zoom, no text-selection/callout on buttons and tabs, and a
+   quick fade on press like UIKit buttons. In @layer base so any Tailwind
+   utility on a given element still wins (unlayered CSS would beat them —
+   the same cascade-layer trap as .ador-grain, CLAUDE.md §10). */
+@layer base {
+@media (hover: none) and (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+  }
+  button,
+  a,
+  nav,
+  [role='button'] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  button:active,
+  a:active {
+    opacity: 0.65;
+    transition: opacity 0s;
+  }
+  button,
+  a {
+    transition-property: opacity, background-color, color, transform;
+    transition-duration: 180ms;
+  }
+}
 }
 
 input:-webkit-autofill,

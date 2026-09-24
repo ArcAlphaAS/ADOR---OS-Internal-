@@ -39,18 +39,22 @@ const MORE = [
   { id: 'admin', label: 'Administración', Icon: LockIcon },
 ]
 
+// Icon-only tab, iOS-style: the active one sits in a filled gold circle.
+// The label stays for VoiceOver and the long-press tooltip.
 function Tab({ label, Icon, active, badge, onClick }) {
   return (
-    <button type="button" onClick={onClick} className="relative flex flex-1 flex-col items-center gap-1 py-2" style={{ color: active ? '#F5F5F5' : '#777777' }}>
-      <span className="relative">
-        <Icon size={20} />
+    <button type="button" onClick={onClick} aria-label={label} title={label} className="relative flex flex-1 items-center justify-center">
+      <span
+        className="relative flex h-12 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 ease-out active:scale-90"
+        style={{ background: active ? '#E8C15A' : 'transparent', color: active ? '#1C1A16' : '#8E8E93' }}
+      >
+        <Icon size={21} />
         {badge > 0 && (
-          <span className="absolute -top-1.5 -right-2.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+          <span className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: active ? '#F5F5F5' : '#E8C15A' }}>
             {badge > 9 ? '9+' : badge}
           </span>
         )}
       </span>
-      <span className="text-[10.5px] font-medium">{label}</span>
     </button>
   )
 }
@@ -68,9 +72,11 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
 
   return (
     <>
+      {/* A floating capsule just above the home indicator, not a
+          full-width bar — the way Apple's own newer apps do it. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/[0.08] bg-[#0A0A0A]/95 backdrop-blur-xl lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-3 z-[46] flex h-16 items-center rounded-full border border-white/[0.08] bg-[#1C1C1E]/90 px-2 shadow-[0_10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden"
+        style={{ bottom: 'max(12px, calc(env(safe-area-inset-bottom) - 8px))' }}
       >
         {primary.map((m) => (
           <Tab key={m.id} {...m} active={activeModule === m.id} badge={badges[m.id]} onClick={() => go(m.id)} />
@@ -90,7 +96,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 onClick={(e) => e.stopPropagation()}
                 className="absolute inset-x-0 bottom-0"
               >
-                <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
+                <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
                   <div className="grid grid-cols-4 gap-2">
                     {more.map((m) => (

@@ -732,6 +732,13 @@ Standard Web Push, free, no Firebase Cloud Messaging: the system notification ba
 - **Status:** live 2026-09-24. The secret is set and the test notification was confirmed on the user's iPhone (installed PWA).
 - **Known limits:** `senderUid`/`senderName` are taken from the request body, not from the token, so an allowed account could technically spoof the sender's name on a notification. Acceptable among the founders; verify the token's `sub` if members ever join. The `pushSubscriptions` rule is in the drafted `firestore.rules`; the live blanket rule already covers it.
 
+### 40. Feeling like an iPhone app: floating tab bar, Satoshi, calls from the phone (2026-09-24)
+
+- **Satoshi** (Fontshare CDN, free for commercial use) replaces Inter everywhere: `index.html` link + `body` and Tailwind's `--font-sans` in `index.css`. Satoshi has no 600 weight, so `font-semibold` renders at 700. `font-mono` is unchanged.
+- **Mobile tab bar** (`BottomNav.jsx`, below 1024px): a floating capsule (`inset-x-3`, 64px, `#1C1C1E`/90 + blur, just above the home indicator) with icons only; the active tab is a filled gold circle (from the user's reference image). z-[46], so it stays above the "Más" sheet (tap again to close) and the chat's side panels. Bottom spacing was updated to match: main `pb-[calc(92px+safe)]`, SidePanel, message toasts and GlobalCapture's "+" (smaller on phones).
+- **Calls from a phone** (`ChatModule.jsx` `quickCallTouch`/`ReadyCallSheet`): on touch devices below 1024px there's no pre-opened "Creando la reunión…" tab (in the installed app it was a dead end with no way back). The room is created, the card is posted and the other person starts ringing, then a bottom sheet offers "Unirse a Meet" as a real link the person taps, so iOS/Android open the Meet app. ADOR OS stays on the chat underneath. Desktop is unchanged.
+- **Native touch feel, touch screens only** (`@media (hover:none) and (pointer:coarse)` inside `@layer base`, so Tailwind utilities still win): no tap highlight, no double-tap zoom, no text selection/callout on buttons/links/nav, UIKit-like fade on press. The viewport has `maximum-scale=1`, so iOS doesn't zoom into inputs on focus (pinch zoom still works on iOS).
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

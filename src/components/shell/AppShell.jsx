@@ -220,7 +220,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(64px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           <ModuleErrorBoundary resetKey={activeModule}>
           <Suspense fallback={null}>
           <AnimatePresence mode="wait">
