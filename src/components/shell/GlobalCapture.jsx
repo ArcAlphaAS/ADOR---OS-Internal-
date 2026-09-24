@@ -58,7 +58,7 @@ export default function GlobalCapture({ user, actorName }) {
         onClick={() => setOpen(true)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.96 }}
-        className="ador-btn-primary fixed bottom-[calc(96px+env(safe-area-inset-bottom))] right-5 z-40 flex h-12 w-12 lg:bottom-24 lg:right-7 lg:h-14 lg:w-14 items-center justify-center rounded-full"
+        className="ador-hide-on-kb ador-btn-primary fixed bottom-[calc(96px+env(safe-area-inset-bottom))] right-5 z-40 flex h-12 w-12 lg:bottom-24 lg:right-7 lg:h-14 lg:w-14 items-center justify-center rounded-full"
         style={{ boxShadow: '0 12px 32px -8px rgba(30,95,173,0.5)' }}
         title="Anotar algo rápido"
       >

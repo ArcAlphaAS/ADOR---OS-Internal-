@@ -23,6 +23,7 @@ import { useAccess } from '../../hooks/useAccess'
 import { backfillChannelVisibility } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
 import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
+import UpdateBanner from './UpdateBanner'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -137,6 +138,15 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     })
   }, [user?.uid])
   const chatUnread = useChatUnreadCount(user?.uid)
+  // The unread count on the app's icon (home screen / Dock), like WhatsApp.
+  // Installed app only; the service worker bumps it when a push arrives
+  // with the app closed, and this puts back the exact number on open.
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return
+    const set = chatUnread > 0 ? navigator.setAppBadge(chatUnread) : navigator.clearAppBadge()
+    set?.catch?.(() => {})
+    navigator.serviceWorker?.controller?.postMessage({ type: 'ador-badge', count: chatUnread })
+  }, [chatUnread])
 
   // Notificaciones push: keep this device's push address filed under whoever
   // is signed in, drop the ?open=… link once consumed, and follow a
@@ -275,6 +285,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         </main>
       </div>
 
+      <UpdateBanner />
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread }} />
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>

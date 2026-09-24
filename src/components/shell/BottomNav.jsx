@@ -79,7 +79,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
       {/* A floating capsule just above the home indicator, not a
           full-width bar — the way Apple's own newer apps do it. */}
       <nav
-        className="fixed inset-x-3 z-[46] flex h-16 items-center rounded-full border border-white/[0.08] bg-[#1C1C1E]/90 px-2 shadow-[0_10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden"
+        className="ador-hide-on-kb fixed inset-x-3 z-[46] flex h-16 items-center rounded-full border border-white/[0.08] bg-[#1C1C1E]/90 px-2 shadow-[0_10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden"
         style={{ bottom: 'max(12px, calc(env(safe-area-inset-bottom) - 8px))' }}
       >
         {primary.map((m) => (

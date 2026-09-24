@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { pushStatus, enablePush, sendPush } from '../../lib/push'
+import { pushStatus, enablePush, sendPush, canInstallApp, onInstallAvailability, installApp } from '../../lib/push'
 
 // "Notificaciones en este dispositivo" — turns push on for this phone or
 // computer (lib/push.js). Two shapes:
@@ -21,6 +21,8 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [dismissed, setDismissed] = useState(readDismissed)
+  const [installable, setInstallable] = useState(canInstallApp)
+  useEffect(() => onInstallAvailability(setInstallable), [])
 
   useEffect(() => {
     let alive = true
@@ -110,6 +112,11 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
           {status === 'off' && (
             <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline disabled:opacity-60">
               {busy ? 'Activando…' : 'Activar'}
+            </button>
+          )}
+          {installable && variant === 'settings' && (
+            <button type="button" onClick={() => installApp().then((ok) => ok && setMessage('Instalada — ábrela desde el Dock o el menú de apps; te llegarán avisos aunque no tengas el navegador delante.'))} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline">
+              Instalar en esta computadora
             </button>
           )}
           {status === 'on' && (

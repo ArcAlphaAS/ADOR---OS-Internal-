@@ -22,6 +22,30 @@ body,
   overscroll-behavior: none;
 }
 
+/* Phones: the app is exactly as tall as the visible screen, keyboard
+   included (lib/keyboard.js sets --app-h). While the keyboard is up the
+   bottom tab bar hides and its reserved space goes away. */
+html.kb-open,
+html.kb-open body,
+html.kb-open #root {
+  height: var(--app-h, 100%);
+}
+html.kb-open .ador-hide-on-kb {
+  display: none !important;
+}
+html.kb-open main {
+  padding-bottom: 8px !important;
+}
+html.kb-open .h-screen {
+  height: var(--app-h, 100vh) !important;
+}
+/* Full-screen phone panels (the chat's Hilo/Perfil/Detalles) */
+html.kb-open .ador-kb-fit {
+  bottom: auto !important;
+  height: var(--app-h, 100%) !important;
+  padding-bottom: 8px !important;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;

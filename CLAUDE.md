@@ -744,6 +744,14 @@ Standard Web Push, free, no Firebase Cloud Messaging: the system notification ba
 
 - **Press and hold a message (phones, same day):** on touch below 1024px the hover toolbar is hidden (`touch` in `MessageBubble.jsx`), and holding a message for 420ms (cancelled if the finger moves >8px) opens `MessageActionSheet.jsx`, an iOS action sheet with a preview, the quick reactions, then Responder, Responder en hilo, Copiar texto, Guardar, Reenviar, Fijar, Recordármelo… (sub-list), Crear tarea, Editar and Eliminar (asks to confirm), plus Cancelar. Only options that apply appear. Swipe down closes it. The bubble area is `select-none` with no iOS callout on touch, so holding doesn't select text ("Copiar texto" covers copying). Editing got visible Cancelar/Guardar buttons, since phones have no Enter/Esc.
 
+### 41. Installed-app polish: update notice, keyboard, icon badge, shortcuts, desktop install (2026-09-24)
+
+- **"Nueva versión · Actualizar":** `vite.config.js` gives each build an id (`__BUILD_ID__`) and emits `dist/version.json`. `hooks/useAppUpdate.js` compares the two on open, every 5 min, and when the app comes back to the front. `UpdateBanner.jsx` (AppShell) shows a pill at the top that reloads. Production only.
+- **Keyboard (phones, `lib/keyboard.js`, from main.jsx):** sets `--app-h` from `visualViewport` and toggles `html.kb-open` when the keyboard is up. CSS in `index.css` then sizes `.h-screen` and full-screen phone panels (`.ador-kb-fit`: chat SidePanel) to the visible height, hides `.ador-hide-on-kb` (the bottom tab bar and GlobalCapture's "+"), and drops main's bottom padding, so the composer sits right on the keyboard. It also undoes iOS's own slide-up (`scrollTo(0,0)`). Not verifiable in the desktop preview; needs a real phone.
+- **Icon badge:** AppShell calls `navigator.setAppBadge(chatUnread)` and posts `ador-badge` to the service worker. `sw.js` stores the number in the Cache API (`ador-meta`) and adds 1 per message push that arrives while the app isn't in front. Installed app only (iOS 16.4+, Android, desktop PWAs).
+- **Icon shortcuts:** manifest `shortcuts` (Comunicación, Hoy, Calendario, Clientes) → `/?open=<module>`, handled by `parseOpenLink`. **Android and desktop Chrome/Edge only; iOS doesn't support web app shortcuts.**
+- **Desktop "always on":** push already works on computers (Configuración → Activar). Configuración now also offers "Instalar en esta computadora" (Chrome/Edge `beforeinstallprompt`, `installApp()` in lib/push.js). Installed, it gets its own Dock/taskbar icon and badge, and notifications keep arriving while the browser is running, even with no window open.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

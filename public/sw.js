@@ -14,6 +14,22 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 const ua = self.navigator.userAgent
 const strictBrowser = /Safari/.test(ua) && !/Chrome|CriOS|Chromium|Edg|Android/.test(ua)
 
+// The number on the app icon. The open app sends the exact unread count
+// ('ador-badge'); with the app closed, each message push adds one. Kept in
+// the Cache API so it survives the worker being stopped between pushes.
+const BADGE_KEY = '/__ador_badge'
+async function readBadge() {
+  const res = await (await caches.open('ador-meta')).match(BADGE_KEY)
+  return res ? Number(await res.text()) || 0 : 0
+}
+async function writeBadge(n) {
+  await (await caches.open('ador-meta')).put(BADGE_KEY, new Response(String(n)))
+  if (self.navigator.setAppBadge) await (n > 0 ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {})
+}
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'ador-badge') event.waitUntil(writeBadge(Number(event.data.count) || 0))
+})
+
 self.addEventListener('push', (event) => {
   let data = {}
   try {
@@ -28,6 +44,7 @@ self.addEventListener('push', (event) => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       const inFront = windows.some((w) => w.visibilityState === 'visible' && w.focused)
       if (inFront && !strictBrowser && data.tag !== 'test') return
+      if (!inFront && data.tag && data.tag.startsWith('conv:')) await writeBadge((await readBadge()) + 1).catch(() => {})
       await self.registration.showNotification(data.title || 'ADOR OS', {
         body: data.body || '',
         tag: data.tag,

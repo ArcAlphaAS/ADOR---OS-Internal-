@@ -4,8 +4,10 @@ import './index.css'
 import App from './App.jsx'
 import { ToastProvider } from './hooks/useToast.jsx'
 import { registerServiceWorker } from './lib/push'
+import { installKeyboardHandling } from './lib/keyboard'
 
 registerServiceWorker()
+installKeyboardHandling()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

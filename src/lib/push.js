@@ -34,6 +34,34 @@ export function registerServiceWorker() {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
 }
 
+// "Instalar ADOR OS" on a computer (Chrome/Edge): the browser offers the
+// install once via beforeinstallprompt; we keep it so a button can use it.
+let installEvent = null
+const installListeners = new Set()
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    installEvent = e
+    installListeners.forEach((fn) => fn(true))
+  })
+  window.addEventListener('appinstalled', () => {
+    installEvent = null
+    installListeners.forEach((fn) => fn(false))
+  })
+}
+export const canInstallApp = () => Boolean(installEvent) && !isStandalone()
+export function onInstallAvailability(fn) {
+  installListeners.add(fn)
+  return () => installListeners.delete(fn)
+}
+export async function installApp() {
+  if (!installEvent) return false
+  installEvent.prompt()
+  const { outcome } = await installEvent.userChoice
+  installEvent = null
+  return outcome === 'accepted'
+}
+
 // 'on' | 'off' | 'denied' | 'install' (iPhone in a Safari tab) | 'unsupported'
 export async function pushStatus() {
   if (!pushSupported()) return isAppleMobile() && !isStandalone() ? 'install' : 'unsupported'
@@ -133,9 +161,14 @@ export function sendPush(event, sender) {
 
 // A tapped notification opens /?open=chat&ct=…&cid=… — turn that into the
 // same [module, focus] AppShell's navigateTo already understands.
+// Also /?open=<module> alone — the app icon's shortcuts (manifest
+// "shortcuts": Comunicación, Hoy, Calendario, Clientes).
+const SHORTCUT_MODULES = ['chat', 'workspace', 'calendario', 'clientes', 'inicio']
 export function parseOpenLink(search) {
   const p = new URLSearchParams(search)
-  if (p.get('open') !== 'chat' || !p.get('cid')) return null
+  const open = p.get('open')
+  if (SHORTCUT_MODULES.includes(open) && !p.get('cid')) return [open, null]
+  if (open !== 'chat' || !p.get('cid')) return null
   return [
     'chat',
     {
