@@ -752,6 +752,8 @@ Standard Web Push, free, no Firebase Cloud Messaging: the system notification ba
 - **Icon shortcuts:** manifest `shortcuts` (Comunicación, Hoy, Calendario, Clientes) → `/?open=<module>`, handled by `parseOpenLink`. **Android and desktop Chrome/Edge only; iOS doesn't support web app shortcuts.**
 - **Desktop "always on":** push already works on computers (Configuración → Activar). Configuración now also offers "Instalar en esta computadora" (Chrome/Edge `beforeinstallprompt`, `installApp()` in lib/push.js). Installed, it gets its own Dock/taskbar icon and badge, and notifications keep arriving while the browser is running, even with no window open.
 
+- **Offline (same day):** (1) Firestore uses `persistentLocalCache` + `persistentMultipleTabManager` (`createDb()` in lib/firestore.js, falls back to the memory cache if IndexedDB isn't allowed). Data shows with no connection, and offline writes survive closing the app and go out on reconnect. (2) `withTimeout` (lib/workspace.js, used by every write) no longer fails while `navigator.onLine === false`: it waits for `online` and restarts the clock. Before this, an offline message showed "Tardó demasiado" and an offline image send was aborted, even though Firestore would have delivered it. (3) `OfflineBanner.jsx`: a "Sin conexión — lo que envíes saldrá al volver la señal" pill, then "Conectado de nuevo" for 2.5s. Messages sent offline keep showing ◷ until confirmed. Checked in the preview by faking `navigator.onLine` + the events.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

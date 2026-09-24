@@ -179,10 +179,34 @@ export function workstreamId(kind, id) {
 // "this failed, try again" instead of silently doing nothing forever, which
 // looks indistinguishable from a broken button.
 export function withTimeout(promise, ms = 8000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Tardó demasiado — revisa tu conexión o que tu sesión siga activa')), ms)),
-  ])
+  // Offline, a write isn't failing — Firestore keeps it and sends it the
+  // moment the connection is back. So with no connection the clock simply
+  // waits for 'online' and starts again; only a write that stalls *while
+  // online* counts as an error. (The "Sin conexión" pill, OfflineBanner,
+  // tells the person what's going on.)
+  return new Promise((resolve, reject) => {
+    let done = false
+    promise.then(
+      (v) => {
+        done = true
+        resolve(v)
+      },
+      (e) => {
+        done = true
+        reject(e)
+      }
+    )
+    const arm = () =>
+      setTimeout(() => {
+        if (done) return
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          window.addEventListener('online', arm, { once: true })
+          return
+        }
+        reject(new Error('Tardó demasiado — revisa tu conexión o que tu sesión siga activa'))
+      }, ms)
+    arm()
+  })
 }
 
 // Shared between the Lista header row and every TaskRow so columns always

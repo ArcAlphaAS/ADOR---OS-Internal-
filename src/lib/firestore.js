@@ -1,5 +1,8 @@
 import {
   getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   collection,
   query,
   where,
@@ -83,7 +86,19 @@ export const COLLECTIONS = {
   errorLogs: 'errorLogs',
 }
 
-export const db = isFirebaseConfigured ? getFirestore(app) : null
+// A copy of the data is kept on the device (IndexedDB), so ADOR OS opens
+// and shows what it already had with no connection, and anything written
+// offline (a message, a task) waits there — even if the app is closed —
+// and goes out when the connection returns. Falls back to the plain
+// in-memory cache where the browser won't allow it (private windows).
+function createDb() {
+  try {
+    return initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) })
+  } catch {
+    return getFirestore(app)
+  }
+}
+export const db = isFirebaseConfigured ? createDb() : null
 
 // Generic live-collection subscription. Returns [] until Firestore is
 // configured and the query resolves — no module should assume data exists.
