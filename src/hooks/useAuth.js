@@ -7,6 +7,7 @@ import {
   updateProfile,
 } from 'firebase/auth'
 import { auth } from '../firebase'
+import { forgetThisDevice } from '../lib/push'
 
 const NOT_CONFIGURED = new Error('Firebase no está configurado. Agrega tus credenciales en .env')
 
@@ -37,7 +38,11 @@ export function useAuth() {
 
   const signOut = useCallback(() => {
     if (!auth) return Promise.reject(NOT_CONFIGURED)
-    return firebaseSignOut(auth)
+    // This device stops getting this person's notifications first — it
+    // needs the session still open to delete its pushSubscriptions doc.
+    return forgetThisDevice()
+      .catch(() => {})
+      .then(() => firebaseSignOut(auth))
   }, [])
 
   // Firebase mutates auth.currentUser in place on updateProfile, but React

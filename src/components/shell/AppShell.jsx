@@ -22,6 +22,7 @@ import BottomNav from './BottomNav'
 import { useAccess } from '../../hooks/useAccess'
 import { backfillChannelVisibility } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
+import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -87,7 +88,11 @@ const MODULE_LABELS = {
 export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
   // Coming back from Google's consent screen: reopen the module that
   // started the connection (OAuth `state`), so its hook finishes it.
+  // Opened from a tapped notification (/?open=chat&…, lib/push.js): start
+  // on that conversation.
+  const [openLink] = useState(() => parseOpenLink(window.location.search))
   const [activeModule, setActiveModule] = useState(() => {
+    if (openLink) return openLink[0]
     const params = new URLSearchParams(window.location.search)
     if (!params.get('code')) return 'inicio'
     const state = params.get('state') || ''
@@ -98,7 +103,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // Set alongside activeModule when a global-search result should also open
   // a specific client/task's detail panel once its module mounts — cleared
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).
-  const [focus, setFocus] = useState(null)
+  const [focus, setFocus] = useState(() => openLink?.[1] || null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   usePresenceHeartbeat(user?.uid)
   // Role and which modules this person can open (lib/access.js).
@@ -132,6 +137,32 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     })
   }, [user?.uid])
   const chatUnread = useChatUnreadCount(user?.uid)
+
+  // Notificaciones push: keep this device's push address filed under whoever
+  // is signed in, drop the ?open=… link once consumed, and follow a
+  // notification tapped while ADOR OS was already open (the service worker
+  // posts the link to this window instead of opening another one).
+  useEffect(() => {
+    refreshPushSubscription(user?.uid).catch(() => {})
+  }, [user?.uid])
+  useEffect(() => {
+    if (openLink) {
+      const url = new URL(window.location.href)
+      for (const k of ['open', 'ct', 'cid', 'p', 'm', 't']) url.searchParams.delete(k)
+      window.history.replaceState(null, '', url.pathname + url.search)
+    }
+    if (!('serviceWorker' in navigator)) return
+    const onMessage = (event) => {
+      if (event.data?.type !== 'ador-open') return
+      const link = parseOpenLink(new URL(event.data.url).search)
+      if (link) {
+        setActiveModule(link[0])
+        setFocus(link[1])
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage)
+  }, [])
 
   const navigateTo = (moduleId, focusTarget = null) => {
     setActiveModule(moduleId)

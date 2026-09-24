@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import PushNotificationsCard from './PushNotificationsCard'
 
 export default function SettingsModal({ user, onClose, onResetPassword, onShowOnboarding }) {
   const [status, setStatus] = useState('')
@@ -38,11 +39,13 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
         transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="ador-modal-surface ador-grain w-[380px] rounded-[28px] p-8">
+        <div className="ador-modal-surface ador-grain w-[min(380px,calc(100vw-32px))] rounded-[28px] p-8">
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">Configuración</h2>
           <p className="mt-1 text-[13px] text-[#888888]">{user?.email}</p>
 
           <div className="mt-6 flex flex-col gap-2.5">
+            <PushNotificationsCard user={user} />
+
             <button
               type="button"
               onClick={() => {

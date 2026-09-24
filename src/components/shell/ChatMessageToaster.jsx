@@ -6,6 +6,7 @@ import { subscribeMyPresence } from '../../lib/firestore'
 import { presenceOf } from '../../lib/chat'
 import Avatar from './Avatar'
 import { CloseIcon } from '../icons'
+import { isPushOnHere } from '../../lib/push'
 
 const SHOW_MS = 6000
 const BASE_TITLE = 'ADOR OS'
@@ -86,7 +87,7 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
     // notification. Visible on screen: the in-app toast as well.
     const inFront = document.visibilityState === 'visible' && document.hasFocus()
     if (!inFront) {
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !isPushOnHere()) {
         for (const i of fresh.slice(0, 3)) {
           const n = new Notification(i.from ? `${i.from} · ADOR OS` : 'Nuevo mensaje · ADOR OS', { body: i.text, tag: `ador-msg-${i.key}`, silent })
           n.onclick = () => {

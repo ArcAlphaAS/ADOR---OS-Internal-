@@ -19,5 +19,14 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  // Notificaciones push (server/push.js). Public values only — the matching
+  // VAPID_PRIVATE_KEY is a Secret in Cloudflare (Settings → Variables and
+  // Secrets). Changing the key pair means every device turns notifications
+  // on again.
+  "vars": {
+    "FIREBASE_PROJECT_ID": "ador-os",
+    "VAPID_PUBLIC_KEY": "BHYH4vo4RAKIcQQtYvfIvgUq3Yl1IXKEl9vKnT6c-ZMGYjkWKVERgAxQcSNTDgQ7w6YE8ezAjNJdMN1iJm3dKYo",
+    "VAPID_SUBJECT": "https://ador-os.adorfirm.workers.dev"
+  },
   "observability": { "enabled": true }
 }

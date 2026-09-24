@@ -142,6 +142,13 @@ service cloud.firestore {
       allow read, update, delete: if isAllowed() && resource.data.uid == request.auth.uid;
       allow create: if isAllowed() && request.resource.data.uid == request.auth.uid;
     }
+    // Notificaciones push (server/push.js): the server reads every device's
+    // push address as the *sender* (with their token) and removes dead ones;
+    // a device can only be filed under the person signed in on it.
+    match /pushSubscriptions/{id} {
+      allow read, delete: if isAllowed();
+      allow create, update: if isAllowed() && request.resource.data.uid == request.auth.uid;
+    }
     match /chatCalls/{id} {
       allow read, update: if isAllowed() && (resource.data.fromUid == request.auth.uid || request.auth.uid in resource.data.toUids);
       allow create: if isAllowed() && request.resource.data.fromUid == request.auth.uid;

@@ -58,6 +58,7 @@ import {
 import { deliverMessage } from '../../lib/chatSend'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
+import { sendPush } from '../../lib/push'
 import { MessageIcon, SearchIcon, ClockIcon } from '../icons'
 import { MessageThread, ImageLightbox } from './ChatThread'
 import Composer from './Composer'
@@ -348,6 +349,15 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         attachment = { kind: 'drive', name: f.name, url: f.url, fileId: f.fileId, mimeType: f.mimeType || '', iconUrl: f.iconUrl || null }
       }
       const payload = { text: draft.text || '', attachment, call: draft.call, mentions: draft.mentions, replyTo: draft.replyTo, poll: draft.poll, important: draft.important }
+      // Slack's rule: everyone taking part in a thread (whoever wrote the
+      // original + anyone who has replied) is notified of new replies —
+      // except people already @mentioned in this reply, who get that instead.
+      let followers = []
+      if (parentId) {
+        const parent = parentMsg || messages.find((m) => m.id === parentId)
+        const mentioned = new Set((draft.mentions || []).map((m) => m.uid))
+        followers = [...new Set([parent?.authorUid, ...(parent?.replyUids || [])])].filter((uid) => uid && uid !== user.uid && !mentioned.has(uid))
+      }
       const { pointer, snippet } = await withTimeout(
         deliverMessage({
           convType,
@@ -360,17 +370,10 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           authorName: actorName,
           parentId,
           audienceUids: conversationAudience,
+          threadFollowers: followers,
         })
       )
-      // Slack's rule: everyone taking part in a thread (whoever wrote the
-      // original + anyone who has replied) is notified of new replies —
-      // except people already @mentioned in this reply, who get that instead.
-      if (parentId) {
-        const parent = parentMsg || messages.find((m) => m.id === parentId)
-        const mentioned = new Set((draft.mentions || []).map((m) => m.uid))
-        const followers = [...new Set([parent?.authorUid, ...(parent?.replyUids || [])])].filter((uid) => uid && uid !== user.uid && !mentioned.has(uid))
-        if (followers.length) createMentions(followers.map((uid) => ({ uid })), { ...pointer, kind: 'reply', text: snippet }, user.uid, actorName).catch(() => {})
-      }
+      if (followers.length) createMentions(followers.map((uid) => ({ uid })), { ...pointer, kind: 'reply', text: snippet }, user.uid, actorName).catch(() => {})
       if (parentId) setTyping(`${selectedConversationId}_thread_${parentId}`, user.uid, actorName, false).catch(() => {})
       else setTyping(selectedConversationId, user.uid, actorName, false).catch(() => {})
     } catch (error) {
@@ -566,6 +569,11 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           )
         )
         callId = ref.id
+        // Rings the phone too, even with ADOR OS closed (lib/push.js).
+        sendPush(
+          { kind: 'call', toUids, callType: type === 'video' ? 'video' : 'audio', convType, convId: selectedConversationId, participantUids: isDm ? [user.uid, selected.id] : undefined },
+          { uid: user.uid, name: actorName }
+        ).catch(() => {})
       } catch (error) {
         fail('avisar la llamada')(error)
       }

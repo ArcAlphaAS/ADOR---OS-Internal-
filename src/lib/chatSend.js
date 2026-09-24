@@ -1,5 +1,6 @@
 import { sendChannelMessage, sendDmMessage, sendThreadReply, createMentions, indexChatFile } from './firestore'
 import { findDriveLink, driveDocType } from './chat'
+import { sendPush } from './push'
 
 // The one way a message gets written, whoever sends it: the composer,
 // "Reenviar", or a scheduled message going out from someone's open app
@@ -13,7 +14,9 @@ import { findDriveLink, driveDocType } from './chat'
 //   participantUids DMs only, stored on the index docs
 //   audienceUids    who a message marked Importante asks to confirm (everyone
 //                   in the conversation except the author)
-export async function deliverMessage({ convType, convId, dmParticipants, participantUids, conversationLabel, payload, authorUid, authorName, parentId = null, audienceUids = [] }) {
+//   threadFollowers thread replies only — who follows that thread (they get
+//                   a 'reply' notice; the caller writes their bell entries)
+export async function deliverMessage({ convType, convId, dmParticipants, participantUids, conversationLabel, payload, authorUid, authorName, parentId = null, audienceUids = [], threadFollowers = [] }) {
   const ref = parentId
     ? await sendThreadReply(convType, convId, parentId, payload, authorUid, authorName)
     : convType === 'conv'
@@ -50,8 +53,41 @@ export async function deliverMessage({ convType, convId, dmParticipants, partici
   // Responder citando in a channel or group: the quoted person hears about
   // it like a mention (in a DM every message already reaches them).
   const quoted = payload.replyTo?.authorUid
-  if (convType === 'conv' && quoted && !notified.has(quoted)) {
+  const quoteTargets = convType === 'conv' && quoted && !notified.has(quoted) ? [quoted] : []
+  if (quoteTargets.length) {
     createMentions([{ uid: quoted }], { ...pointer, kind: 'quote', text: snippetText }, authorUid, authorName).catch(() => {})
+  }
+
+  // Notificaciones push to phones/computers (lib/push.js → server/push.js).
+  // Only who's specifically involved is listed here; the server adds the
+  // rest of the conversation and applies each person's notification
+  // settings, silenced conversations and No molestar. Thread replies only
+  // reach the thread's followers and whoever is mentioned in them.
+  if (!payload.call) {
+    const targets = [
+      ...(payload.mentions || []).map((m) => ({ uid: m.uid, reason: 'mention' })),
+      ...(payload.important ? audienceUids.map((uid) => ({ uid, reason: 'important' })) : []),
+      ...quoteTargets.map((uid) => ({ uid, reason: 'quote' })),
+      ...threadFollowers.map((uid) => ({ uid, reason: 'reply' })),
+    ]
+    const threadOnly = Boolean(parentId)
+    if (!threadOnly || targets.length || convType === 'dm') {
+      sendPush(
+        {
+          kind: 'message',
+          convType,
+          convId,
+          participantUids: participantUids || dmParticipants?.map((p) => p.uid),
+          parentId,
+          messageId: ref.id,
+          conversationLabel,
+          text: snippetText || 'Nuevo mensaje',
+          targets,
+          ...(threadOnly && convType !== 'dm' ? { onlyTargets: true } : {}),
+        },
+        { uid: authorUid, name: authorName }
+      ).catch(() => {})
+    }
   }
   if (attachment?.kind === 'image' && !attachment.expired)
     indexChatFile({ ...pointer, kind: 'image', thumbUrl: attachment.thumbUrl, blobId: attachment.blobId, name: attachment.name }).catch(() => {})

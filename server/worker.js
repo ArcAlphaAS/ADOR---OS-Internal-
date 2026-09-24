@@ -4,12 +4,15 @@
 // index.html as the fallback for the single-page app — see wrangler.jsonc).
 import { cloudflare } from './cloudflare.js'
 import { googleExchange, googleRefresh, meetSpace, adorIA } from './handlers.js'
+import { pushConfig, pushSend } from './push.js'
 
 const ROUTES = {
   '/api/google-calendar/exchange': cloudflare(googleExchange),
   '/api/google-calendar/refresh': cloudflare(googleRefresh),
   '/api/google-meet/space': cloudflare(meetSpace),
   '/api/ador-ia': cloudflare(adorIA),
+  '/api/push/config': cloudflare(pushConfig),
+  '/api/push/send': cloudflare(pushSend),
 }
 
 export default {

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { dmIdFor } from '../../lib/firestore'
 import { isPrivate, userLabel, groupLabel, presenceOf } from '../../lib/chat'
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon } from '../icons'
 import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
+import PushNotificationsCard from '../shell/PushNotificationsCard'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
 // Archivos views, DMs, groups and channels. Split out of ChatModule.jsx.
@@ -234,70 +235,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         </div>
       </div>
 
-      <CallNotificationsPrompt />
-    </div>
-  )
-}
-
-// Browsers only let a page ask for notification permission in response to
-// a click, so this is an explicit one-time prompt rather than something
-// that fires on load. Hidden once answered either way; if denied, only the
-// browser's own site settings can undo it, so it says so once.
-const PROMPT_KEY = 'ador_call_prompt_dismissed'
-
-function wasDismissed() {
-  try {
-    return localStorage.getItem(PROMPT_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function CallNotificationsPrompt() {
-  const supported = typeof Notification !== 'undefined'
-  const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported')
-  const [dismissed, setDismissed] = useState(wasDismissed)
-  const dismiss = () => {
-    setDismissed(true)
-    try {
-      localStorage.setItem(PROMPT_KEY, '1')
-    } catch {
-      // private mode — it just shows again next time
-    }
-  }
-  // "Blocked" is only worth saying once: after it's been shown, it's
-  // remembered as seen and doesn't sit in the sidebar forever.
-  useEffect(() => {
-    if (permission !== 'denied' || dismissed) return
-    try {
-      localStorage.setItem(PROMPT_KEY, '1')
-    } catch {
-      // private mode — it shows again next time
-    }
-  }, [permission, dismissed])
-  // Shown until answered or dismissed once — never a permanent fixture.
-  if (dismissed || permission === 'granted' || permission === 'unsupported') return null
-  if (permission === 'denied') {
-    return (
-      <p className="px-1 text-[11px] leading-relaxed text-[#8A8A8A]">
-        Avisos del sistema bloqueados en este navegador — actívalos desde la configuración del sitio.{' '}
-        <button type="button" onClick={dismiss} className="text-[#9A9A9A] underline hover:text-[#F5F5F5]">
-          Ocultar
-        </button>
-      </p>
-    )
-  }
-  return (
-    <div className="rounded-xl border border-dashed border-white/[0.12] px-3 py-2.5">
-      <p className="text-[12.5px] leading-relaxed text-[#9A9A9A]">Recibe un aviso del sistema cuando te llamen o te escriban y ADOR OS esté en otra pestaña.</p>
-      <div className="mt-1.5 flex items-center gap-3">
-        <button type="button" onClick={() => Notification.requestPermission().then(setPermission)} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline">
-          Activar avisos
-        </button>
-        <button type="button" onClick={dismiss} className="text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
-          Ahora no
-        </button>
-      </div>
+      <PushNotificationsCard variant="prompt" user={{ uid: currentUid }} />
     </div>
   )
 }

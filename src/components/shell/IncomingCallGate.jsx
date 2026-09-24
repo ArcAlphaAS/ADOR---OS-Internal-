@@ -5,6 +5,7 @@ import { subscribeIncomingCalls, respondToChatCall, subscribeUsers, subscribeOut
 import { callState, presenceOf, RING_MS as CALL_RING_MS } from '../../lib/chat'
 import Avatar from './Avatar'
 import { PhoneIcon, VideoIcon, CloseIcon } from '../icons'
+import { isPushOnHere } from '../../lib/push'
 
 // How long a call rings before it quietly becomes "missed" — the call card
 // in the conversation stays either way, this only controls the ringing.
@@ -52,14 +53,14 @@ function useRingtone(active) {
 
 // Layer 2: when ADOR OS is open but not the tab you're looking at, a real
 // operating-system notification (Notification API, permission asked once
-// from Chat's sidebar — see CallNotificationsPrompt). Also flashes the tab
+// from Chat's sidebar or Configuración — see PushNotificationsCard). Also flashes the tab
 // title, which catches the eye even with notifications turned off.
 function useBackgroundAlert(call) {
   useEffect(() => {
     if (!call) return
     let notification = null
     const title = `${call.fromName} te está llamando`
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && (document.hidden || !document.hasFocus())) {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !isPushOnHere() && (document.hidden || !document.hasFocus())) {
       notification = new Notification(title, {
         body: `${call.type === 'video' ? 'Videollamada' : 'Llamada'} en Google Meet · ${call.conversationLabel}`,
         tag: `ador-call-${call.id}`,
