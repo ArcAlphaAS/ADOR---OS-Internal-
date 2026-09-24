@@ -27,7 +27,7 @@ export function useChatData(uid) {
   const [presence, setPresence] = useState({})
   const [reminders, setReminders] = useState([])
 
-  useEffect(() => subscribeChatChannels(setAllChannels), [])
+  useEffect(() => subscribeChatChannels(uid, setAllChannels), [uid])
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribeDirectoryPeople(setDirectory), [])
   useEffect(() => subscribePresence(setPresence), [])

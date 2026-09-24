@@ -5,6 +5,8 @@ import useDeferredReveal from '../../hooks/useDeferredReveal'
 const MENU_ITEMS = [
   { id: 'perfil', label: 'Mi Perfil' },
   { id: 'config', label: 'Configuración' },
+  // Only for administrators (the partners) — see lib/access.js.
+  { id: 'admin', label: 'Administración', adminOnly: true },
   { id: 'logout', label: 'Cerrar Sesión' },
 ]
 
@@ -23,7 +25,7 @@ function formatLastSignIn(user) {
   return text.replace('.', '')
 }
 
-export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open }) {
+export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open, isAdmin }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
 
@@ -69,7 +71,7 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open 
     >
       <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
         <nav className="flex flex-col py-1.5">
-          {MENU_ITEMS.map((item) => (
+          {MENU_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => (
             <button
               key={item.id}
               type="button"

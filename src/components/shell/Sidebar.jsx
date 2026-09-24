@@ -107,7 +107,7 @@ function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
   )
 }
 
-export default function Sidebar({ activeModule, onNavigate, badges = {} }) {
+export default function Sidebar({ activeModule, onNavigate, badges = {}, canSee = () => true }) {
   return (
     <div className="flex h-full w-20 flex-shrink-0 items-center justify-center">
       <nav
@@ -116,7 +116,7 @@ export default function Sidebar({ activeModule, onNavigate, badges = {} }) {
       >
         <img src="/logo.svg" alt="ADOR" style={{ height: 28 }} className="mb-1" />
 
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => canSee(item.id)).map((item) => (
           <NavButton
             key={item.id}
             {...item}
@@ -126,16 +126,16 @@ export default function Sidebar({ activeModule, onNavigate, badges = {} }) {
           />
         ))}
 
-        <div className="my-1 h-px w-6 bg-white/[0.08]" />
+        {canSee('ador-ia') && <div className="my-1 h-px w-6 bg-white/[0.08]" />}
 
-        <NavButton
+        {canSee('ador-ia') && <NavButton
           id="ador-ia"
           label="ADOR IA"
           Icon={SparkleIcon}
           accent
           active={activeModule === 'ador-ia'}
           onClick={() => onNavigate('ador-ia')}
-        />
+        />}
       </nav>
     </div>
   )

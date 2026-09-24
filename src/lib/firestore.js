@@ -320,6 +320,49 @@ export function setDriveFolder(folder) {
   return setDoc(doc(db, COLLECTIONS.settings, 'google'), { driveFolder: folder }, { merge: true })
 }
 
+// ---- Administración: acceso y roles (lib/access.js) ----
+export function subscribeAccessSettings(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.settings, 'access'),
+    (snap) => onData(snap.exists() ? snap.data() : {}),
+    (error) => console.error('Firestore subscription to settings/access failed:', error.message)
+  )
+}
+
+export function setMemberModules(memberModules) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, COLLECTIONS.settings, 'access'), { memberModules }, { merge: true })
+}
+
+export function subscribeAllowedEmails(onData) {
+  return subscribeToCollection('allowedEmails', [], onData)
+}
+
+// allowedEmails/{email} is what actually lets someone in (Firestore rules).
+// `role` is remembered there too, so someone whose Auth account already
+// existed still gets the right role on their first login (App.jsx).
+export function allowEmail(email, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, 'allowedEmails', email.toLowerCase()), { active: true, ...data, updatedAt: serverTimestamp() }, { merge: true })
+}
+
+export function revokeEmail(email) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, 'allowedEmails', email.toLowerCase()))
+}
+
+export async function getAllowedEmail(email) {
+  if (!db || !email) return null
+  const snap = await getDoc(doc(db, 'allowedEmails', email.toLowerCase()))
+  return snap.exists() ? snap.data() : null
+}
+
+export function setUserRole(uid, isAdminRole) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, COLLECTIONS.users, uid), { isAdmin: isAdminRole }, { merge: true })
+}
+
 export function saveUserProfile(userId, data) {
   if (!db || !userId) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
@@ -937,8 +980,57 @@ export function deleteCommunityPost(postId) {
 // Channels and groups share one collection on purpose: same messages
 // subcollection, same unread tracking, same composer — they differ only
 // in how they're listed and who can see them.
-export function subscribeChatChannels(onData) {
-  return subscribeToCollection(COLLECTIONS.chatChannels, [orderBy('createdAt', 'asc')], onData)
+// Two queries merged — public channels, and the private channels/groups
+// you're a member of — instead of "every channel": with the stricter
+// Firestore rules (firestore.rules) a query may only ask for documents the
+// person is allowed to read, so private ones you're not in are never even
+// sent to your browser. Channels from before `visibility` existed are given
+// it by backfillChannelVisibility() (run by an admin).
+export function subscribeChatChannels(uid, onData) {
+  if (!db || !uid || uid === 'preview') {
+    onData([])
+    return () => {}
+  }
+  const results = { pub: [], mine: [] }
+  const emit = () => {
+    const byId = new Map()
+    for (const c of [...results.pub, ...results.mine]) byId.set(c.id, c)
+    onData([...byId.values()].sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0)))
+  }
+  const listen = (key, q) =>
+    onSnapshot(
+      q,
+      (snap) => {
+        results[key] = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }))
+        emit()
+      },
+      (error) => console.error('Firestore subscription to chat channels failed:', error.message)
+    )
+  const col = collection(db, COLLECTIONS.chatChannels)
+  const a = listen('pub', query(col, where('visibility', '==', 'public')))
+  const b = listen('mine', query(col, where('memberUids', 'array-contains', uid)))
+  return () => {
+    a()
+    b()
+  }
+}
+
+// One-time fix-up for channels created before `kind`/`visibility` existed
+// (they were all public): gives them the fields the split query above and
+// the rules need. Safe to run repeatedly — only touches docs missing them.
+export async function backfillChannelVisibility() {
+  if (!db) return 0
+  const snap = await getDocs(collection(db, COLLECTIONS.chatChannels))
+  const batch = writeBatch(db)
+  let n = 0
+  snap.docs.forEach((d) => {
+    const c = d.data()
+    if (c.visibility) return
+    batch.update(d.ref, { visibility: c.kind === 'group' ? 'private' : 'public', kind: c.kind || 'channel' })
+    n++
+  })
+  if (n) await batch.commit()
+  return n
 }
 
 export function createChatChannel({ name, description = '', kind = 'channel', visibility = 'public', memberUids = [] }, actorUid, actorName) {
@@ -1428,14 +1520,24 @@ export async function getChatBlob(blobId) {
 
 // When a message is deleted, its pointers go with it — otherwise Menciones,
 // Guardados and Archivos would list a message that no longer exists.
+// Best effort: under the stricter rules a Miembro can't list other people's
+// pointers — those are left for an admin's cleanup, never an error.
 export async function cleanupMessageIndexes(messageId) {
   if (!db) return
   const batch = writeBatch(db)
+  let n = 0
   for (const name of [COLLECTIONS.chatFiles, COLLECTIONS.chatMentions, COLLECTIONS.chatSaved]) {
-    const snap = await getDocs(query(collection(db, name), where('messageId', '==', messageId)))
-    snap.forEach((d) => batch.delete(d.ref))
+    try {
+      const snap = await getDocs(query(collection(db, name), where('messageId', '==', messageId)))
+      snap.forEach((d) => {
+        batch.delete(d.ref)
+        n++
+      })
+    } catch {
+      // not allowed to list this index — skip
+    }
   }
-  return batch.commit()
+  if (n) await batch.commit().catch(() => {})
 }
 
 // ---- Registro de errores (lib/errorLog.js) ----

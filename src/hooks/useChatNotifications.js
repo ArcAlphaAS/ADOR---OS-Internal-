@@ -53,7 +53,7 @@ export function useChatNotifications(uid, onNavigate) {
     if (!uid || uid === 'preview') return
     return subscribeMyReminders(uid, setReminders)
   }, [uid])
-  useEffect(() => subscribeChatChannels(setChannels), [])
+  useEffect(() => subscribeChatChannels(uid, setChannels), [uid])
   useEffect(() => subscribeUsers(setUsers), [])
 
   if (!uid || uid === 'preview') return []
@@ -157,7 +157,7 @@ export function useChatUnreadCount(uid) {
     if (!uid || uid === 'preview') return
     return subscribeMyDms(uid, setDms)
   }, [uid])
-  useEffect(() => subscribeChatChannels(setChannels), [])
+  useEffect(() => subscribeChatChannels(uid, setChannels), [uid])
 
   if (!uid || uid === 'preview') return 0
   const lastRead = profile?.chatLastRead || {}

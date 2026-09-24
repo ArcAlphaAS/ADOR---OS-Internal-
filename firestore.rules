@@ -1,0 +1,170 @@
+rules_version = '2';
+
+// ADOR OS — Firestore security rules (CLAUDE.md §37).
+//
+// NOT live until pasted into Firebase Console → Firestore → Rules. The rules
+// running today are the original blanket ones (any allowed account can read
+// and write everything). Test these first — see CLAUDE.md §37.
+//
+// Model:
+//   - Only emails in allowedEmails/{email} get in at all (isAllowed).
+//   - Administradores (the partners) can read and write everything.
+//     users/{uid}.isAdmin: a missing field still means admin (the 3
+//     founders' profiles predate it); only an explicit false is a Miembro.
+//   - Miembros: the shared work data; Finanzas only if the admins allowed it
+//     (settings/access.memberModules); never admin settings; never someone
+//     else's DMs or private channels/groups they aren't in; can't change
+//     their own role.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function isAllowed() {
+      return signedIn() && exists(/databases/$(database)/documents/allowedEmails/$(request.auth.token.email.lower()));
+    }
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+    function isAdmin() {
+      return isAllowed() && (!exists(profilePath()) || get(profilePath()).data.get('isAdmin', true) != false);
+    }
+    function memberModules() {
+      return exists(/databases/$(database)/documents/settings/access)
+        ? get(/databases/$(database)/documents/settings/access).data.get('memberModules', [])
+        : ['workspace', 'objetivos', 'clientes', 'calendario', 'conocimiento', 'chat', 'news', 'directorio', 'ador-ia'];
+    }
+    function canUse(module) {
+      return isAdmin() || (isAllowed() && module in memberModules());
+    }
+
+    // Admins: everything. The narrower rules below add what Miembros may do
+    // (rules are OR'd — any matching allow grants access).
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---- Access & roles ----
+    match /allowedEmails/{email} {
+      allow read: if isAllowed();
+    }
+    match /users/{uid} {
+      allow read: if isAllowed();
+      // Your own profile, but never your own role.
+      allow create: if isAllowed() && request.auth.uid == uid && !('isAdmin' in request.resource.data);
+      allow update: if isAllowed() && request.auth.uid == uid
+        && request.resource.data.get('isAdmin', null) == resource.data.get('isAdmin', null);
+    }
+    match /settings/{name} {
+      allow read: if isAllowed() && (name != 'finanzas' || canUse('finanzas'));
+      // Client codes (ADR-0001…) are assigned by whoever creates a client.
+      allow write: if name == 'counters' && canUse('clientes');
+      allow write: if name == 'finanzas' && canUse('finanzas');
+    }
+
+    // ---- Work data ----
+    match /clients/{id} {
+      allow read, write: if canUse('clientes');
+      match /{sub=**} { allow read, write: if canUse('clientes'); }
+    }
+    match /tasks/{id} {
+      allow read, write: if isAllowed();
+      match /{sub=**} { allow read, write: if isAllowed(); }
+    }
+    match /proyectosInternos/{id} { allow read, write: if isAllowed(); }
+    match /notes/{id} { allow read, write: if isAllowed(); }
+    match /objetivos/{id} { allow read, write: if canUse('objetivos'); }
+    match /experimentos/{id} { allow read, write: if canUse('objetivos'); }
+    match /decisions/{id} { allow read, write: if isAllowed(); }
+    match /meetings/{id} { allow read: if isAllowed(); }
+    match /notifications/{id} { allow read: if isAllowed(); }
+
+    // Finanzas — only if the admins gave Miembros access to it.
+    match /expenses/{id} { allow read, write: if canUse('finanzas'); }
+    match /incomes/{id} { allow read, write: if canUse('finanzas'); }
+
+    // Knowledge, news, directory: everyone reads; admins write (catch-all
+    // above). Comunidad is open to everyone by design.
+    match /knowledgeDocs/{id} {
+      allow read: if canUse('conocimiento');
+      match /{sub=**} { allow read: if canUse('conocimiento'); }
+    }
+    match /knowledgeSections/{id} { allow read: if canUse('conocimiento'); }
+    match /news/{id} { allow read: if canUse('news'); }
+    match /communityPosts/{id} {
+      allow read, create: if canUse('news');
+      allow update: if canUse('news'); // reactions
+      allow delete: if canUse('news') && resource.data.authorUid == request.auth.uid;
+    }
+    match /directoryPeople/{id} { allow read: if isAllowed(); }
+    match /directoryTeams/{id} { allow read: if isAllowed(); }
+
+    // ---- Comunicación ----
+    function channelVisible(c) {
+      return c.get('visibility', 'public') == 'public' && c.get('kind', 'channel') != 'group'
+        || request.auth.uid in c.get('memberUids', []);
+    }
+    function channelAt(id) {
+      return get(/databases/$(database)/documents/chatChannels/$(id)).data;
+    }
+    match /chatChannels/{id} {
+      allow read: if isAllowed() && channelVisible(resource.data);
+      allow create: if isAllowed() && request.auth.uid in request.resource.data.get('memberUids', []);
+      allow update: if isAllowed() && channelVisible(resource.data);
+      match /messages/{msg} {
+        allow read, write: if isAllowed() && channelVisible(channelAt(id));
+        match /replies/{reply} {
+          allow read, write: if isAllowed() && channelVisible(channelAt(id));
+        }
+      }
+    }
+    // A DM's id is the two participants' uids joined with "_".
+    match /chatDms/{dmId} {
+      allow read: if isAllowed() && (request.auth.uid in resource.data.participantUids || request.auth.uid in dmId.split('_'));
+      allow write: if isAllowed() && request.auth.uid in dmId.split('_');
+      match /messages/{msg} {
+        allow read, write: if isAllowed() && request.auth.uid in dmId.split('_');
+        match /replies/{reply} {
+          allow read, write: if isAllowed() && request.auth.uid in dmId.split('_');
+        }
+      }
+    }
+    match /chatMentions/{id} {
+      allow read: if isAllowed() && resource.data.toUid == request.auth.uid;
+      allow create: if isAllowed() && request.resource.data.fromUid == request.auth.uid;
+    }
+    match /chatSaved/{id} {
+      allow read, delete: if isAllowed() && resource.data.uid == request.auth.uid;
+      allow create, update: if isAllowed() && request.resource.data.uid == request.auth.uid;
+    }
+    match /chatReminders/{id} {
+      allow read, update, delete: if isAllowed() && resource.data.uid == request.auth.uid;
+      allow create: if isAllowed() && request.resource.data.uid == request.auth.uid;
+    }
+    match /chatCalls/{id} {
+      allow read, update: if isAllowed() && (resource.data.fromUid == request.auth.uid || request.auth.uid in resource.data.toUids);
+      allow create: if isAllowed() && request.resource.data.fromUid == request.auth.uid;
+    }
+    match /chatScheduled/{id} {
+      allow read, update: if isAllowed() && (request.auth.uid in resource.data.audienceUids || resource.data.isPublic == true);
+      allow delete: if isAllowed() && (request.auth.uid in resource.data.audienceUids || resource.data.isPublic == true);
+      allow create: if isAllowed() && request.resource.data.authorUid == request.auth.uid;
+    }
+    // Known limitation: file pointers and blobs (random ids) are readable by
+    // any allowed account; the Archivos view only lists files from
+    // conversations you can see.
+    match /chatFiles/{id} { allow read, create: if isAllowed(); }
+    match /chatBlobs/{id} { allow get, create: if isAllowed(); }
+    match /chatTyping/{key} { allow read, write: if isAllowed(); }
+    match /presence/{uid} {
+      allow read: if isAllowed();
+      allow write: if isAllowed() && request.auth.uid == uid;
+    }
+
+    // ---- Registro de errores ----
+    match /errorLogs/{id} {
+      allow create: if isAllowed() && request.resource.data.uid == request.auth.uid;
+    }
+  }
+}

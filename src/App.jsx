@@ -7,7 +7,7 @@ import AppShell from './components/shell/AppShell'
 import { useAuth } from './hooks/useAuth'
 import { useWelcomeScreen } from './hooks/useWelcomeScreen'
 import { firstName } from './lib/user'
-import { saveUserProfile } from './lib/firestore'
+import { saveUserProfile, getUserProfile, getAllowedEmail } from './lib/firestore'
 
 const PREVIEW_MOCK_USER = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview')
   ? {
@@ -40,6 +40,14 @@ function App() {
   useEffect(() => {
     if (!user || user.uid === 'preview') return
     saveUserProfile(user.uid, { displayName: user.displayName || null, email: user.email })
+    // Someone invited from Administración whose profile doesn't carry a
+    // role yet gets the one they were invited with (allowedEmails.role).
+    // Profiles that already have isAdmin are never touched here.
+    Promise.all([getUserProfile(user.uid), getAllowedEmail(user.email)])
+      .then(([profile, allowed]) => {
+        if (profile && profile.isAdmin === undefined && allowed?.role) saveUserProfile(user.uid, { isAdmin: allowed.role === 'admin' })
+      })
+      .catch(() => {})
   }, [user?.uid, user?.displayName])
 
   // Splash and Login aren't separate routes, just state — without a history

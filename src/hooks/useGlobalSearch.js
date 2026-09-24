@@ -54,7 +54,7 @@ export function useGlobalSearch(query, uid) {
   useEffect(() => subscribeCommunityPosts(setCommunity), [])
   useEffect(() => subscribeObjetivos(setObjetivos), [])
   useEffect(() => subscribeProyectosInternos(setProyectos), [])
-  useEffect(() => subscribeChatChannels(setChannels), [])
+  useEffect(() => subscribeChatChannels(uid, setChannels), [uid])
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => (uid && uid !== 'preview' ? subscribeMyDms(uid, setDms) : undefined), [uid])
 

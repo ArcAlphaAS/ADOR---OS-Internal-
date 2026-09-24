@@ -39,10 +39,10 @@ function shortFullName(user) {
 }
 
 
-function PillTabs({ activeModule, onNavigate }) {
+function PillTabs({ activeModule, onNavigate, canSee }) {
   return (
     <nav className="ador-glass ador-grain flex items-center gap-1 rounded-full p-1">
-      {PRIMARY_MODULES.map((item) => {
+      {PRIMARY_MODULES.filter((item) => canSee(item.id)).map((item) => {
         const active = activeModule === item.id
         return (
           <button
@@ -67,14 +67,17 @@ function PillTabs({ activeModule, onNavigate }) {
   )
 }
 
-function SearchToggle({ onNavigate, uid }) {
+function SearchToggle({ onNavigate, uid, canSee }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [rect, setRect] = useState(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef(null)
-  const results = useGlobalSearch(query, uid)
-  const flat = results.groups.flatMap((g) => g.items)
+  const raw = useGlobalSearch(query, uid)
+  // A member never sees results from modules they can't open (Finanzas…).
+  const groups = raw.groups.map((g) => ({ ...g, items: g.items.filter((i) => canSee(i.target[0])) })).filter((g) => g.items.length)
+  const results = { ...raw, groups, hasResults: groups.length > 0 }
+  const flat = groups.flatMap((g) => g.items)
 
   const close = () => {
     setOpen(false)
@@ -173,7 +176,7 @@ function SearchToggle({ onNavigate, uid }) {
 // width-leak bug described in Sidebar.jsx. Only the dropdown itself is
 // portaled, since it needs to float above everything at a viewport-anchored
 // position.
-function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMenu, onCloseAll, onSelect }) {
+function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMenu, onCloseAll, onSelect, isAdmin }) {
   const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
   const photoURL = useUserPhoto(user?.uid, user?.photoURL)
@@ -277,7 +280,7 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
                 `open` prop instead, so the backdrop-filter layer stays warm
                 across opens rather than being rebuilt from scratch (and
                 visibly popping in) every time. */}
-            <ProfileMenu user={user} anchorRect={rect} open={menuOpen} onClose={onCloseAll} onSelect={onSelect} />
+            <ProfileMenu user={user} anchorRect={rect} open={menuOpen} onClose={onCloseAll} onSelect={onSelect} isAdmin={isAdmin} />
           </>,
           document.body
         )}
@@ -293,6 +296,7 @@ export default function TopBar({
   activeModule,
   onNavigate,
   onShowOnboarding,
+  access = { isAdmin: true, canSee: () => true },
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
@@ -346,6 +350,7 @@ export default function TopBar({
     if (id === 'logout') onSignOut?.()
     else if (id === 'perfil') setActiveModal('profile')
     else if (id === 'config') setActiveModal('settings')
+    else if (id === 'admin') onNavigate('admin')
   }
 
   return (
@@ -361,11 +366,11 @@ export default function TopBar({
       </div>
 
       <div className="justify-self-center">
-        <PillTabs activeModule={activeModule} onNavigate={onNavigate} />
+        <PillTabs activeModule={activeModule} onNavigate={onNavigate} canSee={access.canSee} />
       </div>
 
       <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
-        <SearchToggle onNavigate={onNavigate} uid={user?.uid} />
+        <SearchToggle onNavigate={onNavigate} uid={user?.uid} canSee={access.canSee} />
 
         <motion.div layout="position" transition={REFLOW_TRANSITION} className="relative">
           <button
@@ -398,6 +403,7 @@ export default function TopBar({
           onToggleMenu={() => setProfileMenuOpen((v) => !v)}
           onCloseAll={closeProfileAll}
           onSelect={handleMenuSelect}
+          isAdmin={access.isAdmin}
         />
       </motion.div>
 

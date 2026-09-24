@@ -18,6 +18,8 @@ import { useScheduledSender } from '../../hooks/useScheduledSender'
 import { finishDriveConnect } from '../../lib/googleDrive'
 import { installErrorLogging, setErrorContext } from '../../lib/errorLog'
 import ModuleErrorBoundary from './ModuleErrorBoundary'
+import { useAccess } from '../../hooks/useAccess'
+import { backfillChannelVisibility } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
 
 // Every module except Home is its own code-split chunk, downloaded the
@@ -36,6 +38,7 @@ const moduleLoaders = {
   news: () => import('../news/NewsModule'),
   chat: () => import('../chat/ChatModule'),
   'ador-ia': () => import('../adoria/AdorIAModule'),
+  admin: () => import('../admin/AdminModule'),
 }
 const ClientesModule = lazy(moduleLoaders.clientes)
 const FinanzasModule = lazy(moduleLoaders.finanzas)
@@ -47,6 +50,20 @@ const ConocimientoModule = lazy(moduleLoaders.conocimiento)
 const NewsModule = lazy(moduleLoaders.news)
 const ChatModule = lazy(moduleLoaders.chat)
 const AdorIAModule = lazy(moduleLoaders['ador-ia'])
+const AdminModule = lazy(moduleLoaders.admin)
+
+// Shown when someone opens a module their role doesn't include (lib/access.js).
+function NoAccess({ onHome }) {
+  return (
+    <div className="flex h-full items-center justify-center p-10">
+      <div className="ador-glass ador-grain max-w-[400px] rounded-2xl p-7 text-center">
+        <p className="text-[15px] font-semibold text-[#F5F5F5]">Esta sección no está disponible para tu rol</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-[#888888]">Si la necesitas, pídesela a un administrador de ADOR.</p>
+        <button type="button" onClick={onHome} className="ador-btn-primary mt-5 rounded-xl px-4 py-2 text-[13px] font-medium">Ir a Inicio</button>
+      </div>
+    </div>
+  )
+}
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -83,7 +100,17 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const [focus, setFocus] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   usePresenceHeartbeat(user?.uid)
-  useChatRetention(user?.uid)
+  // Role and which modules this person can open (lib/access.js).
+  const access = useAccess(user?.uid)
+  // The daily cleanup lists every conversation's old files/calls, which
+  // only admins may do under the stricter Firestore rules.
+  useChatRetention(access.isAdmin ? user?.uid : null)
+  // One-time fix-up for channels created before `visibility` existed —
+  // needed by the split channel query (lib/firestore.js).
+  useEffect(() => {
+    if (!access.isAdmin || !user?.uid || user.uid === 'preview') return
+    backfillChannelVisibility().catch(() => {})
+  }, [access.isAdmin, user?.uid])
   // Sends due "Enviar más tarde" messages from wherever ADOR OS is open.
   const scheduledMessages = useScheduledSender(user?.uid)
   const showToast = useToast()
@@ -154,16 +181,21 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         activeModule={activeModule}
         onNavigate={navigateTo}
         onShowOnboarding={() => setShowOnboarding(true)}
+        access={access}
       />
 
       <div className="flex min-h-0 flex-1">
-        <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} />
+        <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} canSee={access.canSee} />
 
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <ModuleErrorBoundary resetKey={activeModule}>
           <Suspense fallback={null}>
           <AnimatePresence mode="wait">
-            {activeModule === 'inicio' ? (
+            {!access.canSee(activeModule) ? (
+              <NoAccess key="no-access" onHome={() => navigateTo('inicio')} />
+            ) : activeModule === 'admin' ? (
+              <AdminModule key="admin" user={user} />
+            ) : activeModule === 'inicio' ? (
               <HomeScreen key="inicio" user={user} onNavigate={navigateTo} />
             ) : activeModule === 'workspace' ? (
               <WorkspaceModule
