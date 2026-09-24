@@ -66,7 +66,7 @@ export default function EventDetailModal({ event, onClose }) {
           )}
 
           {event.description && (
-            <p className="mt-4 whitespace-pre-wrap text-[13px] leading-relaxed text-[#CCCCCC]">{event.description}</p>
+            <p className="mt-4 whitespace-pre-wrap [overflow-wrap:anywhere] text-[13px] leading-relaxed text-[#CCCCCC]">{event.description}</p>
           )}
 
           {guests.length > 0 && (

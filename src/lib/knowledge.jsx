@@ -260,5 +260,5 @@ export function renderMarkdown(source) {
     )
   }
 
-  return <div className="flex flex-col gap-3">{blocks}</div>
+  return <div className="ador-wrap flex flex-col gap-3">{blocks}</div>
 }

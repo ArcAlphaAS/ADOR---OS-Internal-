@@ -78,7 +78,7 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
         <ArrowLeftIcon size={12} /> Volver a Anuncios
       </button>
 
-      <article className="ador-glass overflow-hidden rounded-[32px] p-2.5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] md:p-3">
+      <article className="ador-wrap ador-glass overflow-hidden rounded-[32px] p-2.5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] md:p-3">
         {/* Photo, inset with its own radius */}
         <div className="relative h-[260px] overflow-hidden rounded-[24px] md:h-[380px]">
           <Cover post={post} />

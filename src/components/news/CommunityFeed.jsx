@@ -142,7 +142,7 @@ function Composer({ user, actorName }) {
   }
 
   return (
-    <div className="ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-4 md:p-5">
+    <div className="ador-wrap ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-4 md:p-5">
       <div className="flex items-start gap-3">
         <PersonAvatar uid={user?.uid} name={actorName} size={44} />
         <div className="min-w-0 flex-1">
@@ -335,7 +335,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
   const toggleLike = () => setCommunityReaction(post.id, myReaction || LIKE, uid, myReaction).catch(() => {})
 
   return (
-    <article className="ador-glass flex flex-col gap-4 rounded-[22px] p-5 md:p-6">
+    <article className="ador-wrap ador-glass flex flex-col gap-4 rounded-[22px] p-5 md:p-6">
       <header className="flex items-center gap-3">
         <PersonAvatar uid={post.authorUid} name={post.authorName} size={44} />
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">

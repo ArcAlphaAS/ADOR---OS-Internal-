@@ -68,7 +68,7 @@ export function FeaturedStory({ post, onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group relative block h-full min-h-[340px] w-full overflow-hidden rounded-[22px] border border-white/[0.08] text-left md:min-h-[400px]"
+      className="ador-wrap group relative block h-full min-h-[340px] w-full overflow-hidden rounded-[22px] border border-white/[0.08] text-left md:min-h-[400px]"
     >
       <div className="absolute inset-0">
         <Cover post={post} zoom />
@@ -102,7 +102,7 @@ export function FeaturedStory({ post, onOpen }) {
 
 export function LatestList({ posts, onOpen }) {
   return (
-    <div className="ador-glass ador-grain flex h-full flex-col rounded-[22px] p-5">
+    <div className="ador-wrap ador-glass ador-grain flex h-full flex-col rounded-[22px] p-5">
       <p className="px-1 text-[22px] text-[#F5F5F5]" style={SERIF}>
         Lo último
       </p>
@@ -166,7 +166,7 @@ export function EditorialRow({ posts, onOpen }) {
             key={post.id}
             type="button"
             onClick={() => onOpen(post.id)}
-            className="ador-glass group flex w-[85%] flex-shrink-0 snap-start flex-col overflow-hidden rounded-[20px] text-left sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]"
+            className="ador-wrap ador-glass group flex w-[85%] flex-shrink-0 snap-start flex-col overflow-hidden rounded-[20px] text-left sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]"
           >
             <span className="relative block h-[150px] overflow-hidden">
               <Cover post={post} zoom />
