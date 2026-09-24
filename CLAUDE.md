@@ -780,6 +780,17 @@ From the user's reference image. `CommunityFeed.jsx` rewritten; the header ("Com
 - `createCommunityPost(payload, uid, name)` takes `{text, title, type, images}` (a bare string still works).
 - Verified with 3 sample posts (removed): layout at 1200px, type filters, comments panel. Writes (post, like, comment, save) need a real login.
 
+- **Each post type does something (same day, `CommunityParts.jsx`), modeled on the social networks that do it best:**
+  - **Evento:** composer fields date (required), time, place, link. Stored as `event`, plus `rsvp {going, maybe, no}` with the author already going. The card shows a calendar tile, the weekday/date/time, 📍 place, 🔗 join link, "Hoy/Mañana/En N días" or "Pasado" (3h after start), faces of who's going, and Asistiré / Tal vez / No puedo (`setCommunityRsvp`, one answer per person). It also offers "Google Calendar" (a template URL, no API or scope needed, `ctz` = the device's time zone) and "Apple / Outlook" (an .ics data URL download).
+  - **Pregunta:** the author can mark any other person's comment as the best answer (`acceptedCommentId`, toggle). That comment moves first with a green frame, and the post gets a "✓ Resuelta" chip. The comment button reads "Responder" while it has no comments.
+  - **Idea:** "▲ Me sumo" votes (`votes` [uids], `toggleCommunityVote`) and `ideaStatus` (nueva · evaluacion · aprobada · descartada). Admins change it from a select; everyone else sees a colored chip.
+  - **Logro:** `honorees` [{uid, name}] picked from the users list, shown as a gold 🏆 strip. The like becomes "🎉 Felicitar".
+  - **Recurso:** `resource` from a pasted link or the Google Drive picker (`useDrivePicker('news')`), shown as a card (icon, name, host / "Google Drive", ↗).
+  - **All types:** placeholders written per type; `#hashtags` and links in the text are clickable (a hashtag fills the search box via `onSearch`); admins can "📌 Fijar arriba" (`pinned`, sorted first).
+  - Firestore: `setCommunityRsvp`, `toggleCommunityVote`, `updateCommunityPost`. `createCommunityPost` stores `event`/`honorees`/`resource`/`votes` according to the type.
+  - Verified with 5 sample posts (removed): every type's card, the composer fields per type, hashtag filtering. Writes need a real login.
+  - Not built: notifications for Comunidad activity (a comment on your post, an RSVP), @mentions in posts, link previews (they need a server fetch).
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

@@ -275,7 +275,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       {tab === 'anuncios' ? (
         <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} />
       ) : (
-        <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} profile={profile} query={query} />
+        <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} profile={profile} query={query} onSearch={setQuery} />
       )}
     </motion.div>
   )

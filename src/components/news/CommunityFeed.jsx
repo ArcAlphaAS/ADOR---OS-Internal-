@@ -9,6 +9,7 @@ import {
   addCommunityComment,
   deleteCommunityComment,
   setCommunitySaved,
+  updateCommunityPost,
   subscribeUsers,
   subscribeDirectoryPeople,
 } from '../../lib/firestore'
@@ -17,6 +18,8 @@ import { resizeImageToDataUrl } from '../../lib/image'
 import { useToast } from '../../hooks/useToast'
 import PersonAvatar, { ChatPeopleContext } from '../chat/PersonAvatar'
 import { SERIF } from './NewsLayout'
+import { EventFields, HonoreePicker, ResourceFields, EventBlock, AchievementBlock, ResourceCard, IdeaBar, PostText } from './CommunityParts'
+import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { UsersIcon, CalendarIcon, FileIcon, ImageIcon, BookmarkIcon, MessageIcon, CloseIcon } from '../icons'
 
 // Comunidad — the informal side of News (from the user's reference image):
@@ -69,6 +72,15 @@ function timeAgo(ts) {
   return ts.toDate().toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
+const PLACEHOLDER = {
+  actualizacion: '¿En qué estás trabajando? Comparte un avance…',
+  idea: 'Cuenta tu idea — qué problema resuelve y por qué ahora…',
+  pregunta: '¿Qué necesitas saber? El equipo te responde en los comentarios…',
+  logro: '¿Qué se logró? Cuéntalo y celebremos…',
+  evento: 'De qué trata el evento y por qué vale la pena ir…',
+  recurso: 'Por qué este recurso es útil…',
+}
+
 function Composer({ user, actorName }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -76,8 +88,18 @@ function Composer({ user, actorName }) {
   const [type, setType] = useState('actualizacion')
   const [images, setImages] = useState([])
   const [saving, setSaving] = useState(false)
+  const [event, setEvent] = useState({ date: '', time: '', place: '', link: '' })
+  const [honorees, setHonorees] = useState([])
+  const [resource, setResource] = useState(null)
   const fileRef = useRef(null)
   const showToast = useToast()
+  const { users } = useMemoPeople()
+  const drive = useDrivePicker('news')
+  const pickDrive = async () => {
+    const files = await drive.pick({ multiple: false, title: 'Compartir un recurso' })
+    const f = files?.[0]
+    if (f) setResource({ kind: 'drive', url: f.url, name: f.name, iconUrl: f.iconUrl || null })
+  }
 
   const addImages = async (files) => {
     const room = 3 - images.length
@@ -96,16 +118,21 @@ function Composer({ user, actorName }) {
     setText('')
     setImages([])
     setType('actualizacion')
+    setEvent({ date: '', time: '', place: '', link: '' })
+    setHonorees([])
+    setResource(null)
     setOpen(false)
   }
 
   const submit = async () => {
     if ((!text.trim() && !title.trim()) || saving) return
+    if (type === 'evento' && !event.date) return showToast('Ponle una fecha al evento.')
+    if (type === 'recurso' && !resource?.url) return showToast('Añade el enlace o el archivo del recurso.')
     // Firestore documents top out at 1MB — keep photos comfortably under it.
     if (images.reduce((n, u) => n + u.length, 0) > 850_000) return showToast('Las fotos pesan demasiado juntas — quita alguna.')
     setSaving(true)
     try {
-      await withTimeout(createCommunityPost({ text: text.trim(), title: title.trim(), type, images }, user.uid, actorName))
+      await withTimeout(createCommunityPost({ text: text.trim(), title: title.trim(), type, images, event: type === 'evento' ? event : null, honorees: type === 'logro' ? honorees : [], resource: type === 'recurso' ? resource : null }, user.uid, actorName))
       reset()
     } catch (error) {
       showToast(`No se pudo publicar: ${error.message}`)
@@ -135,10 +162,25 @@ function Composer({ user, actorName }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
             }}
-            placeholder="¿Qué quieres compartir con el equipo?"
+            placeholder={open ? PLACEHOLDER[type] : '¿Qué quieres compartir con el equipo?'}
             rows={open ? 3 : 1}
             className="w-full resize-none rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
           />
+          {open && type === 'evento' && (
+            <div className="mt-2">
+              <EventFields value={event} onChange={setEvent} />
+            </div>
+          )}
+          {open && type === 'logro' && (
+            <div className="mt-2">
+              <HonoreePicker users={users} value={honorees} onChange={setHonorees} currentUid={user?.uid} />
+            </div>
+          )}
+          {open && type === 'recurso' && (
+            <div className="mt-2">
+              <ResourceFields value={resource} onChange={setResource} onPickDrive={pickDrive} />
+            </div>
+          )}
           {images.length > 0 && (
             <div className="mt-2 flex gap-2">
               {images.map((src, i) => (
@@ -177,6 +219,7 @@ function Composer({ user, actorName }) {
         </button>
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
       </div>
+      {drive.prompt}
 
       {open && (
         <div className="flex justify-end gap-2">
@@ -214,7 +257,7 @@ function Photos({ images, onOpen }) {
   )
 }
 
-function Comments({ post, user, actorName, canModerate }) {
+function Comments({ post, user, actorName, canModerate, canAccept }) {
   const [comments, setComments] = useState([])
   const [text, setText] = useState('')
   const showToast = useToast()
@@ -229,14 +272,24 @@ function Comments({ post, user, actorName, canModerate }) {
 
   return (
     <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4">
-      {comments.map((c) => (
+      {[...comments].sort((a, b) => (b.id === post.acceptedCommentId) - (a.id === post.acceptedCommentId)).map((c) => (
         <div key={c.id} className="group flex items-start gap-2.5">
           <PersonAvatar uid={c.authorUid} name={c.authorName} size={28} />
-          <div className="min-w-0 flex-1 rounded-2xl bg-white/[0.04] px-3.5 py-2">
+          <div className={`min-w-0 flex-1 rounded-2xl px-3.5 py-2 ${c.id === post.acceptedCommentId ? 'border border-[#4CAF50]/40 bg-[#4CAF50]/[0.07]' : 'bg-white/[0.04]'}`}>
+            {c.id === post.acceptedCommentId && <p className="mb-0.5 text-[11px] font-semibold text-[#8FD19A]">✓ Mejor respuesta</p>}
             <p className="text-[12.5px] font-semibold text-[#E5E5E5]">
               {c.authorName} <span className="font-normal text-[#7A7A7A]">· {timeAgo(c.createdAt)}</span>
             </p>
             <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]">{c.text}</p>
+            {canAccept && c.authorUid !== user?.uid && (
+              <button
+                type="button"
+                onClick={() => updateCommunityPost(post.id, { acceptedCommentId: c.id === post.acceptedCommentId ? null : c.id }).catch(() => {})}
+                className="mt-1 text-[11.5px] font-medium text-[#8A8A8A] hover:text-[#8FD19A]"
+              >
+                {c.id === post.acceptedCommentId ? 'Quitar como mejor respuesta' : '✓ Marcar como mejor respuesta'}
+              </button>
+            )}
           </div>
           {(canModerate || c.authorUid === user?.uid) && (
             <button type="button" onClick={() => withTimeout(deleteCommunityComment(post.id, c.id)).catch(() => {})} className="mt-2 text-[#5A5A5A] opacity-0 hover:text-[#EF5350] group-hover:opacity-100" aria-label="Eliminar comentario">
@@ -264,7 +317,7 @@ function Comments({ post, user, actorName, canModerate }) {
   )
 }
 
-function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDelete, onOpenImage }) {
+function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDelete, onOpenImage, onTag }) {
   const { directory } = useMemoPeople()
   const [menu, setMenu] = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -289,21 +342,35 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
           <span className="text-[14.5px] font-semibold text-[#F5F5F5]">{post.authorName}</span>
           {area && <span className="rounded-full bg-white/[0.07] px-2.5 py-0.5 text-[12px] text-[#CCCCCC]">{area}</span>}
           <span className="text-[12.5px] text-[#7A7A7A]">{timeAgo(post.createdAt)}</span>
+          {post.pinned && <span className="rounded-full bg-[#E8C15A]/15 px-2 py-0.5 text-[11px] font-medium text-[#E8C15A]">📌 Fijado</span>}
+          {post.type === 'pregunta' && post.acceptedCommentId && <span className="rounded-full bg-[#4CAF50]/15 px-2 py-0.5 text-[11px] font-medium text-[#8FD19A]">✓ Resuelta</span>}
         </div>
-        {canDelete && (
+        {(canDelete || isAdminUser) && (
           <div className="relative">
             <button type="button" onClick={() => setMenu((v) => !v)} className="flex h-8 w-8 items-center justify-center rounded-full text-[18px] leading-none text-[#AAAAAA] hover:bg-white/[0.06]" aria-label="Más opciones">
               ⋯
             </button>
             {menu && (
-              <div className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl border border-white/[0.1] bg-[#1C1C1E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                <button
+              <div className="absolute right-0 top-9 z-10 w-48 overflow-hidden rounded-xl border border-white/[0.1] bg-[#1C1C1E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                {isAdminUser && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateCommunityPost(post.id, { pinned: !post.pinned }).catch(() => {})
+                      setMenu(false)
+                    }}
+                    className="w-full px-4 py-2.5 text-left text-[13px] text-[#DDDDDD] hover:bg-white/[0.05]"
+                  >
+                    {post.pinned ? 'Desfijar' : '📌 Fijar arriba'}
+                  </button>
+                )}
+                {canDelete && <button
                   type="button"
                   onClick={() => (confirm ? onDelete(post) : setConfirm(true))}
                   className="w-full px-4 py-2.5 text-left text-[13px] text-[#FF6B63] hover:bg-white/[0.05]"
                 >
                   {confirm ? '¿Seguro? Eliminar' : 'Eliminar publicación'}
-                </button>
+                </button>}
               </div>
             )}
           </div>
@@ -315,9 +382,13 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
           {post.title}
         </h3>
       )}
-      {post.text && <p className="-mt-1 whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#D5D5D5]">{post.text}</p>}
+      {post.text && <PostText text={post.text} onTag={onTag} className="-mt-1 whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#D5D5D5]" />}
 
+      {post.type === 'logro' && <AchievementBlock post={post} />}
+      {post.type === 'evento' && <EventBlock post={post} uid={uid} />}
+      {post.type === 'recurso' && <ResourceCard resource={post.resource} />}
       <Photos images={post.images} onOpen={onOpenImage} />
+      {post.type === 'idea' && <IdeaBar post={post} uid={uid} isAdminUser={isAdminUser} />}
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -340,12 +411,14 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
       <div className="flex items-center gap-1 border-t border-white/[0.06] pt-3">
         <button type="button" onClick={toggleLike} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 transition-colors hover:bg-white/[0.05]" style={{ color: liked ? '#FF5A6E' : '#AAAAAA' }}>
           <motion.span key={String(liked)} initial={{ scale: liked ? 0.6 : 1 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
-            <HeartIcon filled={liked} />
+            {post.type === 'logro' ? <span className="text-[16px]">🎉</span> : <HeartIcon filled={liked} />}
           </motion.span>
+          {post.type === 'logro' && <span className="text-[13.5px] font-medium">{liked ? 'Felicitado' : 'Felicitar'}</span>}
           {reactors.length > 0 && <span className="text-[13.5px] font-medium">{reactors.length}</span>}
         </button>
         <button type="button" onClick={() => setShowComments((v) => !v)} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[#AAAAAA] transition-colors hover:bg-white/[0.05]">
           <MessageIcon size={17} />
+          {post.type === 'pregunta' && !post.commentCount && <span className="text-[13px]">Responder</span>}
           {post.commentCount > 0 && <span className="text-[13.5px]">{post.commentCount}</span>}
         </button>
         <button
@@ -358,7 +431,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
         </button>
       </div>
 
-      {showComments && <Comments post={post} user={user} actorName={actorName} canModerate={isAdminUser} />}
+      {showComments && <Comments post={post} user={user} actorName={actorName} canModerate={isAdminUser} canAccept={post.type === 'pregunta' && post.authorUid === uid} />}
     </article>
   )
 }
@@ -384,7 +457,7 @@ function ImageViewer({ src, onClose }) {
   )
 }
 
-export default function CommunityFeed({ user, posts, isAdminUser, profile, query = '' }) {
+export default function CommunityFeed({ user, posts, isAdminUser, profile, query = '', onSearch }) {
   const actorName = user?.displayName || user?.email?.split('@')[0] || 'Usuario'
   const showToast = useToast()
   const [filter, setFilter] = useState('todo')
@@ -397,7 +470,7 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
   const saved = profile?.communitySaved || {}
   const fold = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   const words = fold(query).split(/\s+/).filter(Boolean)
-  const visible = posts.filter((p) => {
+  const visible = [...posts].sort((a, b) => Boolean(b.pinned) - Boolean(a.pinned)).filter((p) => {
     if (filter === 'guardados' ? !saved[p.id] : filter !== 'todo' && (p.type || 'actualizacion') !== filter) return false
     if (!words.length) return true
     const hay = fold([p.title, p.text, p.authorName, TYPE_BY_ID[p.type]?.label].join(' '))
@@ -448,6 +521,7 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
               canDelete={isAdminUser || post.authorUid === user?.uid}
               onDelete={handleDelete}
               onOpenImage={setViewing}
+              onTag={onSearch}
             />
           ))
         )}

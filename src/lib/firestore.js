@@ -963,12 +963,40 @@ export function createCommunityPost(payload, actorUid, actorName) {
     title: p.title || '',
     type: p.type || 'actualizacion',
     images: p.images || [],
+    // Type-specific extras (only the one matching `type` is set):
+    //   event {date 'YYYY-MM-DD', time 'HH:MM', place, link} + rsvp {going,maybe,no: [uids]}
+    //   honorees [{uid, name}] (Logro) · resource {url, name, kind:'drive'|'link', iconUrl?}
+    //   votes [uids] + ideaStatus (Idea) · acceptedCommentId (Pregunta)
+    ...(p.event ? { event: p.event, rsvp: { going: [actorUid], maybe: [], no: [] } } : {}),
+    ...(p.honorees?.length ? { honorees: p.honorees } : {}),
+    ...(p.resource ? { resource: p.resource } : {}),
+    ...(p.type === 'idea' ? { votes: [], ideaStatus: 'nueva' } : {}),
     authorUid: actorUid,
     authorName: actorName,
     reactions: {},
     commentCount: 0,
     createdAt: serverTimestamp(),
   })
+}
+
+// Asistiré / Tal vez / No puedo — one answer per person.
+export function setCommunityRsvp(postId, uid, status) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const updates = {}
+  for (const s of ['going', 'maybe', 'no']) updates[`rsvp.${s}`] = s === status ? arrayUnion(uid) : arrayRemove(uid)
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), updates)
+}
+
+// Add/remove the person in an array field (Idea "Me sumo" votes).
+export function toggleCommunityVote(postId, uid, on) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), { votes: on ? arrayUnion(uid) : arrayRemove(uid) })
+}
+
+// Small plain updates: pinned, ideaStatus, acceptedCommentId.
+export function updateCommunityPost(postId, patch) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), patch)
 }
 
 // Comments on a Comunidad post: a subcollection, plus a commentCount on the
