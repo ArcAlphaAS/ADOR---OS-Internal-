@@ -391,7 +391,10 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] Inicio: Próxima reunión desde Google Calendar; Resumen financiero con los mismos datos que Finanzas
 - [x] Archivos desde Google Drive (selector de Google, con opción de subir): Clientes → Documentos, Finanzas → comprobante, Comunicación, Conocimiento
 - [x] "Exportar todo a Drive" en Configuración (solo administradores), carpeta "ADOR OS — Respaldos"
-- [ ] **Pendiente del usuario (consola de Google, una vez):** activar Google Drive API + Google Picker API, añadir el permiso `drive.file`, crear la clave de API y ponerla en Vercel como `VITE_GOOGLE_API_KEY`. Luego cada socio pulsa "Conectar Google" una vez
+- [x] Consola de Google terminada (Drive API, Picker API, permisos, clave) y **Drive probado en vivo** (2026-09-23)
+- [x] **Migración a Cloudflare Workers** (Vercel gratis no permite uso comercial): `ador-os.adorfirm.workers.dev` funcionando. See CLAUDE.md §36
+- [ ] Apagar Vercel: pasar la dirección nueva a los socios, borrar/pausar el proyecto, quitar sus direcciones de Firebase/Google, borrar `api/`
+- [ ] Decidir la carpeta "ADOR" de la empresa en Drive (hoy cada archivo/respaldo va al Drive de quien lo sube)
 - [ ] 5 Búsqueda global · 6 Registro de errores · 7 Permisos + Administración · 8 Celular/iPad
 
 **Not built yet**
@@ -410,8 +413,8 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 | Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region. Rules require `request.auth != null` AND the user's email to have a document in `allowedEmails/{email}` — access control enforced at the data layer, not just the login screen. Applied via a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule, so **every** collection is automatically covered, present and future — no per-collection rule edits are ever needed (confirmed 2026-08-15 by reviewing the actual rules in console). All 3 founder emails added as of 2026-08-14 |
 | Google Cloud (OAuth, Calendar API, **Meet REST API**) | ✅ Same project as Firebase (number 610980815690). OAuth scopes: `calendar.readonly` + `meetings.space.created`. Only the founder's own ADOR OS login email may be connected as their Google account (optional extra domains in `settings/google.allowedDomains`) |
 | Firebase Storage | ❌ Not enabled (deliberately deferred by the user) — Clientes → Documentos, Finanzas → Comprobante and chat "Otro archivo" store metadata only / are disabled |
-| Vercel functions | `api/google-calendar/exchange.js`, `api/google-calendar/refresh.js`, `api/google-meet/space.js` (creates Meet rooms), `api/ador-ia.js` (dormant Gemini path) |
-| Deployment | ✅ Vercel — `ador-os-internal.vercel.app`, auto-deploys on push to `main`. Firebase Hosting not used (redundant with Vercel) |
+| Server functions | `server/handlers.js` (Google connect/refresh, Meet rooms, dormant Gemini), served by `server/worker.js` on Cloudflare; `api/` = old Vercel adapters, delete once Vercel is off |
+| Deployment | ✅ **Cloudflare Workers** (free, commercial use allowed) — `https://ador-os.adorfirm.workers.dev`, auto-deploys on push to `main` (Workers Builds). Vercel (`ador-os-internal.vercel.app`) still running until switched off — see CLAUDE.md §36 |
 | `.env` (Firebase config) | Present locally, gitignored. Same values set as Environment Variables in Vercel project settings |
 | Git repository | ✅ Initialized, initial commit made 2026-08-13 |
 | GitHub | ✅ Private repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` pushed and tracked, connected to Vercel for CI deploys |
