@@ -167,6 +167,8 @@ const SHORTCUT_MODULES = ['chat', 'workspace', 'calendario', 'clientes', 'inicio
 export function parseOpenLink(search) {
   const p = new URLSearchParams(search)
   const open = p.get('open')
+  // /?open=news&nid=<id> — "Copiar enlace" on an opened announcement.
+  if (open === 'news' && p.get('nid')) return ['news', { type: 'news', id: p.get('nid') }]
   if (SHORTCUT_MODULES.includes(open) && !p.get('cid')) return [open, null]
   if (open !== 'chat' || !p.get('cid')) return null
   return [

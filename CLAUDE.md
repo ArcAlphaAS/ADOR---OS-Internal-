@@ -769,6 +769,8 @@ From two reference images the user shared (a dark "News" page with a featured st
 - `parseOpenLink` also accepts `?open=news|objetivos|finanzas|conocimiento|directorio` (handy deep links; used to test).
 - Verified with 9 sample posts (removed): desktop 1440 and phone 375 layouts, no overflow, the editor's categories and photo button. Real photos weren't tried in the preview.
 
+- **Opened announcement (same day):** `PostDetail` in NewsModule follows a travel-app detail card the user shared. It's one centered glass card (780px, 32px radius) with the cover inset in its own rounded frame; over the photo, the category + "ADOR · News" and a frosted "Copiar enlace" button (copies `/?open=news&nid=<id>`, which `parseOpenLink` opens straight to that post; AppShell strips `nid`). Then the serif headline, date · author, a divider, a stats row (Categoría · Lectura in minutes at ~200 words/min · Publicado), an author tile on the right (sm+), the subtitle as a lead paragraph, the Markdown body, admin Editar/Eliminar at the bottom, and a ^ that scrolls back to the top.
+
 ### 44. Comunidad redesigned (2026-09-24)
 
 From the user's reference image. `CommunityFeed.jsx` rewritten; the header ("Comunidad ADOR" in serif, a subtitle and a search box) lives in `NewsModule`, and the page narrows to 1040px on this tab.

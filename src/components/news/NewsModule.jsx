@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { subscribeNews, createNewsPost, updateNewsPost, deleteNewsPost, subscribeCommunityPosts, subscribeUserProfile } from '../../lib/firestore'
 import { renderMarkdown } from '../../lib/knowledge'
@@ -6,8 +6,7 @@ import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import NewsEditor from './NewsEditor'
-import NewsHeroCard from './NewsHeroCard'
-import { FeaturedStory, LatestList, EditorialRow, SERIF } from './NewsLayout'
+import { FeaturedStory, LatestList, EditorialRow, SERIF, Cover } from './NewsLayout'
 import CommunityFeed from './CommunityFeed'
 import Avatar from '../shell/Avatar'
 import { GlobeIcon, PlusIcon, EditIcon, ArrowLeftIcon, SearchIcon } from '../icons'
@@ -43,49 +42,129 @@ function sortPosts(posts) {
   })
 }
 
+// An opened announcement, laid out like the user's reference (a travel-app
+// detail card): the photo inset in a rounded card with the category and a
+// glass button on it, then the serif headline, a short stats row
+// (Categoría · Lectura · Publicado), the author in a soft tile on the
+// right, the article, and a ^ back to the top.
+function readingMinutes(body) {
+  const words = (body || '').trim().split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+
 function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const topRef = useRef(null)
+  const edited = post.updatedAt?.toMillis?.() && post.updatedAt.toMillis() - (post.createdAt?.toMillis?.() || 0) > 60_000
+
+  const copyLink = () => {
+    const url = `${window.location.origin}/?open=news&nid=${post.id}`
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+
+  const stats = [
+    { value: post.category || 'General', label: 'Categoría' },
+    { value: `${readingMinutes(post.body)} min`, label: 'Lectura' },
+    { value: post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '') : '—', label: 'Publicado' },
+  ]
 
   return (
-    <div className="flex flex-col gap-5">
-      <button type="button" onClick={onBack} className="flex w-fit items-center gap-1.5 text-[12px] text-[#666666] hover:text-[#F5F5F5]">
+    <div ref={topRef} className="mx-auto flex w-full max-w-[780px] flex-col gap-4">
+      <button type="button" onClick={onBack} className="flex w-fit items-center gap-1.5 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
         <ArrowLeftIcon size={12} /> Volver a Anuncios
       </button>
 
-      <NewsHeroCard post={post} />
-      {post.category && <p className="-mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{post.category}</p>}
+      <article className="ador-glass overflow-hidden rounded-[32px] p-2.5 shadow-[0_30px_80px_rgba(0,0,0,0.45)] md:p-3">
+        {/* Photo, inset with its own radius */}
+        <div className="relative h-[260px] overflow-hidden rounded-[24px] md:h-[380px]">
+          <Cover post={post} />
+          <div className="absolute inset-x-0 bottom-0 h-2/3" style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(8,8,9,0.35) 45%, rgba(8,8,9,0.85) 100%)' }} />
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 md:p-6">
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-white">{post.category || 'Anuncio oficial'}</p>
+              <p className="truncate text-[12.5px] text-white/65">ADOR · News{post.pinned ? ' · Destacado' : ''}</p>
+            </div>
+            <button
+              type="button"
+              onClick={copyLink}
+              className="flex-shrink-0 rounded-2xl border border-white/20 bg-white/15 px-5 py-3 text-[14px] font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/25 md:px-7"
+            >
+              {copied ? 'Enlace copiado ✓' : 'Copiar enlace'}
+            </button>
+          </div>
+        </div>
 
-      <div className="ador-glass ador-grain flex flex-col gap-5 rounded-2xl p-7">
-        <div className="flex items-start justify-between gap-4">
-          <p className="flex items-center gap-2 text-[12.5px] text-[#666666]">
-            <Avatar displayName={post.createdBy} size={20} />
-            {post.createdBy} · {formatDate(post.createdAt)}
-            {post.updatedAt?.toMillis?.() !== post.createdAt?.toMillis?.() ? ' (editado)' : ''}
-          </p>
+        <div className="px-3 pb-2 pt-6 md:px-6">
+          {/* Headline + stats, author tile on the right */}
+          <div className="flex items-start gap-5">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-[28px] leading-[1.12] text-[#F5F5F5] md:text-[34px]" style={SERIF}>
+                {post.title}
+              </h1>
+              <p className="mt-1.5 text-[13px] text-[#8A8A8A]">
+                {formatDate(post.createdAt)} · Por {post.createdBy || 'ADOR'}
+                {edited ? ' · editado' : ''}
+              </p>
+              <div className="mt-4 h-px bg-white/[0.08]" />
+              <div className="mt-4 flex gap-8">
+                {stats.map((st) => (
+                  <div key={st.label}>
+                    <p className="text-[16px] font-semibold text-[#F5F5F5]">{st.value}</p>
+                    <p className="text-[11.5px] text-[#7A7A7A]">{st.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="hidden w-[130px] flex-shrink-0 flex-col items-center justify-center gap-2 rounded-[22px] bg-white/[0.05] px-3 py-5 sm:flex">
+              <Avatar displayName={post.createdBy} size={46} />
+              <p className="max-w-full truncate text-center text-[12.5px] font-medium text-[#DDDDDD]">{post.createdBy || 'ADOR'}</p>
+              <p className="text-[11px] text-[#7A7A7A]">Autor</p>
+            </div>
+          </div>
+
+          {post.subtitle && <p className="mt-6 text-[16px] leading-relaxed text-[#CFCFCF]">{post.subtitle}</p>}
+
+          <div className="mt-5 text-[15px] leading-[1.75] text-[#BDBDBD]">{renderMarkdown(post.body)}</div>
+
           {isAdminUser && (
-            <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="mt-8 flex items-center gap-2 border-t border-white/[0.06] pt-5">
               <button
                 type="button"
                 onClick={onEdit}
-                className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]"
+                className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12.5px] text-[#AAAAAA] transition-colors hover:border-white/[0.2] hover:text-[#F5F5F5]"
               >
                 <EditIcon size={12} /> Editar
               </button>
               {confirmDelete ? (
-                <button type="button" onClick={() => onDelete(post)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]">
+                <button type="button" onClick={() => onDelete(post)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12.5px] font-medium text-[#EF5350]">
                   ¿Confirmar borrado?
                 </button>
               ) : (
-                <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">
+                <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
                   Eliminar
                 </button>
               )}
             </div>
           )}
+
+          <div className="mt-6 flex justify-center pb-2">
+            <button
+              type="button"
+              onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              aria-label="Volver arriba"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#8A8A8A] hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 15 6-6 6 6" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div className="h-px bg-white/[0.06]" />
-        {renderMarkdown(post.body)}
-      </div>
+      </article>
     </div>
   )
 }
