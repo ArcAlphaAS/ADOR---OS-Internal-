@@ -400,7 +400,7 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [x] 6 Registro de errores (gratis, en Administración → Errores)
 - [x] 7 Roles (Administrador / Miembro) + **Administración** (invitar, roles, accesos, errores, datos)
 - [ ] 7b Activar las reglas de seguridad de `firestore.rules` — **probarlas antes**; necesario solo antes de invitar al primer Miembro. See CLAUDE.md §37
-- [ ] 8 Celular/iPad
+- [x] 8 Celular/iPad: instalable como app (ícono en pantalla de inicio), barra de navegación abajo en pantallas pequeñas, todos los módulos adaptados. Falta probar en un teléfono real y, más adelante, notificaciones con la app cerrada
 
 **Not built yet**
 - [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip

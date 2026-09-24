@@ -114,7 +114,7 @@ function SearchToggle({ onNavigate, uid, canSee }) {
             key="search-input"
             ref={inputRef}
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 220, opacity: 1 }}
+            animate={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? 150 : 220, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={REFLOW_TRANSITION}
             autoFocus
@@ -355,7 +355,7 @@ export default function TopBar({
 
   return (
     <header
-      className="relative z-40 grid w-full flex-shrink-0 grid-cols-3 items-center px-5"
+      className="relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
       style={{ height: 64, backgroundColor: '#0A0A0A' }}
     >
       <div className="flex items-baseline gap-[6px] justify-self-start">
@@ -365,7 +365,8 @@ export default function TopBar({
         </span>
       </div>
 
-      <div className="justify-self-center">
+      {/* Below 1024px these tabs live in the bottom bar (BottomNav). */}
+      <div className="hidden justify-self-center lg:block">
         <PillTabs activeModule={activeModule} onNavigate={onNavigate} canSee={access.canSee} />
       </div>
 

@@ -83,7 +83,7 @@ export default function AdorIAModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-12 pb-8 pt-16"
+      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pb-8 pt-6 md:px-8 lg:px-12 lg:pt-16"
     >
       <div className="flex items-center gap-2.5">
         <div

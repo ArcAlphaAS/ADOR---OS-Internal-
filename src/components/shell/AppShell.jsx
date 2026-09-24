@@ -18,6 +18,7 @@ import { useScheduledSender } from '../../hooks/useScheduledSender'
 import { finishDriveConnect } from '../../lib/googleDrive'
 import { installErrorLogging, setErrorContext } from '../../lib/errorLog'
 import ModuleErrorBoundary from './ModuleErrorBoundary'
+import BottomNav from './BottomNav'
 import { useAccess } from '../../hooks/useAccess'
 import { backfillChannelVisibility } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
@@ -187,7 +188,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       <div className="flex min-h-0 flex-1">
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} canSee={access.canSee} />
 
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        {/* pb on small screens leaves room for the bottom tab bar. */}
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(64px+env(safe-area-inset-bottom))] lg:pb-0">
           <ModuleErrorBoundary resetKey={activeModule}>
           <Suspense fallback={null}>
           <AnimatePresence mode="wait">
@@ -241,6 +243,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           </ModuleErrorBoundary>
         </main>
       </div>
+
+      <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread }} />
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
 

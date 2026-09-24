@@ -142,12 +142,34 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
         />
       )}
 
-      <div className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
+      <div className="min-w-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-8">
         {/* Hoy renders its own richer header (date, rotating quote, live
             stats — see HoyHeader in HoyView.jsx), so the generic
             title/subtitle here would just be a redundant second "Hoy"
             sitting right above it. Every other view still uses it. */}
-        <div className={`mb-6 flex items-center ${view === 'hoy' ? 'justify-end' : 'justify-between'}`}>
+        <div className={`mb-6 flex flex-wrap items-center gap-3 ${view === 'hoy' ? 'justify-end' : 'justify-between'}`}>
+          {/* Phones: the side filter column is hidden, so the same choice
+              (Personal / Grupo / one workstream) is a compact select here. */}
+          {view !== 'hoy' && (
+            <select
+              value={onlyMine ? '__mine' : selectedWorkstreamId || '__all'}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === '__mine') {
+                  if (!onlyMine) toggleOnlyMine()
+                } else selectWorkstream(v === '__all' ? null : v)
+              }}
+              className="w-full rounded-xl border border-white/[0.1] bg-[#141414] px-3 py-2 text-[13px] text-[#DDDDDD] outline-none md:hidden"
+            >
+              <option value="__mine">Personal — lo mío</option>
+              <option value="__all">Grupo — todo el equipo</option>
+              {workstreams.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          )}
           {view !== 'hoy' && (
             <div>
               <h1 className="text-[22px] font-semibold text-[#F5F5F5]">{title}</h1>
@@ -177,7 +199,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 )}
                 <span className="relative flex items-center gap-1.5">
                   <v.Icon size={14} />
-                  {v.label}
+                  <span className="hidden sm:inline">{v.label}</span>
                   {v.id === 'hoy' && myUrgentCount > 0 && view !== 'hoy' && (
                     <span
                       className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-semibold"

@@ -149,7 +149,7 @@ export default function WorkspaceSidebar({
   const proyectos = workstreams.filter((w) => w.kind === 'proyecto_interno')
 
   return (
-    <div className="flex h-full w-[200px] flex-shrink-0 flex-col gap-5 border-r border-white/[0.06] px-3 py-6">
+    <div className="hidden h-full w-[200px] flex-shrink-0 flex-col gap-5 border-r border-white/[0.06] px-3 md:flex py-6">
       <div className="flex flex-col gap-2">
         <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Mi trabajo

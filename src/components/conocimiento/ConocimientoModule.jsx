@@ -154,7 +154,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
     })
 
   return (
-    <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
+    <div className="flex w-full flex-shrink-0 flex-col gap-4 lg:w-[240px]">
       <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
         <SearchIcon size={13} className="text-[#666666]" />
         <input
@@ -332,8 +332,8 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
   return (
     <div className="mt-8">
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">{title}</p>
-      <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-        <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-5 py-2.5">
+      <div className="ador-glass ador-grain overflow-x-auto rounded-2xl">
+        <div className="grid min-w-[640px] grid-cols-[1.6fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-5 py-2.5">
           {['Nombre', 'Categoría', 'Última edición', 'Autor', ''].map((h) => (
             <span key={h} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {h}
@@ -345,7 +345,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
             <div
               key={doc.id}
               onClick={() => onOpen(doc)}
-              className="grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
+              className="grid min-w-[640px] cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
             >
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
@@ -608,7 +608,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1680px] gap-8 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 pb-16 pt-6 md:px-8 lg:flex-row lg:px-12 lg:pt-10"
     >
       <KnowledgeTree
         tree={index.tree}
@@ -661,7 +661,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="grid grid-cols-[1fr_300px] items-start gap-8">
+          <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[1fr_300px]">
             <div className="min-w-0">
               {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} />}
               <DocsTable

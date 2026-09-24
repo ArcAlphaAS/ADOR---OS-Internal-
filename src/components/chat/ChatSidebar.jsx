@@ -139,7 +139,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
-    <div className="flex w-[230px] flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4">
+    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4 md:w-[230px]">
       <div>
         <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
         <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">

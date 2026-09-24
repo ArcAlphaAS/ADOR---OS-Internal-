@@ -100,6 +100,9 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   // While one is open, no conversation is "open" — nothing streams and
   // nothing gets marked read behind the reader's back.
   const [view, setView] = useState(null)
+  // Phones (below md) show one pane at a time, WhatsApp-style: the list of
+  // conversations, or the open one full-screen with a back arrow.
+  const [mobilePane, setMobilePane] = useState('list')
   const [files, setFiles] = useState([])
   const [messageLimit, setMessageLimit] = useState(PAGE_SIZE)
   const [lightbox, setLightbox] = useState(null)
@@ -273,6 +276,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       if (convId === selectedConversationId) setMessageLimit((n) => Math.max(n, SEARCH_DEPTH))
     }
     setView(null)
+    setMobilePane('conv')
     if (threadParentId) setPanel({ type: 'thread', convId, parentId: threadParentId, jumpToId: messageId !== threadParentId ? messageId : null })
     if (type === 'dm') {
       const other = (participantUids || []).find((uid) => uid !== user.uid)
@@ -635,7 +639,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
 
   return (
     <ChatPeopleContext.Provider value={{ users, directory, presence }}>
-    <div className={`mx-auto flex h-full w-full max-w-[1320px] py-8 ${panel && !view ? 'gap-5 px-8' : 'gap-8 px-12'}`}>
+    <div className={`mx-auto flex h-full w-full max-w-[1320px] px-3 py-3 md:py-8 ${panel && !view ? 'md:gap-5 md:px-8' : 'md:gap-8 md:px-12'}`}>
+      <div className={mobilePane === 'list' ? 'flex w-full md:w-auto' : 'hidden md:flex'}>
       <ChatSidebar
         channels={channels}
         groups={groups}
@@ -649,13 +654,18 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         onSelect={(sel) => {
           setView(null)
           setSelected(sel)
+          setMobilePane('conv')
         }}
-        onSelectView={setView}
+        onSelectView={(v) => {
+          setView(v)
+          setMobilePane('conv')
+        }}
         onNewChannel={() => setModal('channel')}
         onNewGroup={() => setModal('group')}
         onSearchMessages={(q) => {
           setMessageSearch(q)
           setView('search')
+          setMobilePane('conv')
         }}
         onSetDnd={(until) =>
           withTimeout(setDoNotDisturb(user.uid, until))
@@ -664,8 +674,12 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         }
         calendarConnected={meet.status === 'ready' || Boolean(profile?.googleCalendar?.refreshToken)}
       />
+      </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={`min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'flex' : 'hidden md:flex'}`}>
+        <button type="button" onClick={() => setMobilePane('list')} className="mb-2 flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-[13px] text-[#AAAAAA] active:bg-white/[0.06] md:hidden">
+          ← Conversaciones
+        </button>
         {view === 'inbox' ? (
           <InboxView
             conversations={inboxConversations}

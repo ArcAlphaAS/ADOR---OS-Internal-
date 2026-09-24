@@ -96,7 +96,7 @@ export default function ObjetivosModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-12 pb-16 pt-16"
+      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-16"
     >
       {/* Cabecera — title/countdown row + the North Star hero. Always
           rendered as its own section, never mixed into the objetivo grid
@@ -126,7 +126,7 @@ export default function ObjetivosModule({ user }) {
           — same split-column pattern as Workspace's sidebar/main/Decisiones
           shell, so the connective tissue (what's being worked on, what's
           being tested) never has to compete for space with the goals grid. */}
-      <div className="grid grid-cols-[1fr_320px] items-start gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-6">
           {objetivos.length === 0 ? (
             <EmptyBoardCTA quarterKey={quarterKey} onCreate={() => openModal()} onPreset={openModal} />
@@ -139,7 +139,7 @@ export default function ObjetivosModule({ user }) {
                 >
                   {foco}
                 </span>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {items.map((o) => (
                     <ObjetivoCard
                       key={o.id}

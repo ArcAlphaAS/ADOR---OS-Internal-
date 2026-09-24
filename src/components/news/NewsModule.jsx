@@ -197,7 +197,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[880px] flex-col gap-6 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[880px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">

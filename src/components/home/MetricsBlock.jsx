@@ -25,7 +25,7 @@ function MetricCard({ label, value, onClick }) {
 
 export default function MetricsBlock({ onNavigate, pipelineSPCCount, activeSPCount, tasksTodayCount }) {
   return (
-    <div className="grid grid-cols-3 gap-5">
+    <div className="grid grid-cols-3 gap-3 sm:gap-5">
       <MetricCard label="SPC en Pipeline" value={pipelineSPCCount} onClick={() => onNavigate?.('clientes')} />
       <MetricCard label="SP Activos" value={activeSPCount} onClick={() => onNavigate?.('clientes')} />
       <MetricCard label="Tareas Hoy" value={tasksTodayCount} onClick={() => onNavigate?.('workspace')} />

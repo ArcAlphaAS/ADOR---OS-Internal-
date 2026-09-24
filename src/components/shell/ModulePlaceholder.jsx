@@ -8,7 +8,7 @@ export default function ModulePlaceholder({ name }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex h-full w-full max-w-[1680px] flex-col items-center justify-center px-12"
+      className="mx-auto flex h-full w-full max-w-[1680px] flex-col items-center justify-center px-4 lg:px-12"
     >
       <span className="text-[24px] font-semibold text-[#F5F5F5]">{name}</span>
       <span className="mt-2 text-[14px] font-light text-[#444444]">En construcción</span>

@@ -114,7 +114,7 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
   }, [activeModule])
 
   return createPortal(
-    <div className="pointer-events-none fixed bottom-6 left-24 z-[64] flex w-[320px] flex-col-reverse gap-2">
+    <div className="pointer-events-none fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-4 z-[64] flex w-[min(320px,calc(100vw-32px))] flex-col-reverse gap-2 lg:bottom-6 lg:left-24">
       <AnimatePresence>
         {toasts.map((t) => (
           <motion.div key={t.key} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }} className="pointer-events-auto">

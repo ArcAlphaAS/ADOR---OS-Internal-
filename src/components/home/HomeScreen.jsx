@@ -72,7 +72,7 @@ export default function HomeScreen({ user, onNavigate }) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="mx-auto flex w-full max-w-[1680px] flex-col gap-10 px-12 pb-16 pt-16"
+      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-10 lg:px-12 lg:pt-16"
     >
       <motion.div variants={itemVariants}>
         <BirthdayBanner birthdays={birthdays} currentUserId={user?.uid} />
@@ -89,7 +89,7 @@ export default function HomeScreen({ user, onNavigate }) {
           2026-08-14): left = chart-driven overview + its paired secondary
           cards, right = at-a-glance stats + a real data table underneath —
           mirrors "My Campaigns" + "Total Balance"/"Popular Campaigns". */}
-      <div className="grid grid-cols-[1fr_1.3fr] items-start gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_1.3fr]">
         <div className="flex flex-col gap-6">
           <motion.div variants={itemVariants}>
             <FinanceBlock

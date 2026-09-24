@@ -46,7 +46,7 @@ function meetingContent(meeting, status) {
 
 export default function MeetingDecisionBlock({ meeting, calendarStatus, onOpenCalendar, latestDecision }) {
   return (
-    <div className="grid grid-cols-2 gap-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
       <InfoCard
         Icon={CalendarIcon}
         iconColor="#1E5FAD"

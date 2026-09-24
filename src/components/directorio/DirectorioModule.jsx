@@ -54,7 +54,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
   return (
     <div
       onClick={() => onOpen(person)}
-      className="grid cursor-pointer grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
+      className="grid min-w-[720px] cursor-pointer grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={26} />
@@ -159,8 +159,8 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
             </div>
             <span className="text-[12px] text-[#444444]">{equipo.length} miembros</span>
           </div>
-          <div className="ador-glass ador-grain mt-4 overflow-hidden rounded-2xl px-3 py-2">
-            <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-2 pb-2 pt-1">
+          <div className="ador-glass ador-grain mt-4 overflow-x-auto rounded-2xl px-3 py-2">
+            <div className="grid min-w-[720px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-2 pb-2 pt-1">
               {['Nombre', 'Rol', 'Área', 'Estado', 'Ubicación', ''].map((h) => (
                 <span key={h} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   {h}
@@ -458,7 +458,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div className="flex items-start justify-between">
         <div>

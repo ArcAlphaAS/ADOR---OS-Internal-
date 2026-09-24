@@ -109,7 +109,8 @@ function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
 
 export default function Sidebar({ activeModule, onNavigate, badges = {}, canSee = () => true }) {
   return (
-    <div className="flex h-full w-20 flex-shrink-0 items-center justify-center">
+    // Hidden below 1024px — phones and iPad portrait use BottomNav instead.
+    <div className="hidden h-full w-20 flex-shrink-0 items-center justify-center lg:flex">
       <nav
         className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-full px-2.5 py-4"
         style={{ boxShadow: '0 20px 40px -16px rgba(0,0,0,0.5)' }}

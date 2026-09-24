@@ -125,7 +125,7 @@ function PeopleTab({ user }) {
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#888888]">
           ADOR OS crea su cuenta y le envía un correo para que elija su contraseña. Entra con el rol que elijas.
         </p>
-        <div className="mt-4 grid grid-cols-[1fr_1.3fr_auto_auto] items-center gap-2.5">
+        <div className="mt-4 grid grid-cols-1 items-center gap-2.5 sm:grid-cols-[1fr_1.3fr_auto_auto]">
           <input className={inputClass} placeholder="Nombre" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           <input className={inputClass} type="email" placeholder="correo@ejemplo.com" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
           <RoleSelect value={form.role} onChange={(role) => setForm((f) => ({ ...f, role }))} />
@@ -286,7 +286,7 @@ export default function AdminModule({ user }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[900px] flex-col gap-6 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[900px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Solo administradores</p>

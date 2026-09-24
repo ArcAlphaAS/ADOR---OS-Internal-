@@ -321,9 +321,9 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-12 pb-16 pt-10"
+      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Clientes</h1>
           <p className="mt-1 text-[13px] text-[#888888]">

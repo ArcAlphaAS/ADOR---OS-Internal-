@@ -35,9 +35,9 @@ export default function FinanzasModule({ user, onNavigate }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto max-w-[1400px] px-8 py-8"
+      className="mx-auto max-w-[1400px] px-4 py-6 md:px-8 md:py-8"
     >
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold text-[#F5F5F5]">Finanzas</h1>
           <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
@@ -67,8 +67,8 @@ export default function FinanzasModule({ user, onNavigate }) {
         onOpenRunway={() => setDetailMode('runway')}
       />
 
-      <div className="mt-6 flex gap-6">
-        <div className="flex w-[66%] flex-col gap-6">
+      <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+        <div className="flex w-full flex-col gap-6 lg:w-[66%]">
           <SituacionActualCard
             monthLabel={currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}
             ingresosDelMes={data.ingresosDelMes}
@@ -80,7 +80,7 @@ export default function FinanzasModule({ user, onNavigate }) {
           <MovimientosTable movements={data.movements} />
         </div>
 
-        <div className="flex w-[34%] flex-col gap-5">
+        <div className="flex w-full flex-col gap-5 lg:w-[34%]">
           <RequiereAtencion
             runwayMonths={data.runwayMonths}
             totalPorCobrar={data.totalPorCobrar}
