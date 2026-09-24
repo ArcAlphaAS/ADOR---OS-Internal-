@@ -4,15 +4,27 @@ The internal operating system for ADOR, a 3-founder strategic intelligence firm.
 
 Invite-only. Dark, glass-surfaced, quiet by design ("something Apple would ship internally," not a generic SaaS dashboard).
 
+**Live:** https://ador-os.adorfirm.workers.dev — installable on phone and iPad (Safari → Compartir → *Añadir a pantalla de inicio*; Chrome → *Instalar app*).
+
 ## Status
 
-Phases 1–2 (Splash/Login/Welcome, shell + Home) and five Phase 3 modules — Clientes (SPC→SP pipeline CRM), Finanzas (financial dashboard), Workspace (Lista/Kanban/Timeline task board), Objetivos (quarterly goals board), and ADOR IA (Gemini-powered chat over ADOR's live data) — are done and live. Calendario (deferred — using Google Calendar for now), Conocimiento, Comunidad, Chat, News, and Directorio are still placeholders. See `PROJECT_STATE.md` for the current build checklist, and `CLAUDE.md` for architecture notes, decisions, and the next-steps handoff.
+Every module is built and live: Inicio, Workspace (Hoy / Lista / Kanban / Timeline), Objetivos, Clientes (SPC→SP CRM), Finanzas, Calendario (Google Calendar), Conocimiento, News + Comunidad, Comunicación (DMs, groups, channels, threads, Google Meet calls), Directorio, ADOR IA (local rule-based engine), and Administración (invite people, roles, member access, error log, data). Files and backups live in Google Drive. Global search covers everything, including chat messages.
+
+Still open: activate the stricter Firestore rules (`firestore.rules`, drafted) before inviting the first non-admin member; push notifications with the app closed.
+
+- `PROJECT_STATE.md` — the living checklist of what's built and what's next.
+- `CLAUDE.md` — architecture notes, the reasoning behind each decision, and the session handoff.
 
 ## Stack
 
-React 19 + Vite + Tailwind CSS v4 + Framer Motion + Firebase (Auth + Firestore, both live). No UI component libraries — every control is hand-built.
+- **Front end:** React 19 + Vite + Tailwind CSS v4 + Framer Motion. No UI component, chart or icon libraries — every control is hand-built.
+- **Data & auth:** Firebase Authentication (email/password, invite-only) + Cloud Firestore (`nam5`). Free Spark plan.
+- **Google:** one per-person connection (OAuth) for Calendar (read-only), Meet (create call rooms) and Drive (`drive.file` — only files the person picks or ADOR OS creates).
+- **Hosting:** Cloudflare Workers (static assets + a small API), free plan, deployed from GitHub on every push to `main`.
 
-## Running it
+Everything runs on free tiers; no billing account is attached anywhere.
+
+## Running it locally
 
 Node.js is not installed system-wide on this machine — a portable copy lives at `~/.local/node`, already on `PATH` via `~/.zshrc` (open a **new** terminal window to pick it up).
 
@@ -21,65 +33,83 @@ cd /Users/angelsamillan/Claude/ador-os
 npm run dev
 ```
 
-Open the printed `localhost` URL. Vite will pick a free port (usually 5173, sometimes higher if something else is already using it).
+Open the printed `localhost` URL (usually 5173). This runs the app only; the `/api/*` functions (connect Google, Meet rooms) run with Cloudflare's own dev server:
 
-### Firebase config
+```bash
+npx wrangler dev
+```
 
-Real project credentials live in `.env` (gitignored). Copy `.env.example` if you ever need to recreate it — the values are already filled in for the live `ador-os` Firebase project (Authentication: Email/Password only; Firestore: enabled, `nam5` region; Storage: **not yet enabled**, needed for real file uploads in Clientes → Documentos and Finanzas → Comprobante).
+`?preview=1` in the URL is a dev-only mock login for screenshots — it has no real Firebase session, so real reads/writes fail by design.
 
-Firestore rules use a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule (confirmed 2026-08-15), so every collection — new or future — is covered automatically; no per-collection rule edits are needed. If a real write ever fails with `permission-denied`, check whether you're on the dev-only `?preview=1` mock session (no real auth, fails by design) or whether the signed-in email is missing from `allowedEmails`.
+### Configuration
 
-### ADOR IA (Gemini)
+Real values live in `.env` (gitignored; `.env.example` has the names). On Cloudflare they're set in the Worker's settings (ador-os → Settings):
 
-The only server-side code in this repo is `api/ador-ia.js`, a Vercel serverless function that proxies chat requests to Gemini's free tier (`gemini-2.5-flash`). It needs a `GEMINI_API_KEY` set in **Vercel's** Environment Variables (Settings → Environment Variables) — get a free key at [aistudio.google.com](https://aistudio.google.com), no card required. **Do not** prefix it with `VITE_` — that would compile the key straight into the shipped client bundle, where anyone can read it from devtools; `GEMINI_API_KEY` (no prefix) stays server-side, read only inside `api/ador-ia.js`. Local `npm run dev` (plain Vite) can't run this function at all — `AdorIAModule.jsx` will show a clear in-UI error there by design; the chat only works on the deployed Vercel site once the key is set.
+| Where | Variables |
+|---|---|
+| **Build variables** (baked into the app by Vite — not secret) | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` |
+| **Runtime variables and secrets** (read by the `/api` functions) | `GOOGLE_CLIENT_SECRET` (secret), `VITE_GOOGLE_CLIENT_ID` |
+
+Never give a secret a `VITE_` prefix — Vite would compile it into the shipped JavaScript.
+
+### Deploying
+
+Push to `main`. Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy` (config in `wrangler.jsonc`) and publishes in 1–2 minutes. Progress and logs: Cloudflare dashboard → Workers & Pages → ador-os → Deployments.
+
+### Access
+
+Only emails with a document in Firestore `allowedEmails/{email}` can read or write anything. People are invited from **Administración → Personas** (creates the account and sends a "choose your password" email); roles are Administrador (everything) and Miembro (modules chosen in Administración → Accesos).
+
+The Firestore rules live today are the original blanket rule (any allowed account can do everything). The stricter role-aware rules are in `firestore.rules` — **test them before pasting into Firebase → Firestore → Rules** (see `CLAUDE.md` §37).
 
 ## Project structure
 
 ```
-api/
-  ador-ia.js               Vercel serverless function — proxies chat to Gemini, keeps GEMINI_API_KEY server-side only (see "ADOR IA (Gemini)" above)
+server/                     The only server-side code (runs on Cloudflare)
+  handlers.js               Host-independent handlers: Google OAuth exchange/refresh, Meet room creation, dormant Gemini proxy
+  worker.js                 Cloudflare Worker entry — routes /api/* to the handlers, serves the built app otherwise
+  cloudflare.js, vercel.js  Adapters (Vercel is paused; api/ + vercel.js go away when it's deleted)
+wrangler.jsonc              Cloudflare Workers config
+firestore.rules             Role-aware Firestore rules — drafted, not live yet
+public/                     Icons (favicon, apple-touch, 192/512), manifest.webmanifest, logos, onboarding images
 src/
-  App.jsx                 Top-level state machine: Splash → Login → Welcome → AppShell
-  firebase.js              Firebase init, guarded so missing config degrades to "logged out" instead of crashing
-  index.css                Design tokens: .ador-glass, .ador-grain, .ador-modal-surface, .ador-btn-primary, .ador-skeleton, keyframes
+  App.jsx                   Splash → Login → Welcome → AppShell; registers users/{uid} on login
+  firebase.js               Firebase init, guarded so a missing config degrades instead of crashing
+  index.css                 Design tokens: .ador-glass, .ador-grain, .ador-modal-surface, .ador-skeleton, keyframes
   components/
-    SplashScreen.jsx, LoginScreen.jsx, WelcomeScreen.jsx, Logo.jsx, LoadingRing.jsx   Phase 1 screens
-    icons.jsx               Hand-drawn line icon set (no icon library)
-    shell/                  TopBar, Sidebar, AppShell, ModulePlaceholder, NotificationCenter, ProfileMenu, ProfileModal, SettingsModal
-    home/                   HomeScreen + its blocks (Greeting, Metrics, Finance, Interventions, MeetingDecision, Activity, QuickLinks, BirthdayBanner, WeeklySummaryCard + WeeklySummaryPanel)
-    clientes/                Clientes module — ClientesModule, KanbanBoard/Column/Card, ListView, ClientDetailPanel + tabs/, NewClientModal
-    finanzas/                Finanzas module — FinanzasModule (68/32 layout), MetricCards, FinanceChart (hand-drawn SVG bar chart), MovimientosTable, QuarterlyGoalCard, CategoryBreakdownCard, NextPaymentCard, AddIncomeModal, AddExpenseModal
-    workspace/               Workspace module — WorkspaceModule (sidebar/main/Decisiones 3-column shell), ListaView (grid-based table + inline "+ Agregar tarea" draft row), KanbanView, TimelineView (5 zoom levels), TaskRow, TaskCells (shared PillCell/EstimationCell/DescriptionCell/AssigneeCell), CellPopover (portaled floating menu), TaskDetailPanel (incl. Historial), DecisionesPanel (collapsible), WorkspaceSidebar (incl. "Mis tareas" + "Carga del equipo" workload panel), AvatarStack, NewProyectoModal, RegisterDecisionModal
-    objetivos/               Objetivos module — ObjetivosModule (cabecera/panel/rail lateral shell), NorthStarHero, ObjetivoCard (kpi progress bar / milestone checkbox), NewObjetivoModal, CheckinModal, IniciativasPanel (Focus Board — linked Workspace tasks), ExperimentosPanel (validation log)
-    adoria/                  ADOR IA module — AdorIAModule (chat UI, calls api/ador-ia.js)
-  hooks/
-    useAuth.js               Firebase auth wrapper
-    useHomeData.js            Home's live-data hook — derives metrics/finance/interventions from clients
-    useWeeklySummary.js       Home's Resumen Semanal hook — aggregates Finanzas/Objetivos/Workspace/Clientes into one Monday–Sunday synthesis (see lib/weeklySummary.js for the narrative logic)
-    useFinanceData.js         Finanzas' live-data hook — derives hero numbers/chart/breakdowns/runway projection from clients + expenses + incomes + settings
-    useWorkspaceData.js       Workspace's live-data hook — derives Intervenciones from clients (never stored) + Proyectos Internos + tasks, grouped
-    useObjetivosData.js       Objetivos' live-data hook — resolves each goal's currentValue from clients/tasks/useFinanceData (never hand-entered except `metric: 'custom'`) and each objetivo's openLinkedTasks (Workspace tasks tagged via objetivoId)
-    useGlobalSearch.js        Top bar search — filters the same live clients/tasks/decisions subscriptions other modules already hold
-    useAdorIAContext.js       Builds the live data snapshot sent to Gemini as context — reuses useFinanceData/useObjetivosData plus the same tasks/clients subscriptions other modules already hold, no independent data-fetching of its own
-    useTodaysBirthdays.js     Team-wide "who's celebrating today" — reads users/{uid}.birthday
-    useCountUp.js             0→value count-up animation used by Finanzas hero numbers
-    useClientNotifications.js Bell notifications ("sin contacto +7 días") — lives outside useHomeData since TopBar needs it everywhere
-    useTaskNotifications.js   Bell notifications for overdue/due-today tasks assigned to the signed-in user — same "lives outside any one module" reasoning
-    useWelcomeScreen.js       localStorage-driven "show Welcome once per day/block" logic
+    shell/                  AppShell (routing, lazy modules), TopBar, Sidebar, BottomNav (phones/iPad portrait),
+                            SearchResults, NotificationCenter, ProfileMenu/Modal, SettingsModal, call/reminder/assignment gates,
+                            ChatMessageToaster, ModuleErrorBoundary
+    home/                   Inicio and its cards (greeting, weekly summary, finance, next meeting, tasks…)
+    workspace/              Hoy, Lista, Kanban, Timeline, Personal overview, task detail panel
+    objetivos/              Goals board, North Star, check-ins, experiments, Decisiones
+    clientes/               SPC→SP pipeline CRM, list, client detail panel (Documentos from Drive)
+    finanzas/               Financial dashboard, projections, goals, movements, income/expense modals
+    calendario/             Google Calendar views (day/week/month/agenda)
+    conocimiento/           Markdown knowledge base
+    news/                   Anuncios + Comunidad
+    chat/                   Comunicación (conversations, threads, composer, polls, calls, search, side panels)
+    directorio/             People, org chart, teams, roles
+    adoria/                 ADOR IA chat
+    admin/                  Administración (people & invites, member access, error log, Drive folder & backups)
+    onboarding/             "Conoce ADOR OS" walkthrough
+  hooks/                    Live-data hooks per module (useFinanceData, useWorkspaceData, useChatData…), useAccess (role),
+                            useGlobalSearch, useGoogleCalendar/useGoogleMeet/useDrivePicker, useScheduledSender, usePresenceHeartbeat
   lib/
-    firestore.js             Collection schema + CRUD + subscribe hooks
-    weeklySummary.js          Resumen Semanal's narrative logic — week-range math, quarter-pace comparison, buildWeeklyNarrative() (rule-based synthesis, no LLM)
-    clientStages.js           SPC/SP pipeline stage constants, currency/date formatting, ADOR vocabulary helpers, LOST_REASONS
-    finance.js                Expense categories, quarter-key helpers, ADOR vocabulary for Finanzas
-    workspace.js              Task priorities/statuses/grid template, ADOR's 7-layer methodology, workstream id helpers, describeTaskChange() (history log copy), withTimeout() (write-hang safeguard), computeWorkload()
-    objetivos.js              Objetivo metric definitions (live vs. custom), type vocabulary, confidence + experiment status palettes
-    adorIA.js                 ADOR IA's system prompt (persona + "never invent numbers" rule) and buildAdorIAContext() — formats the live data snapshot as plain labeled text for Gemini
-    user.js                  Shared user-name helpers
+    firestore.js            Every collection's reads/writes/subscriptions
+    access.js, permissions.js, invite.js      Roles, member modules, invitations
+    googleCalendar.js, googleDrive.js         Google OAuth, Calendar, Meet, Drive picker, backup upload
+    backup.js, errorLog.js                    "Exportar todo" and the error log
+    chat*.js                                   Chat rules, derived indexes, drafts, sending, retention
+    finance.js, clientStages.js, workspace.js, objetivos.js, weeklySummary.js, adorIA.js, knowledge.jsx, …   Per-module logic
 ```
 
 ## Design system quick reference
 
-- Background `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` (sparingly).
-- Glass surfaces: `.ador-glass` (`background: rgba(255,255,255,0.05)`, `border: 1px solid rgba(255,255,255,0.1)`, `backdrop-filter: blur(24px) saturate(160%)`, drop shadow) + `.ador-grain` (0.03-opacity SVG noise overlay) on every card/surface.
-- Pending-data states use `.ador-skeleton` (shimmer sweep) instead of static dashes — reads as "waiting for data," not "broken."
-- Full rationale and the trickier decisions (why floating UI uses portals, why the shell nav is split the way it is) are in `CLAUDE.md`.
+- Background `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` (sparingly; Comunicación uses graphite and gold).
+- Glass surfaces: `.ador-glass` + `.ador-grain` on every card; `.ador-modal-surface` for modals and side panels.
+- Floating UI (dropdowns, tooltips, popovers) is portaled to `document.body` and positioned from the trigger's rect — never nested in a shrink-wrapped container.
+- Never put a transform animation and a backdrop blur on the same element (Chromium drops the blur) — split them into two nested elements.
+- Pending data uses `.ador-skeleton` (shimmer), not static dashes.
+- Below 1024px the app uses a bottom tab bar instead of the side capsule and top tabs.
+- Full rationale for these and every other decision is in `CLAUDE.md`.
