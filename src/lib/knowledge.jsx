@@ -197,6 +197,14 @@ export function renderMarkdown(source) {
     }
 
     // Heading
+    // An image on its own line: ![texto](url) — used by News' editor.
+    const image = line.trim().match(/^!\[(.*?)\]\((\S+?)\)$/)
+    if (image) {
+      blocks.push(<img key={key++} src={image[2]} alt={image[1]} loading="lazy" className="my-1 w-full rounded-2xl border border-white/[0.06] object-cover" />)
+      i++
+      continue
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.*)$/)
     if (heading) {
       const level = heading[1].length

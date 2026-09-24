@@ -176,6 +176,7 @@ export function pushConfig(_req, env) {
 //   { kind: 'message', convType: 'dm'|'conv', convId, participantUids?, parentId?,
 //     messageId, text, conversationLabel, targets: [{uid, reason}] }
 //   { kind: 'call', toUids, callType: 'video'|'audio', convType, convId, participantUids? }
+//   { kind: 'news', postId, title, requireAck? }
 //   { kind: 'test' }
 export async function pushSend({ method, headers, body }, env) {
   if (method !== 'POST') return json(405, { error: 'Method not allowed' })
@@ -210,6 +211,19 @@ export async function pushSend({ method, headers, body }, env) {
           tag: `call:${event.convId || senderUid}`,
           url: chatUrl(event),
           kind: 'call',
+        })
+      }
+    } else if (event.kind === 'news') {
+      // A new announcement: everyone with a device on, except the author.
+      const audience = [...new Set(subs.map((sub) => sub.uid))].filter((u) => u && u !== senderUid).slice(0, 50)
+      const docs = await fs.getMany(audience.map((u) => `presence/${u}`))
+      for (const uid of audience) {
+        if (inDnd(docs[`presence/${uid}`], now)) continue
+        notes.set(uid, {
+          title: event.requireAck ? '📰 Anuncio — confirma que lo leíste' : '📰 Nuevo anuncio en ADOR',
+          body: (event.title || 'Nuevo anuncio').slice(0, 160),
+          tag: `news:${event.postId}`,
+          url: `/?open=news&nid=${encodeURIComponent(event.postId || '')}`,
         })
       }
     } else if (event.kind === 'message') {

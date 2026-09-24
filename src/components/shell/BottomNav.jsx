@@ -85,7 +85,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
         {primary.map((m) => (
           <Tab key={m.id} {...m} active={activeModule === m.id && !moreOpen} badge={badges[m.id]} onClick={() => go(m.id)} />
         ))}
-        {more.length > 0 && <Tab label="Más" Icon={MoreIcon} active={moreActive || moreOpen} onClick={() => setMoreOpen((v) => !v)} />}
+        {more.length > 0 && <Tab label="Más" Icon={MoreIcon} active={moreActive || moreOpen} badge={more.reduce((n, m) => n + (badges[m.id] || 0), 0)} onClick={() => setMoreOpen((v) => !v)} />}
       </nav>
 
       {createPortal(
@@ -112,7 +112,14 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                         className="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition-colors active:bg-white/[0.08]"
                         style={{ background: activeModule === m.id ? 'rgba(255,255,255,0.08)' : undefined, color: activeModule === m.id ? '#F5F5F5' : '#BBBBBB' }}
                       >
-                        <m.Icon size={20} />
+                        <span className="relative">
+                          <m.Icon size={20} />
+                          {badges[m.id] > 0 && (
+                            <span className="absolute -right-2.5 -top-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+                              {badges[m.id] > 9 ? '9+' : badges[m.id]}
+                            </span>
+                          )}
+                        </span>
                         <span className="text-[11px]">{m.label}</span>
                       </button>
                     ))}

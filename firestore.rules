@@ -91,7 +91,16 @@ service cloud.firestore {
       match /{sub=**} { allow read: if canUse('conocimiento'); }
     }
     match /knowledgeSections/{id} { allow read: if canUse('conocimiento'); }
-    match /news/{id} { allow read: if canUse('news'); }
+    match /news/{id} {
+      // Everyone reads live posts; drafts/scheduled only reach admins (the
+      // catch-all). Members may only add themselves to readBy / acks.
+      allow read: if canUse('news') && (!('status' in resource.data) || resource.data.status == 'published');
+      allow update: if canUse('news') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy', 'acks']);
+    }
+    match /communityPosts/{id}/comments/{cid} {
+      allow read, create: if canUse('news');
+      allow delete: if canUse('news') && resource.data.authorUid == request.auth.uid;
+    }
     match /communityPosts/{id} {
       allow read, create: if canUse('news');
       allow update: if canUse('news'); // reactions

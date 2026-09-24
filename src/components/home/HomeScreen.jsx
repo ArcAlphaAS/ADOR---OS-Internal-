@@ -14,6 +14,7 @@ import InterventionsBlock from './InterventionsBlock'
 import MeetingDecisionBlock from './MeetingDecisionBlock'
 import ActivityBlock from './ActivityBlock'
 import QuickLinksBlock from './QuickLinksBlock'
+import LatestNewsCard from './LatestNewsCard'
 
 // Orchestrates a staggered reveal instead of the whole page fading in as one
 // block — each section settles in slightly after the last. Only opacity/y
@@ -83,6 +84,9 @@ export default function HomeScreen({ user, onNavigate }) {
 
       <motion.div variants={itemVariants}>
         <WeeklySummaryCard />
+      </motion.div>
+      <motion.div variants={itemVariants}>
+        <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
       </motion.div>
 
       {/* Two-column "sections" layout (per reference dashboard shared by user,

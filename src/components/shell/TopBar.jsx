@@ -12,6 +12,7 @@ import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { useChatNotifications } from '../../hooks/useChatNotifications'
+import { useNewsAttention } from '../../hooks/useNews'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { useGlobalSearch } from '../../hooks/useGlobalSearch'
@@ -314,7 +315,8 @@ export default function TopBar({
   // Chat items lead: a mention or a direct message is someone waiting on
   // you right now; deadlines and client reminders are slower-moving.
   const chatNotifications = useChatNotifications(user?.uid, onNavigate)
-  const notifications = [...chatNotifications, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
+  const news = useNewsAttention(user?.uid, onNavigate)
+  const notifications = [...chatNotifications, ...news.items, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {

@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { serverTimestamp } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { subscribeNews, createNewsPost, updateNewsPost, deleteNewsPost, subscribeCommunityPosts, subscribeUserProfile } from '../../lib/firestore'
+import { subscribeNews, createNewsPost, updateNewsPost, deleteNewsPost, subscribeCommunityPosts, subscribeUserProfile, subscribeUsers, markNewsRead, ackNewsPost } from '../../lib/firestore'
+import { isPublished, notifyNewsPublished } from '../../lib/news'
+import PersonAvatar, { ChatPeopleContext } from '../chat/PersonAvatar'
+import { NEWS_CATEGORIES } from './NewsLayout'
 import { renderMarkdown } from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
@@ -52,7 +56,7 @@ function readingMinutes(body) {
   return Math.max(1, Math.round(words / 200))
 }
 
-function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
+function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminUser, onBack, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copied, setCopied] = useState(false)
   const topRef = useRef(null)
@@ -126,9 +130,16 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
             </div>
           </div>
 
+          {!isPublished(post) && (
+            <p className="mt-4 inline-block rounded-full bg-[#E8C15A]/15 px-3 py-1 text-[12px] text-[#E8C15A]">
+              {post.status === 'scheduled' ? `Programado para ${post.publishAt?.toDate?.().toLocaleString('es', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}` : 'Borrador — solo lo ven los administradores'}
+            </p>
+          )}
           {post.subtitle && <p className="mt-6 text-[16px] leading-relaxed text-[#CFCFCF]">{post.subtitle}</p>}
 
           <div className="mt-5 text-[15px] leading-[1.75] text-[#BDBDBD]">{renderMarkdown(post.body)}</div>
+
+          {isPublished(post) && <ReadReceipts post={post} user={user} users={users} />}
 
           {isAdminUser && (
             <div className="mt-8 flex items-center gap-2 border-t border-white/[0.06] pt-5">
@@ -151,6 +162,29 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
             </div>
           )}
 
+          {related.length > 0 && (
+            <div className="mt-10 border-t border-white/[0.06] pt-6">
+              <p className="text-[20px] text-[#F5F5F5]" style={SERIF}>
+                Sigue leyendo
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {related.map((r) => (
+                  <button key={r.id} type="button" onClick={() => onOpenPost(r.id)} className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] text-left hover:border-white/[0.16]">
+                    <span className="block h-[90px] overflow-hidden">
+                      <Cover post={r} zoom />
+                    </span>
+                    <span className="p-3">
+                      {r.category && <span className="block text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{r.category}</span>}
+                      <span className="mt-0.5 line-clamp-2 block text-[14px] leading-snug text-[#EDEDED]" style={SERIF}>
+                        {r.title}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 flex justify-center pb-2">
             <button
               type="button"
@@ -169,6 +203,52 @@ function PostDetail({ post, isAdminUser, onBack, onEdit, onDelete }) {
   )
 }
 
+// "Leído por" faces + "Confirmar lectura" when the author asked for it.
+function ReadReceipts({ post, user, users }) {
+  const uid = user?.uid
+  const team = users.filter((u) => u.id !== post.createdByUid)
+  const readers = (post.readBy || []).filter((r) => r !== post.createdByUid)
+  const acks = post.acks || []
+  const iAmAuthor = uid && uid === post.createdByUid
+  const needMyAck = post.requireAck && !iAmAuthor && !acks.includes(uid)
+  const missing = post.requireAck ? team.filter((u) => !acks.includes(u.id)) : []
+  const nameOf = (u) => (u.displayName || u.email || '').split(' ')[0]
+  return (
+    <div className="mt-8 flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex -space-x-2">
+            {readers.slice(0, 6).map((r) => (
+              <span key={r} className="rounded-full ring-2 ring-[#141414]">
+                <PersonAvatar uid={r} size={26} />
+              </span>
+            ))}
+          </span>
+          <span className="text-[13px] text-[#AAAAAA]">
+            {readers.length === 0 ? 'Nadie lo ha leído todavía' : `Leído por ${readers.length}${team.length ? ` de ${team.length}` : ''}`}
+          </span>
+        </div>
+        {post.requireAck && (
+          <span className="text-[12.5px] text-[#8A8A8A]">
+            Confirmado por {acks.filter((a) => a !== post.createdByUid).length} de {team.length}
+          </span>
+        )}
+      </div>
+      {needMyAck && (
+        <button
+          type="button"
+          onClick={() => ackNewsPost(post.id, uid).catch(() => {})}
+          className="self-start rounded-full bg-[#E8C15A] px-5 py-2 text-[13.5px] font-semibold text-[#1C1A16]"
+        >
+          Confirmar que lo leí
+        </button>
+      )}
+      {post.requireAck && acks.includes(uid) && !iAmAuthor && <p className="text-[12.5px] text-[#8FD19A]">✓ Confirmaste que lo leíste</p>}
+      {iAmAuthor && post.requireAck && missing.length > 0 && <p className="text-[12.5px] text-[#8A8A8A]">Falta confirmar: {missing.map(nameOf).join(', ')}</p>}
+    </div>
+  )
+}
+
 // Every word must appear somewhere in the post (accent/case-insensitive).
 const fold = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 function matches(post, query) {
@@ -178,7 +258,7 @@ function matches(post, query) {
   return words.every((w) => hay.includes(w))
 }
 
-function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequest }) {
+function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequest, users }) {
   const [openPostId, setOpenPostId] = useState(focusPostId || null)
   useEffect(() => {
     if (focusPostId) setOpenPostId(focusPostId)
@@ -193,18 +273,34 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
     if (composeRequest) setComposing('new')
   }, [composeRequest])
 
-  const sorted = sortPosts(posts).filter((p) => matches(p, query))
-  const openPost = posts.find((p) => p.id === openPostId) || null
+  const [category, setCategory] = useState(null)
+  const live = sortPosts(posts.filter(isPublished))
+  const unpublished = isAdminUser ? posts.filter((p) => !isPublished(p)) : []
+  const usedCategories = NEWS_CATEGORIES.filter((c) => live.some((p) => p.category === c))
+  const sorted = live.filter((p) => matches(p, query) && (!category || p.category === category))
+  const openPost = posts.find((p) => p.id === openPostId && (isPublished(p) || isAdminUser)) || null
+
+  // Opening an announcement counts as reading it ("Leído por").
+  useEffect(() => {
+    if (openPost && isPublished(openPost) && user?.uid && user.uid !== 'preview' && !(openPost.readBy || []).includes(user.uid)) markNewsRead(openPost.id, user.uid).catch(() => {})
+  }, [openPost?.id, user?.uid])
 
   const handleSave = async (data) => {
     setSaving(true)
     try {
+      const sender = { uid: user?.uid, name: actorName }
       if (composing === 'new') {
-        const ref = await withTimeout(createNewsPost(data, actorName))
+        const ref = await withTimeout(createNewsPost(data, actorName, user?.uid))
+        if (data.status === 'published') notifyNewsPublished({ id: ref.id, ...data }, sender)
         setOpenPostId(ref.id)
       } else {
-        await withTimeout(updateNewsPost(openPost.id, data, actorName))
+        const wasLive = isPublished(openPost)
+        // A draft/scheduled post going live now: date it now and notify.
+        const patch = !wasLive && data.status === 'published' ? { ...data, createdAt: serverTimestamp() } : data
+        await withTimeout(updateNewsPost(openPost.id, patch, actorName))
+        if (!wasLive && data.status === 'published') notifyNewsPublished({ id: openPost.id, ...data }, sender)
       }
+      showToast(data.status === 'draft' ? 'Borrador guardado' : data.status === 'scheduled' ? 'Programado — se publicará solo' : 'Publicado — el equipo recibirá un aviso')
       setComposing(false)
     } catch (error) {
       showToast(`No se pudo publicar: ${error.message}`)
@@ -228,6 +324,10 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
           <motion.div key={openPost.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
             <PostDetail
               post={openPost}
+              user={user}
+              users={users}
+              related={live.filter((p) => p.id !== openPost.id).sort((a, b) => (b.category === openPost.category) - (a.category === openPost.category)).slice(0, 3)}
+              onOpenPost={setOpenPostId}
               isAdminUser={isAdminUser}
               onBack={() => setOpenPostId(null)}
               onEdit={() => setComposing(true)}
@@ -235,12 +335,42 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
             />
           </motion.div>
         </AnimatePresence>
-      ) : sorted.length === 0 ? (
+      ) : (
+        <div className="flex flex-col gap-6">
+          {unpublished.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-white/[0.12] p-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Borradores y programados · solo administradores</p>
+              {unpublished.map((p) => (
+                <button key={p.id} type="button" onClick={() => setOpenPostId(p.id)} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-white/[0.04]">
+                  <span className="min-w-0 truncate text-[14px] text-[#EDEDED]">{p.title || 'Sin título'}</span>
+                  <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11.5px] ${p.status === 'scheduled' ? 'bg-[#E8C15A]/15 text-[#E8C15A]' : 'bg-white/[0.07] text-[#AAAAAA]'}`}>
+                    {p.status === 'scheduled' ? `Programado · ${p.publishAt?.toDate?.().toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'Borrador'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {usedCategories.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {[null, ...usedCategories].map((c) => (
+                <button
+                  key={c || 'all'}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  className="rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors"
+                  style={{ borderColor: category === c ? '#E8C15A' : 'rgba(255,255,255,0.1)', color: category === c ? '#E8C15A' : '#AAAAAA', background: category === c ? 'rgba(232,193,90,0.1)' : 'transparent' }}
+                >
+                  {c || 'Todas'}
+                </button>
+              ))}
+            </div>
+          )}
+      {sorted.length === 0 ? (
         <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
           <GlobeIcon size={20} className="text-[#5A5A5A]" />
-          <p className="text-[14px] font-medium text-[#AAAAAA]">{query ? 'Nada coincide con tu búsqueda' : 'Sin anuncios todavía'}</p>
+          <p className="text-[14px] font-medium text-[#AAAAAA]">{query || category ? 'Nada coincide' : 'Sin anuncios todavía'}</p>
           <p className="text-[13px] text-[#7A7A7A]">
-            {query ? 'Prueba con otras palabras.' : isAdminUser ? 'Usa "Nueva publicación" para publicar el primero.' : 'El equipo todavía no ha publicado ningún anuncio.'}
+            {query || category ? 'Prueba con otras palabras o categoría.' : isAdminUser ? 'Usa "Nueva publicación" para publicar el primero.' : 'El equipo todavía no ha publicado ningún anuncio.'}
           </p>
         </div>
       ) : (
@@ -251,6 +381,8 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
             <LatestList posts={sorted.slice(1, 5)} onOpen={setOpenPostId} />
           </div>
           {sorted.length > 5 && <EditorialRow posts={sorted.slice(5)} onOpen={setOpenPostId} />}
+        </div>
+      )}
         </div>
       )}
     </>
@@ -273,6 +405,8 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
   const isAdminUser = isAdmin(profile)
 
   const [posts, setPosts] = useState([])
+  const [users, setUsers] = useState([])
+  useEffect(() => subscribeUsers(setUsers), [])
   const [query, setQuery] = useState('')
   const [composeRequest, setComposeRequest] = useState(0)
   useEffect(() => subscribeNews(setPosts), [])
@@ -343,8 +477,8 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
             )}
             <span className="relative flex items-center gap-1.5">
               {t.label}
-              {(t.id === 'comunidad' ? communityPosts.length : posts.length) > 0 && (
-                <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] leading-none">{t.id === 'comunidad' ? communityPosts.length : posts.length}</span>
+              {(t.id === 'comunidad' ? communityPosts.length : posts.filter(isPublished).length) > 0 && (
+                <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] leading-none">{t.id === 'comunidad' ? communityPosts.length : posts.filter(isPublished).length}</span>
               )}
             </span>
           </button>
@@ -352,7 +486,9 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       </div>
 
       {tab === 'anuncios' ? (
-        <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} />
+        <ChatPeopleContext.Provider value={{ users, directory: [], presence: {} }}>
+          <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} users={users} />
+        </ChatPeopleContext.Provider>
       ) : (
         <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} profile={profile} query={query} onSearch={setQuery} />
       )}

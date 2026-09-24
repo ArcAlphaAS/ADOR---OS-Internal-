@@ -913,10 +913,17 @@ export function subscribeNews(onData) {
   return subscribeToCollection(COLLECTIONS.news, [orderBy('createdAt', 'desc')], onData)
 }
 
-export function createNewsPost(data, actorName) {
+// News posts: `status` 'draft' | 'scheduled' | 'published' (missing =
+// published, for posts from before drafts existed); `publishAt` for
+// scheduled ones (useNewsPublisher publishes them); `readBy` / `acks`
+// [uids] for "Leído por" and "Confirmar lectura" (`requireAck`).
+export function createNewsPost(data, actorName, actorUid) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return addDoc(collection(db, COLLECTIONS.news), {
+    readBy: actorUid ? [actorUid] : [],
+    acks: [],
     ...data,
+    createdByUid: actorUid || null,
     createdBy: actorName,
     createdAt: serverTimestamp(),
     updatedBy: actorName,
@@ -930,6 +937,30 @@ export function updateNewsPost(postId, data, actorName) {
     ...data,
     updatedBy: actorName,
     updatedAt: serverTimestamp(),
+  })
+}
+
+export function markNewsRead(postId, uid) {
+  if (!db || !uid) return Promise.resolve()
+  return updateDoc(doc(db, COLLECTIONS.news, postId), { readBy: arrayUnion(uid) })
+}
+
+export function ackNewsPost(postId, uid) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.news, postId), { acks: arrayUnion(uid), readBy: arrayUnion(uid) })
+}
+
+// A scheduled post whose time has come: whichever admin's app sees it first
+// publishes it (transaction, so it only happens — and notifies — once).
+export async function claimScheduledNews(postId) {
+  if (!db) return null
+  return runTransaction(db, async (tx) => {
+    const ref = doc(db, COLLECTIONS.news, postId)
+    const snap = await tx.get(ref)
+    if (!snap.exists() || snap.data().status !== 'scheduled') return null
+    const data = snap.data()
+    tx.update(ref, { status: 'published', createdAt: data.publishAt || serverTimestamp(), publishedAt: serverTimestamp() })
+    return { id: postId, ...data }
   })
 }
 

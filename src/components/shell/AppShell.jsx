@@ -11,6 +11,7 @@ import IncomingCallGate, { OutgoingCallBanner } from './IncomingCallGate'
 import ReminderGate from './ReminderGate'
 import ChatMessageToaster from './ChatMessageToaster'
 import { useChatUnreadCount } from '../../hooks/useChatNotifications'
+import { useNewsAttention, useNewsPublisher } from '../../hooks/useNews'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 import { useChatRetention } from '../../hooks/useChatRetention'
@@ -139,6 +140,9 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     })
   }, [user?.uid])
   const chatUnread = useChatUnreadCount(user?.uid)
+  // News: unread announcements badge, and (admins) publishing scheduled ones.
+  const newsAttention = useNewsAttention(user?.uid)
+  useNewsPublisher(user?.uid, access.isAdmin, user?.displayName || user?.email?.split('@')[0])
   // The unread count on the app's icon (home screen / Dock), like WhatsApp.
   // Installed app only; the service worker bumps it when a push arrives
   // with the app closed, and this puts back the exact number on open.
@@ -228,7 +232,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       />
 
       <div className="flex min-h-0 flex-1">
-        <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread }} canSee={access.canSee} />
+        <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
@@ -288,7 +292,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
       <UpdateBanner />
       <OfflineBanner />
-      <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread }} />
+      <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
 
