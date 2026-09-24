@@ -742,6 +742,8 @@ Standard Web Push, free, no Firebase Cloud Messaging: the system notification ba
 
 - **Motion + gestures (same day, `lib/motion.js`):** `SPRING` (centered modals: Settings/Profile, the New… modals, Forward, TaskFromMessage, call and assignment gates, GlobalCapture) and `SHEET` (the "Más" sheet, Task/Client/Finance detail panels, ReadyCallSheet) replaced fixed-duration easings. `swipeToClose(axis, onClose)` only switches on for touch below 1024px: swipe down closes the "Más" sheet and ReadyCallSheet; swipe right closes the Task/Client/Finance detail panels and the chat's Perfil/Detalles/Hilo panel (below 768px only, where it's full-screen). GlobalCapture has no swipe on purpose, because it holds a textarea. Tapping the active bottom tab scrolls `main` and any scrolled list inside it to the top; message threads carry `data-keep-scroll` and are left alone.
 
+- **Press and hold a message (phones, same day):** on touch below 1024px the hover toolbar is hidden (`touch` in `MessageBubble.jsx`), and holding a message for 420ms (cancelled if the finger moves >8px) opens `MessageActionSheet.jsx`, an iOS action sheet with a preview, the quick reactions, then Responder, Responder en hilo, Copiar texto, Guardar, Reenviar, Fijar, Recordármelo… (sub-list), Crear tarea, Editar and Eliminar (asks to confirm), plus Cancelar. Only options that apply appear. Swipe down closes it. The bubble area is `select-none` with no iOS callout on touch, so holding doesn't select text ("Copiar texto" covers copying). Editing got visible Cancelar/Guardar buttons, since phones have no Enter/Esc.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

@@ -3,6 +3,8 @@ import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import MessageActionSheet from './MessageActionSheet'
+import { isTouchLayout } from '../../lib/motion'
 import { driveFileKind } from '../../lib/googleDrive'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -482,6 +484,28 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   const [picking, setPicking] = useState(false)
   // 'more' = the ⋯ menu (fijar · recordar · tarea); 'remind' = its time picker
   const [menu, setMenu] = useState(null)
+  // Phones: press and hold → MessageActionSheet (no hover on a touch screen).
+  const [sheet, setSheet] = useState(false)
+  const press = useRef(null)
+  const touch = isTouchLayout()
+  const startPress = (e) => {
+    if (!touch) return
+    const t = e.touches?.[0]
+    press.current = { x: t?.clientX, y: t?.clientY, timer: setTimeout(() => {
+      press.current = null
+      navigator.vibrate?.(10)
+      setSheet(true)
+    }, 420) }
+  }
+  const movePress = (e) => {
+    const p = press.current
+    const t = e.touches?.[0]
+    if (p && t && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 8) cancelPress()
+  }
+  const cancelPress = () => {
+    if (press.current) clearTimeout(press.current.timer)
+    press.current = null
+  }
   const driveUrl = findDriveLink(message.text)
   const hasText = Boolean(message.text)
   // A message that's nothing but a Drive link shows just the card — the
@@ -504,9 +528,25 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
             }
             if (e.key === 'Escape') setEditing(false)
           }}
-          className="w-[360px] resize-none rounded-2xl border border-white/[0.2] bg-[#141414] px-3.5 py-2 text-[13.5px] text-[#F5F5F5] outline-none"
+          className="w-[min(360px,75vw)] resize-none rounded-2xl border border-white/[0.2] bg-[#141414] px-3.5 py-2 text-[13.5px] text-[#F5F5F5] outline-none"
         />
-        <p className="px-1 text-[11px] text-[#858585]">Enter para guardar · Esc para cancelar</p>
+        <p className="flex items-center gap-3 px-1 text-[11px] text-[#858585]">
+          <span className="hidden lg:inline">Enter para guardar · Esc para cancelar</span>
+          <button type="button" onClick={() => setEditing(false)} className="text-[12.5px] text-[#9A9A9A]">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!draft.trim()) return
+              onEdit(draft.trim())
+              setEditing(false)
+            }}
+            className="text-[12.5px] font-semibold text-[#E8C15A]"
+          >
+            Guardar
+          </button>
+        </p>
       </div>
     )
   }
@@ -647,11 +687,19 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           in narrow layouts. */}
       <div className="relative flex items-center">
         <div
-          className={`absolute -top-4 z-10 max-w-[420px] ${mine ? 'right-0' : 'left-0'} ${menu ? '' : 'pointer-events-none group-hover:pointer-events-auto'}`}
+          className={`absolute -top-4 z-10 max-w-[420px] ${touch ? 'hidden' : ''} ${mine ? 'right-0' : 'left-0'} ${menu ? '' : 'pointer-events-none group-hover:pointer-events-auto'}`}
         >
           {actions}
         </div>
-        <div className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'}`}>
+        <div
+          className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'} ${touch ? 'select-none' : ''}`}
+          style={touch ? { WebkitTouchCallout: 'none' } : undefined}
+          onTouchStart={startPress}
+          onTouchMove={movePress}
+          onTouchEnd={cancelPress}
+          onTouchCancel={cancelPress}
+          onContextMenu={touch ? (e) => e.preventDefault() : undefined}
+        >
           {message.forwarded && (
             <span className="flex items-center gap-1 px-1 text-[11px] italic text-[#8A8A8A]">
               <ForwardIcon size={11} /> Reenviado{message.forwarded.authorName ? ` · de ${message.forwarded.authorName.split(' ')[0]}` : ''}
@@ -716,6 +764,28 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         </p>
       )}
       </div>
+      {sheet && (
+        <MessageActionSheet
+          preview={message.text ? message.text.slice(0, 200) : null}
+          reactions={QUICK_REACTIONS}
+          onReact={(e) => onReact(e, (message.reactions?.[e] || []).includes(currentUid))}
+          reminderOptions={reminderOptions()}
+          onRemind={(at) => onRemind(at)}
+          onClose={() => setSheet(false)}
+          options={[
+            onReply && { label: 'Responder', onClick: onReply },
+            onOpenThread && { label: 'Responder en hilo', onClick: onOpenThread },
+            hasText && { label: 'Copiar texto', onClick: () => navigator.clipboard?.writeText(message.text).catch(() => {}) },
+            { label: saved ? 'Quitar de guardados' : 'Guardar', onClick: onToggleSave },
+            onForward && !message.call && !message.poll && { label: 'Reenviar', onClick: onForward },
+            onTogglePin && { label: pinned ? 'Desfijar' : 'Fijar', onClick: onTogglePin },
+            onRemind && { label: 'Recordármelo…', remind: true },
+            onCreateTask && !message.task && { label: 'Crear tarea', onClick: onCreateTask },
+            mine && hasText && !message.call && { label: 'Editar', onClick: () => setEditing(true) },
+            mine && { label: 'Eliminar', delete: true, onClick: onDelete },
+          ].filter(Boolean)}
+        />
+      )}
     </div>
   )
 }
