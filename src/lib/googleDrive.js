@@ -12,7 +12,7 @@
 // one refresh token); the scope is `drive.file`, so ADOR OS can only see
 // what you pick or what it created. Connections made before Drive was added
 // don't have it — DriveNeedsConnectError tells the UI to reconnect once.
-import { getUserProfile, saveUserProfile } from './firestore'
+import { getUserProfile, saveUserProfile, getDriveFolder } from './firestore'
 import { buildAuthUrl, exchangeCode, refreshAccessToken, isReconnectError, fetchPrimaryCalendarEmail, assertCompanyGoogleAccount, DRIVE_SCOPE, isGoogleCalendarConfigured } from './googleCalendar'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
@@ -124,14 +124,14 @@ function loadPicker() {
 // Opens Google's own Drive picker: "Mi unidad / Compartidos / Recientes"
 // plus a "Subir" tab that uploads from your computer straight into Drive.
 // Resolves with the chosen files as small link records, or [] if cancelled.
-export async function pickDriveFiles(uid, { multiple = false, title = 'Elige un archivo de Google Drive' } = {}) {
+//
+// With the company folder set (Configuración → Carpeta de ADOR en Drive),
+// the picker opens on it first and "Subir" uploads straight into it.
+export async function pickDriveFiles(uid, { multiple = false, title = 'Elige un archivo de Google Drive', folderOnly = false } = {}) {
   if (!API_KEY) throw new Error('Falta la clave VITE_GOOGLE_API_KEY para el selector de Google Drive.')
-  const [token] = await Promise.all([getDriveToken(uid), loadPicker()])
+  const [token, , companyFolder] = await Promise.all([getDriveToken(uid), loadPicker(), folderOnly ? null : getDriveFolder().catch(() => null)])
   const { google } = window
   return new Promise((resolve) => {
-    const docs = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setSelectFolderEnabled(false)
-    const shared = new google.picker.DocsView(google.picker.ViewId.DOCS).setEnableDrives(true).setIncludeFolders(true)
-    const upload = new google.picker.DocsUploadView().setIncludeFolders(true)
     const builder = new google.picker.PickerBuilder()
       .setTitle(title)
       .setLocale('es')
@@ -139,9 +139,21 @@ export async function pickDriveFiles(uid, { multiple = false, title = 'Elige un 
       .setDeveloperKey(API_KEY)
       .setAppId(APP_ID)
       .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
-      .addView(docs)
-      .addView(shared)
-      .addView(upload)
+    if (folderOnly) {
+      // Choosing the company folder itself: folders only, selectable.
+      builder
+        .addView(new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder'))
+        .addView(new google.picker.DocsView(google.picker.ViewId.FOLDERS).setEnableDrives(true).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder'))
+    } else {
+      if (companyFolder?.fileId) builder.addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setParent(companyFolder.fileId).setIncludeFolders(true).setLabel(companyFolder.name || 'ADOR'))
+      builder
+        .addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setSelectFolderEnabled(false))
+        .addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setEnableDrives(true).setIncludeFolders(true))
+      const upload = new google.picker.DocsUploadView().setIncludeFolders(true)
+      if (companyFolder?.fileId) upload.setParent(companyFolder.fileId)
+      builder.addView(upload)
+    }
+    builder
       .setCallback((data) => {
         if (data.action === google.picker.Action.PICKED) {
           resolve(
@@ -176,7 +188,28 @@ export function driveFileKind(mimeType = '') {
 }
 
 // ---- Backup upload ----
+// Backups go to "Respaldos" inside the company folder when one is set and
+// this person's connection can write there (they chose it, or it's shared
+// with them and ADOR OS was granted it); otherwise to "ADOR OS — Respaldos"
+// in their own Drive, as before.
 async function findOrCreateBackupFolder(token) {
+  const company = await getDriveFolder().catch(() => null)
+  if (company?.fileId) {
+    try {
+      const q = encodeURIComponent(`name='Respaldos' and '${company.fileId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`)
+      const found = await driveFetch(token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1&supportsAllDrives=true&includeItemsFromAllDrives=true`)
+      if (found.files?.[0]) return found.files[0].id
+      const created = await driveFetch(token, 'https://www.googleapis.com/drive/v3/files?fields=id&supportsAllDrives=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Respaldos', mimeType: 'application/vnd.google-apps.folder', parents: [company.fileId] }),
+      })
+      return created.id
+    } catch (error) {
+      if (error instanceof DriveNeedsConnectError) throw error
+      // No access to the company folder from this connection — fall back.
+    }
+  }
   const q = encodeURIComponent(`name='${BACKUP_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`)
   const found = await driveFetch(token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`)
   if (found.files?.[0]) return found.files[0].id
@@ -207,7 +240,7 @@ export async function uploadBackupToDrive(uid, fileName, jsonText) {
     `--${boundary}--`,
     '',
   ].join('\r\n')
-  return driveFetch(token, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+  return driveFetch(token, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true', {
     method: 'POST',
     headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
     body,

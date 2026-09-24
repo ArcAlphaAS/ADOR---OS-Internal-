@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { subscribeUserProfile, subscribeMaintenance, recordBackup } from '../../lib/firestore'
+import { subscribeUserProfile, subscribeMaintenance, recordBackup, subscribeDriveFolder, setDriveFolder } from '../../lib/firestore'
+import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { isAdmin } from '../../lib/permissions'
 import { exportAllData, backupFileName } from '../../lib/backup'
 import { uploadBackupToDrive, connectDrive, DriveNeedsConnectError } from '../../lib/googleDrive'
@@ -16,6 +17,52 @@ const COLLECTION_LABELS = {
   incomes: 'ingresos',
   objetivos: 'objetivos',
   directoryPeople: 'directorio',
+}
+
+// "Carpeta de ADOR en Drive" (admins): the company's shared folder — made in
+// one partner's Drive and shared with the others as Editor. Once chosen,
+// uploads from ADOR OS (Google's picker "Subir" tab) land in it and backups
+// go to its "Respaldos" subfolder. See lib/googleDrive.js.
+function DriveFolderSection({ user }) {
+  const [profile, setProfile] = useState(null)
+  const [folder, setFolder] = useState(null)
+  const [error, setError] = useState('')
+  const drive = useDrivePicker('inicio')
+  useEffect(() => (user?.uid && user.uid !== 'preview' ? subscribeUserProfile(user.uid, setProfile) : undefined), [user?.uid])
+  useEffect(() => subscribeDriveFolder(setFolder), [])
+  if (!profile || !isAdmin(profile)) return null
+
+  const choose = async () => {
+    setError('')
+    const [picked] = await drive.pick({ folderOnly: true, title: 'Elige la carpeta de ADOR (compartida con tus socios)' })
+    if (!picked) return
+    try {
+      await setDriveFolder({ fileId: picked.fileId, name: picked.name, url: picked.url })
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  return (
+    <div className="ador-glass w-full rounded-xl px-4 py-3">
+      <span className="block text-[13px] font-medium text-[#F5F5F5]">Carpeta de ADOR en Drive</span>
+      <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">
+        {folder
+          ? 'Lo que se sube desde ADOR OS va aquí, y los respaldos a su subcarpeta “Respaldos”.'
+          : 'Crea una carpeta “ADOR” en tu Drive, compártela con tus socios como Editor y elígela aquí. Así los archivos son de la empresa, no de una persona.'}
+      </span>
+      {folder && (
+        <a href={folder.url} target="_blank" rel="noopener noreferrer" className="mt-1.5 block truncate text-[12px] text-[#6FA3E0] hover:underline">
+          📁 {folder.name}
+        </a>
+      )}
+      <button type="button" onClick={choose} disabled={drive.busy} className="mt-2.5 rounded-lg border border-white/[0.12] px-3 py-1.5 text-[12px] text-[#DDDDDD] hover:border-white/[0.25] disabled:opacity-50">
+        {drive.busy ? 'Abriendo Google Drive…' : folder ? 'Cambiar carpeta' : 'Elegir carpeta'}
+      </button>
+      {error && <p className="mt-2 text-[12px] text-[#EF8A88]">{error}</p>}
+      {drive.prompt}
+    </div>
+  )
 }
 
 // "Exportar todo" (admins only): reads every collection and saves one JSON
@@ -51,7 +98,7 @@ function BackupSection({ user }) {
     <div className="ador-glass w-full rounded-xl px-4 py-3">
       <span className="block text-[13px] font-medium text-[#F5F5F5]">Respaldo de datos</span>
       <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">
-        Guarda una copia completa de ADOR OS en tu Google Drive (carpeta “ADOR OS — Respaldos”).
+        Guarda una copia completa de ADOR OS en Google Drive (en la carpeta de ADOR si está elegida; si no, en “ADOR OS — Respaldos” de tu Drive).
       </span>
       {lastAt && (
         <span className="mt-1.5 block text-[11px] text-[#777777]">
@@ -162,6 +209,7 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
               </span>
             </button>
 
+            <DriveFolderSection user={user} />
             <BackupSection user={user} />
 
             {status && <p className="mt-1 px-1 text-[12px] text-[#888888]">{status}</p>}

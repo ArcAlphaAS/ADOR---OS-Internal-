@@ -296,6 +296,29 @@ export async function getGoogleAccountPolicy() {
   return { allowedDomains: (snap.exists() && snap.data().allowedDomains) || [] }
 }
 
+// The company's shared Drive folder ("ADOR"), chosen once by an admin in
+// Configuración: uploads from ADOR OS land in it, backups in a "Respaldos"
+// subfolder. `settings/google.driveFolder = {fileId, name, url}`.
+export async function getDriveFolder() {
+  if (!db) return null
+  const snap = await getDoc(doc(db, COLLECTIONS.settings, 'google'))
+  return (snap.exists() && snap.data().driveFolder) || null
+}
+
+export function subscribeDriveFolder(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.settings, 'google'),
+    (snap) => onData((snap.exists() && snap.data().driveFolder) || null),
+    (error) => console.error('Firestore subscription to settings/google failed:', error.message)
+  )
+}
+
+export function setDriveFolder(folder) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, COLLECTIONS.settings, 'google'), { driveFolder: folder }, { merge: true })
+}
+
 export function saveUserProfile(userId, data) {
   if (!db || !userId) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
