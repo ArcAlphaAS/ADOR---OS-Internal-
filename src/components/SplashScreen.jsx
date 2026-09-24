@@ -41,18 +41,16 @@ export default function SplashScreen({ onFinish }) {
           brighter so the glow actually reads at a glance, not just on close
           inspection. The small secondary mark that used to sit below it was
           removed the same request — one focal mark, not two. */}
-      <motion.img
-        src="/logo.svg"
-        alt="ADOR"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: LOGO_DURATION, ease: 'easeOut' }}
-        style={{
-          height: 80,
-          filter:
-            'drop-shadow(0 0 14px rgba(255,255,255,0.35)) drop-shadow(0 0 36px rgba(255,255,255,0.18)) drop-shadow(0 0 80px rgba(255,255,255,0.08))',
-        }}
-      />
+      {/* iPhone (installed app): an <img> with only a height, plus stacked
+          drop-shadows on the same element whose opacity animates, could
+          render nothing at all — the screen showed only "Toca para
+          continuar". Now the image has explicit width/height, the glow
+          filter sits on a still wrapper, and only the outer element fades. */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: LOGO_DURATION, ease: 'easeOut' }}>
+        <div style={{ filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.35)) drop-shadow(0 0 36px rgba(255,255,255,0.16))' }}>
+          <img src="/logo.svg" alt="ADOR" width={86} height={80} style={{ display: 'block', width: 86, height: 80 }} />
+        </div>
+      </motion.div>
 
       <motion.p
         initial={{ opacity: 0 }}

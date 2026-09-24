@@ -84,7 +84,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
         }}
       >
         <div className="flex justify-center">
-          <img src="/logo.svg" alt="ADOR" style={{ height: 36 }} />
+          <img src="/logo.svg" alt="ADOR" width={39} height={36} style={{ height: 36, width: 39 }} />
         </div>
         <div className="mt-4 flex items-baseline justify-center gap-[7px]">
           <Logo size={22} />
