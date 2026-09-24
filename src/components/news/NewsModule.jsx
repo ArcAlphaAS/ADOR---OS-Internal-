@@ -205,7 +205,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
+      className={`mx-auto flex w-full flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10 ${tab === 'comunidad' ? 'max-w-[1040px]' : 'max-w-[1440px]'}`}
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
@@ -213,26 +213,26 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
             {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
           </p>
           <h1 className="mt-1 text-[38px] leading-none text-[#F5F5F5] md:text-[46px]" style={SERIF}>
-            News
+            {tab === 'anuncios' ? 'News' : 'Comunidad ADOR'}
           </h1>
           <p className="mt-2 text-[13.5px] text-[#9A9A9A]">
             {tab === 'anuncios'
               ? 'Decisiones, hitos y anuncios de ADOR, escritos por el equipo.'
-              : 'Avances, ideas y momentos que el equipo quiere compartir.'}
+              : 'Personas, ideas y conversaciones que impulsan lo que construimos.'}
           </p>
         </div>
-        {tab === 'anuncios' && (
+        {(
           <div className="flex items-center gap-2.5">
             <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.03] px-4 md:w-[260px] md:flex-none">
               <SearchIcon size={15} className="flex-shrink-0 text-[#8A8A8A]" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar noticias…"
+                placeholder={tab === 'anuncios' ? 'Buscar noticias…' : 'Buscar en la comunidad…'}
                 className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
               />
             </label>
-            {isAdminUser && (
+            {isAdminUser && tab === 'anuncios' && (
               <button
                 type="button"
                 onClick={() => setComposeRequest((n) => n + 1)}
@@ -275,7 +275,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
       {tab === 'anuncios' ? (
         <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} />
       ) : (
-        <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} />
+        <CommunityFeed user={user} posts={communityPosts} isAdminUser={isAdminUser} profile={profile} query={query} />
       )}
     </motion.div>
   )

@@ -768,6 +768,17 @@ From two reference images the user shared (a dark "News" page with a featured st
 - `parseOpenLink` also accepts `?open=news|objetivos|finanzas|conocimiento|directorio` (handy deep links; used to test).
 - Verified with 9 sample posts (removed): desktop 1440 and phone 375 layouts, no overflow, the editor's categories and photo button. Real photos weren't tried in the preview.
 
+### 44. Comunidad redesigned (2026-09-24)
+
+From the user's reference image. `CommunityFeed.jsx` rewritten; the header ("Comunidad ADOR" in serif, a subtitle and a search box) lives in `NewsModule`, and the page narrows to 1040px on this tab.
+- **Types:** `COMMUNITY_TYPES` (Actualización, Idea, Pregunta, Logro, Evento, Recurso) → `communityPosts.type`. They drive an underlined filter row (Todo + each type + "Guardados" once you've saved something) and are picked in the composer. Older posts without a type count as Actualización.
+- **Composer:** collapsed to one field. Focusing it or picking a type expands it into an optional serif title, the text, and up to 3 photos (1000px @0.72, ≤850KB in total, stored as data URLs on the post). Cmd/Ctrl+Enter publishes.
+- **Post card:** author photo via the chat's `PersonAvatar` + `ChatPeopleContext` (users + Directorio, subscribed here); an area chip from Directorio ("Dirección" for directivos); time; a ⋯ menu to delete (author or admin, confirmed); serif title; text; a photo grid (1 full, 2 side by side, 3 = one big + two stacked; tap opens a viewer); a type chip; faces of who liked it +N; a heart like (a spring pop, stored as the ❤️ reaction in the existing `reactions` map; any older reaction counts as a like); comments; "Guardar".
+- **Comments:** new subcollection `communityPosts/{id}/comments`, and `commentCount` on the post kept in the same batch (`addCommunityComment`/`deleteCommunityComment`). They open under the post; you can delete your own, and admins can delete any.
+- **Guardar:** `users/{uid}.communitySaved.{postId}` (`setCommunitySaved`).
+- `createCommunityPost(payload, uid, name)` takes `{text, title, type, images}` (a bare string still works).
+- Verified with 3 sample posts (removed): layout at 1200px, type filters, comments panel. Writes (post, like, comment, save) need a real login.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

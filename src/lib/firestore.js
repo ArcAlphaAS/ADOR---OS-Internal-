@@ -951,15 +951,53 @@ export function subscribeCommunityPosts(onData) {
   return subscribeToCollection(COLLECTIONS.communityPosts, [orderBy('createdAt', 'desc')], onData)
 }
 
-export function createCommunityPost(text, actorUid, actorName) {
+// `payload` is {text, title?, type?, images?} — a bare string still works
+// (posts from before types/titles/photos existed). `type` is one of
+// COMMUNITY_TYPES in components/news/CommunityFeed.jsx; `images` are small
+// data URLs (≤3, compressed on the device — no Storage needed).
+export function createCommunityPost(payload, actorUid, actorName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const p = typeof payload === 'string' ? { text: payload } : payload
   return addDoc(collection(db, COLLECTIONS.communityPosts), {
-    text,
+    text: p.text || '',
+    title: p.title || '',
+    type: p.type || 'actualizacion',
+    images: p.images || [],
     authorUid: actorUid,
     authorName: actorName,
     reactions: {},
+    commentCount: 0,
     createdAt: serverTimestamp(),
   })
+}
+
+// Comments on a Comunidad post: a subcollection, plus a commentCount on the
+// post (same batch) so the feed shows "💬 6" without loading comments.
+export function subscribeCommunityComments(postId, onData) {
+  if (!postId) return () => {}
+  return subscribeToCollection(`${COLLECTIONS.communityPosts}/${postId}/comments`, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function addCommunityComment(postId, text, uid, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  batch.set(doc(collection(db, COLLECTIONS.communityPosts, postId, 'comments')), { text, authorUid: uid, authorName: name, createdAt: serverTimestamp() })
+  batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(1) })
+  return batch.commit()
+}
+
+export function deleteCommunityComment(postId, commentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  batch.delete(doc(db, COLLECTIONS.communityPosts, postId, 'comments', commentId))
+  batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(-1) })
+  return batch.commit()
+}
+
+// "Guardar" — a per-person bookmark map on the profile.
+export function setCommunitySaved(uid, postId, saved) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.users, uid), { [`communitySaved.${postId}`]: saved ? true : deleteField() })
 }
 
 // LinkedIn-style single-reaction-per-person: picking a new reaction clears
