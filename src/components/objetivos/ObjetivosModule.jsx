@@ -233,9 +233,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#8A8A8A]">Dirección estratégica</p>
-          <h1 className="mt-1 text-[38px] leading-none text-[#F5F5F5] md:text-[46px]" style={SERIF}>
-            Objetivos
-          </h1>
+          <h1 className="ador-title mt-1">Objetivos</h1>
           <p className="mt-2 text-[13.5px] text-[#9A9A9A]">Metas de ADOR conectadas a Finanzas, Clientes y Workspace.</p>
         </div>
         <div className="flex flex-col items-start gap-1.5 lg:items-center">
