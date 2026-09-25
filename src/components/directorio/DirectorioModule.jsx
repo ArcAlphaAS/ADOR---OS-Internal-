@@ -419,9 +419,18 @@ function DefaultSidebar({ people, teams }) {
 
 // `focus` (top-bar search): {type:'person', id} opens that person's panel.
 export default function DirectorioModule({ user, focus, onFocusHandled }) {
-  const [people, setPeople] = useState([])
+  const [rawPeople, setPeople] = useState([])
   const [teams, setTeams] = useState([])
   const [users, setUsers] = useState([])
+  // Someone linked to an ADOR OS account with no Directorio photo of their
+  // own shows the photo from their profile — live, so it follows any change
+  // they make there. `photoFromAccount` tells the edit form it isn't theirs
+  // to save.
+  const people = rawPeople.map((p) => {
+    if (p.photoDataUrl || !p.linkedUserId) return p
+    const account = users.find((u) => u.id === p.linkedUserId)
+    return account?.photoDataUrl ? { ...p, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : p
+  })
   const [tab, setTab] = useState('personas')
   const [search, setSearch] = useState('')
   const [selectedPersonId, setSelectedPersonId] = useState(null)

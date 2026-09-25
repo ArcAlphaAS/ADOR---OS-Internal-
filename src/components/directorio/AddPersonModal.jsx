@@ -27,7 +27,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
   const [about, setAbout] = useState(person?.about || '')
   const [tags, setTags] = useState((person?.tags || []).join(', '))
   const [isDirectivo, setIsDirectivo] = useState(person?.isDirectivo || false)
-  const [photoDataUrl, setPhotoDataUrl] = useState(person?.photoDataUrl || null)
+  const [photoDataUrl, setPhotoDataUrl] = useState(person?.photoFromAccount ? null : person?.photoDataUrl || null)
   const [linkedUserId, setLinkedUserId] = useState(person?.linkedUserId || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -38,6 +38,10 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
   // Directorio entries from silently claiming the same real account. The
   // entry being edited keeps its own link available in the list.
   const linkableUsers = users.filter((u) => u.id === linkedUserId || !people.some((p) => p.linkedUserId === u.id && p.id !== person?.id))
+
+  // With no photo of their own, a linked person uses their profile photo.
+  const accountPhoto = users.find((u) => u.id === linkedUserId)?.photoDataUrl || null
+  const shownPhoto = photoDataUrl || accountPhoto
 
   const applyLinkedUser = (uid) => {
     setLinkedUserId(uid)
@@ -119,11 +123,17 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
           <h2 className="text-[15px] font-semibold text-[#F5F5F5]">{isEdit ? 'Editar persona' : 'Añadir persona'}</h2>
 
           <div className="mt-5 flex items-center gap-4">
-            <Avatar photoURL={photoDataUrl} displayName={name} size={56} />
+            <Avatar photoURL={shownPhoto} displayName={name} size={56} />
             <label className="cursor-pointer text-[13px] font-medium text-[#1E5FAD] hover:underline">
-              {photoDataUrl ? 'Cambiar foto' : 'Subir foto'}
+              {photoDataUrl ? 'Cambiar foto' : accountPhoto ? 'Usar otra foto' : 'Subir foto'}
               <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
             </label>
+            {!photoDataUrl && accountPhoto && <span className="text-[12px] text-[#8A8A8A]">Foto de su perfil de ADOR OS</span>}
+            {photoDataUrl && accountPhoto && (
+              <button type="button" onClick={() => setPhotoDataUrl(null)} className="text-[12px] text-[#8A8A8A] hover:text-[#F5F5F5]">
+                Usar la de su perfil
+              </button>
+            )}
           </div>
 
           <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
