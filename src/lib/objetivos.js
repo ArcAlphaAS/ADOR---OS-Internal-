@@ -50,3 +50,51 @@ export const EXPERIMENT_STATUSES = [
 export function experimentStatusColor(id) {
   return EXPERIMENT_STATUSES.find((s) => s.id === id)?.color || '#888888'
 }
+
+// ---- Board helpers (ObjetivosModule redesign) ----
+
+// 0–100. Milestones are all-or-nothing.
+export function objetivoPct(o) {
+  if (o.type === 'milestone') return o.completed ? 100 : 0
+  if (!o.targetValue) return 0
+  return Math.max(0, Math.min(100, Math.round(((o.currentValue || 0) / o.targetValue) * 100)))
+}
+
+export const OBJETIVO_STATUS = {
+  logrado: { label: 'Logrado', color: '#E8C15A' },
+  encamino: { label: 'En camino', color: '#4CAF50' },
+  riesgo: { label: 'En riesgo', color: '#FFC107' },
+  bloqueado: { label: 'Bloqueado', color: '#EF5350' },
+}
+
+// Reached → Logrado. Otherwise the owner's last check-in wins (rojo =
+// Bloqueado, amarillo = En riesgo); with no check-in, a KPI more than 15
+// points behind the share of the quarter already gone counts as En riesgo
+// (same pace rule as Resumen Semanal).
+export function objetivoStatus(o, elapsedPct, isCurrentQuarter) {
+  const pct = objetivoPct(o)
+  if (pct >= 100) return 'logrado'
+  if (o.confidence === 'rojo') return 'bloqueado'
+  if (o.confidence === 'amarillo') return 'riesgo'
+  if (o.confidence === 'verde') return 'encamino'
+  if (isCurrentQuarter && o.type !== 'milestone' && pct < elapsedPct - 15) return 'riesgo'
+  return 'encamino'
+}
+
+// Which modules an objetivo is actually connected to: its live metric's
+// source, plus Workspace when tasks are linked to it.
+const METRIC_MODULE = { revenue_quarter: ['finanzas', 'Finanzas'], sp_activos: ['clientes', 'Clientes'], spc_pipeline: ['clientes', 'Clientes'], tasks_completadas: ['workspace', 'Workspace'] }
+export function objetivoLinks(o) {
+  const links = []
+  const m = METRIC_MODULE[o.metric]
+  if (m && o.type !== 'milestone') links.push({ module: m[0], label: m[1] })
+  if (o.linkedTotal > 0 && !links.some((l) => l.module === 'workspace')) links.push({ module: 'workspace', label: `Workspace · ${o.linkedDone}/${o.linkedTotal} tareas` })
+  return links
+}
+
+// '2026-Q3' → '2026-Q2' / '2026-Q4' (crossing years).
+export function shiftQuarter(key, delta) {
+  const [y, q] = key.split('-Q').map(Number)
+  const idx = y * 4 + (q - 1) + delta
+  return `${Math.floor(idx / 4)}-Q${(idx % 4) + 1}`
+}

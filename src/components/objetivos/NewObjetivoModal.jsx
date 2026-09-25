@@ -19,6 +19,7 @@ export default function NewObjetivoModal({ quarterKey, actorName, users, preset,
   const [targetValue, setTargetValue] = useState('')
   const [customLabel, setCustomLabel] = useState('')
   const [foco, setFoco] = useState(preset?.foco || '')
+  const [description, setDescription] = useState('')
   const [ownerId, setOwnerId] = useState('')
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
@@ -34,6 +35,7 @@ export default function NewObjetivoModal({ quarterKey, actorName, users, preset,
         createObjetivo(
           {
             title: title.trim(),
+            description: description.trim(),
             type,
             quarter: quarterKey,
             foco: foco.trim() || 'General',
@@ -89,6 +91,13 @@ export default function NewObjetivoModal({ quarterKey, actorName, users, preset,
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="¿Qué queremos lograr este trimestre?"
                 className={inputClass}
+              />
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Por qué importa (opcional) — una o dos frases"
+                rows={2}
+                className={`${inputClass} mt-2 resize-none`}
               />
             </div>
 

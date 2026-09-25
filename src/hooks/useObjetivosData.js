@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeObjetivos, subscribeClients, subscribeAllTasks, subscribeUsers } from '../lib/firestore'
+import { subscribeObjetivos, subscribeClients, subscribeAllTasks, subscribeUsers, subscribeExperimentos, subscribeDecisions } from '../lib/firestore'
 import { clientType } from '../lib/clientStages'
 import { quarterKey, isInQuarter } from '../lib/finance'
 import { useFinanceData } from './useFinanceData'
@@ -10,7 +10,10 @@ import { useFinanceData } from './useFinanceData'
 // 'custom'` goals carry a manually-edited currentValue (set either via the
 // pencil-edit on the card or a Friday check-in — see submitCheckin), since
 // there's no existing collection a custom goal could read from.
-export function useObjetivosData() {
+// `selectedQuarter` (e.g. '2026-Q3') lets the page browse other quarters.
+// Live metrics only exist for the current quarter; other quarters show each
+// objetivo's stored value (custom metrics) and no live number.
+export function useObjetivosData(selectedQuarter) {
   const [objetivos, setObjetivos] = useState([])
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
@@ -21,8 +24,14 @@ export function useObjetivosData() {
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeAllTasks(setTasks), [])
   useEffect(() => subscribeUsers(setUsers), [])
+  const [experimentos, setExperimentos] = useState([])
+  const [decisions, setDecisions] = useState([])
+  useEffect(() => subscribeExperimentos(setExperimentos), [])
+  useEffect(() => subscribeDecisions(setDecisions), [])
 
-  const qKey = quarterKey()
+  const currentQuarter = quarterKey()
+  const qKey = selectedQuarter || currentQuarter
+  const isCurrent = qKey === currentQuarter
   const spActivos = clients.filter((c) => c.stage === 'intervencion_activa').length
   const spcPipeline = clients.filter((c) => clientType(c.stage) === 'SPC').length
   const tasksCompletadas = tasks.filter(
@@ -46,8 +55,9 @@ export function useObjetivosData() {
 
   const resolved = objetivos.map((o) => {
     const currentValue =
-      o.type === 'milestone' ? undefined : o.metric === 'custom' ? o.currentValue || 0 : liveValueByMetric[o.metric] || 0
-    return { ...o, currentValue, linkedTaskCount: openLinkedTaskCount(o.id) }
+      o.type === 'milestone' ? undefined : o.metric === 'custom' || !isCurrent ? o.currentValue || 0 : liveValueByMetric[o.metric] || 0
+    const linked = tasks.filter((t) => t.objetivoId === o.id)
+    return { ...o, currentValue, linkedTaskCount: openLinkedTaskCount(o.id), linkedDone: linked.filter((t) => t.status === 'completado').length, linkedTotal: linked.length }
   })
 
   const currentQuarterObjetivos = resolved
@@ -71,5 +81,22 @@ export function useObjetivosData() {
     }))
     .sort((a, b) => (a.dueDate?.toDate?.() || Infinity) - (b.dueDate?.toDate?.() || Infinity))
 
-  return { objetivos: currentQuarterObjetivos, quarterKey: qKey, northStar, users, openLinkedTasks }
+  // Counts for the summary strip.
+  const activeExperiments = experimentos.filter((e) => (e.status || 'pendiente') === 'pendiente').length
+  const quarterDecisions = decisions.filter((d) => {
+    const at = d.decidedAt?.toDate?.() || d.createdAt?.toDate?.()
+    return at ? quarterKey(at) === qKey : false
+  }).length
+
+  return {
+    objetivos: currentQuarterObjetivos,
+    quarterKey: qKey,
+    isCurrentQuarter: isCurrent,
+    northStar,
+    users,
+    openLinkedTasks,
+    liveValueByMetric,
+    activeExperiments,
+    quarterDecisions,
+  }
 }

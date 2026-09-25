@@ -263,7 +263,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             ) : activeModule === 'finanzas' ? (
               <FinanzasModule key="finanzas" user={user} onNavigate={navigateTo} />
             ) : activeModule === 'objetivos' ? (
-              <ObjetivosModule key="objetivos" user={user} />
+              <ObjetivosModule key="objetivos" user={user}  onNavigate={navigateTo} />
             ) : activeModule === 'calendario' ? (
               <CalendarioModule key="calendario" user={user} />
             ) : activeModule === 'directorio' ? (
