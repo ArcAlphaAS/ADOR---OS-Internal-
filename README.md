@@ -8,9 +8,11 @@ Invite-only. Dark, glass-surfaced, quiet by design ("something Apple would ship 
 
 ## Status
 
-Every module is built and live: Inicio, Workspace (Hoy / Lista / Kanban / Timeline), Objetivos, Clientes (SPC→SP CRM), Finanzas, Calendario (Google Calendar), Conocimiento, News + Comunidad, Comunicación (DMs, groups, channels, threads, Google Meet calls), Directorio, ADOR IA (local rule-based engine), and Administración (invite people, roles, member access, error log, data). Files and backups live in Google Drive. Global search covers everything, including chat messages.
+Every module is built and live: Inicio, Workspace (Hoy / Lista / Kanban / Timeline), Objetivos (quarterly goals with pace, owners and linked work), Clientes (SPC→SP CRM), Finanzas, Calendario (Google Calendar), Conocimiento, News (editorial announcements with read receipts, drafts and scheduling) + Comunidad (posts, events with RSVP, questions, ideas, achievements, resources, comments), Comunicación (DMs, groups, channels, threads, Google Meet calls), Directorio, ADOR IA (local rule-based engine), and Administración (invite people, roles, member access, error log, data). Files and backups live in Google Drive. Global search covers everything, including chat messages.
 
-Still open: activate the stricter Firestore rules (`firestore.rules`, drafted) before inviting the first non-admin member; push notifications with the app closed.
+It installs like a native app on iPhone, iPad, Android and desktop, with **push notifications even when it's closed**, an unread badge on the icon, an update notice, and offline support.
+
+Still open: activate the stricter Firestore rules (`firestore.rules`, drafted) before inviting the first non-admin member; a real two-account test of messaging, notifications, News and Comunidad; optionally, a server schedule so scheduled posts/messages go out with every app closed.
 
 - `PROJECT_STATE.md` — the living checklist of what's built and what's next.
 - `CLAUDE.md` — architecture notes, the reasoning behind each decision, and the session handoff.
@@ -21,6 +23,8 @@ Still open: activate the stricter Firestore rules (`firestore.rules`, drafted) b
 - **Data & auth:** Firebase Authentication (email/password, invite-only) + Cloud Firestore (`nam5`). Free Spark plan.
 - **Google:** one per-person connection (OAuth) for Calendar (read-only), Meet (create call rooms) and Drive (`drive.file` — only files the person picks or ADOR OS creates).
 - **Hosting:** Cloudflare Workers (static assets + a small API), free plan, deployed from GitHub on every push to `main`.
+- **App on devices:** a PWA (`manifest.webmanifest` + service worker `public/sw.js`) with standard Web Push — VAPID-signed and encrypted on the Worker with Web Crypto, no Firebase Cloud Messaging.
+- **Typeface:** Apple's SF Pro via the system font (Inter as the fallback on Android/Windows); News, Comunidad and objective titles use Apple's serif (New York).
 
 Everything runs on free tiers; no billing account is attached anywhere.
 
@@ -48,13 +52,16 @@ Real values live in `.env` (gitignored; `.env.example` has the names). On Cloudf
 | Where | Variables |
 |---|---|
 | **Build variables** (baked into the app by Vite — not secret) | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` |
-| **Runtime variables and secrets** (read by the `/api` functions) | `GOOGLE_CLIENT_SECRET` (secret), `VITE_GOOGLE_CLIENT_ID` |
+| **Runtime variables and secrets** (read by the `/api` functions) | `GOOGLE_CLIENT_SECRET` (secret), `VITE_GOOGLE_CLIENT_ID`, `VAPID_PRIVATE_KEY` (secret — push notifications) |
+| **`wrangler.jsonc` vars** (public, in the repo) | `FIREBASE_PROJECT_ID`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` |
 
 Never give a secret a `VITE_` prefix — Vite would compile it into the shipped JavaScript.
 
 ### Deploying
 
-Push to `main`. Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy` (config in `wrangler.jsonc`) and publishes in 1–2 minutes. Progress and logs: Cloudflare dashboard → Workers & Pages → ador-os → Deployments.
+Push to `main`. Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy` (config in `wrangler.jsonc`) and publishes in 1–2 minutes. Progress and logs: Cloudflare dashboard → Workers & Pages → ador-os → Deployments. Open apps show "Nueva versión · Actualizar" on their own.
+
+If a change doesn't show up: compare `/version.json` on the live site with the latest commit, and check the commit's build result at `https://api.github.com/repos/ArcAlphaAS/ADOR---OS-Internal-/commits/<sha>/check-runs`. A build that fails in 0 seconds is a Cloudflare hiccup — push an empty commit to retry.
 
 ### Access
 
@@ -67,11 +74,12 @@ The Firestore rules live today are the original blanket rule (any allowed accoun
 ```
 server/                     The only server-side code (runs on Cloudflare)
   handlers.js               Host-independent handlers: Google OAuth exchange/refresh, Meet room creation, dormant Gemini proxy
+  push.js                   Web Push: who gets notified (same rules as the bell), encryption + VAPID signing, /api/push/*
   worker.js                 Cloudflare Worker entry — routes /api/* to the handlers, serves the built app otherwise
   cloudflare.js, vercel.js  Adapters (Vercel is paused; api/ + vercel.js go away when it's deleted)
 wrangler.jsonc              Cloudflare Workers config
 firestore.rules             Role-aware Firestore rules — drafted, not live yet
-public/                     Icons (favicon, apple-touch, 192/512), manifest.webmanifest, logos, onboarding images
+public/                     Icons (favicon, apple-touch, 192/512), manifest.webmanifest (+ icon shortcuts), sw.js (push, badge), logos, onboarding images
 src/
   App.jsx                   Splash → Login → Welcome → AppShell; registers users/{uid} on login
   firebase.js               Firebase init, guarded so a missing config degrades instead of crashing
@@ -82,12 +90,12 @@ src/
                             ChatMessageToaster, ModuleErrorBoundary
     home/                   Inicio and its cards (greeting, weekly summary, finance, next meeting, tasks…)
     workspace/              Hoy, Lista, Kanban, Timeline, Personal overview, task detail panel
-    objetivos/              Goals board, North Star, check-ins, experiments, Decisiones
+    objetivos/              Objective rows (status, pace, owner), quarter switcher, check-ins, experiments, Decisiones
     clientes/               SPC→SP pipeline CRM, list, client detail panel (Documentos from Drive)
     finanzas/               Financial dashboard, projections, goals, movements, income/expense modals
     calendario/             Google Calendar views (day/week/month/agenda)
     conocimiento/           Markdown knowledge base
-    news/                   Anuncios + Comunidad
+    news/                   Anuncios (editorial layout, editor, read receipts) + Comunidad (post types, comments, RSVP, votes)
     chat/                   Comunicación (conversations, threads, composer, polls, calls, search, side panels)
     directorio/             People, org chart, teams, roles
     adoria/                 ADOR IA chat
@@ -101,15 +109,19 @@ src/
     googleCalendar.js, googleDrive.js         Google OAuth, Calendar, Meet, Drive picker, backup upload
     backup.js, errorLog.js                    "Exportar todo" and the error log
     chat*.js                                   Chat rules, derived indexes, drafts, sending, retention
+    push.js, news.js                          Device push subscription, install prompt, deep links; News rules and publish notices
+    motion.js, keyboard.js                    iOS-style springs + swipe-to-close; on-screen keyboard handling
     finance.js, clientStages.js, workspace.js, objetivos.js, weeklySummary.js, adorIA.js, knowledge.jsx, …   Per-module logic
 ```
 
 ## Design system quick reference
 
-- Background `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` (sparingly; Comunicación uses graphite and gold).
+- Background `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` / `#E8C15A` (sparingly; Comunicación uses graphite and gold).
+- One page title everywhere: `.ador-title`. Cards that need action: `.ador-card-attention` (gold edge) / `.ador-card-urgent` (red). Free text containers: `.ador-wrap` (long words break inside).
+- Motion: `SPRING` / `SHEET` from `lib/motion.js`, never fixed-duration easings for modals and panels.
 - Glass surfaces: `.ador-glass` + `.ador-grain` on every card; `.ador-modal-surface` for modals and side panels.
 - Floating UI (dropdowns, tooltips, popovers) is portaled to `document.body` and positioned from the trigger's rect — never nested in a shrink-wrapped container.
 - Never put a transform animation and a backdrop blur on the same element (Chromium drops the blur) — split them into two nested elements.
 - Pending data uses `.ador-skeleton` (shimmer), not static dashes.
-- Below 1024px the app uses a bottom tab bar instead of the side capsule and top tabs.
+- Below 1024px the app uses a floating bottom tab bar instead of the side capsule and top tabs; touch-only behaviors (swipe to close, press and hold) switch on only there.
 - Full rationale for these and every other decision is in `CLAUDE.md`.

@@ -1,6 +1,6 @@
 # ADOR OS — Project State
 
-Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long session — DMs, private groups, public/private channels with permissions, Slack-style threads, mentions, email-style Inbox, reactions, pins, reminders, message → task, voice notes and pasted images, Google Meet calls in one click with ringing on the other side, presence and availability statuses, search across all messages, a graphite-and-gold visual pass, and a free 90-day retention policy. One-click Meet calls confirmed working live by the user. Open items: lock private channels in Firestore rules before any non-founder gets a login, and a full two-account test of the rest). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
+Last updated: 2026-09-29 (covers the long 2026-09-24 session: push notifications with the app closed, live on the user's iPhone; the installed app made to feel like an iPhone app — floating tab bar, SF Pro, springs and swipe gestures, press-and-hold on messages, update notice, keyboard handling, icon badge, offline mode; an interface pass; News rebuilt as an editorial page and as the internal announcement channel; Comunidad rebuilt with social-network features per post type; Objetivos redesigned; Directorio shows linked people's profile photos). This is the living status snapshot — update the checklists below whenever something ships or a blocker changes. For *why* things were built the way they were, see `CLAUDE.md`; that file changes rarely, this one changes often.
 
 ## Phase status
 
@@ -25,6 +25,11 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 | Roles + Administración (invitar, roles, accesos, errores, datos) | ✅ Done (2026-09-24) — stricter Firestore rules drafted, **not live yet** |
 | Celular / iPad (installable PWA, bottom tab bar, responsive modules) | ✅ Done (2026-09-24) — not yet tried on a real phone |
 | Hosting on Cloudflare Workers (moved from Vercel) | ✅ Done, confirmed live (2026-09-23) |
+| Push notifications with ADOR OS closed (Web Push, free) | ✅ Done, confirmed on the user's iPhone (2026-09-24) — partners still to turn them on |
+| iPhone-app feel (tab bar, SF Pro, gestures, update notice, keyboard, badge, offline) | ✅ Done (2026-09-24) — keyboard and badge not yet tried on a real phone |
+| News rebuilt (editorial page, opened-post card, notifications, read receipts, drafts/scheduling, toolbar editor) | ✅ Done (2026-09-24) — writes/push need a real two-account test |
+| Comunidad rebuilt (types, photos, comments, events with RSVP, questions, ideas, achievements, resources) | ✅ Done (2026-09-24) |
+| Objetivos redesigned (quarter switcher, summary strip, objective rows, linked initiatives, key metrics) | ✅ Done (2026-09-24) |
 
 ## What's actually built
 
@@ -408,8 +413,19 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 - [ ] 7b Activar las reglas de seguridad de `firestore.rules` — **probarlas antes**; necesario solo antes de invitar al primer Miembro. See CLAUDE.md §37
 - [x] 8 Celular/iPad: instalable como app (ícono en pantalla de inicio), barra de navegación abajo en pantallas pequeñas, todos los módulos adaptados. Falta probar en un teléfono real y, más adelante, notificaciones con la app cerrada
 
-**Not built yet**
-- [ ] Documentos tab (Ficha panel) and Finanzas' Comprobante field only store file **metadata** (name, type, size) — actual file upload needs Firebase Storage enabled, which hasn't happened yet. Download button is present but disabled with an explanatory tooltip
+**Ronda del 2026-09-24 (una sesión larga).** See CLAUDE.md §39–§45
+- [x] Notificaciones push con la app cerrada (mensajes directos, menciones, respuestas en hilos, llamadas, anuncios) — probado en el iPhone del usuario. §39
+- [x] Mensajes llegando tarde en Android: el envío ya no se corta si quien escribe bloquea el teléfono (`keepalive`); ajustes de batería de Chrome para el receptor. §39
+- [x] App instalada con sensación de iPhone: barra flotante, SF Pro, animaciones tipo resorte, deslizar para cerrar, mantener pulsado un mensaje, aviso "Nueva versión", teclado en el chat, número en el ícono, atajos del ícono (Android/escritorio), modo sin conexión. §40–§41
+- [x] Llamar desde el celular sin quedar atrapado en la pestaña de Meet. §40
+- [x] Pase de interfaz: logo "ADOR OS", jerarquía de tarjetas en Inicio, un mismo título y márgenes en todos los módulos. §42
+- [x] News: página editorial, anuncio abierto como tarjeta, notificación al publicar, "Leído por" y confirmación de lectura, editor con botones e imágenes, borradores y programados, filtro por categoría, "Sigue leyendo", último anuncio en Inicio. §43
+- [x] Comunidad: tipos de publicación con funciones propias (eventos con asistencia y calendario, preguntas con mejor respuesta, ideas con votos y estado, logros, recursos), fotos, comentarios, guardar, hashtags, fijar. §44
+- [x] Objetivos rediseñado. §45
+- [x] Palabras muy largas ya no se salen de su caja. §43
+- [x] Directorio: las personas vinculadas muestran su foto de perfil solas. §30
+- [ ] Anuncios programados y mensajes programados salen a su hora solo si un administrador tiene ADOR OS abierto — arreglo gratis ofrecido (tarea programada en Cloudflare + clave de Firebase), aplazado por el usuario. §43
+- [ ] Probar con cuentas reales: publicar/comentar/votar en Comunidad, anuncios con confirmación, notificaciones entre dos personas
 
 **Scoped but not started:**
 - ~~**Mobile access (2026-09-18 conversation)**~~ — phases 1 and 2 (responsive layout, installable) **done 2026-09-24** (CLAUDE.md §38); phase 3 (push notifications) built 2026-09-24 (CLAUDE.md §39). Original note: Goal is a lightweight "check status on my phone" experience, not a full mobile work surface — user was explicit that phone use is for glancing/reviewing, not working. Recommended path: a PWA built on the existing web app (not a native React Native/iOS/Android app — too much investment for a 3-founder internal tool), in three independent phases: (1) a responsive layout pass on Inicio (and possibly Workspace's Hoy) so it's actually legible on a phone screen, (2) a web manifest + icon so it's installable to the home screen, (3) real push notifications, which needs a backend piece (same Vercel-serverless-function pattern already used for `api/ador-ia.js`/`api/google-calendar/*`) plus a service worker — works on Android always, on iPhone only once the app is installed via phase 2 (Apple allows PWA push since iOS 16.4). User wants to revisit this later, not now — parked here per their own request, not forgotten.
@@ -423,12 +439,13 @@ Last updated: 2026-09-23 (Chat rebuilt into **Comunicación** in one long sessio
 | Firebase Authentication | Enabled — **Email/Password only**. Google OAuth was enabled then removed 2026-08-14 (self-serve sign-in let any Google account in; invite-only model needs admin-provisioned accounts instead) |
 | Firebase Firestore | ✅ Enabled 2026-08-13, `nam5` (US) region. Rules require `request.auth != null` AND the user's email to have a document in `allowedEmails/{email}` — access control enforced at the data layer, not just the login screen. Applied via a blanket `match /{document=**} { allow read, write: if isAllowed(); }` rule, so **every** collection is automatically covered, present and future — no per-collection rule edits are ever needed (confirmed 2026-08-15 by reviewing the actual rules in console). All 3 founder emails added as of 2026-08-14 |
 | Google Cloud (OAuth, Calendar API, Meet REST API, **Drive API, Picker API**) | ✅ Project `ador-os-internal` (number 610980815690). OAuth scopes: `calendar.readonly`, `meetings.space.created`, `drive.file` (declared in Data Access; app intentionally unverified — "Advanced → continue", 100-user cap). OAuth client "ADOR OS" authorizes `https://ador-os.adorfirm.workers.dev` (+ old Vercel URL). API key "ADOR OS – Drive Picker" restricted to Drive + Picker APIs and to the Cloudflare URL + `localhost:5173`. Only the person's own ADOR OS login email may be connected as their Google account |
-| Firebase Storage | ❌ Not enabled — and no longer needed: files live in Google Drive via the picker (Clientes → Documentos, Finanzas → comprobante, chat, Conocimiento); Storage would now require a billing account |
-| Server functions | `server/handlers.js` (Google connect/refresh, Meet rooms, dormant Gemini), served by `server/worker.js` on Cloudflare (`wrangler.jsonc`); `api/` + `server/vercel.js` = Vercel adapters kept only while Vercel is paused |
+| Firebase Storage | ❌ Not enabled — and not needed: files live in Google Drive via the picker (Clientes → Documentos, Finanzas → comprobante, chat, Conocimiento); Storage would now require a billing account |
+| Server functions | `server/handlers.js` (Google connect/refresh, Meet rooms, dormant Gemini) and `server/push.js` (Web Push: `/api/push/config`, `/api/push/send`), served by `server/worker.js` on Cloudflare (`wrangler.jsonc`); `api/` + `server/vercel.js` = Vercel adapters kept only while Vercel is paused |
 | Deployment | ✅ **Cloudflare Workers** (free, commercial use allowed) — `https://ador-os.adorfirm.workers.dev`, auto-deploys on push to `main` (Workers Builds). Vercel (`ador-os-internal.vercel.app`) paused 2026-09-23 — see CLAUDE.md §36 |
-| `.env` (Firebase + Google config) | Present locally, gitignored. On Cloudflare (ador-os → Settings): **Build variables** = `VITE_FIREBASE_*` (6), `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`; **Runtime secrets** = `GOOGLE_CLIENT_SECRET`, `VITE_GOOGLE_CLIENT_ID` |
+| `.env` (Firebase + Google config) | Present locally, gitignored. On Cloudflare (ador-os → Settings): **Build variables** = `VITE_FIREBASE_*` (6), `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`; **Runtime secrets** = `GOOGLE_CLIENT_SECRET`, `VITE_GOOGLE_CLIENT_ID`, `VAPID_PRIVATE_KEY`; **vars in `wrangler.jsonc`** = `FIREBASE_PROJECT_ID`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` |
 | Git repository | ✅ Initialized, initial commit made 2026-08-13 |
 | GitHub | ✅ Private repo `ArcAlphaAS/ADOR---OS-Internal-`, `main` pushed and tracked, connected to Cloudflare Workers Builds (every push to `main` deploys) |
+| Service worker (`public/sw.js`) | ✅ Push notifications, notification taps, icon badge. No offline page caching (data works offline through Firestore's local cache) |
 | Firestore security rules | Live: the original blanket rule (any allowed account, everything). Drafted in the repo: `firestore.rules` (Administrador / Miembro) — test before activating, see CLAUDE.md §37 |
 
 ## Open blockers
@@ -442,6 +459,8 @@ Same list as "Next recommended steps" in `CLAUDE.md` (keep both in sync). In ord
 2. **Two-account test** (two founders, two computers): Comunicación (mentions, bell, threads, ✓/✓✓, "escribiendo…", polls, important messages, scheduled messages, forwarding, calls) and an invite from Administración (e.g. a spare email as Miembro).
 3. **Test and activate `firestore.rules`** (§37) — required before the first Miembro is invited. Test with the Firestore emulator (needs Java — ask before installing a portable JDK in `~/.local`, same approach as Node) or the Rules Playground in the Firebase console; only then paste into Firebase → Firestore → Rules.
 4. **Push notifications — live (CLAUDE.md §39)**, test notification confirmed on the user's iPhone 2026-09-24. Leonardo and Mateo: Configuración → Notificaciones en este dispositivo → Activar. Then test a real DM/mention/call between two people.
+   Also with two accounts: a News announcement with "Pedir confirmación de lectura" (push + bell + badge), and Comunidad writes (post with photos, comment, RSVP, idea vote, best answer).
 - ~~Phone-test items (call return, Satoshi, floating tab bar)~~ — done 2026-09-24, CLAUDE.md §40.
 5. **Existing clients created before 2026-08-15 have no `code` field** (shown as "—"). Ask the user before writing a backfill script — see §13.
-6. If Vercel is ever deleted (it's paused): remove its URLs from Firebase Authorized domains and the Google OAuth client, and delete `api/` + `server/vercel.js` (§36).
+6. **Optional, deferred by the user:** make scheduled announcements, scheduled chat messages and reminders punctual with the app closed (free Cloudflare Cron Trigger + a Firebase service-account key as a secret). §43
+7. If Vercel is ever deleted (it's paused): remove its URLs from Firebase Authorized domains and the Google OAuth client, and delete `api/` + `server/vercel.js` (§36).
