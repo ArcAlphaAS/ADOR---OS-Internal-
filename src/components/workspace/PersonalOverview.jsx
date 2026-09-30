@@ -17,7 +17,7 @@ import { useToast } from '../../hooks/useToast'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { eventColor } from '../../lib/googleCalendar'
 import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon, PlusIcon, NoteIcon } from '../icons'
-import { PillCell, EstimationCell, AssigneeCell, WorkstreamCell } from './TaskCells'
+import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import ProjectTaskRow from './ProjectTaskRow'
 
 // A richer "Personal" landing page, built from a reference image the user
@@ -103,7 +103,7 @@ function ProjectCard({ workstream, total, pending, pct }) {
   )
 }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Vencimiento', 'Timeline', 'Estado']
 
 function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forceOpen, onOpenChange }) {
   const [adding, setAdding] = useState(false)
@@ -115,6 +115,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
   const [priority, setPriority] = useState('media')
   const [status, setStatus] = useState('por_hacer')
   const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
   const [dueDate, setDueDate] = useState(null)
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
@@ -127,6 +128,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
     setPriority('media')
     setStatus('por_hacer')
     setStartDate(null)
+    setEndDate(null)
     setDueDate(null)
     setAdding(false)
     onOpenChange?.(false)
@@ -137,7 +139,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
     setSaving(true)
     try {
       const targetId = workstreamId || (await findOrCreateGeneralProyecto(actorName).then((id) => buildWorkstreamId('proyecto', id)))
-      await createTask({ title: title.trim(), description: description.trim(), workstreamId: targetId, assignedTo, priority, status, startDate, dueDate }, actorName, actorUserId)
+      await createTask({ title: title.trim(), description: description.trim(), workstreamId: targetId, assignedTo, priority, status, startDate, endDate, dueDate }, actorName, actorUserId)
       reset()
     } catch (error) {
       showToast(`No se pudo crear la tarea: ${error.message}`)
@@ -170,7 +172,8 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
-      <EstimationCell startDate={startDate} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={setStartDate} onChangeDue={setDueDate} />
+      <DueDateCell dueDate={dueDate} overdue={false} dueToday={false} onChange={setDueDate} />
+      <TimelineCell startDate={startDate} endDate={endDate} onChangeStart={setStartDate} onChangeEnd={setEndDate} />
       <PillCell options={STATUSES} value={status} meta={statusMeta(status)} onChange={setStatus} />
     </div>
   )

@@ -59,11 +59,19 @@ export function advanceByRecurrence(date, recurrence) {
   return d
 }
 
+// A task has two separate date ideas: `dueDate` (the deadline — what makes it
+// overdue / "para hoy") and a timeline, `startDate` → `endDate` (the span of
+// work, drawn in the Timeline view). Tasks made before `endDate` existed
+// have start + due only, so their timeline ends at the due date.
+export function timelineEnd(task) {
+  return task.endDate?.toDate?.() || task.dueDate?.toDate?.() || null
+}
+
 export function describeTaskChange(data) {
   if ('status' in data) return `Estado → ${statusMeta(data.status).label}`
   if ('priority' in data) return `Prioridad → ${priorityMeta(data.priority).label}`
   if ('assignedTo' in data) return 'Asignados actualizados'
-  if ('startDate' in data || 'dueDate' in data) return 'Fechas actualizadas'
+  if ('startDate' in data || 'dueDate' in data || 'endDate' in data) return 'Fechas actualizadas'
   if ('workstreamId' in data) return 'Proyecto actualizado'
   if ('recurrence' in data) return data.recurrence ? `Repetición → ${recurrenceMeta(data.recurrence).label}` : 'Repetición quitada'
   if ('description' in data) return 'Descripción actualizada'
@@ -238,8 +246,8 @@ export function withTimeout(promise, ms = 8000) {
 // line up — a CSS grid template rather than an HTML <table> so column
 // widths are explicit and predictable instead of shrinking/overflowing
 // based on content (which is what was clipping the Estado column).
-// checkbox · tarea · asignado · prioridad · estimación · estado
-export const TASK_ROW_GRID = '28px minmax(220px,1.8fr) 92px 88px 120px 104px'
+// checkbox · tarea · asignado · prioridad · vencimiento · timeline · estado
+export const TASK_ROW_GRID = '28px minmax(200px,1.6fr) 92px 88px 108px 128px 104px'
 
 // Same shape as TASK_ROW_GRID plus a Proyecto column — for the two places a
 // task list isn't already grouped by workstream (so the project isn't
@@ -247,4 +255,4 @@ export const TASK_ROW_GRID = '28px minmax(220px,1.8fr) 92px 88px 120px 104px'
 // Personal's task table and Hoy's sections. Grupo/Lista deliberately keeps
 // TASK_ROW_GRID as-is, no Proyecto column, since that would just repeat
 // the group header on every row.
-export const PROJECT_TASK_ROW_GRID = '28px minmax(210px,1.6fr) 108px 88px 84px 110px 100px'
+export const PROJECT_TASK_ROW_GRID = '28px minmax(190px,1.5fr) 108px 88px 84px 108px 128px 100px'

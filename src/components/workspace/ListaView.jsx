@@ -14,7 +14,7 @@ import {
 } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
+import { PillCell, DueDateCell, TimelineCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
 
 // Shown instead of a real workstream when there's nothing to group by yet —
@@ -29,7 +29,7 @@ import TaskRow from './TaskRow'
 // screen. Now both look and behave like the same real system.
 const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Vencimiento', 'Timeline', 'Estado']
 
 function LayerIndicator({ week, totalWeeks }) {
   const active = currentLayer(week, totalWeeks)
@@ -63,7 +63,7 @@ function LayerIndicator({ week, totalWeeks }) {
 }
 
 function emptyDraft(actorUserId) {
-  return { title: '', description: '', assignedTo: actorUserId ? [actorUserId] : [], priority: 'media', startDate: null, dueDate: null }
+  return { title: '', description: '', assignedTo: actorUserId ? [actorUserId] : [], priority: 'media', startDate: null, endDate: null, dueDate: null }
 }
 
 // Renders as a full grid row (same TASK_ROW_GRID as TaskRow) so Asignado,
@@ -156,13 +156,13 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
         onChange={(id) => setDraft((d) => ({ ...d, priority: id }))}
       />
 
-      <EstimationCell
+      <DueDateCell dueDate={draft.dueDate} overdue={false} dueToday={false} onChange={(date) => setDraft((d) => ({ ...d, dueDate: date }))} />
+
+      <TimelineCell
         startDate={draft.startDate}
-        dueDate={draft.dueDate}
-        overdue={false}
-        dueToday={false}
+        endDate={draft.endDate}
         onChangeStart={(date) => setDraft((d) => ({ ...d, startDate: date }))}
-        onChangeDue={(date) => setDraft((d) => ({ ...d, dueDate: date }))}
+        onChangeEnd={(date) => setDraft((d) => ({ ...d, endDate: date }))}
       />
 
       <span
@@ -271,7 +271,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
             )}
 
             <div className="overflow-x-auto px-3 pb-3">
-              <div style={{ minWidth: 720 }}>
+              <div style={{ minWidth: 780 }}>
                 <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                   {COLUMN_HEADERS.map((h, i) => (
                     <span

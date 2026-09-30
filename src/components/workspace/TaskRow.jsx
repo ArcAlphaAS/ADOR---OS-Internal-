@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
+import { PillCell, DueDateCell, TimelineCell, AssigneeCell } from './TaskCells'
 import { TaskTitleCell, SubtasksBlock } from './TaskChrome'
 import TaskContextMenu from './TaskContextMenu'
 import { CheckCircleIcon } from '../icons'
@@ -94,13 +94,13 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
         onChange={(id) => applyUpdate({ priority: id })}
       />
 
-      <EstimationCell
+      <DueDateCell dueDate={task.dueDate?.toDate?.() || null} overdue={isOverdue(task)} dueToday={isDueToday(task)} onChange={(date) => applyUpdate({ dueDate: date })} />
+
+      <TimelineCell
         startDate={task.startDate?.toDate?.() || null}
-        dueDate={task.dueDate?.toDate?.() || null}
-        overdue={isOverdue(task)}
-        dueToday={isDueToday(task)}
+        endDate={task.endDate?.toDate?.() || (task.startDate ? task.dueDate?.toDate?.() || null : null)}
         onChangeStart={(date) => applyUpdate({ startDate: date })}
-        onChangeDue={(date) => applyUpdate({ dueDate: date })}
+        onChangeEnd={(date) => applyUpdate({ endDate: date })}
       />
 
       <PillCell

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { priorityMeta, statusMeta } from '../../lib/workspace'
+import { priorityMeta, statusMeta, timelineEnd } from '../../lib/workspace'
 
 const DAY_MS = 86400000
 
@@ -115,14 +115,14 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
 
   const now = startOfDay(new Date())
   const datedByWorkstream = workstreams
-    .map((w) => ({ workstream: w, tasks: (tasksByWorkstream.get(w.id) || []).filter((t) => t.dueDate?.toDate) }))
+    .map((w) => ({ workstream: w, tasks: (tasksByWorkstream.get(w.id) || []).filter((t) => timelineEnd(t)) }))
     .filter((g) => g.tasks.length > 0)
   const hasDatedTasks = datedByWorkstream.length > 0
 
   const allDates = [now]
   for (const group of datedByWorkstream) {
     for (const task of group.tasks) {
-      const due = startOfDay(task.dueDate.toDate())
+      const due = startOfDay(timelineEnd(task))
       const start = task.startDate?.toDate?.() ? startOfDay(task.startDate.toDate()) : due
       allDates.push(start, due)
     }
@@ -220,7 +220,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
 
                   <div className="flex flex-col gap-2.5">
                     {tasks.map((task) => {
-                      const due = startOfDay(task.dueDate.toDate())
+                      const due = startOfDay(timelineEnd(task))
                       const hasStart = Boolean(task.startDate?.toDate)
                       const start = hasStart ? startOfDay(task.startDate.toDate()) : due
                       const isMilestone = !hasStart || start.getTime() === due.getTime()

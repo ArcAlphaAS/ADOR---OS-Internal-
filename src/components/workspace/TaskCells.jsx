@@ -143,20 +143,28 @@ export function WorkstreamCell({ workstreams = [], value, onChange, variant = 'b
   )
 }
 
-// "Estimación" — a due date ("Vencimiento") drives Vencidas/Para hoy/Mis
-// Pendientes placement everywhere it's read (see isOverdue/isDueToday in
-// lib/workspace.js), with an optional start date on top of it purely for
-// Timeline's duration bars (see TimelineView.jsx). Labeled around the due
-// date since that's what most editing here is actually about — the start
-// date is a secondary, clearly-optional field in the popover, not implied
-// by the trigger's own label.
-export function EstimationCell({ startDate, dueDate, overdue, dueToday, onChangeStart, onChangeDue }) {
+// Two separate date cells, like Monday: Vencimiento is the deadline (what
+// drives overdue / "para hoy"); Timeline is the span of work, Inicio → Fin,
+// drawn as a bar in the Timeline view.
+function DateField({ label, value, onChange }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">{label}</span>
+      <input
+        type="date"
+        defaultValue={value ? value.toISOString().slice(0, 10) : ''}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onChange(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
+        className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
+      />
+    </label>
+  )
+}
+
+function DatePopoverCell({ label, emptyLabel, color, children }) {
   const [open, setOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
-
-  const label = dueDate ? (startDate ? `${formatShort(startDate)} – ${formatShort(dueDate)}` : formatShort(dueDate)) : null
-
   return (
     <div>
       <button
@@ -167,39 +175,35 @@ export function EstimationCell({ startDate, dueDate, overdue, dueToday, onChange
           setRect(triggerRef.current.getBoundingClientRect())
           setOpen(true)
         }}
-        className="w-fit truncate text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
-        style={{ color: label ? (overdue ? '#EF5350' : dueToday ? '#FFC107' : '#888888') : '#444444' }}
+        className="w-fit max-w-full truncate text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
+        style={{ color: label ? color : '#444444' }}
       >
-        {label || 'Agregar vencimiento'}
+        {label || emptyLabel}
       </button>
-
       {open && (
         <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={210}>
-          <div className="flex flex-col gap-2 p-1">
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Vencimiento</span>
-              <input
-                type="date"
-                defaultValue={dueDate ? dueDate.toISOString().slice(0, 10) : ''}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => onChangeDue(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
-                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">Inicio (opcional, para Timeline)</span>
-              <input
-                type="date"
-                defaultValue={startDate ? startDate.toISOString().slice(0, 10) : ''}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => onChangeStart(e.target.value ? new Date(`${e.target.value}T00:00:00`) : null)}
-                className="rounded-lg border border-white/[0.14] bg-[#141414] px-2 py-1 text-[12px] text-[#F5F5F5] outline-none"
-              />
-            </label>
-          </div>
+          <div className="flex flex-col gap-2 p-1">{children}</div>
         </CellPopover>
       )}
     </div>
+  )
+}
+
+export function DueDateCell({ dueDate, overdue, dueToday, onChange }) {
+  return (
+    <DatePopoverCell label={dueDate ? formatShort(dueDate) : null} emptyLabel="Agregar fecha" color={overdue ? '#EF5350' : dueToday ? '#FFC107' : '#888888'}>
+      <DateField label="Fecha límite" value={dueDate} onChange={onChange} />
+    </DatePopoverCell>
+  )
+}
+
+export function TimelineCell({ startDate, endDate, onChangeStart, onChangeEnd }) {
+  const label = startDate && endDate ? `${formatShort(startDate)} – ${formatShort(endDate)}` : startDate ? `desde ${formatShort(startDate)}` : endDate ? `hasta ${formatShort(endDate)}` : null
+  return (
+    <DatePopoverCell label={label} emptyLabel="Agregar timeline" color="#888888">
+      <DateField label="Inicio" value={startDate} onChange={onChangeStart} />
+      <DateField label="Fin" value={endDate} onChange={onChangeEnd} />
+    </DatePopoverCell>
   )
 }
 

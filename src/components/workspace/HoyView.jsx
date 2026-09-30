@@ -20,7 +20,7 @@ import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, AssigneeCell, WorkstreamCell } from './TaskCells'
+import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
 import { SPRING } from '../../lib/motion'
@@ -343,7 +343,7 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
   )
 }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Vencimiento', 'Timeline', 'Estado']
 
 function SectionIcon({ Icon, color }) {
   return (
@@ -423,6 +423,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
   const [priority, setPriority] = useState('media')
   const [status, setStatus] = useState('por_hacer')
   const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
   const [dueDate, setDueDate] = useState(null)
   const showToast = useToast()
 
@@ -434,6 +435,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
     setPriority('media')
     setStatus('por_hacer')
     setStartDate(null)
+    setEndDate(null)
     setDueDate(null)
     onOpenChange(false)
   }
@@ -452,6 +454,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
           priority,
           status,
           startDate,
+          endDate,
           dueDate,
         },
         actorName,
@@ -493,7 +496,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
-      <EstimationCell startDate={startDate} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={setStartDate} onChangeDue={setDueDate} />
+      <DueDateCell dueDate={dueDate} overdue={false} dueToday={false} onChange={setDueDate} />
+      <TimelineCell startDate={startDate} endDate={endDate} onChangeStart={setStartDate} onChangeEnd={setEndDate} />
       <PillCell options={STATUSES} value={status} meta={statusMeta(status)} onChange={setStatus} />
     </div>
   )

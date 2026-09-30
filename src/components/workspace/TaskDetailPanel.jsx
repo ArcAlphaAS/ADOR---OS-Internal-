@@ -68,6 +68,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
   const dueValue = task.dueDate?.toDate?.() ? task.dueDate.toDate().toISOString().slice(0, 10) : ''
   const startValue = task.startDate?.toDate?.() ? task.startDate.toDate().toISOString().slice(0, 10) : ''
+  const endValue = (task.endDate?.toDate?.() || (task.startDate ? task.dueDate?.toDate?.() : null))?.toISOString?.().slice(0, 10) || ''
   const assignedTo = task.assignedTo || []
 
   const applyUpdate = (data) => applyTaskUpdate(task, data, actorUserId, actorName)
@@ -205,39 +206,45 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             <p className="mt-1.5 text-[11px] text-[#444444]">Conecta esta tarea al Objetivo que está empujando esta semana.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-                Inicio
-              </span>
-              <input
-                type="date"
-                value={startValue}
-                onChange={(e) =>
-                  applyUpdate({
-                    startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null,
-                  })
-                }
-                className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-              />
-            </div>
-            <div>
-              <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-                Fecha límite
-              </span>
-              <input
-                type="date"
-                value={dueValue}
-                onChange={(e) =>
-                  applyUpdate({
-                    dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null,
-                  })
-                }
-                className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-              />
-            </div>
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Fecha límite
+            </span>
+            <input
+              type="date"
+              value={dueValue}
+              onChange={(e) => applyUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
+              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+            />
+            <p className="mt-1.5 text-[11px] text-[#444444]">Es el plazo: decide cuándo aparece en Hoy y cuándo se marca atrasada.</p>
           </div>
-          <p className="-mt-4 text-[11px] text-[#444444]">La fecha de inicio es opcional — solo se usa para dibujar la duración en la vista Timeline.</p>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Timeline
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-[11px] text-[#666666]">
+                Inicio
+                <input
+                  type="date"
+                  value={startValue}
+                  onChange={(e) => applyUpdate({ startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-[#666666]">
+                Fin
+                <input
+                  type="date"
+                  value={endValue}
+                  onChange={(e) => applyUpdate({ endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
+                  className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+                />
+              </label>
+            </div>
+            <p className="mt-1.5 text-[11px] text-[#444444]">Es el tramo de trabajo: se dibuja como barra en la vista Timeline.</p>
+          </div>
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
