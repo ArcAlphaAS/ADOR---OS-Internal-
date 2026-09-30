@@ -4,6 +4,17 @@ import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { ChevronRightIcon, MessageIcon, CloseIcon, PlusIcon } from '../icons'
 
+// Subtask dates are plain 'YYYY-MM-DD' strings (calendar dates typed by hand,
+// same choice as client payment dates) — they live inside the task doc.
+const todayKey = () => new Date().toISOString().slice(0, 10)
+const shortDate = (key) => new Date(`${key}T00:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+function dateLabel(s) {
+  if (s.startDate && s.dueDate) return `${shortDate(s.startDate)} → ${shortDate(s.dueDate)}`
+  if (s.dueDate) return shortDate(s.dueDate)
+  if (s.startDate) return `desde ${shortDate(s.startDate)}`
+  return null
+}
+
 // What Monday/Linear put around a task's name, shared by every task row
 // (Grupo/Lista, Hoy, Personal): an arrow on the left that unfolds its
 // subtasks, a comment bubble with the count that opens the task's
@@ -83,20 +94,23 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
 export function SubtasksBlock({ task, embedded = false }) {
   const showToast = useToast()
   const [text, setText] = useState('')
+  const [editingDates, setEditingDates] = useState(null) // subtask id
   const subtasks = task.subtasks || []
+  const patch = (id, data) => save(subtasks.map((x) => (x.id === id ? { ...x, ...data } : x)))
 
   const save = (next) => withTimeout(updateTask(task.id, { subtasks: next })).catch((e) => showToast(`No se pudo guardar la subtarea: ${e.message}`))
   const add = () => {
     const title = text.trim()
     if (!title) return
     setText('')
-    save([...subtasks, { id: Math.random().toString(36).slice(2, 10), title, done: false }])
+    save([...subtasks, { id: Math.random().toString(36).slice(2, 10), title, done: false, startDate: null, dueDate: null }])
   }
 
   return (
     <div className={embedded ? 'flex flex-col gap-1' : 'mb-1 ml-9 mr-2 flex flex-col gap-0.5 border-l border-white/[0.08] pb-2 pl-3'} onClick={(e) => e.stopPropagation()}>
       {subtasks.map((s) => (
-        <div key={s.id} className="group/sub flex items-center gap-2 rounded-md px-1 py-1 hover:bg-white/[0.035]">
+        <div key={s.id}>
+        <div className="group/sub flex items-center gap-2 rounded-md px-1 py-1 hover:bg-white/[0.035]">
           <button
             type="button"
             onClick={() => save(subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))}
@@ -108,6 +122,21 @@ export function SubtasksBlock({ task, embedded = false }) {
           <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: s.done ? '#777777' : '#DDDDDD', textDecoration: s.done ? 'line-through' : 'none' }}>
             {s.title}
           </span>
+          {(() => {
+            const label = dateLabel(s)
+            const late = s.dueDate && !s.done && s.dueDate < todayKey()
+            return (
+              <button
+                type="button"
+                onClick={() => setEditingDates((v) => (v === s.id ? null : s.id))}
+                title="Fecha límite y timeline"
+                className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[11px] transition-opacity hover:bg-white/[0.08] ${label ? 'opacity-100' : 'opacity-0 group-hover/sub:opacity-100'}`}
+                style={{ color: late ? '#EF5350' : label ? '#BBBBBB' : '#888888' }}
+              >
+                {label || '+ fecha'}
+              </button>
+            )
+          })()}
           <button
             type="button"
             onClick={() => save(subtasks.filter((x) => x.id !== s.id))}
@@ -116,6 +145,22 @@ export function SubtasksBlock({ task, embedded = false }) {
           >
             <CloseIcon size={11} />
           </button>
+        </div>
+        {editingDates === s.id && (
+          <div className="mb-1 ml-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white/[0.03] px-2.5 py-2">
+            <label className="flex items-center gap-1.5 text-[11px] text-[#888888]">
+              Inicio
+              <input type="date" value={s.startDate || ''} onChange={(e) => patch(s.id, { startDate: e.target.value || null })} className="rounded-md border border-white/[0.08] bg-[#1A1A1A] px-1.5 py-1 text-[12px] text-[#F5F5F5] outline-none focus:border-white/[0.2]" />
+            </label>
+            <label className="flex items-center gap-1.5 text-[11px] text-[#888888]">
+              Fecha límite
+              <input type="date" value={s.dueDate || ''} onChange={(e) => patch(s.id, { dueDate: e.target.value || null })} className="rounded-md border border-white/[0.08] bg-[#1A1A1A] px-1.5 py-1 text-[12px] text-[#F5F5F5] outline-none focus:border-white/[0.2]" />
+            </label>
+            {(s.startDate || s.dueDate) && (
+              <button type="button" onClick={() => patch(s.id, { startDate: null, dueDate: null })} className="text-[11px] text-[#888888] hover:text-[#EF5350]">Quitar fechas</button>
+            )}
+          </div>
+        )}
         </div>
       ))}
       <div className="flex items-center gap-2 px-1 py-1">
