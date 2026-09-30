@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createTask, createProyectoInterno } from '../../lib/firestore'
+import { createTask, createProyectoInterno, applyInterventionTemplate, subscribeInterventionTemplate } from '../../lib/firestore'
 import {
   LAYERS,
   currentLayer,
@@ -180,6 +180,26 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
   const [collapsed, setCollapsed] = useState(false)
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
+  const showToast = useToast()
+  const [template, setTemplate] = useState(null)
+  const [applying, setApplying] = useState(false)
+  const canApplyTemplate = workstream.kind === 'intervencion' && !workstream.templateApplied
+  useEffect(() => {
+    if (!canApplyTemplate) return
+    return subscribeInterventionTemplate(setTemplate)
+  }, [canApplyTemplate])
+  const templateHasTasks = Object.values(template?.layers || {}).some((l) => l.some((t) => t.title?.trim()))
+  const applyTemplate = async () => {
+    setApplying(true)
+    try {
+      const r = await withTimeout(applyInterventionTemplate(workstream.clientId, actorName), 20000)
+      showToast(r.applied ? `Plantilla aplicada: ${r.applied} tareas creadas.` : 'La plantilla está vacía o ya se aplicó.')
+    } catch (e) {
+      showToast(`No se pudo aplicar la plantilla: ${e.message}`)
+    } finally {
+      setApplying(false)
+    }
+  }
   const virtual = workstream.kind === 'virtual' // grouped by estado/prioridad/responsable, not a real project
   const accent = virtual ? workstream.accent : workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
   // Real, live-derived status pill (never a manually-set field) — see
@@ -269,6 +289,15 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
             {workstream.kind === 'intervencion' && (
               <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3.5">
                 <LayerIndicator week={workstream.interventionWeek} totalWeeks={workstream.interventionTotalWeeks} />
+              </div>
+            )}
+
+            {canApplyTemplate && templateHasTasks && (
+              <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
+                <p className="min-w-0 flex-1 text-[12px] leading-snug text-[#888888]">Esta Intervención no tiene las tareas de la metodología.</p>
+                <button type="button" onClick={applyTemplate} disabled={applying} className="flex-shrink-0 rounded-lg border border-[#1E5FAD]/50 px-3 py-1.5 text-[12px] font-medium text-[#6FA3E0] transition-colors hover:bg-[#1E5FAD]/10 disabled:opacity-50">
+                  {applying ? 'Aplicando…' : 'Aplicar plantilla'}
+                </button>
               </div>
             )}
 

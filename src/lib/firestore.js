@@ -27,7 +27,7 @@ import {
   arrayRemove,
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
-import { describeTaskChange, advanceByRecurrence, recurrenceMeta } from './workspace'
+import { describeTaskChange, advanceByRecurrence, recurrenceMeta, layerWeekSpan, LAYERS } from './workspace'
 import { describeKnowledgeChange } from './knowledge'
 
 // Central data model. Every entity references related entities by ID —
@@ -604,6 +604,7 @@ export async function createClient(data, actorName) {
       type: 'created',
       description: `SPC creado por ${actorName}`,
     })
+    if (data.stage === 'intervencion_activa') applyInterventionTemplate(ref.id, actorName).catch(() => {})
     return ref.id
   })
 }
@@ -625,6 +626,66 @@ export async function deleteClient(clientId) {
 // Moves a client to a new stage, stamps stageEnteredAt for the "days in
 // stage" indicator, and logs the transition (including the SPC→SP moment
 // when a client first reaches Intervención Activa).
+// ---- Plantilla de Intervención ----
+// settings/interventionTemplate: { layers: { '1': [{id,title,priority}], … '7': […] } }
+// (an object keyed by layer number — Firestore can't nest arrays). Edited by
+// admins in Administración → Plantilla; applied automatically the moment a
+// client reaches Intervención Activa (moveClientStage / createClient), and by
+// hand from a Workspace Intervención that never got it.
+export function subscribeInterventionTemplate(onData) {
+  if (!db) return () => {}
+  return onSnapshot(doc(db, 'settings', 'interventionTemplate'), (snap) => onData(snap.exists() ? snap.data() : null), () => onData(null))
+}
+
+export function saveInterventionTemplate(layers, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, 'settings', 'interventionTemplate'), { layers, updatedBy: actorName, updatedAt: serverTimestamp() })
+}
+
+// Creates one task per template entry inside the client's Intervención, spread
+// over its weeks (layer n → its weeks, timeline start→end, due = end).
+// Idempotent: `templateAppliedAt` on the client is claimed first, so a double
+// click or two devices can't create the set twice. Tasks go to the client's
+// responsible associate with no accept/reject step (they already own the SP).
+export async function applyInterventionTemplate(clientId, actorName) {
+  if (!db) return { applied: 0 }
+  const [clientSnap, tplSnap] = await Promise.all([getDoc(doc(db, COLLECTIONS.clients, clientId)), getDoc(doc(db, 'settings', 'interventionTemplate'))])
+  if (!clientSnap.exists() || clientSnap.data().templateAppliedAt) return { applied: 0, reason: 'already' }
+  const client = clientSnap.data()
+  const layers = tplSnap.exists() ? tplSnap.data().layers || {} : {}
+  const entries = LAYERS.flatMap((_, i) => (layers[String(i + 1)] || []).filter((t) => t.title?.trim()).map((t) => ({ ...t, layer: i + 1 })))
+  if (!entries.length) return { applied: 0, reason: 'empty' }
+
+  await updateDoc(doc(db, COLLECTIONS.clients, clientId), { templateAppliedAt: serverTimestamp() })
+  const total = client.interventionTotalWeeks || 8
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  const day = (n) => new Date(base.getTime() + n * 86400000)
+  const batch = writeBatch(db)
+  for (const t of entries) {
+    const span = layerWeekSpan(t.layer, total)
+    const start = span ? day((span.startWeek - 1) * 7) : null
+    const end = span ? day(span.endWeek * 7 - 1) : null
+    batch.set(doc(collection(db, COLLECTIONS.tasks)), {
+      title: t.title.trim(),
+      description: `Capa ${t.layer} · ${LAYERS[t.layer - 1]}`,
+      workstreamId: `client:${clientId}`,
+      priority: t.priority || 'media',
+      status: 'por_hacer',
+      assignedTo: client.assignedTo ? [client.assignedTo] : [],
+      pendingConfirmations: [],
+      startDate: start,
+      endDate: end,
+      dueDate: end,
+      templateLayer: t.layer,
+      createdBy: `${actorName} (plantilla)`,
+      createdAt: serverTimestamp(),
+    })
+  }
+  await batch.commit()
+  return { applied: entries.length }
+}
+
 export async function moveClientStage(client, newStageId, actorName) {
   const wasSP = client.stage === 'intervencion_activa'
   const becomesSP = newStageId === 'intervencion_activa'
@@ -634,6 +695,10 @@ export async function moveClientStage(client, newStageId, actorName) {
       type: 'converted',
       description: `${client.name} pasó de SPC a SP — Intervención Activa iniciada por ${actorName}`,
     })
+    // La Intervención nace con las tareas de la metodología (si hay plantilla).
+    applyInterventionTemplate(client.id, actorName)
+      .then((r) => r.applied && addHistoryEvent(client.id, { type: 'template', description: `Plantilla de metodología aplicada: ${r.applied} tareas creadas` }))
+      .catch(() => {})
   } else {
     await addHistoryEvent(client.id, {
       type: 'stage_change',

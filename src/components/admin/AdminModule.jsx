@@ -14,6 +14,8 @@ import {
   allowEmail,
   revokeEmail,
   saveUserProfile,
+  subscribeInterventionTemplate,
+  saveInterventionTemplate,
   subscribeErrorLogs,
   resolveErrorLog,
 } from '../../lib/firestore'
@@ -21,7 +23,7 @@ import { isAdmin as isAdminProfile } from '../../lib/permissions'
 import { MODULES, DEFAULT_MEMBER_MODULES } from '../../lib/access'
 import { presenceOf } from '../../lib/chat'
 import { inviteMember, resendAccessEmail } from '../../lib/invite'
-import { withTimeout } from '../../lib/workspace'
+import { withTimeout, LAYERS, PRIORITIES, layerWeekSpan } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { DriveFolderSection, BackupSection } from './DataSections'
 
@@ -33,6 +35,7 @@ import { DriveFolderSection, BackupSection } from './DataSections'
 const TABS = [
   { id: 'personas', label: 'Personas' },
   { id: 'accesos', label: 'Accesos' },
+  { id: 'plantilla', label: 'Plantilla' },
   { id: 'errores', label: 'Errores' },
   { id: 'datos', label: 'Datos' },
 ]
@@ -295,6 +298,103 @@ function PeopleTab({ user }) {
   )
 }
 
+// The methodology template: which tasks each of the 7 layers brings when a
+// SPC becomes an active Intervención (created automatically, spread across
+// the run's weeks — see applyInterventionTemplate in lib/firestore.js).
+function TemplateTab({ user }) {
+  const showToast = useToast()
+  const [layers, setLayers] = useState(null) // { '1': [{id,title,priority}], … }
+  const [saved, setSaved] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => subscribeInterventionTemplate((t) => {
+    setSaved(JSON.stringify(t?.layers || {}))
+    setLayers((cur) => cur ?? (t?.layers || {}))
+  }), [])
+
+  if (!layers) return <div className={card}><p className="text-[13px] text-[#777777]">Cargando…</p></div>
+  const dirty = JSON.stringify(layers) !== saved
+  const list = (i) => layers[String(i + 1)] || []
+  const setList = (i, next) => setLayers((l) => ({ ...l, [String(i + 1)]: next }))
+  const total = LAYERS.reduce((n, _, i) => n + list(i).filter((t) => t.title.trim()).length, 0)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const clean = {}
+      LAYERS.forEach((_, i) => {
+        clean[String(i + 1)] = list(i).filter((t) => t.title.trim()).map((t) => ({ id: t.id, title: t.title.trim(), priority: t.priority || 'media' }))
+      })
+      await withTimeout(saveInterventionTemplate(clean, actorNameFor(user)))
+      setLayers(clean)
+      setSaved(JSON.stringify(clean))
+      showToast('Plantilla guardada.')
+    } catch (e) {
+      showToast(`No se pudo guardar: ${e.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className={card}>
+        <h3 className="text-[15px] font-semibold text-[#F5F5F5]">Plantilla de Intervención</h3>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[#888888]">
+          Las tareas que trae cada capa de la metodología. Cuando un SPC pasa a <strong className="font-medium text-[#DDDDDD]">Intervención Activa</strong>, su Intervención nace con estas tareas, repartidas en las semanas de cada capa (con timeline y fecha límite), asignadas a su asociado responsable. Los cambios aplican a las Intervenciones que nazcan desde ahora; las que ya existen se pueden completar con “Aplicar plantilla” dentro de Workspace.
+        </p>
+      </div>
+
+      {LAYERS.map((name, i) => {
+        const span = layerWeekSpan(i + 1, 8)
+        return (
+          <div key={name} className={card}>
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1E5FAD] text-[11px] font-semibold text-[#F5F5F5]">{i + 1}</span>
+              <h4 className="text-[14px] font-semibold text-[#F5F5F5]">{name}</h4>
+              {span && <span className="text-[11.5px] text-[#777777]">{span.startWeek === span.endWeek ? `Semana ${span.startWeek}` : `Semanas ${span.startWeek}–${span.endWeek}`} de 8</span>}
+            </div>
+            <div className="mt-3 flex flex-col gap-1.5">
+              {list(i).map((t, j) => (
+                <div key={t.id} className="flex items-center gap-2">
+                  <input
+                    value={t.title}
+                    onChange={(e) => setList(i, list(i).map((x, k) => (k === j ? { ...x, title: e.target.value } : x)))}
+                    placeholder="Título de la tarea"
+                    className={inputClass}
+                  />
+                  <select
+                    value={t.priority || 'media'}
+                    onChange={(e) => setList(i, list(i).map((x, k) => (k === j ? { ...x, priority: e.target.value } : x)))}
+                    className="flex-shrink-0 rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-2.5 py-2.5 text-[12.5px] text-[#F5F5F5] outline-none"
+                  >
+                    {PRIORITIES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setList(i, list(i).filter((_, k) => k !== j))} className="flex-shrink-0 px-2 text-[16px] text-[#777777] hover:text-[#EF5350]" title="Quitar tarea">×</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setList(i, [...list(i), { id: Math.random().toString(36).slice(2, 10), title: '', priority: 'media' }])}
+                className="mt-1 w-fit rounded-lg px-2.5 py-1.5 text-[12.5px] text-[#AAAAAA] hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+              >
+                + Agregar tarea
+              </button>
+            </div>
+          </div>
+        )
+      })}
+
+      <div className="sticky bottom-4 flex items-center gap-3 self-end rounded-2xl border border-white/[0.1] bg-[#141414]/95 px-4 py-2.5 backdrop-blur">
+        <span className="text-[12.5px] text-[#888888]">{total} {total === 1 ? 'tarea' : 'tareas'} en la plantilla{dirty ? ' · sin guardar' : ''}</span>
+        <button type="button" onClick={save} disabled={!dirty || saving} className="ador-btn-primary rounded-xl px-4 py-2 text-[12.5px] font-medium disabled:opacity-40">
+          {saving ? 'Guardando…' : 'Guardar plantilla'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AccessTab() {
   const [settings, setSettings] = useState(null)
   const showToast = useToast()
@@ -422,6 +522,7 @@ export default function AdminModule({ user }) {
 
       {tab === 'personas' && <PeopleTab user={user} />}
       {tab === 'accesos' && <AccessTab />}
+      {tab === 'plantilla' && <TemplateTab user={user} />}
       {tab === 'errores' && <ErrorsTab />}
       {tab === 'datos' && (
         <div className="flex flex-col gap-3">

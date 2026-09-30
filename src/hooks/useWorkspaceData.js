@@ -25,6 +25,7 @@ export function useWorkspaceData() {
       clientId: c.id,
       interventionWeek: c.interventionWeek || 1,
       interventionTotalWeeks: c.interventionTotalWeeks || 8,
+      templateApplied: Boolean(c.templateAppliedAt),
     }))
 
   const proyectosInternos = proyectos.map((p) => ({

@@ -94,6 +94,17 @@ export const LAYERS = [
   'Arquitectura del Futuro',
 ]
 
+// The weeks (1-based, inclusive) each of the 7 layers covers in a run of
+// `totalWeeks`, consistent with currentLayer(): layer n owns every week w
+// where ceil(w / total * 7) === n. In the usual 8-week run, layers 1–6 get one
+// week each and layer 7 gets weeks 7–8.
+export function layerWeekSpan(layer, totalWeeks = 8) {
+  const weeks = []
+  for (let w = 1; w <= totalWeeks; w++) if (currentLayer(w, totalWeeks) === layer) weeks.push(w)
+  if (!weeks.length) return null
+  return { startWeek: weeks[0], endWeek: weeks[weeks.length - 1] }
+}
+
 export function currentLayer(interventionWeek, interventionTotalWeeks) {
   const week = interventionWeek || 1
   const total = interventionTotalWeeks || 8

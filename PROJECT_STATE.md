@@ -434,7 +434,7 @@ Last updated: 2026-09-29 (covers the long 2026-09-24 session: push notifications
 - [x] Recurring tasks ("Repetir"), comments with @mentions inside tasks, and chat cards for tasks/clients/objetivos (2026-09-30). CLAUDE.md §46
 - [x] Workspace rows like Monday: no Descripción column (description only in the task panel, saved on close too), subtasks (left arrow, "done/total"), comment bubble with count and expand icon on every row (2026-09-30). CLAUDE.md §46
 - [x] Workspace power round (2026-09-30): filters/sort/group/saved views, bulk edit, draggable Timeline with dependencies and subtasks, Calendario view, task alerts in the bell, attach tasks/clients/objetivos to updates. CLAUDE.md §46
-- [ ] Project templates (methodology layers → tasks) — to be defined with the user
+- [x] Plantilla de Intervención: editable by admins (Administración → Plantilla), auto-applied when a SPC reaches Intervención Activa, spread over the 8 weeks; "Aplicar plantilla" for Intervenciones that already exist. Needs the template to be written (no starter content)
 - [ ] Push reminders of due tasks with the app closed — blocked on a Cloudflare Cron + Firebase service-account key (user step)
 - [ ] Untested live: needs the user's real session (edit email flow, cleanup, bell items, the new pushes, the profile prompt)
 
