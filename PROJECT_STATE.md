@@ -436,6 +436,7 @@ Last updated: 2026-09-29 (covers the long 2026-09-24 session: push notifications
 - [x] Workspace power round (2026-09-30): filters/sort/group/saved views, bulk edit, draggable Timeline with dependencies and subtasks, Calendario view, task alerts in the bell, attach tasks/clients/objetivos to updates. CLAUDE.md §46
 - [x] Plantilla de Intervención: editable by admins (Administración → Plantilla), auto-applied when a SPC reaches Intervención Activa, spread over the 8 weeks; "Aplicar plantilla" for Intervenciones that already exist. Needs the template to be written (no starter content)
 - [x] ADOR IA acts with confirmation (create/complete/move tasks, register decisions); onboarding tour updated; Comunidad @mentions (bell + push); Kanban right-click menu and expandable subtask rows in Timeline (2026-09-30). CLAUDE.md §46
+- [x] Finanzas: recurring expenses/incomes (Repetir, auto-registered, Recurrentes card); photo cropper with drag + zoom for profile, Directorio and Comunidad photos; News cover focal point + zoom (2026-09-30). CLAUDE.md §46
 - [ ] Push reminders of due tasks with the app closed — blocked on a Cloudflare Cron + Firebase service-account key (user step)
 - [ ] Untested live: needs the user's real session (edit email flow, cleanup, bell items, the new pushes, the profile prompt)
 

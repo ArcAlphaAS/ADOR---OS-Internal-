@@ -15,6 +15,7 @@ import {
 } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { resizeImageToDataUrl } from '../../lib/image'
+import PhotoCropper from '../common/PhotoCropper'
 import { useToast } from '../../hooks/useToast'
 import PersonAvatar, { ChatPeopleContext } from '../chat/PersonAvatar'
 import { SERIF } from './NewsLayout'
@@ -102,17 +103,31 @@ function Composer({ user, actorName }) {
     if (f) setResource({ kind: 'drive', url: f.url, name: f.name, iconUrl: f.iconUrl || null })
   }
 
-  const addImages = async (files) => {
+  // Each picked photo goes through the cropper one by one (4:3 frame — how
+  // the feed shows it); "Usar completa" keeps the whole picture instead.
+  const [cropQueue, setCropQueue] = useState([])
+  const addImages = (files) => {
     const room = 3 - images.length
     const picked = [...(files || [])].filter((f) => f.type.startsWith('image/')).slice(0, room)
-    try {
-      const urls = await Promise.all(picked.map((f) => resizeImageToDataUrl(f, 1000, 0.72)))
-      setImages((cur) => [...cur, ...urls].slice(0, 3))
+    if (picked.length) {
+      setCropQueue(picked)
       setOpen(true)
+    }
+  }
+  const finishCrop = (url) => {
+    setImages((cur) => [...cur, url].slice(0, 3))
+    setCropQueue((q) => q.slice(1))
+  }
+  const useWhole = async () => {
+    const file = cropQueue[0]
+    setCropQueue((q) => q.slice(1))
+    try {
+      finishCropSafe(await resizeImageToDataUrl(file, 1000, 0.72))
     } catch {
       showToast('No se pudo leer esa imagen.')
     }
   }
+  const finishCropSafe = (url) => setImages((cur) => [...cur, url].slice(0, 3))
 
   const reset = () => {
     setTitle('')
@@ -143,6 +158,21 @@ function Composer({ user, actorName }) {
   }
 
   return (
+    <>
+    {cropQueue.length > 0 && (
+      <PhotoCropper
+        key={`${cropQueue[0].name}-${cropQueue.length}`}
+        file={cropQueue[0]}
+        aspect={4 / 3}
+        outWidth={1000}
+        quality={0.75}
+        allowFull
+        title="Encuadra la foto"
+        onDone={finishCrop}
+        onSkip={useWhole}
+        onCancel={() => setCropQueue([])}
+      />
+    )}
     <div className="ador-wrap ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-4 md:p-5">
       <div className="flex items-start gap-3">
         <PersonAvatar uid={user?.uid} name={actorName} size={44} />
@@ -252,6 +282,7 @@ function Composer({ user, actorName }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 

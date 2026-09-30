@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { getUserProfile, saveUserProfile } from '../../lib/firestore'
-import { resizeImageToDataUrl } from '../../lib/image'
+import PhotoCropper from '../common/PhotoCropper'
 import Avatar from './Avatar'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
@@ -16,6 +16,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
   const [birthday, setBirthday] = useState('')
   const [photoDataUrl, setPhotoDataUrl] = useState(null)
   const [photoError, setPhotoError] = useState('')
+  const [cropFile, setCropFile] = useState(null)
   const [focused, setFocused] = useState(false)
   const [birthdayFocused, setBirthdayFocused] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -38,12 +39,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
       return
     }
     setPhotoError('')
-    try {
-      const dataUrl = await resizeImageToDataUrl(file)
-      setPhotoDataUrl(dataUrl)
-    } catch {
-      setPhotoError('No pudimos procesar esa imagen.')
-    }
+    setCropFile(file) // the cropper (below) hands back the final square photo
   }
 
   const handleSubmit = async (e) => {
@@ -69,7 +65,22 @@ export default function ProfileModal({ user, onClose, onSave }) {
     }
   }
 
-  return createPortal(
+  return (
+    <>
+    {cropFile && (
+      <PhotoCropper
+        file={cropFile}
+        round
+        outWidth={256}
+        title="Encuadra tu foto"
+        onDone={(url) => {
+          setPhotoDataUrl(url)
+          setCropFile(null)
+        }}
+        onCancel={() => setCropFile(null)}
+      />
+    )}
+    {createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -175,5 +186,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
       </motion.div>
     </motion.div>,
     document.body
+  )}
+    </>
   )
 }

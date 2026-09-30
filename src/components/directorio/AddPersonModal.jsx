@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { createDirectoryPerson, updateDirectoryPerson } from '../../lib/firestore'
-import { resizeImageToDataUrl } from '../../lib/image'
+import PhotoCropper from '../common/PhotoCropper'
 import { withTimeout } from '../../lib/workspace'
 import { STATUSES } from '../../lib/directorio'
 import Avatar from '../shell/Avatar'
@@ -52,15 +52,12 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
     }
   }
 
+  const [cropFile, setCropFile] = useState(null)
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file || !file.type.startsWith('image/')) return
-    try {
-      setPhotoDataUrl(await resizeImageToDataUrl(file))
-    } catch {
-      showToast('No pudimos procesar esa imagen.')
-    }
+    setCropFile(file)
   }
 
   const submit = async (e) => {
@@ -102,7 +99,22 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
   const labelClass = 'mb-1.5 block font-medium text-[#444444]'
   const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 
-  return createPortal(
+  return (
+    <>
+    {cropFile && (
+      <PhotoCropper
+        file={cropFile}
+        round
+        outWidth={256}
+        title="Encuadra la foto"
+        onDone={(url) => {
+          setPhotoDataUrl(url)
+          setCropFile(null)
+        }}
+        onCancel={() => setCropFile(null)}
+      />
+    )}
+    {createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -233,5 +245,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
       </motion.div>
     </motion.div>,
     document.body
+  )}
+    </>
   )
 }
