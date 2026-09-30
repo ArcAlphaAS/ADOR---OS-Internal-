@@ -177,6 +177,7 @@ export function pushConfig(_req, env) {
 //     messageId, text, conversationLabel, targets: [{uid, reason}] }
 //   { kind: 'call', toUids, callType: 'video'|'audio', convType, convId, participantUids? }
 //   { kind: 'news', postId, title, requireAck? }
+//   { kind: 'notify', toUids, title, body, tag?, url? }  (task assigned, Comunidad activity…)
 //   { kind: 'test' }
 export async function pushSend({ method, headers, body }, env) {
   if (method !== 'POST') return json(405, { error: 'Method not allowed' })
@@ -211,6 +212,20 @@ export async function pushSend({ method, headers, body }, env) {
           tag: `call:${event.convId || senderUid}`,
           url: chatUrl(event),
           kind: 'call',
+        })
+      }
+    } else if (event.kind === 'notify') {
+      // A direct, one-off notice to specific people (never the sender).
+      const toUids = (event.toUids || []).filter((u) => u && u !== senderUid).slice(0, 30)
+      const docs = await fs.getMany(toUids.map((u) => `presence/${u}`))
+      const safeUrl = typeof event.url === 'string' && event.url.startsWith('/') ? event.url : '/'
+      for (const uid of toUids) {
+        if (inDnd(docs[`presence/${uid}`], now)) continue
+        notes.set(uid, {
+          title: String(event.title || 'ADOR OS').slice(0, 100),
+          body: String(event.body || '').slice(0, 180),
+          tag: String(event.tag || `notify:${senderUid}`).slice(0, 80),
+          url: safeUrl,
         })
       }
     } else if (event.kind === 'news') {

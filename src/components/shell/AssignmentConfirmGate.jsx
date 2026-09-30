@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { subscribeAssignedPending, subscribeClients, subscribeProyectosInternos, respondToAssignment } from '../../lib/firestore'
+import { subscribeAssignedPending, subscribeClients, subscribeProyectosInternos, respondToAssignment, dmIdFor } from '../../lib/firestore'
 import { workstreamId } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
@@ -11,8 +11,8 @@ import { SPRING } from '../../lib/motion'
 // drop a task on them, they should confirm it, and be pointed at whoever
 // assigned it in case they need to talk first. Chat is still a placeholder
 // module (no real messaging in the app yet), so "comunícate" is deliberately
-// just a text hint, not a button that opens anything — coordinating happens
-// outside the app for now. See lib/firestore.js's createTask/applyTaskUpdate
+// a text hint; since Comunicación shipped it also offers "Escribirle", which
+// opens the DM (the popup hides for a minute so you can talk, then returns). See lib/firestore.js's createTask/applyTaskUpdate
 // for how a task lands in pendingConfirmations, and CLAUDE.md §20.
 //
 // Mounted once in AppShell.jsx (like GlobalCapture) so it fires regardless
@@ -22,7 +22,7 @@ import { SPRING } from '../../lib/motion'
 // a time (oldest first, since subscribeToCollection has no explicit order
 // here — first in the array is whatever Firestore returns first, stable
 // enough at 3-founder task volume).
-export default function AssignmentConfirmGate({ user, actorName }) {
+export default function AssignmentConfirmGate({ user, actorName, onNavigate }) {
   const [pending, setPending] = useState([])
   const [clients, setClients] = useState([])
   const [proyectos, setProyectos] = useState([])
@@ -55,7 +55,17 @@ export default function AssignmentConfirmGate({ user, actorName }) {
     }
   }
 
-  if (!current) return null
+  // "Escribirle": abre el mensaje directo con quien asignó. El popup sigue
+  // pendiente (sigue bloqueando) — al volver a otra pantalla lo vuelve a ver.
+  // Como bloquea toda la app, se oculta mientras se está en el chat.
+  const [chatting, setChatting] = useState(false)
+  useEffect(() => {
+    if (!chatting) return
+    const t = setTimeout(() => setChatting(false), 60000)
+    return () => clearTimeout(t)
+  }, [chatting])
+
+  if (!current || chatting) return null
 
   const workstreamName = workstreamNameById[current.workstreamId]
   const assignedBy = current.lastAssignedBy || 'Un asociado'
@@ -90,6 +100,18 @@ export default function AssignmentConfirmGate({ user, actorName }) {
               Habla con <strong className="font-medium text-[#F5F5F5]">{assignedBy}</strong> antes de aceptar si tienes dudas sobre el
               alcance o el plazo.
             </p>
+            {current.lastAssignedByUid && onNavigate && (
+              <button
+                type="button"
+                onClick={() => {
+                  setChatting(true)
+                  onNavigate('chat', { type: 'chat', convType: 'dm', convId: dmIdFor(user.uid, current.lastAssignedByUid), participantUids: [user.uid, current.lastAssignedByUid] })
+                }}
+                className="mt-2 text-[12px] font-medium text-[#E8C15A] hover:underline"
+              >
+                Escribirle a {assignedBy.split(' ')[0]} →
+              </button>
+            )}
           </div>
 
           <div className="mt-7 flex gap-2.5">

@@ -825,6 +825,9 @@ Found while replacing a mistyped teammate email: removing access left the person
 - **Workspace's Asignado shows profile photos** (`AvatarStack`, `AssigneeCell`).
 - **Comunidad → bell:** comments and "Asistiré" on *your* posts. `addCommunityComment`/`setCommunityRsvp` write `lastActivity {kind, uid, name, at}` on the post; `useCommunityNotifications` (only `where authorUid == me`, so the feed's photos aren't downloaded app-wide) shows items newer than `users/{uid}.communitySeenAt`, which opening the Comunidad tab updates. Bell only — no push yet (would need a `kind` in `server/push.js`).
 
+- **Push for task assignments and Comunidad (2026-09-30):** new generic push kind `notify` (`server/push.js`: `toUids`, `title`, `body`, `tag`, `url`; skips the sender and No molestar, only same-origin paths as `url`). `lib/firestore.js` `pushNotify()` (lazy-imports `lib/push.js` to avoid a cycle) fires from `createTask`/`applyTaskUpdate` (to the newly assigned person), `addCommunityComment` and `setCommunityRsvp` (to the post's author; both take the `post` now). `/?open=news&tab=community` opens the Comunidad tab. Tasks also store `lastAssignedByUid` so `AssignmentConfirmGate` can offer "Escribirle a {nombre}" (opens the DM; the blocking popup hides for a minute, then returns). The notification text comes from the sender's app, same trust level as `senderName`.
+- **First-login profile prompt:** `ProfileSetupPrompt` (AppShell, after the walkthrough) asks anyone with no photo and no `users/{uid}.profileSetupAt` to confirm their name and add a photo via the regular `ProfileModal`; finishing or skipping sets `profileSetupAt` and it never returns.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

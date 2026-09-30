@@ -267,7 +267,7 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
     if (!text.trim()) return
     const value = text.trim()
     setText('')
-    withTimeout(addCommunityComment(post.id, value, user.uid, actorName)).catch((e) => showToast(`No se pudo comentar: ${e.message}`))
+    withTimeout(addCommunityComment(post.id, value, user.uid, actorName, post)).catch((e) => showToast(`No se pudo comentar: ${e.message}`))
   }
 
   return (

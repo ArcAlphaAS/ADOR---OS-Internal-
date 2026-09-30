@@ -208,7 +208,7 @@ export function EventBlock({ post, uid, name }) {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setCommunityRsvp(post.id, uid, r.id, name).catch(() => {})}
+                onClick={() => setCommunityRsvp(post.id, uid, r.id, name, post).catch(() => {})}
                 className="rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors"
                 style={{ background: mine === r.id ? '#E8C15A' : 'transparent', color: mine === r.id ? '#1C1A16' : '#BBBBBB' }}
               >

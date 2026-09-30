@@ -169,6 +169,7 @@ export function parseOpenLink(search) {
   const open = p.get('open')
   // /?open=news&nid=<id> — "Copiar enlace" on an opened announcement.
   if (open === 'news' && p.get('nid')) return ['news', { type: 'news', id: p.get('nid') }]
+  if (open === 'news' && p.get('tab') === 'community') return ['news', { type: 'community' }]
   if (SHORTCUT_MODULES.includes(open) && !p.get('cid')) return [open, null]
   if (open !== 'chat' || !p.get('cid')) return null
   return [

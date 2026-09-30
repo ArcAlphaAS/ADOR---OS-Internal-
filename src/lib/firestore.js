@@ -152,6 +152,15 @@ export function subscribeAllTasks(onData) {
 // people, so they land in `pendingConfirmations` and need to accept before
 // the task counts as theirs — see AssignmentConfirmGate.jsx and CLAUDE.md
 // §20. Assigning yourself never needs confirmation.
+// Push a short notice to specific people (server/push.js kind 'notify').
+// Fire-and-forget and lazy-imported (lib/push.js imports this file).
+function pushNotify(toUids, note, sender) {
+  const to = [...new Set(toUids || [])].filter((u) => u && u !== sender?.uid)
+  if (!to.length) return
+  import('./push').then((m) => m.sendPush({ kind: 'notify', toUids: to, ...note }, sender)).catch(() => {})
+}
+const firstWord = (name) => (name || 'Alguien').split(' ')[0]
+
 export function createTask(data, actorName, actorUserId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const assignedTo = data.assignedTo || []
@@ -161,10 +170,12 @@ export function createTask(data, actorName, actorUserId) {
     ...data,
     pendingConfirmations,
     lastAssignedBy: pendingConfirmations.length > 0 ? actorName : null,
+    lastAssignedByUid: pendingConfirmations.length > 0 ? actorUserId : null,
     createdBy: actorName,
     createdAt: serverTimestamp(),
   }).then(async (ref) => {
     await addTaskHistoryEvent(ref.id, `Tarea creada por ${actorName}`)
+    pushNotify(pendingConfirmations, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: data.title || '', tag: `task:${ref.id}`, url: '/?open=workspace' }, { uid: actorUserId, name: actorName })
     return ref
   })
 }
@@ -231,9 +242,16 @@ export function applyTaskUpdate(task, data, actorUserId, actorName) {
     const prevPending = task.pendingConfirmations || []
     const newlyAdded = data.assignedTo.filter((uid) => !prevAssigned.includes(uid) && uid !== actorUserId)
     patch.pendingConfirmations = Array.from(new Set([...prevPending.filter((uid) => data.assignedTo.includes(uid)), ...newlyAdded]))
-    if (newlyAdded.length > 0) patch.lastAssignedBy = actorName
+    if (newlyAdded.length > 0) {
+      patch.lastAssignedBy = actorName
+      patch.lastAssignedByUid = actorUserId || null
+    }
   }
-  return updateTask(task.id, patch).then(() => addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`))
+  const newlyAssigned = 'assignedTo' in data ? data.assignedTo.filter((uid) => !(task.assignedTo || []).includes(uid) && uid !== actorUserId) : []
+  return updateTask(task.id, patch).then(() => {
+    pushNotify(newlyAssigned, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: task.title || '', tag: `task:${task.id}`, url: '/?open=workspace' }, { uid: actorUserId, name: actorName })
+    return addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`)
+  })
 }
 
 // The Accept/Reject response to AssignmentConfirmGate.jsx's blocking popup.
@@ -1054,12 +1072,15 @@ export function subscribeMyCommunityPosts(uid, onData) {
 }
 
 // Asistiré / Tal vez / No puedo — one answer per person.
-export function setCommunityRsvp(postId, uid, status, name) {
+export function setCommunityRsvp(postId, uid, status, name, post) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const updates = {}
   if (status === 'going' && name) updates.lastActivity = { kind: 'rsvp', uid, name, at: serverTimestamp() }
   for (const s of ['going', 'maybe', 'no']) updates[`rsvp.${s}`] = s === status ? arrayUnion(uid) : arrayRemove(uid)
-  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), updates)
+  return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), updates).then((r) => {
+    if (status === 'going' && name && post?.authorUid) pushNotify([post.authorUid], { title: `👥 ${firstWord(name)} asistirá a tu evento`, body: post.title || post.text?.slice(0, 100) || '', tag: `community:${postId}`, url: '/?open=news&tab=community' }, { uid, name })
+    return r
+  })
 }
 
 // Add/remove the person in an array field (Idea "Me sumo" votes).
@@ -1081,13 +1102,16 @@ export function subscribeCommunityComments(postId, onData) {
   return subscribeToCollection(`${COLLECTIONS.communityPosts}/${postId}/comments`, [orderBy('createdAt', 'asc')], onData)
 }
 
-export function addCommunityComment(postId, text, uid, name) {
+export function addCommunityComment(postId, text, uid, name, post) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const batch = writeBatch(db)
   batch.set(doc(collection(db, COLLECTIONS.communityPosts, postId, 'comments')), { text, authorUid: uid, authorName: name, createdAt: serverTimestamp() })
   // lastActivity alimenta la campana de quien escribió la publicación.
   batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(1), lastActivity: { kind: 'comment', uid, name, at: serverTimestamp() } })
-  return batch.commit()
+  return batch.commit().then((r) => {
+    if (post?.authorUid) pushNotify([post.authorUid], { title: `💬 ${firstWord(name)} comentó en tu publicación`, body: text.slice(0, 140), tag: `community:${postId}`, url: '/?open=news&tab=community' }, { uid, name })
+    return r
+  })
 }
 
 export function deleteCommunityComment(postId, commentId) {

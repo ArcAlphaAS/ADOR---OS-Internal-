@@ -5,6 +5,7 @@ import TopBar from './TopBar'
 import ModulePlaceholder from './ModulePlaceholder'
 import HomeScreen from '../home/HomeScreen'
 import OnboardingTour from '../onboarding/OnboardingTour'
+import ProfileSetupPrompt from './ProfileSetupPrompt'
 import GlobalCapture from './GlobalCapture'
 import AssignmentConfirmGate from './AssignmentConfirmGate'
 import IncomingCallGate, { OutgoingCallBanner } from './IncomingCallGate'
@@ -108,6 +109,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // by the module itself after consuming it (see ClientesModule/WorkspaceModule).
   const [focus, setFocus] = useState(() => openLink?.[1] || null)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
   usePresenceHeartbeat(user?.uid)
   // Role and which modules this person can open (lib/access.js).
   const access = useAccess(user?.uid)
@@ -163,7 +165,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   useEffect(() => {
     if (openLink) {
       const url = new URL(window.location.href)
-      for (const k of ['open', 'ct', 'cid', 'p', 'm', 't', 'nid']) url.searchParams.delete(k)
+      for (const k of ['open', 'ct', 'cid', 'p', 'm', 't', 'nid', 'tab']) url.searchParams.delete(k)
       window.history.replaceState(null, '', url.pathname + url.search)
     }
     if (!('serviceWorker' in navigator)) return
@@ -192,7 +194,10 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     if (!user?.uid || user.uid === 'preview') return
     let cancelled = false
     getUserProfile(user.uid).then((profile) => {
-      if (!cancelled && !profile?.onboardingSeenAt) setShowOnboarding(true)
+      if (cancelled) return
+      if (!profile?.onboardingSeenAt) setShowOnboarding(true)
+      // Sin foto y sin haberlo visto antes: invitación a completar el perfil.
+      if (!profile?.photoDataUrl && !profile?.profileSetupAt) setNeedsProfileSetup(true)
     })
     return () => {
       cancelled = true
@@ -295,6 +300,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>
+      {needsProfileSetup && !showOnboarding && <ProfileSetupPrompt user={user} onUpdateDisplayName={onUpdateDisplayName} onDone={() => setNeedsProfileSetup(false)} />}
 
       {/* Hidden on Chat — that module already has its own real-time capture
           point (the message composer), so a second floating "+" doing
@@ -302,7 +308,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           where a Slack-like "new message" button would be expected and
           caused exactly that confusion in testing (see ChatModule.jsx). */}
       {activeModule !== 'chat' && <GlobalCapture user={user} actorName={actorNameFor(user)} />}
-      <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} />
+      <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} onNavigate={navigateTo} />
       <IncomingCallGate user={user} />
       <OutgoingCallBanner user={user} />
       <ReminderGate user={user} onNavigate={navigateTo} />
