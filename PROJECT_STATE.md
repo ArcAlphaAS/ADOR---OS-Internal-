@@ -427,6 +427,11 @@ Last updated: 2026-09-29 (covers the long 2026-09-24 session: push notifications
 - [ ] Anuncios programados y mensajes programados salen a su hora solo si un administrador tiene ADOR OS abierto — arreglo gratis ofrecido (tarea programada en Cloudflare + clave de Firebase), aplazado por el usuario. §43
 - [ ] Probar con cuentas reales: publicar/comentar/votar en Comunidad, anuncios con confirmación, notificaciones entre dos personas
 
+**2026-09-30 — access hygiene and Comunidad notifications.** See CLAUDE.md §46
+- [x] Removed/corrected people no longer appear in Workspace, chat or pickers; Administración → Personas has "Editar" (name; email until first login) and a "Restos de personas sin acceso" cleanup; Directorio tags fichas linked to accounts without access; Workspace's Asignado shows profile photos
+- [x] Comunidad: bell notifications for comments and RSVPs on your own posts (no push yet)
+- [ ] Untested live: needs the user's real session (edit email flow, cleanup, bell items)
+
 **Scoped but not started:**
 - ~~**Mobile access (2026-09-18 conversation)**~~ — phases 1 and 2 (responsive layout, installable) **done 2026-09-24** (CLAUDE.md §38); phase 3 (push notifications) built 2026-09-24 (CLAUDE.md §39). Original note: Goal is a lightweight "check status on my phone" experience, not a full mobile work surface — user was explicit that phone use is for glancing/reviewing, not working. Recommended path: a PWA built on the existing web app (not a native React Native/iOS/Android app — too much investment for a 3-founder internal tool), in three independent phases: (1) a responsive layout pass on Inicio (and possibly Workspace's Hoy) so it's actually legible on a phone screen, (2) a web manifest + icon so it's installable to the home screen, (3) real push notifications, which needs a backend piece (same Vercel-serverless-function pattern already used for `api/ador-ia.js`/`api/google-calendar/*`) plus a service worker — works on Android always, on iPhone only once the app is installed via phase 2 (Apple allows PWA push since iOS 16.4). User wants to revisit this later, not now — parked here per their own request, not forgotten.
 

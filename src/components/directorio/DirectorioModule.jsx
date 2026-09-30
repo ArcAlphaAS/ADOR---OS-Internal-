@@ -59,6 +59,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
       <div className="flex min-w-0 items-center gap-2.5">
         <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={26} />
         <span className="min-w-0 truncate text-[13px] font-medium text-[#F5F5F5]">{person.name}</span>
+        {person.noAccess && <span title="Su cuenta ya no tiene acceso a ADOR OS" className="flex-shrink-0 rounded-full bg-[#EF5350]/15 px-1.5 py-0.5 text-[10px] text-[#EF5350]">sin acceso</span>}
       </div>
       <span className="min-w-0 truncate text-[12.5px] text-[#888888]">{person.role}</span>
       <span className="min-w-0 truncate text-[12.5px] text-[#888888]">{person.area || 'General'}</span>
@@ -426,10 +427,14 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
   // own shows the photo from their profile — live, so it follows any change
   // they make there. `photoFromAccount` tells the edit form it isn't theirs
   // to save.
+  // `noAccess`: ligada a una cuenta que ya no tiene acceso a ADOR OS (la lista
+  // de usuarios solo trae a quien sigue autorizado). La ficha no se borra sola.
   const people = rawPeople.map((p) => {
-    if (p.photoDataUrl || !p.linkedUserId) return p
+    if (!p.linkedUserId) return p
     const account = users.find((u) => u.id === p.linkedUserId)
-    return account?.photoDataUrl ? { ...p, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : p
+    const noAccess = users.length > 0 && !account
+    if (p.photoDataUrl) return noAccess ? { ...p, noAccess } : p
+    return account?.photoDataUrl ? { ...p, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : noAccess ? { ...p, noAccess } : p
   })
   const [tab, setTab] = useState('personas')
   const [search, setSearch] = useState('')

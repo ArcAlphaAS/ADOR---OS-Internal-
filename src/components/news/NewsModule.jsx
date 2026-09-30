@@ -1,3 +1,4 @@
+import { useMarkCommunitySeen } from '../../hooks/useCommunityNotifications'
 import { useEffect, useRef, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -415,6 +416,9 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
   useEffect(() => subscribeNews(setPosts), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
   useEffect(() => subscribeCommunityPosts(setCommunityPosts), [])
+  // Abrir Comunidad marca como vista la actividad en tus publicaciones (campana).
+  const latestActivityOnMine = Math.max(0, ...communityPosts.filter((p) => p.authorUid === user?.uid).map((p) => p.lastActivity?.at?.toMillis?.() || 0))
+  useMarkCommunitySeen(user?.uid, tab === 'comunidad', latestActivityOnMine)
 
   return (
     <motion.div

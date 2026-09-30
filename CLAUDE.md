@@ -816,6 +816,15 @@ From the user's reference image ("es de las más flojas").
 - `ObjetivosModule` now receives `onNavigate` from AppShell.
 - Verified with 3 sample objetivos (removed): desktop 1440, quarter switching, phone 375 with no overflow.
 
+### 46. Access hygiene + Comunidad notifications (2026-09-30)
+
+Found while replacing a mistyped teammate email: removing access left the person everywhere (their `users/{uid}` profile stayed).
+- **`subscribeUsers` only returns people still in `allowedEmails`** (`subscribeUsersRaw` is the unfiltered one, used only by Administración). So Workspace, chat and every picker drop someone the moment access is removed or an email is corrected. `AvatarStack` no longer draws an avatar for a uid missing from `userById` (shows "Sin asignar" with a tooltip; an empty map = still loading, shown as before).
+- **Administración → Personas:** "Editar" per row (name always; email only while the person hasn't logged in — `inviteMember` with the new email + `revokeEmail` the old; someone who already logged in has an Auth account tied to their email, changing it would create a second account and lose their history). A "Restos de personas sin acceso" card appears when there are orphan `users` profiles or open tasks assigned to inactive people; "Limpiar" deletes those profiles and unassigns those tasks (never deletes tasks/messages).
+- **Directorio:** a person linked (`linkedUserId`) to an account without access shows a red "sin acceso" tag and a note in the detail panel; the ficha isn't deleted automatically.
+- **Workspace's Asignado shows profile photos** (`AvatarStack`, `AssigneeCell`).
+- **Comunidad → bell:** comments and "Asistiré" on *your* posts. `addCommunityComment`/`setCommunityRsvp` write `lastActivity {kind, uid, name, at}` on the post; `useCommunityNotifications` (only `where authorUid == me`, so the feed's photos aren't downloaded app-wide) shows items newer than `users/{uid}.communitySeenAt`, which opening the Comunidad tab updates. Bell only — no push yet (would need a `kind` in `server/push.js`).
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

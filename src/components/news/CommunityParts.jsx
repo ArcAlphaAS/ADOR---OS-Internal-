@@ -153,7 +153,7 @@ const RSVP = [
   { id: 'no', label: 'No puedo' },
 ]
 
-export function EventBlock({ post, uid }) {
+export function EventBlock({ post, uid, name }) {
   const start = eventDate(post.event)
   if (!start) return null
   const past = start.getTime() + 3 * 3600e3 < Date.now()
@@ -208,7 +208,7 @@ export function EventBlock({ post, uid }) {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setCommunityRsvp(post.id, uid, r.id).catch(() => {})}
+                onClick={() => setCommunityRsvp(post.id, uid, r.id, name).catch(() => {})}
                 className="rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors"
                 style={{ background: mine === r.id ? '#E8C15A' : 'transparent', color: mine === r.id ? '#1C1A16' : '#BBBBBB' }}
               >

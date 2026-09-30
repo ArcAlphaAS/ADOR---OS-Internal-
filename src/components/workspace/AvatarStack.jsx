@@ -9,8 +9,22 @@ import Avatar from '../shell/Avatar'
 // clock dot, so a teammate scanning the board can tell "assigned but not
 // confirmed" from "assigned and on it" without opening the task.
 export default function AvatarStack({ userIds = [], userById, pendingIds = [], size = 24 }) {
-  const visible = userIds.slice(0, 3)
-  if (visible.length === 0) return <span className="text-[11px] text-[#444444]">Sin asignar</span>
+  // Someone who no longer has access isn't in userById (subscribeUsers only
+  // lists people still allowed in) — don't draw a ghost avatar for them.
+  // While users are still loading (empty map) show everyone as before.
+  const loaded = Object.keys(userById || {}).length > 0
+  const active = loaded ? userIds.filter((uid) => userById[uid]) : userIds
+  const visible = active.slice(0, 3)
+  if (visible.length === 0) {
+    return (
+      <span
+        className="text-[11px] text-[#444444]"
+        title={userIds.length > 0 ? 'Estaba asignada a alguien que ya no tiene acceso a ADOR OS' : undefined}
+      >
+        Sin asignar
+      </span>
+    )
+  }
 
   return (
     <div className="flex flex-shrink-0" style={{ marginLeft: 4 }}>

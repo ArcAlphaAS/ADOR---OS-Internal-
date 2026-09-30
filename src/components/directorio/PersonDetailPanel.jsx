@@ -35,6 +35,11 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
         <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={64} />
         <h3 className="mt-3 text-[17px] font-semibold text-[#F5F5F5]">{person.name}</h3>
         <p className="text-[13px] text-[#888888]">{person.role}</p>
+        {person.noAccess && (
+          <p className="mt-2 rounded-lg bg-[#EF5350]/10 px-2.5 py-1.5 text-[12px] leading-snug text-[#EF9A98]">
+            Su cuenta ya no tiene acceso a ADOR OS. Si esta persona salió del equipo, puedes eliminar su ficha desde el menú de la tabla.
+          </p>
+        )}
         {person.quote && <p className="mt-2 text-[12px] italic text-[#666666]">"{person.quote}"</p>}
       </div>
 

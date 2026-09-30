@@ -385,7 +385,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
       {post.text && <PostText text={post.text} onTag={onTag} className="-mt-1 whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#D5D5D5]" />}
 
       {post.type === 'logro' && <AchievementBlock post={post} />}
-      {post.type === 'evento' && <EventBlock post={post} uid={uid} />}
+      {post.type === 'evento' && <EventBlock post={post} uid={uid} name={actorName} />}
       {post.type === 'recurso' && <ResourceCard resource={post.resource} />}
       <Photos images={post.images} onOpen={onOpenImage} />
       {post.type === 'idea' && <IdeaBar post={post} uid={uid} isAdminUser={isAdminUser} />}

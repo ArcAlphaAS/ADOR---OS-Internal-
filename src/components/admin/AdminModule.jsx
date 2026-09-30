@@ -3,6 +3,10 @@ import { motion } from 'framer-motion'
 import {
   subscribeAllowedEmails,
   subscribeUsers,
+  subscribeUsersRaw,
+  subscribeAllTasks,
+  deleteUserProfile,
+  unassignFromTasks,
   subscribePresence,
   subscribeAccessSettings,
   setMemberModules,
@@ -61,6 +65,9 @@ function PeopleTab({ user }) {
   const [form, setForm] = useState({ name: '', email: '', role: 'miembro' })
   const [inviting, setInviting] = useState(false)
   const [confirmRevoke, setConfirmRevoke] = useState(null)
+  const [rawUsers, setRawUsers] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [cleaning, setCleaning] = useState(false)
   const [editing, setEditing] = useState(null) // { email (original), name, newEmail }
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
@@ -68,6 +75,8 @@ function PeopleTab({ user }) {
   useEffect(() => subscribeAllowedEmails(setAllowed), [])
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribePresence(setPresence), [])
+  useEffect(() => subscribeUsersRaw(setRawUsers), [])
+  useEffect(() => subscribeAllTasks(setTasks), [])
 
   const byEmail = new Map(users.filter((u) => u.email).map((u) => [u.email.toLowerCase(), u]))
   const rows = allowed
@@ -80,6 +89,31 @@ function PeopleTab({ user }) {
     .sort((x, y) => (x.role === y.role ? x.name.localeCompare(y.name) : x.role === 'admin' ? -1 : 1))
   const adminCount = rows.filter((r) => r.role === 'admin' && !r.invited).length
   const me = (user?.email || '').toLowerCase()
+
+  // Restos de personas que ya no tienen acceso: su perfil sigue en `users` y
+  // sus tareas abiertas siguen a su nombre. Aquí se limpian con un clic.
+  const allowedSet = new Set(allowed.map((a) => a.id.toLowerCase()))
+  const activeIds = new Set(users.map((u) => u.id))
+  const ghosts = rawUsers.filter((u) => u.email && !allowedSet.has(u.email.toLowerCase()))
+  const orphanTasks = tasks
+    .filter((t) => t.status !== 'completado' && (t.assignedTo || []).some((id) => !activeIds.has(id)))
+    .map((t) => ({
+      id: t.id,
+      assignedTo: (t.assignedTo || []).filter((id) => activeIds.has(id)),
+      pendingConfirmations: (t.pendingConfirmations || []).filter((id) => activeIds.has(id)),
+    }))
+  const cleanUp = async () => {
+    setCleaning(true)
+    try {
+      if (orphanTasks.length) await withTimeout(unassignFromTasks(orphanTasks), 20000)
+      for (const g of ghosts) await withTimeout(deleteUserProfile(g.id))
+      showToast('Listo: limpiamos los restos de personas sin acceso.')
+    } catch (e) {
+      showToast(`No se pudo limpiar: ${e.message}`)
+    } finally {
+      setCleaning(false)
+    }
+  }
 
   const changeRole = async (row, role) => {
     if (row.email === me) return showToast('No puedes cambiar tu propio rol.')
@@ -243,6 +277,20 @@ function PeopleTab({ user }) {
           Quitar el acceso le impide ver cualquier dato de inmediato. Su cuenta de inicio de sesión sigue existiendo en Firebase; si quieres borrarla del todo: Firebase → Authentication → Users.
         </p>
       </div>
+
+      {(ghosts.length > 0 || orphanTasks.length > 0) && (
+        <div className={card}>
+          <h3 className="text-[15px] font-semibold text-[#F5F5F5]">Restos de personas sin acceso</h3>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[#888888]">
+            {ghosts.length > 0 && <>Perfiles guardados de cuentas que ya no tienen acceso: {ghosts.map((g) => g.displayName || g.email).join(', ')}. </>}
+            {orphanTasks.length > 0 && <>{orphanTasks.length} {orphanTasks.length === 1 ? 'tarea abierta sigue asignada' : 'tareas abiertas siguen asignadas'} a esas personas. </>}
+            Limpiar borra esos perfiles y deja esas tareas sin asignar (no borra ninguna tarea ni mensaje).
+          </p>
+          <button type="button" onClick={cleanUp} disabled={cleaning} className="ador-btn-primary mt-3 rounded-xl px-4 py-2 text-[12.5px] font-medium">
+            {cleaning ? 'Limpiando…' : 'Limpiar'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

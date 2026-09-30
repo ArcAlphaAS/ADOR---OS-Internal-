@@ -399,6 +399,30 @@ export function markOnboardingSeen(userId) {
 // Only people who still have access: a profile whose email is no longer in
 // allowedEmails (removed, or an email that was corrected) stays in `users`
 // forever, and would keep showing up in every picker, Workspace and the chat.
+export function subscribeUsersRaw(onData) {
+  return subscribeToCollection(COLLECTIONS.users, [], onData)
+}
+
+// Administración → "Perfiles sin acceso": borra el perfil de una cuenta que
+// ya no está en allowedEmails (no toca la cuenta de Firebase Auth).
+export function deleteUserProfile(userId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.users, userId))
+}
+
+// Quita a personas sin acceso de las tareas donde siguen asignadas.
+// `updates`: [{id, assignedTo, pendingConfirmations}] ya calculados.
+export async function unassignFromTasks(updates) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const u of updates.slice(i, i + 400)) {
+      batch.update(doc(db, COLLECTIONS.tasks, u.id), { assignedTo: u.assignedTo, pendingConfirmations: u.pendingConfirmations })
+    }
+    await batch.commit()
+  }
+}
+
 export function subscribeUsers(onData) {
   let users = null
   let allowed = null
@@ -1022,10 +1046,17 @@ export function createCommunityPost(payload, actorUid, actorName) {
   })
 }
 
+// Solo mis publicaciones (campana): evita bajar todo el feed con sus fotos.
+export function subscribeMyCommunityPosts(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection(COLLECTIONS.communityPosts, [where('authorUid', '==', uid)], onData)
+}
+
 // Asistiré / Tal vez / No puedo — one answer per person.
-export function setCommunityRsvp(postId, uid, status) {
+export function setCommunityRsvp(postId, uid, status, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const updates = {}
+  if (status === 'going' && name) updates.lastActivity = { kind: 'rsvp', uid, name, at: serverTimestamp() }
   for (const s of ['going', 'maybe', 'no']) updates[`rsvp.${s}`] = s === status ? arrayUnion(uid) : arrayRemove(uid)
   return updateDoc(doc(db, COLLECTIONS.communityPosts, postId), updates)
 }
@@ -1053,7 +1084,8 @@ export function addCommunityComment(postId, text, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const batch = writeBatch(db)
   batch.set(doc(collection(db, COLLECTIONS.communityPosts, postId, 'comments')), { text, authorUid: uid, authorName: name, createdAt: serverTimestamp() })
-  batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(1) })
+  // lastActivity alimenta la campana de quien escribió la publicación.
+  batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(1), lastActivity: { kind: 'comment', uid, name, at: serverTimestamp() } })
   return batch.commit()
 }
 
