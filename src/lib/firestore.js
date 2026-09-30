@@ -252,14 +252,39 @@ export function addTaskComment(task, text, mentions, author, attachments = []) {
     createdAt: serverTimestamp(),
   })
   batch.update(doc(db, COLLECTIONS.tasks, task.id), { commentCount: increment(1) })
+  // Un aviso por persona para la campana (`taskAlerts`, se limpia al abrir la tarea).
+  const mentioned = (mentions || []).map((m) => m.uid)
+  const others = (task.assignedTo || []).filter((u) => !mentioned.includes(u))
+  for (const [uid, kind] of [...mentioned.map((u) => [u, 'mention']), ...others.map((u) => [u, 'comment'])]) {
+    if (uid === author.uid) continue
+    batch.set(doc(collection(db, 'taskAlerts')), { toUid: uid, taskId: task.id, taskTitle: task.title || '', fromName: author.name, kind, text: (text || '📎 archivo adjunto').slice(0, 140), read: false, createdAt: serverTimestamp() })
+  }
   return batch.commit().then((r) => {
     const url = `/?open=workspace&task=${task.id}`
-    const mentioned = (mentions || []).map((m) => m.uid)
-    const others = (task.assignedTo || []).filter((u) => !mentioned.includes(u))
     pushNotify(mentioned, { title: `@ ${firstWord(author.name)} te mencionó en una tarea`, body: `${task.title}: ${text || '📎 archivo adjunto'}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
     pushNotify(others, { title: `💬 ${firstWord(author.name)} comentó en una tarea`, body: `${task.title}: ${text || '📎 archivo adjunto'}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
     return r
   })
+}
+
+export function subscribeTaskAlerts(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection('taskAlerts', [where('toUid', '==', uid), where('read', '==', false)], onData)
+}
+
+export function markTaskAlertRead(id) {
+  if (!db) return Promise.resolve()
+  return updateDoc(doc(db, 'taskAlerts', id), { read: true })
+}
+
+// Abrir una tarea limpia sus avisos pendientes de la campana.
+export async function clearTaskAlerts(uid, taskId) {
+  if (!db || !uid) return
+  const snap = await getDocs(query(collection(db, 'taskAlerts'), where('toUid', '==', uid), where('taskId', '==', taskId), where('read', '==', false)))
+  if (snap.empty) return
+  const batch = writeBatch(db)
+  snap.docs.forEach((d) => batch.update(d.ref, { read: true }))
+  await batch.commit()
 }
 
 export function deleteTaskComment(taskId, commentId) {

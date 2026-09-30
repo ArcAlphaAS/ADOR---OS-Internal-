@@ -73,6 +73,7 @@ export function describeTaskChange(data) {
   if ('assignedTo' in data) return 'Asignados actualizados'
   if ('startDate' in data || 'dueDate' in data || 'endDate' in data) return 'Fechas actualizadas'
   if ('workstreamId' in data) return 'Proyecto actualizado'
+  if ('blockedBy' in data) return 'Dependencias actualizadas'
   if ('recurrence' in data) return data.recurrence ? `Repetición → ${recurrenceMeta(data.recurrence).label}` : 'Repetición quitada'
   if ('description' in data) return 'Descripción actualizada'
   if ('title' in data) return 'Título actualizado'

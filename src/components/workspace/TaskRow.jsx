@@ -8,7 +8,7 @@ import { TaskTitleCell, SubtasksBlock } from './TaskChrome'
 import TaskContextMenu from './TaskContextMenu'
 import { CheckCircleIcon } from '../icons'
 
-export default function TaskRow({ task, userById, users, workstreams = [], onOpen, actorUserId, actorName }) {
+export default function TaskRow({ task, userById, users, workstreams = [], onOpen, actorUserId, actorName, selectMode = false, selected = false, onSelect }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
   const [expanded, setExpanded] = useState(false)
@@ -33,13 +33,26 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
       }}
-      className="grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
+      className={`grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035] ${selected ? 'bg-[#B8860B]/10' : ''}`}
       style={{ gridTemplateColumns: TASK_ROW_GRID }}
     >
       {/* The completion "pop" (spring scale-in on the checkmark, a tactile
           scale-down on tap) is the single most recognizable Reminders/Things 3
           signature — checking something off should feel like a small,
           satisfying physical event, not just a color swap. */}
+      {selectMode ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelect?.(task.id)
+          }}
+          className="flex h-[17px] w-[17px] items-center justify-center rounded-[5px] border text-[11px] leading-none"
+          style={{ borderColor: selected ? '#E8C15A' : '#666666', background: selected ? '#E8C15A' : 'transparent', color: '#1C1A16' }}
+        >
+          {selected ? '✓' : ''}
+        </button>
+      ) : (
       <motion.button
         type="button"
         whileTap={{ scale: 0.82 }}
@@ -75,6 +88,7 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
           )}
         </AnimatePresence>
       </motion.button>
+      )}
 
       <TaskTitleCell task={task} completed={completed} expanded={expanded} onToggleExpand={() => setExpanded((v) => !v)} onOpen={onOpen} />
 

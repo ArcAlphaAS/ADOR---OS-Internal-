@@ -16,6 +16,7 @@ import { ChevronDownIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, DueDateCell, TimelineCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
+import { sortTasks, groupTasks } from '../../lib/workspaceFilters'
 
 // Shown instead of a real workstream when there's nothing to group by yet —
 // never persisted itself. The first task added through it silently
@@ -175,11 +176,12 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
   )
 }
 
-function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, users, onOpenTask, actorUserId, actorName }) {
+function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, users, onOpenTask, actorUserId, actorName, selectMode, selectedIds, onToggleSelect }) {
   const [collapsed, setCollapsed] = useState(false)
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
-  const accent = workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
+  const virtual = workstream.kind === 'virtual' // grouped by estado/prioridad/responsable, not a real project
+  const accent = virtual ? workstream.accent : workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
   // Real, live-derived status pill (never a manually-set field) — see
   // workstreamHealth's own comment for the reference this was adapted from.
   const health = workstreamHealth(tasks)
@@ -216,7 +218,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
               background: `${accent}1F`,
             }}
           >
-            {workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto Interno'}
+            {virtual ? 'Grupo' : workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto Interno'}
           </span>
           {/* Salud del proyecto — adapted from a project-pipeline reference
               the user shared (colored Schedule/Budget Health columns), but
@@ -295,19 +297,24 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
                       onOpen={onOpenTask}
                       actorUserId={actorUserId}
                       actorName={actorName}
+                      selectMode={selectMode}
+                      selected={selectedIds?.has(task.id)}
+                      onSelect={onToggleSelect}
                     />
                   ))}
                 </div>
 
-                <div className="pt-1">
-                  <InlineAddTask
-                    workstreamId={workstream.id}
-                    actorUserId={actorUserId}
-                    actorName={actorName}
-                    userById={userById}
-                    users={users}
-                  />
-                </div>
+                {!virtual && (
+                  <div className="pt-1">
+                    <InlineAddTask
+                      workstreamId={workstream.id}
+                      actorUserId={actorUserId}
+                      actorName={actorName}
+                      userById={userById}
+                      users={users}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -317,22 +324,56 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
   )
 }
 
-export default function ListaView({ workstreams, tasksByWorkstream, userById, users, onOpenTask, actorUserId, actorName, emptyLabel = 'General' }) {
-  const visibleGroups = workstreams.length > 0 ? workstreams : [{ ...GENERAL_WORKSTREAM, name: emptyLabel }]
+export default function ListaView({
+  workstreams,
+  tasksByWorkstream,
+  userById,
+  users,
+  onOpenTask,
+  actorUserId,
+  actorName,
+  emptyLabel = 'General',
+  sort,
+  groupBy = 'proyecto',
+  filtersActive = false,
+  selectMode = false,
+  selectedIds,
+  onToggleSelect,
+}) {
+  // Grouped by project (default): one group per Intervención/Proyecto. Any
+  // other grouping builds virtual groups from the same (already filtered)
+  // tasks. With filters on, empty groups are hidden instead of showing a
+  // lonely "+ Agregar tarea".
+  let groups
+  if (groupBy !== 'proyecto') {
+    const all = []
+    for (const list of tasksByWorkstream.values()) all.push(...list)
+    groups = groupTasks(all, groupBy, { userById }).map((g) => ({ ...g, tasks: sortTasks(g.tasks, sort) }))
+  } else {
+    const real = filtersActive ? workstreams.filter((w) => (tasksByWorkstream.get(w.id) || []).length > 0) : workstreams
+    groups = (real.length > 0 ? real : filtersActive ? [] : [{ ...GENERAL_WORKSTREAM, name: emptyLabel }]).map((w) => ({ ...w, tasks: sortTasks((w.id && tasksByWorkstream.get(w.id)) || [], sort) }))
+  }
+
+  if (groups.length === 0) {
+    return <p className="rounded-2xl border border-dashed border-white/[0.1] px-6 py-10 text-center text-[13px] text-[#777777]">Ninguna tarea coincide con los filtros. Cambia o quita alguno para ver más.</p>
+  }
 
   return (
     <div className="flex flex-col gap-5">
-      {visibleGroups.map((w) => (
+      {groups.map((w) => (
         <WorkstreamGroup
           key={w.id ?? 'general'}
           workstream={w}
           allWorkstreams={workstreams}
-          tasks={(w.id && tasksByWorkstream.get(w.id)) || []}
+          tasks={w.tasks}
           userById={userById}
           users={users}
           onOpenTask={onOpenTask}
           actorUserId={actorUserId}
           actorName={actorName}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </div>

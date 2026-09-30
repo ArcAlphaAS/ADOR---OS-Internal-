@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { subscribeTaskComments, addTaskComment, deleteTaskComment } from '../../lib/firestore'
+import { subscribeTaskComments, addTaskComment, deleteTaskComment, clearTaskAlerts } from '../../lib/firestore'
+import ItemPicker from '../chat/ItemPicker'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
@@ -33,7 +34,9 @@ function CommentText({ text, mentions }) {
 
 // Discusión dentro de la tarea, con @menciones. Quien la tiene asignada y
 // quien se menciona recibe un aviso (push) — ver addTaskComment.
-export default function TaskComments({ task, users, userById, actorUserId, actorName }) {
+const ENTITY = { task: { emoji: '✅', label: 'Tarea' }, client: { emoji: '🏢', label: 'Cliente' }, objetivo: { emoji: '🎯', label: 'Objetivo' } }
+
+export default function TaskComments({ task, users, userById, actorUserId, actorName, onNavigate }) {
   const showToast = useToast()
   const [comments, setComments] = useState([])
   const [text, setText] = useState('')
@@ -41,10 +44,22 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
   const [caret, setCaret] = useState(0)
   const [files, setFiles] = useState([]) // Drive files waiting to be published
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [itemsOpen, setItemsOpen] = useState(false)
   const inputRef = useRef(null)
   const drive = useDrivePicker('workspace')
 
   useEffect(() => subscribeTaskComments(task.id, setComments), [task.id])
+  // Opening the task clears its bell alerts (mentions / comments).
+  useEffect(() => {
+    if (actorUserId && actorUserId !== 'preview') clearTaskAlerts(actorUserId, task.id).catch(() => {})
+  }, [actorUserId, task.id, comments.length])
+
+  const openEntity = (f) => {
+    if (!onNavigate) return
+    if (f.entityType === 'task') onNavigate('workspace', { type: 'task', id: f.id })
+    else if (f.entityType === 'client') onNavigate('clientes', { type: 'client', id: f.id })
+    else onNavigate('objetivos', null)
+  }
 
   // "@par" right before the cursor opens the suggestions.
   const mentionQuery = useMemo(() => {
@@ -120,7 +135,15 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
                   <p className="ador-wrap mt-0.5 whitespace-pre-wrap text-[13px] leading-relaxed text-[#DDDDDD]">
                     <CommentText text={c.text} mentions={c.mentions} />
                   </p>
-                  {(c.attachments || []).map((f) => (
+                  {(c.attachments || []).map((f) => f.kind === 'entity' ? (
+                    <button key={`${f.entityType}:${f.id}`} type="button" onClick={() => openEntity(f)} className="mt-1.5 flex max-w-[300px] items-center gap-2 rounded-lg border border-[#B8860B]/40 bg-white/[0.03] px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.06]">
+                      <span className="text-[15px]">{(ENTITY[f.entityType] || ENTITY.task).emoji}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[12px] text-[#F0F0F0]">{f.title}</span>
+                        <span className="block text-[10.5px] text-[#B8860B]">{(ENTITY[f.entityType] || ENTITY.task).label}{f.subtitle ? ` · ${f.subtitle}` : ''} · abrir</span>
+                      </span>
+                    </button>
+                  ) : (
                     <a key={f.fileId || f.url} href={f.url} target="_blank" rel="noreferrer" className="mt-1.5 flex max-w-[300px] items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 transition-colors hover:bg-white/[0.06]">
                       {f.iconUrl ? <img src={f.iconUrl} alt="" className="h-4 w-4" /> : <PaperclipIcon size={14} />}
                       <span className="min-w-0 truncate text-[12px] text-[#F0F0F0]">{f.name}</span>
@@ -168,12 +191,24 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
           <div className="flex flex-wrap gap-1.5 px-3 pb-1">
             {files.map((f, i) => (
               <span key={f.fileId || i} className="flex max-w-[220px] items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-2.5 pr-1.5 text-[11.5px] text-[#DDDDDD]">
-                <span className="truncate">{f.name}</span>
+                <span className="truncate">{f.name || f.title}</span>
                 <button type="button" onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} className="text-[#888888] hover:text-[#F5F5F5]">
                   <CloseIcon size={10} />
                 </button>
               </span>
             ))}
+          </div>
+        )}
+
+        {itemsOpen && (
+          <div className="mx-2 mb-1">
+            <ItemPicker
+              onClose={() => setItemsOpen(false)}
+              onPick={(e) => {
+                setFiles((list) => [...list, { kind: 'entity', entityType: e.type, id: e.id, title: e.title, subtitle: e.subtitle || '' }])
+                setItemsOpen(false)
+              }}
+            />
           </div>
         )}
 
@@ -193,6 +228,9 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
           </button>
           <button type="button" title="Adjuntar archivo de Google Drive" onClick={attachFromDrive} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#999999] transition-colors hover:bg-white/[0.07] hover:text-[#F5F5F5]">
             <PaperclipIcon size={15} />
+          </button>
+          <button type="button" title="Adjuntar una tarea, cliente u objetivo de ADOR OS" onClick={() => setItemsOpen((v) => !v)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[14px] transition-colors hover:bg-white/[0.07]" style={{ color: itemsOpen ? '#E8C15A' : '#999999' }}>
+            🔗
           </button>
           <button type="button" title="Emoji" onMouseDown={(e) => e.preventDefault()} onClick={() => setEmojiOpen((v) => !v)} className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/[0.07]" style={{ color: emojiOpen ? '#E8C15A' : '#999999' }}>
             <SmileIcon size={15} />

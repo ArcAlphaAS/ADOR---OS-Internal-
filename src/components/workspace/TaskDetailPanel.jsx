@@ -43,7 +43,7 @@ function PillToggle({ options, value, onChange }) {
   )
 }
 
-export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, initialSection }) {
+export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, initialSection, allTasks = [], onNavigate }) {
   const descRef = useRef(null)
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -57,6 +57,19 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
   useEffect(() => subscribeObjetivos(setObjetivos), [])
   const currentQuarterObjetivos = objetivos.filter((o) => o.quarter === quarterKey())
+
+  // Tareas previas (dependencias). Un ciclo (A espera a B y B a A) no se permite:
+  // se ofrecen solo las que no dependen, ni siquiera de lejos, de esta.
+  const byId = Object.fromEntries(allTasks.map((t) => [t.id, t]))
+  const dependsOn = (fromId, targetId, seen = new Set()) => {
+    if (seen.has(fromId)) return false
+    seen.add(fromId)
+    return (byId[fromId]?.blockedBy || []).some((id) => id === targetId || dependsOn(id, targetId, seen))
+  }
+  const blockers = (task?.blockedBy || []).map((id) => byId[id]).filter(Boolean)
+  const blockerOptions = task
+    ? allTasks.filter((t) => t.id !== task.id && t.workstreamId === task.workstreamId && !(task.blockedBy || []).includes(t.id) && !dependsOn(t.id, task.id))
+    : []
 
   useEffect(() => {
     if (initialSection !== 'comments') return
@@ -255,6 +268,37 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Depende de
+            </span>
+            {blockers.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {blockers.map((b) => (
+                  <span key={b.id} className="flex max-w-full items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-2.5 pr-1.5 text-[11.5px]" style={{ color: b.status === 'completado' ? '#4CAF50' : '#DDDDDD' }}>
+                    <span className="truncate">{b.title}</span>
+                    <button type="button" onClick={() => applyUpdate({ blockedBy: (task.blockedBy || []).filter((x) => x !== b.id) })} className="text-[#888888] hover:text-[#F5F5F5]">
+                      <CloseIcon size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <select
+              value=""
+              onChange={(e) => e.target.value && applyUpdate({ blockedBy: [...(task.blockedBy || []), e.target.value] })}
+              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+            >
+              <option value="">{blockerOptions.length ? 'Agregar una tarea previa…' : 'No hay otras tareas del proyecto'}</option>
+              {blockerOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-[#444444]">Esta tarea espera a las de arriba. En Timeline se dibuja una flecha, en rojo si empieza antes de que termine la previa.</p>
+          </div>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
               Repetir
             </span>
             <select
@@ -299,7 +343,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             </div>
           </div>
 
-          <TaskComments task={task} users={users} userById={userById} actorUserId={actorUserId} actorName={actorName} />
+          <TaskComments task={task} users={users} userById={userById} actorUserId={actorUserId} actorName={actorName} onNavigate={onNavigate} />
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>

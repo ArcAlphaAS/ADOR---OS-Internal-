@@ -3,15 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspaceData } from '../../hooks/useWorkspaceData'
 import { subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/firestore'
 import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/workspace'
-import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon } from '../icons'
+import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon, GridIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import HoyView from './HoyView'
 import ListaView from './ListaView'
 import PersonalOverview from './PersonalOverview'
 import KanbanView from './KanbanView'
 import TimelineView from './TimelineView'
+import CalendarView from './CalendarView'
 import TaskDetailPanel from './TaskDetailPanel'
 import NewProyectoModal from './NewProyectoModal'
+import ViewToolbar from './ViewToolbar'
+import BulkBar from './BulkBar'
+import { applyTaskFilters, activeFilterCount, DEFAULT_FILTERS, DEFAULT_SORT, DEFAULT_GROUP } from '../../lib/workspaceFilters'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -30,6 +34,7 @@ const VIEWS = [
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },
+  { id: 'calendario', label: 'Calendario', Icon: GridIcon },
 ]
 
 const HEADER_COPY = {
@@ -52,6 +57,14 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
     setOpenTaskId(t.id)
   }
   const [showNewProyecto, setShowNewProyecto] = useState(false)
+  // Filters / sort / grouping follow you between Lista, Kanban and Timeline;
+  // saved views are the only part that persists (users/{uid}.workspaceSavedViews).
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [sort, setSort] = useState(DEFAULT_SORT)
+  const [group, setGroup] = useState(DEFAULT_GROUP)
+  const [savedViews, setSavedViews] = useState([])
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   const actorName = actorNameFor(user)
 
@@ -71,6 +84,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
       // Falls back to 'hoy' for anyone whose stored preference is the now-
       // removed 'notas' tab (folded into Hoy — see VIEWS above).
       if (profile?.workspaceView && VIEWS.some((v) => v.id === profile.workspaceView)) setView(profile.workspaceView)
+      if (Array.isArray(profile?.workspaceSavedViews)) setSavedViews(profile.workspaceSavedViews)
     })
   }, [user?.uid])
 
@@ -97,11 +111,17 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   const matchesFilter = (t) => (onlyMine ? isMine(t) : true)
 
   const byWorkstream = selectedWorkstreamId ? workstreams.filter((w) => w.id === selectedWorkstreamId) : workstreams
-  const visibleTasks = tasks.filter((t) => (!selectedWorkstreamId || t.workstreamId === selectedWorkstreamId) && matchesFilter(t))
-  const visibleTasksByWorkstream = onlyMine
-    ? new Map([...tasksByWorkstream].map(([id, list]) => [id, list.filter(matchesFilter)]))
-    : tasksByWorkstream
-  const visibleWorkstreams = onlyMine ? byWorkstream.filter((w) => (visibleTasksByWorkstream.get(w.id) || []).length > 0) : byWorkstream
+  const filtersOn = activeFilterCount(filters) > 0
+  const visibleTasks = applyTaskFilters(
+    tasks.filter((t) => (!selectedWorkstreamId || t.workstreamId === selectedWorkstreamId) && matchesFilter(t)),
+    filters
+  )
+  const visibleTasksByWorkstream = new Map()
+  for (const t of visibleTasks) {
+    if (!t.workstreamId) continue
+    visibleTasksByWorkstream.set(t.workstreamId, [...(visibleTasksByWorkstream.get(t.workstreamId) || []), t])
+  }
+  const visibleWorkstreams = onlyMine || filtersOn ? byWorkstream.filter((w) => (visibleTasksByWorkstream.get(w.id) || []).length > 0) : byWorkstream
 
   const selectWorkstream = (id) => {
     setOnlyMine(false)
@@ -113,6 +133,21 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   }
 
   const openTask = tasks.find((t) => t.id === openTaskId) || null
+  const toggleSelected = (id) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  const endSelection = () => {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }
+  const persistViews = (next) => {
+    setSavedViews(next)
+    if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { workspaceSavedViews: next })
+  }
+  const showToolbar = view !== 'hoy' && !(view === 'lista' && onlyMine)
   const headerCopy = HEADER_COPY[view]
   // Page titles for the Lista/Kanban/Timeline scopes — deliberately not
   // "Workspace" here (direct feedback: "Workspace" is the whole section's
@@ -219,6 +254,31 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
           </div>
         </div>
 
+        {showToolbar && (
+          <ViewToolbar
+            filters={filters}
+            onFilters={setFilters}
+            sort={sort}
+            onSort={setSort}
+            group={group}
+            onGroup={setGroup}
+            users={users}
+            savedViews={savedViews}
+            onSaveView={(name) => persistViews([...savedViews, { id: Math.random().toString(36).slice(2, 10), name, filters, sort, group }])}
+            onApplyView={(v) => {
+              setFilters(v.filters || DEFAULT_FILTERS)
+              setSort(v.sort || DEFAULT_SORT)
+              setGroup(v.group || DEFAULT_GROUP)
+            }}
+            onDeleteView={(id) => persistViews(savedViews.filter((v) => v.id !== id))}
+            showGroup={view === 'lista'}
+            showSort={view === 'lista'}
+            selectMode={selectMode}
+            onToggleSelect={view === 'lista' ? () => (selectMode ? endSelection() : setSelectMode(true)) : null}
+            resultCount={visibleTasks.length}
+          />
+        )}
+
         <AnimatePresence mode="wait">
           {view === 'hoy' ? (
             <motion.div key="hoy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -265,6 +325,12 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                   actorUserId={user?.uid}
                   actorName={actorName}
                   emptyLabel="General"
+                  sort={sort}
+                  groupBy={group}
+                  filtersActive={filtersOn}
+                  selectMode={selectMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelected}
                 />
               )}
             </motion.div>
@@ -279,12 +345,18 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 actorName={actorName}
               />
             </motion.div>
+          ) : view === 'calendario' ? (
+            <motion.div key="calendario" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <CalendarView tasks={visibleTasks} onOpenTask={openTaskPanel} actorUserId={user?.uid} actorName={actorName} />
+            </motion.div>
           ) : (
             <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <TimelineView
                 workstreams={visibleWorkstreams}
                 tasksByWorkstream={visibleTasksByWorkstream}
                 onOpenTask={openTaskPanel}
+                actorUserId={user?.uid}
+                actorName={actorName}
               />
             </motion.div>
           )}
@@ -301,10 +373,23 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             actorUserId={user?.uid}
             actorName={actorName}
             initialSection={panelSection}
+            allTasks={tasks}
+            onNavigate={onNavigate}
             onClose={() => setOpenTaskId(null)}
           />
         )}
       </AnimatePresence>
+
+      {selectMode && view === 'lista' && (
+        <BulkBar
+          tasks={tasks.filter((t) => selectedIds.has(t.id))}
+          users={users}
+          workstreams={workstreams}
+          actorUserId={user?.uid}
+          actorName={actorName}
+          onClear={endSelection}
+        />
+      )}
 
       <AnimatePresence>{showNewProyecto && <NewProyectoModal actorName={actorName} onClose={() => setShowNewProyecto(false)} />}</AnimatePresence>
     </motion.div>

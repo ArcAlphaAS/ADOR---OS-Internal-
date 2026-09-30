@@ -13,6 +13,7 @@ import { useClientNotifications } from '../../hooks/useClientNotifications'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { useChatNotifications } from '../../hooks/useChatNotifications'
 import { useCommunityNotifications } from '../../hooks/useCommunityNotifications'
+import { useTaskAlerts } from '../../hooks/useTaskAlerts'
 import { useNewsAttention } from '../../hooks/useNews'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
@@ -318,7 +319,8 @@ export default function TopBar({
   const chatNotifications = useChatNotifications(user?.uid, onNavigate)
   const news = useNewsAttention(user?.uid, onNavigate)
   const communityNotifications = useCommunityNotifications(user?.uid, onNavigate)
-  const notifications = [...chatNotifications, ...news.items, ...communityNotifications, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
+  const taskAlerts = useTaskAlerts(user?.uid, onNavigate)
+  const notifications = [...chatNotifications, ...taskAlerts, ...news.items, ...communityNotifications, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
