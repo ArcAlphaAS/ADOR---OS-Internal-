@@ -23,17 +23,25 @@ export function formatNewsDate(ts, short = false) {
 // the editor: which part of the photo stays visible when it's cropped.
 export const coverObjectPosition = (post) => (post.coverPosition ? `${post.coverPosition.x}% ${post.coverPosition.y}%` : '50% 50%')
 
+// `post.coverZoom` (1–3) zooms into the same focal point (transform-origin).
+export const coverImageStyle = (post) => ({
+  objectPosition: coverObjectPosition(post),
+  ...(post.coverZoom > 1 ? { transform: `scale(${post.coverZoom})`, transformOrigin: coverObjectPosition(post) } : {}),
+})
+
 export function Cover({ post, className = '', zoom = false }) {
   if (post.coverImageUrl) {
-    return (
+    const img = (
       <img
         src={post.coverImageUrl}
         alt=""
         loading="lazy"
-        style={{ objectPosition: coverObjectPosition(post) }}
+        style={coverImageStyle(post)}
         className={`h-full w-full object-cover ${zoom ? 'transition-transform duration-700 ease-out group-hover:scale-[1.04]' : ''} ${className}`}
       />
     )
+    // A zoomed photo overflows its box — clip it here so no layout has to.
+    return post.coverZoom > 1 ? <div className="h-full w-full overflow-hidden">{img}</div> : img
   }
   return (
     <div

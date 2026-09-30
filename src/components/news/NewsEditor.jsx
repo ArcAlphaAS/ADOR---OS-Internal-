@@ -18,6 +18,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
   const [subtitle, setSubtitle] = useState(initial?.subtitle || '')
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl || '')
   const [coverPosition, setCoverPosition] = useState(initial?.coverPosition || { x: 50, y: 50 })
+  const [coverZoom, setCoverZoom] = useState(initial?.coverZoom || 1)
   const dragRef = useRef(null)
   const [body, setBody] = useState(initial?.body || '')
   const [pinned, setPinned] = useState(initial?.pinned || false)
@@ -92,7 +93,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
   const save = (status) => {
     setFormError('')
     if (tooBig()) return setFormError('El anuncio pesa demasiado (demasiadas imágenes). Quita alguna o usa imágenes más livianas.')
-    const data = { title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), coverPosition, body, pinned, category, requireAck, status }
+    const data = { title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), coverPosition, coverZoom, body, pinned, category, requireAck, status }
     if (status === 'scheduled') {
       const when = new Date(publishAt)
       if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() + 60_000) return setFormError('Elige una fecha y hora futuras para programarlo.')
@@ -161,7 +162,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
             <input type="file" accept="image/*" className="hidden" onChange={(e) => pickImage(e.target.files?.[0])} />
           </label>
           {coverImageUrl && (
-            <button type="button" onClick={() => { setCoverImageUrl(''); setCoverPosition({ x: 50, y: 50 }) }} className="px-2 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
+            <button type="button" onClick={() => { setCoverImageUrl(''); setCoverPosition({ x: 50, y: 50 }); setCoverZoom(1) }} className="px-2 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
               Quitar
             </button>
           )}
@@ -198,21 +199,26 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
               // focal point moves the opposite way; ×1.6 makes it feel direct.
               const clamp = (v) => Math.max(0, Math.min(100, v))
               setCoverPosition({
-                x: clamp(d.start.x - ((e.clientX - d.x) / d.box.width) * 160),
-                y: clamp(d.start.y - ((e.clientY - d.y) / d.box.height) * 160),
+                x: clamp(d.start.x - ((e.clientX - d.x) / d.box.width) * (160 / coverZoom)),
+                y: clamp(d.start.y - ((e.clientY - d.y) / d.box.height) * (160 / coverZoom)),
               })
             }}
             onPointerUp={() => (dragRef.current = null)}
             onPointerCancel={() => (dragRef.current = null)}
           >
-            <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, coverPosition, pinned, category, createdAt: null }} />
+            <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, coverPosition, coverZoom, pinned, category, createdAt: null }} />
           </div>
           {coverImageUrl && (
-            <div className="flex items-center gap-3 text-[12px] text-[#8A8A8A]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#8A8A8A]">
               <span>Arrastra la foto para elegir qué parte se ve.</span>
-              {(coverPosition.x !== 50 || coverPosition.y !== 50) && (
-                <button type="button" onClick={() => setCoverPosition({ x: 50, y: 50 })} className="text-[#E8C15A] hover:underline">
-                  Centrar
+              <label className="flex items-center gap-2">
+                Zoom
+                <input type="range" min="1" max="3" step="0.05" value={coverZoom} onChange={(e) => setCoverZoom(Number(e.target.value))} className="w-[140px] accent-[#E8C15A]" />
+                <span className="w-9 tabular-nums text-[#BBBBBB]">{Math.round(coverZoom * 100)}%</span>
+              </label>
+              {(coverPosition.x !== 50 || coverPosition.y !== 50 || coverZoom !== 1) && (
+                <button type="button" onClick={() => { setCoverPosition({ x: 50, y: 50 }); setCoverZoom(1) }} className="text-[#E8C15A] hover:underline">
+                  Restablecer
                 </button>
               )}
             </div>

@@ -1,6 +1,6 @@
 import Logo from '../Logo'
 import { PinIcon } from '../icons'
-import { SERIF } from './NewsLayout'
+import { SERIF, coverImageStyle } from './NewsLayout'
 
 function formatDate(ts) {
   if (!ts?.toDate) return null
@@ -32,7 +32,7 @@ export default function NewsHeroCard({ post, onOpen }) {
         <img
           src={post.coverImageUrl}
           alt=""
-          style={{ objectPosition: post.coverPosition ? `${post.coverPosition.x}% ${post.coverPosition.y}%` : '50% 50%' }}
+          style={coverImageStyle(post)}
           draggable={false}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
