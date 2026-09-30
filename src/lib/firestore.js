@@ -429,7 +429,8 @@ export function subscribeUsers(onData) {
   const emit = () => {
     if (!users || !allowed) return
     const ok = new Set(allowed.map((a) => a.id.toLowerCase()))
-    onData(users.filter((u) => !u.email || ok.has(u.email.toLowerCase())))
+    // Sin correo no hay forma de saber si tiene acceso: se trata como resto.
+    onData(users.filter((u) => u.email && ok.has(u.email.toLowerCase())))
   }
   const offUsers = subscribeToCollection(COLLECTIONS.users, [], (d) => { users = d; emit() })
   const offAllowed = subscribeToCollection('allowedEmails', [], (d) => { allowed = d; emit() })

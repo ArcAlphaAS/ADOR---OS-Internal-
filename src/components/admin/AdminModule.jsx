@@ -94,7 +94,7 @@ function PeopleTab({ user }) {
   // sus tareas abiertas siguen a su nombre. Aquí se limpian con un clic.
   const allowedSet = new Set(allowed.map((a) => a.id.toLowerCase()))
   const activeIds = new Set(users.map((u) => u.id))
-  const ghosts = rawUsers.filter((u) => u.email && !allowedSet.has(u.email.toLowerCase()))
+  const ghosts = rawUsers.filter((u) => !u.email || !allowedSet.has(u.email.toLowerCase()))
   const orphanTasks = tasks
     .filter((t) => t.status !== 'completado' && (t.assignedTo || []).some((id) => !activeIds.has(id)))
     .map((t) => ({
@@ -282,7 +282,7 @@ function PeopleTab({ user }) {
         <div className={card}>
           <h3 className="text-[15px] font-semibold text-[#F5F5F5]">Restos de personas sin acceso</h3>
           <p className="mt-1 text-[12.5px] leading-relaxed text-[#888888]">
-            {ghosts.length > 0 && <>Perfiles guardados de cuentas que ya no tienen acceso: {ghosts.map((g) => g.displayName || g.email).join(', ')}. </>}
+            {ghosts.length > 0 && <>Perfiles guardados de cuentas que ya no tienen acceso: {ghosts.map((g) => g.displayName || g.email || `perfil sin nombre (${g.id.slice(0, 6)}…)`).join(', ')}. </>}
             {orphanTasks.length > 0 && <>{orphanTasks.length} {orphanTasks.length === 1 ? 'tarea abierta sigue asignada' : 'tareas abiertas siguen asignadas'} a esas personas. </>}
             Limpiar borra esos perfiles y deja esas tareas sin asignar (no borra ninguna tarea ni mensaje).
           </p>
