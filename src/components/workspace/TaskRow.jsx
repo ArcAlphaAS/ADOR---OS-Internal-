@@ -5,12 +5,15 @@ import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, 
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
 import { TaskTitleCell, SubtasksBlock } from './TaskChrome'
+import TaskContextMenu from './TaskContextMenu'
 import { CheckCircleIcon } from '../icons'
 
-export default function TaskRow({ task, userById, users, onOpen, actorUserId, actorName }) {
+export default function TaskRow({ task, userById, users, workstreams = [], onOpen, actorUserId, actorName }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
   const [expanded, setExpanded] = useState(false)
+  const [menu, setMenu] = useState(null) // right-click position
+  const [subFocus, setSubFocus] = useState(0)
 
   // Every inline cell edit routes through here so a failed write (most
   // commonly: Firestore rules don't yet cover this collection for this
@@ -26,6 +29,10 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
   return (
     <div>
     <div
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ x: e.clientX, y: e.clientY })
+      }}
       className="grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
       style={{ gridTemplateColumns: TASK_ROW_GRID }}
     >
@@ -103,7 +110,23 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
         onChange={(id) => applyUpdate({ status: id })}
       />
     </div>
-    {expanded && <SubtasksBlock task={task} />}
+    {expanded && <SubtasksBlock task={task} focusKey={subFocus} />}
+    {menu && (
+      <TaskContextMenu
+        task={task}
+        x={menu.x}
+        y={menu.y}
+        workstreams={workstreams}
+        actorUserId={actorUserId}
+        actorName={actorName}
+        onClose={() => setMenu(null)}
+        onOpen={onOpen}
+        onAddSubtask={() => {
+          setExpanded(true)
+          setSubFocus((n) => n + 1)
+        }}
+      />
+    )}
     </div>
   )
 }

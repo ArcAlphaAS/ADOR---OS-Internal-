@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { updateTask } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -91,7 +91,11 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
 // on the task (no separate collection — they never appear in Hoy, the bell
 // or the workload; they're a checklist inside one task). Used unfolded under
 // a row and inside the task panel.
-export function SubtasksBlock({ task, embedded = false }) {
+export function SubtasksBlock({ task, embedded = false, focusKey = 0 }) {
+  const inputRef = useRef(null)
+  useEffect(() => {
+    if (focusKey) inputRef.current?.focus()
+  }, [focusKey])
   const showToast = useToast()
   const [text, setText] = useState('')
   const [editingDates, setEditingDates] = useState(null) // subtask id
@@ -168,6 +172,7 @@ export function SubtasksBlock({ task, embedded = false }) {
           <PlusIcon size={11} />
         </span>
         <input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}

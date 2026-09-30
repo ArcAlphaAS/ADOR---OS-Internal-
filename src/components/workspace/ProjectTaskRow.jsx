@@ -5,6 +5,7 @@ import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, 
 import { useToast } from '../../hooks/useToast'
 import { PillCell, EstimationCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { TaskTitleCell, SubtasksBlock } from './TaskChrome'
+import TaskContextMenu from './TaskContextMenu'
 import { CheckCircleIcon, PlayIcon } from '../icons'
 
 // Same full-column row as TaskRow.jsx (Grupo/Lista), plus a Proyecto
@@ -19,6 +20,8 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
   const completed = task.status === 'completado'
   const showToast = useToast()
   const [expanded, setExpanded] = useState(false)
+  const [menu, setMenu] = useState(null) // right-click position
+  const [subFocus, setSubFocus] = useState(0)
   const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
 
   const applyUpdate = (data) => {
@@ -37,6 +40,10 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
   return (
     <div>
     <div
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ x: e.clientX, y: e.clientY })
+      }}
       className="grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
       style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}
     >
@@ -116,7 +123,23 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
 
       <PillCell options={STATUSES} value={task.status} meta={statusMeta(task.status)} onChange={(id) => applyUpdate({ status: id })} />
     </div>
-    {expanded && <SubtasksBlock task={task} />}
+    {expanded && <SubtasksBlock task={task} focusKey={subFocus} />}
+    {menu && (
+      <TaskContextMenu
+        task={task}
+        x={menu.x}
+        y={menu.y}
+        workstreams={workstreams}
+        actorUserId={actorUserId}
+        actorName={actorName}
+        onClose={() => setMenu(null)}
+        onOpen={onOpen}
+        onAddSubtask={() => {
+          setExpanded(true)
+          setSubFocus((n) => n + 1)
+        }}
+      />
+    )}
     </div>
   )
 }

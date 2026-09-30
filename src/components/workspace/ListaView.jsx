@@ -175,7 +175,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
   )
 }
 
-function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actorUserId, actorName }) {
+function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, users, onOpenTask, actorUserId, actorName }) {
   const [collapsed, setCollapsed] = useState(false)
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
@@ -291,6 +291,7 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
                       task={task}
                       userById={userById}
                       users={users}
+                      workstreams={allWorkstreams}
                       onOpen={onOpenTask}
                       actorUserId={actorUserId}
                       actorName={actorName}
@@ -325,6 +326,7 @@ export default function ListaView({ workstreams, tasksByWorkstream, userById, us
         <WorkstreamGroup
           key={w.id ?? 'general'}
           workstream={w}
+          allWorkstreams={workstreams}
           tasks={(w.id && tasksByWorkstream.get(w.id)) || []}
           userById={userById}
           users={users}
