@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import AdorMark from '../AdorMark'
-import { HomeIcon, KanbanIcon, TargetIcon, ContactsIcon, WalletIcon, SparkleIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon } from '../icons'
+import { HomeIcon, KanbanIcon, TargetIcon, ContactsIcon, WalletIcon, SparkleIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon, MessageIcon, CalendarIcon, GlobeIcon, BookIcon } from '../icons'
 
 // Full-screen slide carousel — "Conoce ADOR OS" — shown once on first login
 // (gated by users/{uid}.onboardingSeenAt, see lib/firestore.js's
@@ -33,7 +33,7 @@ const SLIDES = [
     icon: KanbanIcon,
     image: '/onboarding/workspace.jpg',
     title: 'Workspace',
-    description: 'Donde vive el trabajo real: tareas de cada Intervención y Proyecto Interno, en Lista, Kanban o Timeline. Asigna, prioriza y da seguimiento sin salir del módulo.',
+    description: 'Donde vive el trabajo real. Empieza en Hoy; en Lista, Kanban, Timeline y Calendario filtra, ordena y agrupa, edita varias tareas a la vez y arrastra fechas. Cada tarea tiene subtareas, dependencias, repetición, actualizaciones con @ y archivos de Drive. Clic derecho para más opciones.',
   },
   {
     icon: TargetIcon,
@@ -45,7 +45,7 @@ const SLIDES = [
     icon: ContactsIcon,
     image: '/onboarding/clientes.jpg',
     title: 'Clientes',
-    description: 'El pipeline completo, de Strategic Partner Candidate a Strategic Partner activo. Pagos, progreso de intervención y documentos, todo en la ficha de cada uno.',
+    description: 'El pipeline completo, de Strategic Partner Candidate a Strategic Partner activo. Pagos, progreso de intervención y documentos en la ficha de cada uno. Al pasar a Intervención Activa, la Intervención nace con las tareas de la metodología.',
   },
   {
     icon: WalletIcon,
@@ -54,10 +54,30 @@ const SLIDES = [
     description: 'Ingresos, gastos, meta trimestral y proyección de caja — leídos directamente de los pagos registrados en Clientes, nunca cifras cargadas a mano por separado.',
   },
   {
+    icon: MessageIcon,
+    title: 'Comunicación',
+    description: 'Mensajes directos, grupos y canales, con hilos, menciones, encuestas y llamadas por Google Meet. Puedes pegar una tarea, un cliente o un objetivo dentro de un mensaje. Las notificaciones te llegan aunque la app esté cerrada.',
+  },
+  {
+    icon: CalendarIcon,
+    title: 'Calendario',
+    description: 'Tu Google Calendar dentro de ADOR OS, en vista de día, semana y mes. Conéctalo una vez con tu cuenta de la empresa y tu próxima reunión aparece también en Inicio.',
+  },
+  {
+    icon: GlobeIcon,
+    title: 'News y Comunidad',
+    description: 'News es el canal oficial de anuncios, con confirmación de lectura. Comunidad es el pulso informal del equipo: ideas, preguntas, logros y eventos, con menciones y comentarios.',
+  },
+  {
+    icon: BookIcon,
+    title: 'Conocimiento y Directorio',
+    description: 'Conocimiento es la wiki de la firma — documentos, procesos y principios. Directorio muestra a las personas, el organigrama y los equipos de ADOR.',
+  },
+  {
     icon: SparkleIcon,
     image: '/onboarding/ador-ia.jpg',
     title: 'ADOR IA',
-    description: 'Pregúntale por el estado real de la empresa — ingresos, objetivos, carga del equipo, clientes sin contacto — y te da una lectura priorizada, no solo los números.',
+    description: 'Pregúntale por el estado real de la empresa y te da una lectura priorizada. También ejecuta órdenes sencillas — “crea una tarea para Leo: revisar propuesta, viernes” — y siempre te pide confirmación antes de hacer algo.',
   },
 ]
 

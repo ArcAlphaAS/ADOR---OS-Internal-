@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeAllTasks, subscribeUsers, subscribeClients } from '../lib/firestore'
+import { subscribeAllTasks, subscribeUsers, subscribeClients, subscribeProyectosInternos } from '../lib/firestore'
 import { useFinanceData } from './useFinanceData'
 import { useObjetivosData } from './useObjetivosData'
 import { computeWorkload, isOverdue } from '../lib/workspace'
@@ -14,12 +14,14 @@ export function useAdorIAContext() {
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [clients, setClients] = useState([])
+  const [proyectos, setProyectos] = useState([])
   const finance = useFinanceData()
   const { objetivos, quarterKey } = useObjetivosData()
 
   useEffect(() => subscribeAllTasks(setTasks), [])
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribeClients(setClients), [])
+  useEffect(() => subscribeProyectosInternos(setProyectos), [])
 
   const openTasks = tasks.filter((t) => t.status !== 'completado')
   const overdueTasks = tasks.filter(isOverdue)
@@ -45,5 +47,10 @@ export function useAdorIAContext() {
 
   // `data` feeds the zero-cost local answerer (see lib/adorIA.js); `text` is
   // the formatted context block kept ready for when GEMINI_API_KEY is added.
-  return { data, text: buildAdorIAContext(data) }
+  // What the action parser (lib/adorIAActions.js) matches names against.
+  const workstreams = [
+    ...clients.filter((c) => c.stage === 'intervencion_activa').map((c) => ({ id: `client:${c.id}`, name: c.name })),
+    ...proyectos.map((p) => ({ id: `proyecto:${p.id}`, name: p.name })),
+  ]
+  return { data, text: buildAdorIAContext(data), actionCtx: { tasks: openTasks, users, workstreams } }
 }

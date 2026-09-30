@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAdorIAContext } from '../../hooks/useAdorIAContext'
 import { answerLocally } from '../../lib/adorIA'
+import { parseAction, describeAction } from '../../lib/adorIAActions'
+import { createTask, applyTaskUpdate, toggleTaskComplete, createDecision, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/workspace'
 import { SparkleIcon } from '../icons'
 import { firstName } from '../../lib/user'
 
@@ -10,6 +13,7 @@ const SUGGESTIONS = [
   '¿Qué objetivo necesita atención?',
   '¿Quién tiene más carga esta semana?',
   '¿Hay clientes sin contacto reciente?',
+  'Crea una tarea para mí: revisar propuesta, mañana',
 ]
 
 // Messages live only in memory for the life of this panel (never persisted,
@@ -24,8 +28,9 @@ function appendCapped(prev, message) {
   return { messages: next.slice(next.length - MAX_MESSAGES), trimmed: true }
 }
 
-function MessageBubble({ role, content }) {
+function MessageBubble({ role, content, action, status, actorId, onConfirm, onCancel }) {
   const isUser = role === 'user'
+  const card = action ? describeAction(action, actorId) : null
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -33,6 +38,29 @@ function MessageBubble({ role, content }) {
         style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap' }}
       >
         {content}
+        {card && (
+          <div className="mt-3 rounded-xl border border-white/[0.1] bg-white/[0.03] p-3" style={{ whiteSpace: 'normal' }}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#E8C15A]">{card.heading}</p>
+            <dl className="mt-2 flex flex-col gap-1">
+              {card.rows.map(([k, v]) => (
+                <div key={k} className="flex gap-2 text-[12.5px]">
+                  <dt className="w-[72px] flex-shrink-0 text-[#888888]">{k}</dt>
+                  <dd className="min-w-0 text-[#F0F0F0]">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {status === 'pending' && (
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={onConfirm} className="ador-btn-primary rounded-lg px-3.5 py-1.5 text-[12px] font-medium">{card.cta}</button>
+                <button type="button" onClick={onCancel} className="rounded-lg px-3 py-1.5 text-[12px] text-[#888888] hover:text-[#F5F5F5]">Cancelar</button>
+              </div>
+            )}
+            {status === 'working' && <p className="mt-3 text-[12px] text-[#888888]">Un momento…</p>}
+            {status === 'done' && <p className="mt-3 text-[12px] text-[#4CAF50]">✓ Hecho</p>}
+            {status === 'cancelled' && <p className="mt-3 text-[12px] text-[#777777]">Cancelado — no cambié nada.</p>}
+            {status === 'error' && <p className="mt-3 text-[12px] text-[#EF5350]">No se pudo completar. Inténtalo de nuevo.</p>}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -68,14 +96,58 @@ export default function AdorIAModule({ user }) {
     // See PROJECT_STATE.md: GEMINI_API_KEY setup deferred by user choice.
     // Small artificial delay so the reply doesn't feel instant/robotic.
     await new Promise((resolve) => setTimeout(resolve, 350))
-    const reply = answerLocally(trimmed, context.data, firstName(user), lastTopicRef.current)
-    lastTopicRef.current = reply.topic
+    // Commands ("crea una tarea…", "completa la tarea…", "registra la
+    // decisión…") never run straight from a sentence: they come back as a
+    // card showing what was understood, with Confirmar / Cancelar.
+    const actor = { id: user?.uid, displayName: user?.displayName || user?.email }
+    const action = parseAction(trimmed, { ...context.actionCtx, actor })
+    let assistant
+    if (action?.type === 'clarify') assistant = { role: 'assistant', content: action.message }
+    else if (action) assistant = { role: 'assistant', content: 'Esto entendí — dime si lo hago:', action, status: 'pending' }
+    else {
+      const reply = answerLocally(trimmed, context.data, firstName(user), lastTopicRef.current)
+      lastTopicRef.current = reply.topic
+      assistant = { role: 'assistant', content: reply.text }
+    }
     setMessages((prev) => {
-      const { messages: next, trimmed: didTrim } = appendCapped(prev, { role: 'assistant', content: reply.text })
+      const { messages: next, trimmed: didTrim } = appendCapped(prev, assistant)
       if (didTrim) setTrimmedOnce(true)
       return next
     })
     setSending(false)
+  }
+
+  const setStatus = (index, status) => setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, status } : m)))
+
+  const runAction = async (a) => {
+    const actorName = user?.displayName || user?.email?.split('@')[0] || 'Usuario'
+    if (!user?.uid || user.uid === 'preview') throw new Error('Sin sesión real')
+    if (a.type === 'createTask') {
+      const workstreamId = a.workstream?.id || (await findOrCreateGeneralProyecto(actorName).then((pid) => buildWorkstreamId('proyecto', pid)))
+      await createTask(
+        { title: a.title, description: '', workstreamId, priority: a.priority, assignedTo: [a.assignee?.id || user.uid], startDate: null, endDate: null, dueDate: a.dueDate || null },
+        actorName,
+        user.uid
+      )
+    } else if (a.type === 'completeTask') {
+      if (a.task.status !== 'completado') await toggleTaskComplete(a.task, actorName)
+    } else if (a.type === 'moveTask') {
+      await applyTaskUpdate(a.task, { dueDate: a.dueDate }, user.uid, actorName)
+    } else if (a.type === 'decision') {
+      await createDecision({ title: a.title, context: '', clientId: null, proyectoId: null, linkedName: null }, actorName)
+    }
+  }
+
+  const confirm = async (index) => {
+    const a = messages[index]?.action
+    if (!a) return
+    setStatus(index, 'working')
+    try {
+      await withTimeout(runAction(a))
+      setStatus(index, 'done')
+    } catch {
+      setStatus(index, 'error')
+    }
   }
 
   return (
@@ -94,7 +166,7 @@ export default function AdorIAModule({ user }) {
         </div>
         <div>
           <h1 className="ador-title">ADOR IA</h1>
-          <p className="text-[12px] text-[#888888]">Basado en los datos reales de la empresa, en vivo.</p>
+          <p className="text-[12px] text-[#888888]">Responde con los datos reales de la empresa y ejecuta órdenes sencillas — siempre pide confirmación.</p>
         </div>
       </div>
 
@@ -125,7 +197,7 @@ export default function AdorIAModule({ user }) {
               </p>
             )}
             {messages.map((m, i) => (
-              <MessageBubble key={i} role={m.role} content={m.content} />
+              <MessageBubble key={i} role={m.role} content={m.content} action={m.action} status={m.status} actorId={user?.uid} onConfirm={() => confirm(i)} onCancel={() => setStatus(i, 'cancelled')} />
             ))}
             {sending && (
               <div className="flex justify-start">
