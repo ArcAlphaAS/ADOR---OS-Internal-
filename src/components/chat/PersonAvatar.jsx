@@ -48,7 +48,7 @@ export default function PersonAvatar({ uid, name, size = 28, showPresence = fals
       )}
       {dot?.color && (
         <span
-          className="absolute rounded-full ring-2 ring-[#0A0A0A]"
+          className="absolute rounded-full ring-2 ring-[#000000]"
           style={{ background: dot.color, width: Math.max(7, size * 0.3), height: Math.max(7, size * 0.3), right: -1, bottom: -1 }}
         />
       )}

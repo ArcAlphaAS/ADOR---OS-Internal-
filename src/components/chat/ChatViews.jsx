@@ -176,7 +176,7 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
               </span>
             )}
             {c.unread && (
-              <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-[#0A0A0A]" style={{ background: '#E8C15A' }}>
+              <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-[#000000]" style={{ background: '#E8C15A' }}>
                 {c.unreadCount || '•'}
               </span>
             )}

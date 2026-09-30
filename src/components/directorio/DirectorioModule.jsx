@@ -369,7 +369,7 @@ function DefaultSidebar({ people, teams }) {
   const counts = areaCounts(people)
   return (
     <div className="flex flex-col gap-4">
-      <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #0A0A0A 100%)' }}>
+      <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #000000 100%)' }}>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Nuestra gente</p>
         <p className="mt-3 text-[21px] font-semibold leading-tight text-[#F5F5F5]">Personas que construyen lo extraordinario.</p>
         <p className="mt-3 text-[12px] text-[#666666]">Talento. Carácter. Propósito.</p>

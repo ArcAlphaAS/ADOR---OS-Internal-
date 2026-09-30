@@ -368,7 +368,7 @@ function ThreadSummary({ message, userName, onOpen }) {
     <button type="button" onClick={onOpen} className="group/thread flex items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-white/[0.04]">
       <span className="flex -space-x-1.5">
         {uids.map((uid) => (
-          <span key={uid} className="rounded-full ring-2 ring-[#0A0A0A]">
+          <span key={uid} className="rounded-full ring-2 ring-[#000000]">
             <PersonAvatar uid={uid} name={userName(uid)} size={18} />
           </span>
         ))}

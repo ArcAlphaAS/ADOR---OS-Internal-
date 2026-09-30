@@ -37,7 +37,7 @@ This split came from direct user reference images (a pill-tab nav bar + a separa
 - `.ador-grain` — a 0.03-opacity SVG-noise `::after` overlay, paired with `.ador-glass` on almost everything.
 - `.ador-skeleton` — a shimmer-sweep gradient (not a static dash) for values with no data yet. Added specifically because plain "—" placeholders made the Home screen feel dead; the shimmer reads as "the system is tracking this, just waiting on data."
 - Keyframes: `ador-drift` (slow background gradient drift, Welcome screen), `ador-pulse` (opacity breathe, used for live-status dots and breathing icons), `ador-spin-dot` (6-dot loading ring), `ador-shimmer` (skeleton sweep).
-- Color roles: bg `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD` (primary/brand), accent gold `#B8860B` (used sparingly — decisions/checkmarks only).
+- Color roles: bg `#000000` (pure black since 2026-09-30), text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD` (primary/brand), accent gold `#B8860B` (used sparingly — decisions/checkmarks only).
 
 ### 4. Firebase is guarded against missing config
 

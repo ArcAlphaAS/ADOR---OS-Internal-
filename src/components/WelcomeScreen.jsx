@@ -61,7 +61,7 @@ export default function WelcomeScreen({ name = 'Ángel', isReturning = false, on
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0A]"
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden bg-[#000000]"
       animate={{ opacity: dismissing ? 0 : 1, scale: dismissing ? 0.98 : 1 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >

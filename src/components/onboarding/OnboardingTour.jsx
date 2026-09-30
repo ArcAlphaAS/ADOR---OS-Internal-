@@ -96,7 +96,7 @@ export default function OnboardingTour({ onFinish }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0A]"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-[#000000]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

@@ -116,7 +116,7 @@ src/
 
 ## Design system quick reference
 
-- Background `#0A0A0A`, text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` / `#E8C15A` (sparingly; Comunicación uses graphite and gold).
+- Background `#000000` (pure black), text `#F5F5F5` / `#888888` / `#444444`, accent blue `#1E5FAD`, accent gold `#B8860B` / `#E8C15A` (sparingly; Comunicación uses graphite and gold).
 - One page title everywhere: `.ador-title`. Cards that need action: `.ador-card-attention` (gold edge) / `.ador-card-urgent` (red). Free text containers: `.ador-wrap` (long words break inside).
 - Motion: `SPRING` / `SHEET` from `lib/motion.js`, never fixed-duration easings for modals and panels.
 - Glass surfaces: `.ador-glass` + `.ador-grain` on every card; `.ador-modal-surface` for modals and side panels.

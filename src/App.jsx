@@ -147,7 +147,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#0A0A0A]">
+    <div className="h-screen w-screen overflow-hidden bg-[#000000]">
       <AnimatePresence mode="wait">{content}</AnimatePresence>
     </div>
   )

@@ -68,7 +68,7 @@ export default function MovimientosTable({ movements }) {
                 {['Movimiento', 'Fecha', 'Monto', 'Estado'].map((h) => (
                   <th
                     key={h}
-                    className="sticky top-0 bg-[#0A0A0A] pb-2 text-left font-medium text-[#444444]"
+                    className="sticky top-0 bg-[#000000] pb-2 text-left font-medium text-[#444444]"
                     style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   >
                     {h}

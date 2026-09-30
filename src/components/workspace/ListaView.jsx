@@ -267,7 +267,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
               flat fill bar into something that reads as "a position on a
               track," not just a percentage. */}
           <span
-            className="absolute top-1/2 h-2.5 w-2.5 rounded-full border-2 border-[#0A0A0A]"
+            className="absolute top-1/2 h-2.5 w-2.5 rounded-full border-2 border-[#000000]"
             style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)', background: accent }}
           />
         </div>

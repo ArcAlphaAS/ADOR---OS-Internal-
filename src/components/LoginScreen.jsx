@@ -51,7 +51,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#0A0A0A]"
+      className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#000000]"
       style={{
         backgroundImage:
           'radial-gradient(ellipse at center, rgba(30,95,173,0.08) 0%, transparent 70%)',

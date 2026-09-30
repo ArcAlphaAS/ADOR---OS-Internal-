@@ -381,7 +381,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
 
 function IntroCard() {
   return (
-    <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #0A0A0A 100%)' }}>
+    <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #000000 100%)' }}>
       <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Internal intelligence</p>
       <p className="mt-3 text-[19px] font-semibold leading-tight text-[#F5F5F5]">El conocimiento convierte la intención en capacidad.</p>
       <p className="mt-3 text-[12px] text-[#666666]">Estrategia. Marketing. Operaciones. Compañía.</p>

@@ -119,7 +119,7 @@ export function SubtasksBlock({ task, embedded = false, focusKey = 0 }) {
             type="button"
             onClick={() => save(subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))}
             className="flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center rounded-full border text-[9px] leading-none"
-            style={{ borderColor: s.done ? '#4CAF50' : '#555555', background: s.done ? '#4CAF50' : 'transparent', color: '#0A0A0A' }}
+            style={{ borderColor: s.done ? '#4CAF50' : '#555555', background: s.done ? '#4CAF50' : 'transparent', color: '#000000' }}
           >
             {s.done ? '✓' : ''}
           </button>

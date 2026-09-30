@@ -43,7 +43,7 @@ export default function AvatarStack({ userIds = [], userById, pendingIds = [], s
             </div>
             {pending && (
               <span
-                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-[#0A0A0A]"
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-[#000000]"
                 style={{ background: '#B8860B' }}
               />
             )}

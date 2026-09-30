@@ -328,7 +328,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       onDrop={onDrop}
     >
       {dragging && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#0A0A0A]/80 text-[13.5px] text-[#E8C15A]">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#000000]/80 text-[13.5px] text-[#E8C15A]">
           Suelta la imagen para adjuntarla
         </div>
       )}

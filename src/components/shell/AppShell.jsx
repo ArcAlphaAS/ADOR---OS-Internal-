@@ -219,7 +219,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
   return (
     <div
-      className="flex h-screen w-screen flex-col overflow-hidden bg-[#0A0A0A]"
+      className="flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
       style={{
         backgroundImage:
           'radial-gradient(ellipse at 50% 30%, rgba(30,95,173,0.06) 0%, transparent 60%)',

@@ -163,7 +163,7 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className="relative rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-150"
-              style={{ color: activeTab === tab.id ? '#0A0A0A' : '#888888' }}
+              style={{ color: activeTab === tab.id ? '#000000' : '#888888' }}
             >
               {activeTab === tab.id && (
                 <motion.span

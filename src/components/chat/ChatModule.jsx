@@ -607,7 +607,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     if (isTouchDevice()) return quickCallTouch(type, anchorRef)
     const win = preOpened || window.open('', '_blank')
     try {
-      win?.document.write('<title>Google Meet</title><body style="background:#0A0A0A;color:#999;font:14px system-ui;display:grid;place-items:center;height:100vh;margin:0">Creando la reunión…</body>')
+      win?.document.write('<title>Google Meet</title><body style="background:#000000;color:#999;font:14px system-ui;display:grid;place-items:center;height:100vh;margin:0">Creando la reunión…</body>')
     } catch {
       // cross-origin or blocked — fine, the redirect below still works
     }

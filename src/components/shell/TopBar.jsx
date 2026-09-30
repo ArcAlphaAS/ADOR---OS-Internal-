@@ -53,7 +53,7 @@ function PillTabs({ activeModule, onNavigate, canSee }) {
             type="button"
             onClick={() => onNavigate(item.id)}
             className="relative rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors duration-150"
-            style={{ color: active ? '#0A0A0A' : '#888888' }}
+            style={{ color: active ? '#000000' : '#888888' }}
           >
             {active && (
               <motion.span
@@ -362,7 +362,7 @@ export default function TopBar({
   return (
     <header
       className="relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
-      style={{ height: 64, backgroundColor: '#0A0A0A' }}
+      style={{ height: 64, backgroundColor: '#000000' }}
     >
       {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline
           (see Logo.jsx), so "OS" sits on the same line. It used to have

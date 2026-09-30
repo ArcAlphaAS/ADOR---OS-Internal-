@@ -55,7 +55,7 @@ function ArrowButton({ light = false }) {
   return (
     <span
       className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-0.5 ${
-        light ? 'bg-white text-[#0A0A0A]' : 'border border-white/[0.14] text-[#DDDDDD]'
+        light ? 'bg-white text-[#000000]' : 'border border-white/[0.14] text-[#DDDDDD]'
       }`}
     >
       <ArrowRightIcon size={15} />
