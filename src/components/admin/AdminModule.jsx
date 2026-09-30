@@ -9,6 +9,7 @@ import {
   setUserRole,
   allowEmail,
   revokeEmail,
+  saveUserProfile,
   subscribeErrorLogs,
   resolveErrorLog,
 } from '../../lib/firestore'
@@ -60,6 +61,8 @@ function PeopleTab({ user }) {
   const [form, setForm] = useState({ name: '', email: '', role: 'miembro' })
   const [inviting, setInviting] = useState(false)
   const [confirmRevoke, setConfirmRevoke] = useState(null)
+  const [editing, setEditing] = useState(null) // { email (original), name, newEmail }
+  const [saving, setSaving] = useState(false)
   const showToast = useToast()
 
   useEffect(() => subscribeAllowedEmails(setAllowed), [])
@@ -103,6 +106,33 @@ function PeopleTab({ user }) {
     }
   }
 
+  // Editar nombre y, mientras la persona aún no ha entrado, su correo. Cambiar el
+  // correo = invitar al correcto (mismo rol) y quitar el acceso del equivocado.
+  // Quien ya entró tiene una cuenta ligada a su correo actual: cambiarlo crearía
+  // otra cuenta y perdería su historial, así que ahí solo se edita el nombre.
+  const saveEdit = async (row) => {
+    if (!editing || saving) return
+    const name = editing.name.trim()
+    const newEmail = editing.newEmail.trim().toLowerCase()
+    setSaving(true)
+    try {
+      if (row.invited && newEmail && newEmail !== row.email) {
+        await inviteMember({ email: newEmail, name, role: row.role, invitedBy: actorNameFor(user) })
+        await withTimeout(revokeEmail(row.email))
+        showToast(`Correo corregido: ${newEmail}. Le enviamos el correo para entrar.`)
+      } else {
+        await withTimeout(allowEmail(row.email, { name }))
+        if (row.account && name) await withTimeout(saveUserProfile(row.account.id, { displayName: name }))
+        showToast('Nombre actualizado.')
+      }
+      setEditing(null)
+    } catch (err) {
+      showToast(`No se pudo guardar: ${err.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const invite = async (e) => {
     e.preventDefault()
     if (!form.email.trim() || inviting) return
@@ -140,6 +170,32 @@ function PeopleTab({ user }) {
         <div className="mt-3 flex flex-col divide-y divide-white/[0.06]">
           {rows.map((row) => {
             const p = row.account ? presenceOf(presence[row.account.id]) : null
+            if (editing?.email === row.email) {
+              return (
+                <form key={row.email} onSubmit={(e) => { e.preventDefault(); saveEdit(row) }} className="flex flex-col gap-2 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    <input className={inputClass} placeholder="Nombre" value={editing.name} onChange={(e) => setEditing((v) => ({ ...v, name: e.target.value }))} />
+                    <input
+                      className={inputClass}
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={editing.newEmail}
+                      disabled={!row.invited}
+                      onChange={(e) => setEditing((v) => ({ ...v, newEmail: e.target.value }))}
+                    />
+                  </div>
+                  <p className="text-[11.5px] text-[#777777]">
+                    {row.invited
+                      ? 'Si cambias el correo, se invita al nuevo (mismo rol), se le envía el correo para entrar y se quita el acceso del anterior.'
+                      : 'Esta persona ya entró: su correo está ligado a su cuenta y no se puede cambiar desde aquí. El nombre sí.'}
+                  </p>
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={saving} className="ador-btn-primary rounded-xl px-4 py-2 text-[12.5px] font-medium">{saving ? 'Guardando…' : 'Guardar'}</button>
+                    <button type="button" onClick={() => setEditing(null)} className="rounded-xl px-3 py-2 text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">Cancelar</button>
+                  </div>
+                </form>
+              )
+            }
             return (
               <div key={row.email} className="flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
@@ -151,6 +207,13 @@ function PeopleTab({ user }) {
                     {row.email} · {row.invited ? <span className="text-[#E8C15A]">Invitado, aún no entra</span> : p?.label || 'Sin actividad reciente'}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ email: row.email, name: row.account?.displayName || row.allowed?.name || '', newEmail: row.email })}
+                  className="rounded-lg px-2.5 py-1.5 text-[12px] text-[#AAAAAA] hover:text-[#F5F5F5]"
+                >
+                  Editar
+                </button>
                 <RoleSelect value={row.role} disabled={row.email === me} onChange={(role) => changeRole(row, role)} />
                 {row.invited && (
                   <button

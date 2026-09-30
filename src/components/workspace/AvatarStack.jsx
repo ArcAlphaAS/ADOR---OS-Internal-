@@ -1,9 +1,8 @@
 import Avatar from '../shell/Avatar'
 
-// Up to 3 overlapping initials-avatars for a task's assigned Asociados.
-// Doesn't resolve live profile photos (unlike TopBar's Avatar usage) — a
-// task list rendering a dozen rows shouldn't fan out a photo lookup per
-// avatar; initials are enough at 24px.
+// Up to 3 overlapping avatars for a task's assigned Asociados, with each
+// person's profile photo (already on the users docs the caller holds, so no
+// per-avatar lookup) and initials as the fallback.
 //
 // `pendingIds` (optional) marks whoever hasn't accepted/rejected the
 // assignment yet (see AssignmentConfirmGate.jsx) — a small amber ring +
@@ -26,7 +25,7 @@ export default function AvatarStack({ userIds = [], userById, pendingIds = [], s
             title={pending ? 'Pendiente de confirmar' : undefined}
           >
             <div style={pending ? { borderRadius: '9999px', boxShadow: '0 0 0 2px #B8860B' } : undefined}>
-              <Avatar displayName={user?.displayName} email={user?.email} size={size} />
+              <Avatar photoURL={user?.photoDataUrl} displayName={user?.displayName} email={user?.email} size={size} />
             </div>
             {pending && (
               <span

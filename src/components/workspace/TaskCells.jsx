@@ -307,7 +307,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
                     className="flex items-center gap-1 rounded-full py-0.5 pl-1 pr-1.5 text-[11px]"
                     style={{ background: 'rgba(30,95,173,0.15)', color: '#F5F5F5' }}
                   >
-                    <Avatar displayName={u.displayName} email={u.email} size={16} />
+                    <Avatar photoURL={u.photoDataUrl} displayName={u.displayName} email={u.email} size={16} />
                     {u.displayName || u.email}
                     <button
                       type="button"
@@ -365,7 +365,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
                     className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150"
                     style={{ background: i === highlight ? 'rgba(255,255,255,0.06)' : 'transparent' }}
                   >
-                    <Avatar displayName={u.displayName} email={u.email} size={20} />
+                    <Avatar photoURL={u.photoDataUrl} displayName={u.displayName} email={u.email} size={20} />
                     <span className="text-[#F5F5F5]">{u.displayName || u.email}</span>
                     {pendingIds.includes(u.id) && <span className="ml-auto text-[10px]" style={{ color: '#B8860B' }}>pendiente</span>}
                   </button>
