@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { addExpense } from '../../lib/firestore'
-import { EXPENSE_CATEGORIES } from '../../lib/finance'
+import { addExpense, createFinanceRecurring } from '../../lib/firestore'
+import { EXPENSE_CATEGORIES, RECURRING_FREQUENCIES, advanceRecurringDate } from '../../lib/finance'
 import { useToast } from '../../hooks/useToast'
 import { UploadIcon, FileIcon } from '../icons'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
@@ -21,6 +21,7 @@ export default function AddExpenseModal({ actorName, onClose }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [receipt, setReceipt] = useState(null)
   const [notes, setNotes] = useState('')
+  const [repeat, setRepeat] = useState('none')
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
   // The receipt itself lives in Google Drive; the expense keeps its link.
@@ -35,8 +36,17 @@ export default function AddExpenseModal({ actorName, onClose }) {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // A repeating expense: the template first (its nextDate is the one after
+      // this date), then today's entry linked to it.
+      let recurringId = null
+      if (repeat !== 'none') {
+        const anchorDay = Number(date.slice(8))
+        const ref = await createFinanceRecurring({ kind: 'gasto', category, description: description.trim(), amount: Number(amount), frequency: repeat, anchorDay, nextDate: advanceRecurringDate(date, repeat, anchorDay) }, actorName)
+        recurringId = ref.id
+      }
       await addExpense(
         {
+          ...(recurringId ? { recurringId } : {}),
           category,
           description: description.trim(),
           amount: Number(amount),
@@ -116,6 +126,24 @@ export default function AddExpenseModal({ actorName, onClose }) {
               </label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
             </div>
+          </div>
+          <div>
+            <label className={labelClass} style={labelStyle}>
+              Repetir
+            </label>
+            <select value={repeat} onChange={(e) => setRepeat(e.target.value)} className={inputClass}>
+              <option value="none">No se repite</option>
+              {RECURRING_FREQUENCIES.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+            {repeat !== 'none' && (
+              <p className="mt-1 text-[11px] text-[#555555]">
+                Se registra hoy y volverá a registrarse solo {RECURRING_FREQUENCIES.find((f) => f.id === repeat).label.toLowerCase()}, el día {Number(date.slice(8))}. Lo gestionas desde “Recurrentes”.
+              </p>
+            )}
           </div>
           <div>
             <label className={labelClass} style={labelStyle}>

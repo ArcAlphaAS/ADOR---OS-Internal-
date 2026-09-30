@@ -43,3 +43,25 @@ export function monthLabel(monthKey) {
   const date = new Date(year, month - 1, 1)
   return date.toLocaleDateString('es', { month: 'short' }).replace('.', '')
 }
+
+// ---- Gastos e ingresos recurrentes ----
+// `financeRecurring/{id}` is a template (kind, amount, frequency, `nextDate`);
+// `materializeFinanceRecurring` (lib/firestore.js) turns every occurrence that
+// has come due into a normal expense/income entry and moves `nextDate`
+// forward. `anchorDay` keeps "el 31" from drifting to the 28th after February.
+export const RECURRING_FREQUENCIES = [
+  { id: 'monthly', label: 'Cada mes', months: 1 },
+  { id: 'quarterly', label: 'Cada trimestre', months: 3 },
+  { id: 'yearly', label: 'Cada año', months: 12 },
+]
+export const frequencyLabel = (id) => RECURRING_FREQUENCIES.find((f) => f.id === id)?.label || id
+
+export function advanceRecurringDate(dateStr, frequency, anchorDay) {
+  const months = RECURRING_FREQUENCIES.find((f) => f.id === frequency)?.months || 1
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const total = m - 1 + months
+  const year = y + Math.floor(total / 12)
+  const month = total % 12
+  const day = Math.min(anchorDay || d, new Date(year, month + 1, 0).getDate())
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}

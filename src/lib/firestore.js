@@ -28,6 +28,7 @@ import {
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange, advanceByRecurrence, recurrenceMeta, layerWeekSpan, LAYERS } from './workspace'
+import { advanceRecurringDate } from './finance'
 import { describeKnowledgeChange } from './knowledge'
 
 // Central data model. Every entity references related entities by ID —
@@ -802,6 +803,64 @@ export async function registerPayment(client, key, amount, actorName) {
 
 export function subscribeExpenses(onData) {
   return subscribeToCollection(COLLECTIONS.expenses, [orderBy('date', 'desc')], onData)
+}
+
+// ---- Recurrentes (plantillas) ----
+export function subscribeFinanceRecurring(onData) {
+  return subscribeToCollection('financeRecurring', [], onData)
+}
+
+export function createFinanceRecurring(data, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, 'financeRecurring'), { ...data, active: true, registeredBy: actorName, createdAt: serverTimestamp() })
+}
+
+export function updateFinanceRecurring(id, patch) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, 'financeRecurring', id), patch)
+}
+
+export function deleteFinanceRecurring(id) {
+  if (!db) return Promise.resolve()
+  return deleteDoc(doc(db, 'financeRecurring', id))
+}
+
+// Creates the entries that have come due (nextDate <= today), one transaction
+// per occurrence: it re-reads the template and only writes if `nextDate` is
+// still what this app saw, so two devices opening Finanzas at once can't both
+// create the same month. Catches up at most 12 occurrences per template per
+// run (a long-unused app doesn't flood the ledger in one go).
+export async function materializeFinanceRecurring() {
+  if (!db) return 0
+  const snap = await getDocs(query(collection(db, 'financeRecurring'), where('active', '==', true)))
+  const today = new Date().toISOString().slice(0, 10)
+  let created = 0
+  for (const docSnap of snap.docs) {
+    for (let i = 0; i < 12; i++) {
+      const ref = docSnap.ref
+      const made = await runTransaction(db, async (tx) => {
+        const cur = await tx.get(ref)
+        const t = cur.data()
+        if (!t || !t.active || !t.nextDate || t.nextDate > today) return false
+        const entry = {
+          description: t.description,
+          amount: t.amount,
+          date: t.nextDate,
+          notes: 'Recurrente',
+          recurringId: docSnap.id,
+          registeredBy: `${t.registeredBy || 'Sistema'} (recurrente)`,
+          createdAt: serverTimestamp(),
+          ...(t.kind === 'gasto' ? { category: t.category, receipt: null } : { clientId: null, clientName: null }),
+        }
+        tx.set(doc(collection(db, t.kind === 'gasto' ? COLLECTIONS.expenses : COLLECTIONS.incomes)), entry)
+        tx.update(ref, { nextDate: advanceRecurringDate(t.nextDate, t.frequency, t.anchorDay) })
+        return true
+      })
+      if (!made) break
+      created++
+    }
+  }
+  return created
 }
 
 export function addExpense(data, actorName) {

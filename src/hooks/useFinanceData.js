@@ -55,6 +55,7 @@ export function useFinanceData() {
       amount: i.amount,
       source: 'manual',
       clientName: i.clientName,
+      recurringId: i.recurringId || null,
     }))
   const allIncomes = [...clientIncomeEntries, ...manualIncomeEntries]
   const validExpenses = expenses.filter((e) => e.date && e.amount)

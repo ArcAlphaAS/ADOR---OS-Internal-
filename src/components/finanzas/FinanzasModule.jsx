@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { subscribeFinanceRecurring } from '../../lib/firestore'
+import RecurrentesCard from './RecurrentesCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFinanceData } from '../../hooks/useFinanceData'
 import SituacionActualCard from './SituacionActualCard'
@@ -26,6 +28,8 @@ export default function FinanzasModule({ user, onNavigate }) {
   const data = useFinanceData()
   const [modal, setModal] = useState(null) // null | 'ingreso' | 'gasto'
   const [detailMode, setDetailMode] = useState(null) // null | 'porCobrar' | 'runway'
+  const [recurring, setRecurring] = useState([])
+  useEffect(() => subscribeFinanceRecurring(setRecurring), [])
 
   const actorName = actorNameFor(user)
   const currentMonthLabel = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })
@@ -99,6 +103,7 @@ export default function FinanzasModule({ user, onNavigate }) {
             inflowIn90={data.inflowIn90}
           />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
+          <RecurrentesCard templates={recurring} />
           <MetasCard
             quarterKey={data.quarterKey}
             quarterlyTarget={data.quarterlyTarget}

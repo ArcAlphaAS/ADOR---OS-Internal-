@@ -81,6 +81,7 @@ export default function MovimientosTable({ movements }) {
                 <tr key={`${m.type}-${m.id}`}>
                   <td className="py-2.5 pr-3 text-[13px] text-[#F5F5F5]">
                     {m.type === 'ingreso' ? m.name : m.description}
+                    {m.recurringId && <span title="Recurrente" className="ml-1.5 text-[11px] text-[#E8C15A]">↻</span>}
                     {m.receipt?.url && (
                       <a
                         href={m.receipt.url}

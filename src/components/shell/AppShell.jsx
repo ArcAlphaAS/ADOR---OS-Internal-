@@ -16,6 +16,7 @@ import { useNewsAttention, useNewsPublisher } from '../../hooks/useNews'
 import { getUserProfile, markOnboardingSeen } from '../../lib/firestore'
 import { usePresenceHeartbeat } from '../../hooks/usePresenceHeartbeat'
 import { useChatRetention } from '../../hooks/useChatRetention'
+import { useFinanceRecurring } from '../../hooks/useFinanceRecurring'
 import { useScheduledSender } from '../../hooks/useScheduledSender'
 import { finishDriveConnect } from '../../lib/googleDrive'
 import { installErrorLogging, setErrorContext } from '../../lib/errorLog'
@@ -116,6 +117,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // The daily cleanup lists every conversation's old files/calls, which
   // only admins may do under the stricter Firestore rules.
   useChatRetention(access.isAdmin ? user?.uid : null)
+  useFinanceRecurring(access.canSee('finanzas'), user?.uid)
   // One-time fix-up for channels created before `visibility` existed —
   // needed by the split channel query (lib/firestore.js).
   useEffect(() => {

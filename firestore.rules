@@ -93,6 +93,7 @@ service cloud.firestore {
     // Finanzas — only if the admins gave Miembros access to it.
     match /expenses/{id} { allow read, write: if canUse('finanzas'); }
     match /incomes/{id} { allow read, write: if canUse('finanzas'); }
+    match /financeRecurring/{id} { allow read, write: if canUse('finanzas'); }
 
     // Knowledge, news, directory: everyone reads; admins write (catch-all
     // above). Comunidad is open to everyone by design.

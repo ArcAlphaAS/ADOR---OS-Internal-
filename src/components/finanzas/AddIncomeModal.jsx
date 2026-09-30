@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { addManualIncome } from '../../lib/firestore'
+import { addManualIncome, createFinanceRecurring } from '../../lib/firestore'
+import { RECURRING_FREQUENCIES, advanceRecurringDate } from '../../lib/finance'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
 
@@ -16,6 +17,7 @@ export default function AddIncomeModal({ clients, actorName, onClose }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [clientId, setClientId] = useState('')
   const [notes, setNotes] = useState('')
+  const [repeat, setRepeat] = useState('none')
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
 
@@ -25,8 +27,15 @@ export default function AddIncomeModal({ clients, actorName, onClose }) {
     setSaving(true)
     try {
       const client = clients.find((c) => c.id === clientId)
+      let recurringId = null
+      if (repeat !== 'none') {
+        const anchorDay = Number(date.slice(8))
+        const ref = await createFinanceRecurring({ kind: 'ingreso', description: description.trim(), amount: Number(amount), frequency: repeat, anchorDay, nextDate: advanceRecurringDate(date, repeat, anchorDay) }, actorName)
+        recurringId = ref.id
+      }
       await addManualIncome(
         {
+          ...(recurringId ? { recurringId } : {}),
           description: description.trim(),
           amount: Number(amount),
           date,
@@ -112,6 +121,24 @@ export default function AddIncomeModal({ clients, actorName, onClose }) {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className={labelClass} style={labelStyle}>
+              Repetir
+            </label>
+            <select value={repeat} onChange={(e) => setRepeat(e.target.value)} className={inputClass}>
+              <option value="none">No se repite</option>
+              {RECURRING_FREQUENCIES.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+            {repeat !== 'none' && (
+              <p className="mt-1 text-[11px] text-[#555555]">
+                Se registra hoy y volverá a registrarse solo {RECURRING_FREQUENCIES.find((f) => f.id === repeat).label.toLowerCase()}, el día {Number(date.slice(8))}. Lo gestionas desde “Recurrentes”.
+              </p>
+            )}
           </div>
           <div>
             <label className={labelClass} style={labelStyle}>
