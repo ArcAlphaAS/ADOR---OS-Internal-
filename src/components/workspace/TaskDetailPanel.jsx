@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos } from '../../lib/firestore'
 import { STATUSES, PRIORITIES, RECURRENCES } from '../../lib/workspace'
 import TaskComments from './TaskComments'
+import { SubtasksBlock } from './TaskChrome'
 import { quarterKey } from '../../lib/finance'
 import { CloseIcon } from '../icons'
 import AvatarStack from './AvatarStack'
@@ -42,7 +43,8 @@ function PillToggle({ options, value, onChange }) {
   )
 }
 
-export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose }) {
+export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, initialSection }) {
+  const descRef = useRef(null)
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [history, setHistory] = useState([])
@@ -56,6 +58,12 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
   useEffect(() => subscribeObjetivos(setObjetivos), [])
   const currentQuarterObjetivos = objetivos.filter((o) => o.quarter === quarterKey())
 
+  useEffect(() => {
+    if (initialSection !== 'comments') return
+    const t = setTimeout(() => document.getElementById('task-comments')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 380)
+    return () => clearTimeout(t)
+  }, [initialSection, task?.id])
+
   if (!task) return null
 
   const dueValue = task.dueDate?.toDate?.() ? task.dueDate.toDate().toISOString().slice(0, 10) : ''
@@ -64,8 +72,33 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
   const applyUpdate = (data) => applyTaskUpdate(task, data, actorUserId, actorName)
 
+  // Refs remember what was just written: the blur and the close both call
+  // these, and `task` only catches up a moment later — without them a title
+  // typed then closed would be saved (and logged) twice.
+  const lastTitle = useRef(null)
+  const lastDesc = useRef(null)
   const saveTitle = () => {
-    if (title.trim() && title.trim() !== task.title) applyUpdate({ title: title.trim() })
+    const t = title.trim()
+    if (t && t !== task.title && t !== lastTitle.current) {
+      lastTitle.current = t
+      applyUpdate({ title: t })
+    }
+  }
+  const saveDescription = (value) => {
+    const v = value.trim()
+    if (v !== (task.description || '') && v !== lastDesc.current) {
+      lastDesc.current = v
+      applyUpdate({ description: v })
+    }
+  }
+
+  // Cerrar por cualquier lado (X, fuera del panel, deslizar) guarda antes lo que
+  // se estaba escribiendo: el blur del campo no siempre alcanza a correr antes
+  // de que el panel se desmonte.
+  const onClose = () => {
+    saveTitle()
+    if (descRef.current) saveDescription(descRef.current.value)
+    onCloseRaw()
   }
 
   const toggleAssignee = (uid) => {
@@ -79,7 +112,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
       return
     }
     deleteTask(task.id)
-    onClose()
+    onCloseRaw()
   }
 
   return createPortal(
@@ -130,10 +163,9 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
               Descripción
             </span>
             <textarea
+              ref={descRef}
               defaultValue={task.description || ''}
-              onBlur={(e) => {
-                if (e.target.value !== (task.description || '')) applyUpdate({ description: e.target.value.trim() })
-              }}
+              onBlur={(e) => saveDescription(e.target.value)}
               rows={3}
               placeholder="Sin descripción"
               className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/[0.2]"
@@ -206,6 +238,13 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             </div>
           </div>
           <p className="-mt-4 text-[11px] text-[#444444]">La fecha de inicio es opcional — solo se usa para dibujar la duración en la vista Timeline.</p>
+
+          <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Subtareas{(task.subtasks || []).length ? ` · ${(task.subtasks || []).filter((x) => x.done).length}/${(task.subtasks || []).length}` : ''}
+            </span>
+            <SubtasksBlock task={task} embedded />
+          </div>
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>

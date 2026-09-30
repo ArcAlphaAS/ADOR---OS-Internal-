@@ -20,7 +20,7 @@ import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
+import { PillCell, EstimationCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
 import { SPRING } from '../../lib/motion'
@@ -343,7 +343,7 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
   )
 }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
 function SectionIcon({ Icon, color }) {
   return (
@@ -491,7 +491,6 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
         className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
-      <DescriptionCell description={description} onChange={setDescription} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
       <EstimationCell startDate={startDate} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={setStartDate} onChangeDue={setDueDate} />

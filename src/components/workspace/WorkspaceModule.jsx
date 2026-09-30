@@ -46,6 +46,11 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
   const [onlyMine, setOnlyMine] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
+  const [panelSection, setPanelSection] = useState(null) // 'comments' = the bubble on a row
+  const openTaskPanel = (t, section = null) => {
+    setPanelSection(section)
+    setOpenTaskId(t.id)
+  }
   const [showNewProyecto, setShowNewProyecto] = useState(false)
 
   const actorName = actorNameFor(user)
@@ -225,7 +230,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 users={users}
                 workstreams={workstreams}
                 workstreamById={workstreamById}
-                onOpenTask={(t) => setOpenTaskId(t.id)}
+                onOpenTask={openTaskPanel}
                 actorUserId={user?.uid}
                 actorName={actorName}
                 notes={notes}
@@ -242,7 +247,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                   workstreamById={workstreamById}
                   userById={userById}
                   users={users}
-                  onOpenTask={(t) => setOpenTaskId(t.id)}
+                  onOpenTask={openTaskPanel}
                   actorUserId={user?.uid}
                   actorName={actorName}
                   onToggleOnlyMine={toggleOnlyMine}
@@ -256,7 +261,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                   tasksByWorkstream={visibleTasksByWorkstream}
                   userById={userById}
                   users={users}
-                  onOpenTask={(t) => setOpenTaskId(t.id)}
+                  onOpenTask={openTaskPanel}
                   actorUserId={user?.uid}
                   actorName={actorName}
                   emptyLabel="General"
@@ -269,7 +274,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 tasks={visibleTasks}
                 workstreamById={workstreamById}
                 userById={userById}
-                onOpenTask={(t) => setOpenTaskId(t.id)}
+                onOpenTask={openTaskPanel}
                 actorUserId={user?.uid}
                 actorName={actorName}
               />
@@ -279,7 +284,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
               <TimelineView
                 workstreams={visibleWorkstreams}
                 tasksByWorkstream={visibleTasksByWorkstream}
-                onOpenTask={(t) => setOpenTaskId(t.id)}
+                onOpenTask={openTaskPanel}
               />
             </motion.div>
           )}
@@ -295,6 +300,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             userById={userById}
             actorUserId={user?.uid}
             actorName={actorName}
+            initialSection={panelSection}
             onClose={() => setOpenTaskId(null)}
           />
         )}

@@ -67,12 +67,12 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
   }
 
   return (
-    <div>
+    <div id="task-comments">
       <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-        Comentarios{comments.length ? ` · ${comments.length}` : ''}
+        Actualizaciones{comments.length ? ` · ${comments.length}` : ''}
       </span>
       {comments.length === 0 ? (
-        <p className="text-[13px] font-light text-[#444444]">Aún no hay comentarios. Usa @ para avisarle a alguien.</p>
+        <p className="text-[13px] font-light text-[#444444]">Aún no hay actualizaciones. Comparte avances o usa @ para avisarle a alguien.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {comments.map((c) => {
@@ -125,12 +125,12 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
               send()
             }
           }}
-          placeholder="Escribe un comentario… (@ para mencionar)"
+          placeholder="Escribe una actualización… (@ para mencionar)"
           className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#555555] focus:border-white/[0.2]"
         />
         <div className="mt-1.5 flex justify-end">
           <button type="button" onClick={send} disabled={!text.trim() || sending} className="ador-btn-primary rounded-xl px-4 py-1.5 text-[12.5px] font-medium disabled:opacity-40">
-            {sending ? 'Enviando…' : 'Comentar'}
+            {sending ? 'Enviando…' : 'Publicar'}
           </button>
         </div>
       </div>

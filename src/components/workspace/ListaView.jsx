@@ -14,7 +14,7 @@ import {
 } from '../../lib/workspace'
 import { ChevronDownIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
+import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
 import TaskRow from './TaskRow'
 
 // Shown instead of a real workstream when there's nothing to group by yet —
@@ -29,7 +29,7 @@ import TaskRow from './TaskRow'
 // screen. Now both look and behave like the same real system.
 const GENERAL_WORKSTREAM = { id: null, kind: 'proyecto_interno', name: 'General' }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
 function LayerIndicator({ week, totalWeeks }) {
   const active = currentLayer(week, totalWeeks)
@@ -141,8 +141,6 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
         placeholder={saving ? 'Guardando...' : 'Título de la tarea — Enter para guardar'}
         className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
-
-      <DescriptionCell description={draft.description} onChange={(text) => setDraft((d) => ({ ...d, description: text }))} />
 
       <AssigneeCell
         assignedTo={draft.assignedTo}
@@ -273,7 +271,7 @@ function WorkstreamGroup({ workstream, tasks, userById, users, onOpenTask, actor
             )}
 
             <div className="overflow-x-auto px-3 pb-3">
-              <div style={{ minWidth: 680 }}>
+              <div style={{ minWidth: 720 }}>
                 <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                   {COLUMN_HEADERS.map((h, i) => (
                     <span

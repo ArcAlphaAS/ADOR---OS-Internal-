@@ -17,7 +17,7 @@ import { useToast } from '../../hooks/useToast'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { eventColor } from '../../lib/googleCalendar'
 import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon, PlusIcon, NoteIcon } from '../icons'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell, WorkstreamCell } from './TaskCells'
+import { PillCell, EstimationCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import ProjectTaskRow from './ProjectTaskRow'
 
 // A richer "Personal" landing page, built from a reference image the user
@@ -103,7 +103,7 @@ function ProjectCard({ workstream, total, pending, pct }) {
   )
 }
 
-const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Descripción', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
+const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Estimación', 'Estado']
 
 function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forceOpen, onOpenChange }) {
   const [adding, setAdding] = useState(false)
@@ -168,7 +168,6 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
         className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
-      <DescriptionCell description={description} onChange={setDescription} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
       <PillCell options={PRIORITIES} value={priority} meta={priorityMeta(priority)} onChange={setPriority} />
       <EstimationCell startDate={startDate} dueDate={dueDate} overdue={false} dueToday={false} onChangeStart={setStartDate} onChangeDue={setDueDate} />

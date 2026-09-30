@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import { PillCell, EstimationCell, DescriptionCell, AssigneeCell } from './TaskCells'
+import { PillCell, EstimationCell, AssigneeCell } from './TaskCells'
+import { TaskTitleCell, SubtasksBlock } from './TaskChrome'
 import { CheckCircleIcon } from '../icons'
 
 export default function TaskRow({ task, userById, users, onOpen, actorUserId, actorName }) {
   const completed = task.status === 'completado'
   const showToast = useToast()
+  const [expanded, setExpanded] = useState(false)
 
   // Every inline cell edit routes through here so a failed write (most
   // commonly: Firestore rules don't yet cover this collection for this
@@ -21,6 +24,7 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
   }
 
   return (
+    <div>
     <div
       className="grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
       style={{ gridTemplateColumns: TASK_ROW_GRID }}
@@ -65,16 +69,7 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
         </AnimatePresence>
       </motion.button>
 
-      <motion.span
-        onClick={() => onOpen(task)}
-        animate={{ opacity: completed ? 0.5 : 1 }}
-        className="min-w-0 cursor-pointer truncate text-[14px] font-medium text-[#F5F5F5] hover:underline"
-        style={{ textDecoration: completed ? 'line-through' : 'none' }}
-      >
-        {task.title}
-      </motion.span>
-
-      <DescriptionCell description={task.description} onChange={(text) => applyUpdate({ description: text })} />
+      <TaskTitleCell task={task} completed={completed} expanded={expanded} onToggleExpand={() => setExpanded((v) => !v)} onOpen={onOpen} />
 
       <AssigneeCell
         assignedTo={task.assignedTo || []}
@@ -107,6 +102,8 @@ export default function TaskRow({ task, userById, users, onOpen, actorUserId, ac
         meta={statusMeta(task.status)}
         onChange={(id) => applyUpdate({ status: id })}
       />
+    </div>
+    {expanded && <SubtasksBlock task={task} />}
     </div>
   )
 }
