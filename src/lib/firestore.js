@@ -240,12 +240,13 @@ export function subscribeTaskComments(taskId, onData) {
   return subscribeToCollection(`${COLLECTIONS.tasks}/${taskId}/comments`, [orderBy('createdAt', 'asc')], onData)
 }
 
-export function addTaskComment(task, text, mentions, author) {
+export function addTaskComment(task, text, mentions, author, attachments = []) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const batch = writeBatch(db)
   batch.set(doc(collection(db, COLLECTIONS.tasks, task.id, 'comments')), {
     text,
     mentions: mentions || [],
+    attachments: attachments || [],
     authorUid: author.uid,
     authorName: author.name,
     createdAt: serverTimestamp(),
@@ -255,8 +256,8 @@ export function addTaskComment(task, text, mentions, author) {
     const url = `/?open=workspace&task=${task.id}`
     const mentioned = (mentions || []).map((m) => m.uid)
     const others = (task.assignedTo || []).filter((u) => !mentioned.includes(u))
-    pushNotify(mentioned, { title: `@ ${firstWord(author.name)} te mencionó en una tarea`, body: `${task.title}: ${text}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
-    pushNotify(others, { title: `💬 ${firstWord(author.name)} comentó en una tarea`, body: `${task.title}: ${text}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
+    pushNotify(mentioned, { title: `@ ${firstWord(author.name)} te mencionó en una tarea`, body: `${task.title}: ${text || '📎 archivo adjunto'}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
+    pushNotify(others, { title: `💬 ${firstWord(author.name)} comentó en una tarea`, body: `${task.title}: ${text || '📎 archivo adjunto'}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
     return r
   })
 }
