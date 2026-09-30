@@ -19,6 +19,10 @@ export function formatNewsDate(ts, short = false) {
 
 // A cover: the post's photo, or — when it has none — a quiet gradient so
 // the layout never shows an empty/broken image box.
+// `post.coverPosition` {x, y} (0–100) is the focal point the author chose in
+// the editor: which part of the photo stays visible when it's cropped.
+export const coverObjectPosition = (post) => (post.coverPosition ? `${post.coverPosition.x}% ${post.coverPosition.y}%` : '50% 50%')
+
 export function Cover({ post, className = '', zoom = false }) {
   if (post.coverImageUrl) {
     return (
@@ -26,6 +30,7 @@ export function Cover({ post, className = '', zoom = false }) {
         src={post.coverImageUrl}
         alt=""
         loading="lazy"
+        style={{ objectPosition: coverObjectPosition(post) }}
         className={`h-full w-full object-cover ${zoom ? 'transition-transform duration-700 ease-out group-hover:scale-[1.04]' : ''} ${className}`}
       />
     )

@@ -32,6 +32,8 @@ export default function NewsHeroCard({ post, onOpen }) {
         <img
           src={post.coverImageUrl}
           alt=""
+          style={{ objectPosition: post.coverPosition ? `${post.coverPosition.x}% ${post.coverPosition.y}%` : '50% 50%' }}
+          draggable={false}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
       ) : (

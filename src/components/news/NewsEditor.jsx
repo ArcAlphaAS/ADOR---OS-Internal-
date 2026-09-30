@@ -17,6 +17,8 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
   const [title, setTitle] = useState(initial?.title || '')
   const [subtitle, setSubtitle] = useState(initial?.subtitle || '')
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl || '')
+  const [coverPosition, setCoverPosition] = useState(initial?.coverPosition || { x: 50, y: 50 })
+  const dragRef = useRef(null)
   const [body, setBody] = useState(initial?.body || '')
   const [pinned, setPinned] = useState(initial?.pinned || false)
   const [category, setCategory] = useState(initial?.category || '')
@@ -90,7 +92,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
   const save = (status) => {
     setFormError('')
     if (tooBig()) return setFormError('El anuncio pesa demasiado (demasiadas imágenes). Quita alguna o usa imágenes más livianas.')
-    const data = { title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), body, pinned, category, requireAck, status }
+    const data = { title: title.trim(), subtitle: subtitle.trim(), coverImageUrl: coverImageUrl.trim(), coverPosition, body, pinned, category, requireAck, status }
     if (status === 'scheduled') {
       const when = new Date(publishAt)
       if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() + 60_000) return setFormError('Elige una fecha y hora futuras para programarlo.')
@@ -159,7 +161,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
             <input type="file" accept="image/*" className="hidden" onChange={(e) => pickImage(e.target.files?.[0])} />
           </label>
           {coverImageUrl && (
-            <button type="button" onClick={() => setCoverImageUrl('')} className="px-2 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
+            <button type="button" onClick={() => { setCoverImageUrl(''); setCoverPosition({ x: 50, y: 50 }) }} className="px-2 text-[12.5px] text-[#8A8A8A] hover:text-[#EF5350]">
               Quitar
             </button>
           )}
@@ -177,7 +179,45 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
       </div>
 
       {(title || subtitle || coverImageUrl) && (
-        <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, pinned, category, createdAt: null }} />
+        <div className="flex flex-col gap-1.5">
+          {/* Drag the preview to choose which part of the photo stays in
+              view — the same crop every layout (portada, listas, tarjetas,
+              anuncio abierto) will use. */}
+          <div
+            className={coverImageUrl ? 'cursor-grab select-none active:cursor-grabbing' : ''}
+            style={{ touchAction: coverImageUrl ? 'none' : undefined }}
+            onPointerDown={(e) => {
+              if (!coverImageUrl) return
+              e.currentTarget.setPointerCapture(e.pointerId)
+              dragRef.current = { x: e.clientX, y: e.clientY, start: coverPosition, box: e.currentTarget.getBoundingClientRect() }
+            }}
+            onPointerMove={(e) => {
+              const d = dragRef.current
+              if (!d) return
+              // Dragging the photo right reveals more of its left side, so the
+              // focal point moves the opposite way; ×1.6 makes it feel direct.
+              const clamp = (v) => Math.max(0, Math.min(100, v))
+              setCoverPosition({
+                x: clamp(d.start.x - ((e.clientX - d.x) / d.box.width) * 160),
+                y: clamp(d.start.y - ((e.clientY - d.y) / d.box.height) * 160),
+              })
+            }}
+            onPointerUp={() => (dragRef.current = null)}
+            onPointerCancel={() => (dragRef.current = null)}
+          >
+            <NewsHeroCard post={{ title: title || 'Titular del anuncio', subtitle, coverImageUrl, coverPosition, pinned, category, createdAt: null }} />
+          </div>
+          {coverImageUrl && (
+            <div className="flex items-center gap-3 text-[12px] text-[#8A8A8A]">
+              <span>Arrastra la foto para elegir qué parte se ve.</span>
+              {(coverPosition.x !== 50 || coverPosition.y !== 50) && (
+                <button type="button" onClick={() => setCoverPosition({ x: 50, y: 50 })} className="text-[#E8C15A] hover:underline">
+                  Centrar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="flex flex-wrap items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1">

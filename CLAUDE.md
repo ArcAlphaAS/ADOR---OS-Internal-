@@ -852,6 +852,8 @@ Found while replacing a mistyped teammate email: removing access left the person
 - **Comunidad @mentions (2026-09-30):** typing @ in a post or a comment suggests people (`mentionCandidates`/`applyMention`/`resolveMentions`/`MentionMenu` in `CommunityParts.jsx`, built on the chat's `mentionQueryAt`); posts and comments store `mentions: [{uid,name}]` and `PostText` shows them in gold. Each mentioned person gets a `communityAlerts/{id}` doc (bell item, cleared when they open Comunidad) plus a push (`notifyCommunityMentions` in `lib/firestore.js`); if the post's author is also mentioned in a comment they get the mention push only (no duplicate "comentó").
 - **Kanban card right-click** reuses `TaskContextMenu` ("Agregar subtarea" opens the panel there); cards show `☑ done/total` and `💬 count`. **Timeline:** a "▸ N subtareas" toggle beside a bar unfolds each dated subtask into its own labelled row.
 
+- **News cover focal point (2026-09-30):** posts store `coverPosition {x, y}` (0–100, default 50/50). In `NewsEditor` the hero preview is draggable (pointer events; dragging the photo up shows its lower part) with a "Centrar" reset; `Cover` (`NewsLayout.jsx`, used by the featured story, lists, cards and the opened post) and `NewsHeroCard` apply it as `object-position`, so one crop follows the post everywhere. Position only — no zoom.
+
 - **Not built (needs the user):** push reminders of due/overdue tasks with the app closed need a server schedule — a Cloudflare Cron Trigger plus a Firebase service-account key as a Worker secret (same prerequisite as truly punctual scheduled posts/messages, §43). The bell still shows them.
 
 ## Next recommended steps (in priority order, as discussed with the user)
