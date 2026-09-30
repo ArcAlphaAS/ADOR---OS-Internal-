@@ -396,8 +396,20 @@ export function markOnboardingSeen(userId) {
 // every Auth user from the client. Instead each founder's own session
 // self-registers a lightweight directory entry on login (see App.jsx) —
 // enough to populate "Asociado responsable" pickers for a 3-person team.
+// Only people who still have access: a profile whose email is no longer in
+// allowedEmails (removed, or an email that was corrected) stays in `users`
+// forever, and would keep showing up in every picker, Workspace and the chat.
 export function subscribeUsers(onData) {
-  return subscribeToCollection(COLLECTIONS.users, [], onData)
+  let users = null
+  let allowed = null
+  const emit = () => {
+    if (!users || !allowed) return
+    const ok = new Set(allowed.map((a) => a.id.toLowerCase()))
+    onData(users.filter((u) => !u.email || ok.has(u.email.toLowerCase())))
+  }
+  const offUsers = subscribeToCollection(COLLECTIONS.users, [], (d) => { users = d; emit() })
+  const offAllowed = subscribeToCollection('allowedEmails', [], (d) => { allowed = d; emit() })
+  return () => { offUsers(); offAllowed() }
 }
 
 export function subscribeUserProfile(userId, onData) {
