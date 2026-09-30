@@ -35,12 +35,37 @@ export function priorityMeta(id) {
 // used by lib/firestore.js's applyTaskUpdate so every edit surface (Lista's
 // inline cells, the Task Detail Panel, Kanban drag-and-drop) leaves the same
 // kind of trail without each call site having to know the copy itself.
+// Tareas recurrentes: al completar una con `recurrence`, firestore.js crea la
+// siguiente con la fecha corrida (ver spawnRecurringTask).
+export const RECURRENCES = [
+  { id: 'daily', label: 'Cada día' },
+  { id: 'weekly', label: 'Cada semana' },
+  { id: 'biweekly', label: 'Cada 2 semanas' },
+  { id: 'monthly', label: 'Cada mes' },
+]
+export const recurrenceMeta = (id) => RECURRENCES.find((r) => r.id === id) || { id, label: id }
+
+export function advanceByRecurrence(date, recurrence) {
+  const d = new Date(date)
+  if (recurrence === 'daily') d.setDate(d.getDate() + 1)
+  else if (recurrence === 'weekly') d.setDate(d.getDate() + 7)
+  else if (recurrence === 'biweekly') d.setDate(d.getDate() + 14)
+  else if (recurrence === 'monthly') {
+    const day = d.getDate()
+    d.setDate(1)
+    d.setMonth(d.getMonth() + 1)
+    d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()))
+  }
+  return d
+}
+
 export function describeTaskChange(data) {
   if ('status' in data) return `Estado → ${statusMeta(data.status).label}`
   if ('priority' in data) return `Prioridad → ${priorityMeta(data.priority).label}`
   if ('assignedTo' in data) return 'Asignados actualizados'
   if ('startDate' in data || 'dueDate' in data) return 'Fechas actualizadas'
   if ('workstreamId' in data) return 'Proyecto actualizado'
+  if ('recurrence' in data) return data.recurrence ? `Repetición → ${recurrenceMeta(data.recurrence).label}` : 'Repetición quitada'
   if ('description' in data) return 'Descripción actualizada'
   if ('title' in data) return 'Título actualizado'
   return 'Tarea actualizada'

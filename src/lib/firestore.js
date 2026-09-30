@@ -27,7 +27,7 @@ import {
   arrayRemove,
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
-import { describeTaskChange } from './workspace'
+import { describeTaskChange, advanceByRecurrence, recurrenceMeta } from './workspace'
 import { describeKnowledgeChange } from './knowledge'
 
 // Central data model. Every entity references related entities by ID —
@@ -175,7 +175,7 @@ export function createTask(data, actorName, actorUserId) {
     createdAt: serverTimestamp(),
   }).then(async (ref) => {
     await addTaskHistoryEvent(ref.id, `Tarea creada por ${actorName}`)
-    pushNotify(pendingConfirmations, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: data.title || '', tag: `task:${ref.id}`, url: '/?open=workspace' }, { uid: actorUserId, name: actorName })
+    pushNotify(pendingConfirmations, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: data.title || '', tag: `task:${ref.id}`, url: `/?open=workspace&task=${ref.id}` }, { uid: actorUserId, name: actorName })
     return ref
   })
 }
@@ -185,12 +185,88 @@ export function updateTask(taskId, data) {
   return updateDoc(doc(db, COLLECTIONS.tasks, taskId), data)
 }
 
+// Al completar una tarea recurrente se crea la siguiente: misma info, misma
+// gente (ya confirmada), fecha límite corrida hasta quedar en hoy o después.
+// `recurrenceSpawned` en la completada evita duplicar si se reabre y vuelve a
+// completar.
+async function spawnRecurringTask(task, actorName) {
+  if (!db || !task.recurrence || task.recurrenceSpawned) return
+  await updateTask(task.id, { recurrenceSpawned: true })
+  try {
+    const base = task.dueDate?.toDate?.() || new Date()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let next = advanceByRecurrence(base, task.recurrence)
+    while (next < today) next = advanceByRecurrence(next, task.recurrence)
+    const shiftMs = next.getTime() - base.getTime()
+    const start = task.startDate?.toDate?.()
+    const ref = await addDoc(collection(db, COLLECTIONS.tasks), {
+      title: task.title,
+      description: task.description || '',
+      workstreamId: task.workstreamId || null,
+      priority: task.priority || 'media',
+      objetivoId: task.objetivoId || null,
+      recurrence: task.recurrence,
+      assignedTo: task.assignedTo || [],
+      pendingConfirmations: [],
+      status: 'por_hacer',
+      dueDate: next,
+      startDate: start ? new Date(start.getTime() + shiftMs) : null,
+      createdBy: actorName,
+      createdAt: serverTimestamp(),
+    })
+    await addTaskHistoryEvent(ref.id, `Tarea recurrente (${recurrenceMeta(task.recurrence).label.toLowerCase()}) creada al completar la anterior`)
+  } catch (error) {
+    await updateTask(task.id, { recurrenceSpawned: false }).catch(() => {})
+    throw error
+  }
+}
+
 export function toggleTaskComplete(task, actorName) {
   const completing = task.status !== 'completado'
   return updateTask(task.id, {
     status: completing ? 'completado' : 'por_hacer',
     completedAt: completing ? serverTimestamp() : null,
-  }).then(() => addTaskHistoryEvent(task.id, `${completing ? 'Marcada como completada' : 'Reabierta'} por ${actorName}`))
+  })
+    .then(() => addTaskHistoryEvent(task.id, `${completing ? 'Marcada como completada' : 'Reabierta'} por ${actorName}`))
+    .then(() => (completing ? spawnRecurringTask(task, actorName) : undefined))
+}
+
+// ---- Comentarios en tareas ----
+// tasks/{id}/comments, con `commentCount` en la tarea (mismo lote). Avisa
+// por push a quien tiene la tarea asignada y a quien se menciona con @.
+export function subscribeTaskComments(taskId, onData) {
+  if (!taskId) return () => {}
+  return subscribeToCollection(`${COLLECTIONS.tasks}/${taskId}/comments`, [orderBy('createdAt', 'asc')], onData)
+}
+
+export function addTaskComment(task, text, mentions, author) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  batch.set(doc(collection(db, COLLECTIONS.tasks, task.id, 'comments')), {
+    text,
+    mentions: mentions || [],
+    authorUid: author.uid,
+    authorName: author.name,
+    createdAt: serverTimestamp(),
+  })
+  batch.update(doc(db, COLLECTIONS.tasks, task.id), { commentCount: increment(1) })
+  return batch.commit().then((r) => {
+    const url = `/?open=workspace&task=${task.id}`
+    const mentioned = (mentions || []).map((m) => m.uid)
+    const others = (task.assignedTo || []).filter((u) => !mentioned.includes(u))
+    pushNotify(mentioned, { title: `@ ${firstWord(author.name)} te mencionó en una tarea`, body: `${task.title}: ${text}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
+    pushNotify(others, { title: `💬 ${firstWord(author.name)} comentó en una tarea`, body: `${task.title}: ${text}`.slice(0, 160), tag: `task:${task.id}`, url }, author)
+    return r
+  })
+}
+
+export function deleteTaskComment(taskId, commentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  const batch = writeBatch(db)
+  batch.delete(doc(db, COLLECTIONS.tasks, taskId, 'comments', commentId))
+  batch.update(doc(db, COLLECTIONS.tasks, taskId), { commentCount: increment(-1) })
+  return batch.commit()
 }
 
 export function deleteTask(taskId) {
@@ -249,8 +325,9 @@ export function applyTaskUpdate(task, data, actorUserId, actorName) {
   }
   const newlyAssigned = 'assignedTo' in data ? data.assignedTo.filter((uid) => !(task.assignedTo || []).includes(uid) && uid !== actorUserId) : []
   return updateTask(task.id, patch).then(() => {
-    pushNotify(newlyAssigned, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: task.title || '', tag: `task:${task.id}`, url: '/?open=workspace' }, { uid: actorUserId, name: actorName })
-    return addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`)
+    pushNotify(newlyAssigned, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: task.title || '', tag: `task:${task.id}`, url: `/?open=workspace&task=${task.id}` }, { uid: actorUserId, name: actorName })
+    const done = addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`)
+    return data.status === 'completado' && task.status !== 'completado' ? done.then(() => spawnRecurringTask(task, actorName)) : done
   })
 }
 
@@ -1296,6 +1373,7 @@ function previewOf(payload, authorUid, authorName) {
   if (!text && p.attachment?.kind === 'image') text = '📷 Imagen'
   if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
   if (!text && p.attachment?.kind === 'drive') text = `📎 ${p.attachment.name}`
+  if (!text && p.attachment?.kind === 'entity') text = `🔗 ${p.attachment.title}`
   if (!text && p.poll) text = `📊 Encuesta: ${p.poll.question}`.slice(0, 140)
   if (p.important) text = `❗ ${text}`
   return { text, authorUid, authorName }

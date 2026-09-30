@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
 import { getDraft, setDraft } from '../../lib/chatDrafts'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
+import ItemPicker from './ItemPicker'
 import { resizeImageToDataUrl } from '../../lib/image'
 import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
@@ -114,7 +115,7 @@ function useVoiceRecorder({ onDone, onError }) {
 // everyone in the conversation to confirm they read it).
 export default function Composer({ onSend, onError, onTyping, mentionCandidates = [], placeholder, compact, draftKey, replyTo, onCancelReply, onSchedule, canPoll, canMarkImportant }) {
   const [text, setText] = useState(() => getDraft(draftKey))
-  const [panel, setPanel] = useState(null) // 'more' | 'format' | 'emoji' | 'schedule' | 'poll' | null
+  const [panel, setPanel] = useState(null) // 'more' | 'format' | 'emoji' | 'schedule' | 'poll' | 'item' | null
   const [customAt, setCustomAt] = useState('')
   const [important, setImportant] = useState(false)
   // "Archivo de Google Drive": files stay in the company's Drive; the
@@ -367,6 +368,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
                 for (const f of files) onSend({ driveFile: f })
               },
             },
+            { id: 'item', icon: <span className="text-[13px]">🔗</span>, label: 'Tarea, cliente u objetivo', hint: 'Compártelo como tarjeta que se abre con un clic', onPick: () => setPanel('item') },
             canPoll && { id: 'poll', icon: <PollIcon size={14} />, label: 'Encuesta', hint: 'Pregunta rápida, todos votan con un clic', onPick: () => setPanel('poll') },
             canMarkImportant && {
               id: 'important',
@@ -404,6 +406,16 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               </button>
             ))}
         </div>
+      )}
+
+      {panel === 'item' && (
+        <ItemPicker
+          onClose={() => setPanel(null)}
+          onPick={(entity) => {
+            setPanel(null)
+            onSend({ entity })
+          }}
+        />
       )}
 
       {panel === 'format' && (

@@ -431,6 +431,8 @@ Last updated: 2026-09-29 (covers the long 2026-09-24 session: push notifications
 - [x] Removed/corrected people no longer appear in Workspace, chat or pickers; Administración → Personas has "Editar" (name; email until first login) and a "Restos de personas sin acceso" cleanup; Directorio tags fichas linked to accounts without access; Workspace's Asignado shows profile photos
 - [x] Comunidad: bell notifications for comments and RSVPs on your own posts (no push yet)
 - [x] Push notifications for task assignments and Comunidad comments/RSVPs; "Escribirle" button in the assignment popup; first-login profile prompt (name + photo). CLAUDE.md §46
+- [x] Recurring tasks ("Repetir"), comments with @mentions inside tasks, and chat cards for tasks/clients/objetivos (2026-09-30). CLAUDE.md §46
+- [ ] Push reminders of due tasks with the app closed — blocked on a Cloudflare Cron + Firebase service-account key (user step)
 - [ ] Untested live: needs the user's real session (edit email flow, cleanup, bell items, the new pushes, the profile prompt)
 
 **Scoped but not started:**

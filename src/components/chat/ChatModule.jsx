@@ -347,6 +347,9 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       } else if (draft.voice) {
         const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
         attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz' }
+      } else if (draft.entity) {
+        const e = draft.entity
+        attachment = { kind: 'entity', entityType: e.type, id: e.id, title: e.title, subtitle: e.subtitle || '' }
       } else if (draft.driveFile) {
         const f = draft.driveFile
         attachment = { kind: 'drive', name: f.name, url: f.url, fileId: f.fileId, mimeType: f.mimeType || '', iconUrl: f.iconUrl || null }
@@ -521,6 +524,11 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   }
 
   const openTask = (taskId) => onNavigate?.('workspace', { type: 'task', id: taskId })
+  const openEntity = (a) => {
+    if (a.entityType === 'task') openTask(a.id)
+    else if (a.entityType === 'client') onNavigate?.('clientes', { type: 'client', id: a.id })
+    else onNavigate?.('objetivos', null)
+  }
 
   const jumpToMessage = (id) => {
     const el = document.getElementById(`msg-${id}`)
@@ -810,6 +818,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onRemind={(m, at) => handleRemind(m, at)}
               onCreateTask={(m) => setTaskDraft({ message: m, parentId: null })}
               onOpenTask={openTask}
+              onOpenEntity={openEntity}
               onEdit={handleEditMessage}
               onDelete={handleDeleteMessage}
               onOpenProfile={(uid) => setPanel({ type: 'profile', uid })}
@@ -985,6 +994,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           onRemind={(m, at) => handleRemind(m, at, m.id === panel.parentId ? null : panel.parentId)}
           onCreateTask={(m) => setTaskDraft({ message: m, parentId: m.id === panel.parentId ? null : panel.parentId })}
           onOpenTask={openTask}
+          onOpenEntity={openEntity}
           onError={showToast}
         />
       )}

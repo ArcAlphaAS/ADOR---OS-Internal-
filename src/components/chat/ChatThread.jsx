@@ -58,7 +58,7 @@ function groupFlags(list) {
   })
 }
 
-export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
+export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const positionedRef = useRef(null) // conversationKey already positioned on open
@@ -195,6 +195,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
                   onRemind={onRemind ? (at) => onRemind(m, at) : null}
                   onCreateTask={onCreateTask ? () => onCreateTask(m) : null}
                   onOpenTask={onOpenTask}
+                  onOpenEntity={onOpenEntity}
                   onReply={onReply ? () => onReply(m) : null}
                   onForward={onForward ? () => onForward(m) : null}
                   onJump={onJump}

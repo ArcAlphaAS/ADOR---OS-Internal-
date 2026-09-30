@@ -165,7 +165,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   useEffect(() => {
     if (openLink) {
       const url = new URL(window.location.href)
-      for (const k of ['open', 'ct', 'cid', 'p', 'm', 't', 'nid', 'tab']) url.searchParams.delete(k)
+      for (const k of ['open', 'ct', 'cid', 'p', 'm', 't', 'nid', 'tab', 'task']) url.searchParams.delete(k)
       window.history.replaceState(null, '', url.pathname + url.search)
     }
     if (!('serviceWorker' in navigator)) return

@@ -35,7 +35,7 @@ export async function deliverMessage({ convType, convId, dmParticipants, partici
     ...(parentId ? { threadParentId: parentId } : {}),
   }
   const attachment = payload.attachment
-  const snippet = (payload.text || (attachment ? '📎 Archivo' : '')).slice(0, 200)
+  const snippet = (payload.text || (attachment?.kind === 'entity' ? `🔗 ${attachment.title}` : attachment ? '📎 Archivo' : '')).slice(0, 200)
 
   const snippetText = snippet || (payload.poll ? `📊 ${payload.poll.question}` : '')
   const notified = new Set([authorUid])

@@ -36,6 +36,7 @@ export default function ThreadPanel({
   onRemind,
   onCreateTask,
   onOpenTask,
+  onOpenEntity,
 }) {
   const [parent, setParent] = useState(undefined)
   const [replies, setReplies] = useState([])
@@ -84,6 +85,7 @@ export default function ThreadPanel({
     onRemind: onRemind ? (at) => onRemind(m, at) : null,
     onCreateTask: onCreateTask ? () => onCreateTask(m) : null,
     onOpenTask,
+    onOpenEntity,
   })
 
   return (

@@ -81,6 +81,29 @@ function RichText({ text, mentions, currentUid }) {
 // The official version of a document lives in Google Drive — this card is
 // how that distinction shows up in the thread: a Drive link reads as "the
 // record," a pasted image reads as "part of the conversation."
+// A task, client or objetivo shared from ADOR OS (attachment.kind 'entity'):
+// a card that opens the real thing.
+const ENTITY_META = { task: { emoji: '✅', label: 'Tarea' }, client: { emoji: '🏢', label: 'Cliente' }, objetivo: { emoji: '🎯', label: 'Objetivo' } }
+function EntityCard({ attachment, onOpen }) {
+  const meta = ENTITY_META[attachment.entityType] || ENTITY_META.task
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen?.(attachment)}
+      className="flex max-w-[320px] items-center gap-2.5 rounded-xl border border-[#B8860B]/40 bg-white/[0.04] px-3 py-2 text-left transition-colors hover:bg-white/[0.07]"
+    >
+      <span className="text-[18px]">{meta.emoji}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-[12.5px] font-medium text-[#F5F5F5]">{attachment.title}</span>
+        <span className="block text-[11px] text-[#B8860B]">
+          {meta.label}
+          {attachment.subtitle ? ` · ${attachment.subtitle}` : ''} · abrir
+        </span>
+      </span>
+    </button>
+  )
+}
+
 // A file picked from Google Drive (attachment.kind 'drive'): its real name
 // and type, opening in Drive.
 function DriveFileCard({ attachment }) {
@@ -477,7 +500,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -719,6 +742,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
           {message.attachment?.kind === 'drive' && <DriveFileCard attachment={message.attachment} />}
+          {message.attachment?.kind === 'entity' && <EntityCard attachment={message.attachment} onOpen={onOpenEntity} />}
           {showBubble && (
             <div
               className="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"

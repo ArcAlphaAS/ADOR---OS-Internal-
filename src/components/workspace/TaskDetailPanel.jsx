@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos } from '../../lib/firestore'
-import { STATUSES, PRIORITIES } from '../../lib/workspace'
+import { STATUSES, PRIORITIES, RECURRENCES } from '../../lib/workspace'
+import TaskComments from './TaskComments'
 import { quarterKey } from '../../lib/finance'
 import { CloseIcon } from '../icons'
 import AvatarStack from './AvatarStack'
@@ -207,6 +208,25 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
           <p className="-mt-4 text-[11px] text-[#444444]">La fecha de inicio es opcional — solo se usa para dibujar la duración en la vista Timeline.</p>
 
           <div>
+            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+              Repetir
+            </span>
+            <select
+              value={task.recurrence || ''}
+              onChange={(e) => applyUpdate({ recurrence: e.target.value || null })}
+              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
+            >
+              <option value="">No se repite</option>
+              {RECURRENCES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-[#444444]">Al completarla, se crea sola la siguiente con la fecha límite corrida.</p>
+          </div>
+
+          <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="font-medium text-[#444444]" style={labelStyle}>
                 Asignado a
@@ -232,6 +252,8 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
               ))}
             </div>
           </div>
+
+          <TaskComments task={task} users={users} userById={userById} actorUserId={actorUserId} actorName={actorName} />
 
           <div>
             <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
