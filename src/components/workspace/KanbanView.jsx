@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { applyTaskUpdate } from '../../lib/firestore'
 import { STATUSES, priorityMeta } from '../../lib/workspace'
 import AvatarStack from './AvatarStack'
+import TaskContextMenu from './TaskContextMenu'
 
 function formatDueDate(task) {
   const due = task.dueDate?.toDate?.()
@@ -10,12 +11,15 @@ function formatDueDate(task) {
   return due.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn, actorUserId, actorName }) {
+function TaskCard({ task, workstream, workstreams = [], userById, onOpen, resolveDropColumn, actorUserId, actorName }) {
+  const [menu, setMenu] = useState(null)
+  const subs = task.subtasks || []
   const priority = priorityMeta(task.priority)
   const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
   const dueLabel = formatDueDate(task)
 
   return (
+    <>
     <motion.div
       layout
       layoutId={task.id}
@@ -28,6 +32,10 @@ function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn, actor
         if (targetStatus && targetStatus !== task.status) applyTaskUpdate(task, { status: targetStatus }, actorUserId, actorName)
       }}
       onClick={() => onOpen(task)}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ x: e.clientX, y: e.clientY })
+      }}
       className="ador-glass ador-grain relative cursor-pointer rounded-xl border-l-[3px] p-3.5"
       style={{ borderLeftColor: accent }}
     >
@@ -43,11 +51,27 @@ function TaskCard({ task, workstream, userById, onOpen, resolveDropColumn, actor
           >
             {priority.label}
           </span>
-          {dueLabel && <span className="text-[11px] text-[#444444]">{dueLabel}</span>}
+          {dueLabel && <span className="text-[11px] text-[#666666]">{dueLabel}</span>}
+          {subs.length > 0 && <span className="text-[11px] text-[#777777]" title="Subtareas completadas">☑ {subs.filter((s) => s.done).length}/{subs.length}</span>}
+          {task.commentCount > 0 && <span className="text-[11px] text-[#E8C15A]" title="Actualizaciones">💬 {task.commentCount}</span>}
         </div>
         <AvatarStack userIds={task.assignedTo || []} userById={userById} pendingIds={task.pendingConfirmations || []} size={20} />
       </div>
     </motion.div>
+    {menu && (
+      <TaskContextMenu
+        task={task}
+        x={menu.x}
+        y={menu.y}
+        workstreams={workstreams}
+        actorUserId={actorUserId}
+        actorName={actorName}
+        onClose={() => setMenu(null)}
+        onOpen={onOpen}
+        onAddSubtask={() => onOpen(task)}
+      />
+    )}
+    </>
   )
 }
 
@@ -79,6 +103,7 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
               key={task.id}
               task={task}
               workstream={workstreamById[task.workstreamId]}
+              workstreams={Object.values(workstreamById)}
               userById={userById}
               onOpen={onOpenTask}
               resolveDropColumn={resolveDropColumn}

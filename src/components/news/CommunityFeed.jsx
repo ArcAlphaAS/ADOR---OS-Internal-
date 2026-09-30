@@ -18,7 +18,7 @@ import { resizeImageToDataUrl } from '../../lib/image'
 import { useToast } from '../../hooks/useToast'
 import PersonAvatar, { ChatPeopleContext } from '../chat/PersonAvatar'
 import { SERIF } from './NewsLayout'
-import { EventFields, HonoreePicker, ResourceFields, EventBlock, AchievementBlock, ResourceCard, IdeaBar, PostText } from './CommunityParts'
+import { EventFields, HonoreePicker, ResourceFields, EventBlock, AchievementBlock, ResourceCard, IdeaBar, PostText, MentionMenu, mentionCandidates, applyMention, resolveMentions } from './CommunityParts'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { UsersIcon, CalendarIcon, FileIcon, ImageIcon, BookmarkIcon, MessageIcon, CloseIcon } from '../icons'
 
@@ -85,6 +85,7 @@ function Composer({ user, actorName }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [text, setText] = useState('')
+  const [caret, setCaret] = useState(0)
   const [type, setType] = useState('actualizacion')
   const [images, setImages] = useState([])
   const [saving, setSaving] = useState(false)
@@ -132,7 +133,7 @@ function Composer({ user, actorName }) {
     if (images.reduce((n, u) => n + u.length, 0) > 850_000) return showToast('Las fotos pesan demasiado juntas — quita alguna.')
     setSaving(true)
     try {
-      await withTimeout(createCommunityPost({ text: text.trim(), title: title.trim(), type, images, event: type === 'evento' ? event : null, honorees: type === 'logro' ? honorees : [], resource: type === 'recurso' ? resource : null }, user.uid, actorName))
+      await withTimeout(createCommunityPost({ text: text.trim(), title: title.trim(), type, images, mentions: resolveMentions(text, users, user?.uid), event: type === 'evento' ? event : null, honorees: type === 'logro' ? honorees : [], resource: type === 'recurso' ? resource : null }, user.uid, actorName))
       reset()
     } catch (error) {
       showToast(`No se pudo publicar: ${error.message}`)
@@ -155,10 +156,23 @@ function Composer({ user, actorName }) {
               style={SERIF}
             />
           )}
+          <div className="relative">
+            <MentionMenu
+              people={mentionCandidates(users, user?.uid, text, caret)}
+              onPick={(u) => {
+                const r = applyMention(text, caret, u)
+                setText(r.text)
+                setCaret(r.caret)
+              }}
+            />
           <textarea
             value={text}
             onFocus={() => setOpen(true)}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value)
+              setCaret(e.target.selectionStart)
+            }}
+            onSelect={(e) => setCaret(e.target.selectionStart)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
             }}
@@ -166,6 +180,7 @@ function Composer({ user, actorName }) {
             rows={open ? 3 : 1}
             className="w-full resize-none rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
           />
+          </div>
           {open && type === 'evento' && (
             <div className="mt-2">
               <EventFields value={event} onChange={setEvent} />
@@ -260,6 +275,8 @@ function Photos({ images, onOpen }) {
 function Comments({ post, user, actorName, canModerate, canAccept }) {
   const [comments, setComments] = useState([])
   const [text, setText] = useState('')
+  const [caret, setCaret] = useState(0)
+  const { users } = useMemoPeople()
   const showToast = useToast()
   useEffect(() => subscribeCommunityComments(post.id, setComments), [post.id])
 
@@ -267,7 +284,7 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
     if (!text.trim()) return
     const value = text.trim()
     setText('')
-    withTimeout(addCommunityComment(post.id, value, user.uid, actorName, post)).catch((e) => showToast(`No se pudo comentar: ${e.message}`))
+    withTimeout(addCommunityComment(post.id, value, user.uid, actorName, post, resolveMentions(value, users, user?.uid))).catch((e) => showToast(`No se pudo comentar: ${e.message}`))
   }
 
   return (
@@ -280,7 +297,7 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
             <p className="text-[12.5px] font-semibold text-[#E5E5E5]">
               {c.authorName} <span className="font-normal text-[#7A7A7A]">· {timeAgo(c.createdAt)}</span>
             </p>
-            <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]">{c.text}</p>
+            <PostText text={c.text} mentions={c.mentions} className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]" />
             {canAccept && c.authorUid !== user?.uid && (
               <button
                 type="button"
@@ -300,13 +317,27 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
       ))}
       <div className="flex items-center gap-2.5">
         <PersonAvatar uid={user?.uid} name={actorName} size={28} />
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Escribe un comentario…"
-          className="min-w-0 flex-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
-        />
+        <div className="relative min-w-0 flex-1">
+          <MentionMenu
+            people={mentionCandidates(users, user?.uid, text, caret)}
+            onPick={(u) => {
+              const r = applyMention(text, caret, u)
+              setText(r.text)
+              setCaret(r.caret)
+            }}
+          />
+          <input
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value)
+              setCaret(e.target.selectionStart)
+            }}
+            onSelect={(e) => setCaret(e.target.selectionStart)}
+            onKeyDown={(e) => e.key === 'Enter' && mentionCandidates(users, user?.uid, text, caret).length === 0 && send()}
+            placeholder="Escribe un comentario… (@ para mencionar)"
+            className="w-full rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
+          />
+        </div>
         {text.trim() && (
           <button type="button" onClick={send} className="text-[13px] font-medium text-[#E8C15A]">
             Enviar
@@ -382,7 +413,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
           {post.title}
         </h3>
       )}
-      {post.text && <PostText text={post.text} onTag={onTag} className="-mt-1 whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#D5D5D5]" />}
+      {post.text && <PostText text={post.text} mentions={post.mentions} onTag={onTag} className="-mt-1 whitespace-pre-wrap text-[14.5px] leading-relaxed text-[#D5D5D5]" />}
 
       {post.type === 'logro' && <AchievementBlock post={post} />}
       {post.type === 'evento' && <EventBlock post={post} uid={uid} name={actorName} />}

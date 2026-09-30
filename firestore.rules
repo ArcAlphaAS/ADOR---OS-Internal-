@@ -75,6 +75,10 @@ service cloud.firestore {
     match /proyectosInternos/{id} { allow read, write: if isAllowed(); }
     // Bell alerts for @mentions / comments on tasks: written by whoever comments,
     // read and cleared only by the person they're for.
+    match /communityAlerts/{id} {
+      allow create: if canUse('news');
+      allow read, update: if canUse('news') && resource.data.toUid == request.auth.uid;
+    }
     match /taskAlerts/{id} {
       allow create: if isAllowed();
       allow read, update: if isAllowed() && resource.data.toUid == request.auth.uid;

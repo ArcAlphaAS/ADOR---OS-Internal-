@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { setCommunityRsvp, toggleCommunityVote, updateCommunityPost } from '../../lib/firestore'
 import PersonAvatar from '../chat/PersonAvatar'
+import { mentionQueryAt } from '../../lib/chat'
 import { SERIF } from './NewsLayout'
 import { CalendarIcon, FileIcon } from '../icons'
 
@@ -310,13 +311,55 @@ export function IdeaBar({ post, uid, isAdminUser }) {
   )
 }
 
-// Text with clickable #hashtags (they fill the search box) and links.
-export function PostText({ text, onTag, className }) {
-  const parts = text.split(/(#[\p{L}\p{N}_]+|https?:\/\/\S+)/u)
+// ---- @menciones (posts y comentarios) ----
+// Same rule as the chat and task updates: typing "@par" right before the
+// cursor suggests people; the text keeps "@Nombre Apellido" and the post/
+// comment stores `mentions: [{uid, name}]` for whoever is actually named.
+const mentionLabel = (u) => u.displayName || u.email || 'Usuario'
+export function mentionCandidates(users, selfUid, text, caret) {
+  const at = mentionQueryAt(text, caret)
+  if (!at) return []
+  const q = at.query.toLowerCase().replace(/\s+/g, '')
+  return users.filter((u) => u.id !== selfUid && mentionLabel(u).toLowerCase().replace(/\s+/g, '').includes(q)).slice(0, 5)
+}
+export function applyMention(text, caret, user) {
+  const at = mentionQueryAt(text, caret)
+  if (!at) return { text, caret }
+  const insert = `@${mentionLabel(user)} `
+  const next = text.slice(0, at.start) + insert + text.slice(caret)
+  return { text: next, caret: at.start + insert.length }
+}
+export function resolveMentions(text, users, selfUid) {
+  return users.filter((u) => u.id !== selfUid && text.includes(`@${mentionLabel(u)}`)).map((u) => ({ uid: u.id, name: mentionLabel(u) }))
+}
+export function MentionMenu({ people, onPick }) {
+  if (!people.length) return null
+  return (
+    <div className="absolute bottom-full left-0 z-20 mb-1 w-[240px] max-w-full overflow-hidden rounded-xl border border-white/[0.1] bg-[#1A1A1A] p-1 shadow-xl">
+      {people.map((u) => (
+        <button key={u.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onPick(u)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] text-[#F5F5F5] hover:bg-white/[0.06]">
+          <PersonAvatar uid={u.id} name={mentionLabel(u)} size={20} />
+          {mentionLabel(u)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// Text with clickable #hashtags (they fill the search box), links, and the
+// @mentions of people actually named (`mentions`), in gold.
+export function PostText({ text, onTag, className, mentions = [] }) {
+  const names = mentions.map((m) => m.name).filter(Boolean).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const re = new RegExp(`(${names.length ? `@(?:${names.join('|')})|` : ''}#[\\p{L}\\p{N}_]+|https?:\\/\\/\\S+)`, 'u')
+  const parts = text.split(re)
   return (
     <p className={className}>
       {parts.map((part, i) =>
-        part.startsWith('#') && part.length > 1 ? (
+        part.startsWith('@') && mentions.some((m) => part === `@${m.name}`) ? (
+          <span key={i} className="font-medium text-[#E8C15A]">
+            {part}
+          </span>
+        ) : part.startsWith('#') && part.length > 1 ? (
           <button key={i} type="button" onClick={() => onTag?.(part)} className="font-medium text-[#E8C15A] hover:underline">
             {part}
           </button>

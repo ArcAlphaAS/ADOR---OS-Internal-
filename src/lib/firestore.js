@@ -1209,6 +1209,38 @@ export function subscribeCommunityPosts(onData) {
 // (posts from before types/titles/photos existed). `type` is one of
 // COMMUNITY_TYPES in components/news/CommunityFeed.jsx; `images` are small
 // data URLs (≤3, compressed on the device — no Storage needed).
+// @mentions in Comunidad (posts and comments): a bell alert per person
+// (`communityAlerts`, cleared when they open Comunidad) plus a push.
+function notifyCommunityMentions({ postId, postTitle, text, mentions, author }) {
+  const targets = (mentions || []).filter((m) => m.uid && m.uid !== author.uid)
+  if (!targets.length || !db) return
+  const batch = writeBatch(db)
+  for (const m of targets) {
+    batch.set(doc(collection(db, 'communityAlerts')), { toUid: m.uid, postId, postTitle: postTitle || '', fromName: author.name, text: (text || '').slice(0, 140), read: false, createdAt: serverTimestamp() })
+  }
+  batch.commit().catch(() => {})
+  pushNotify(targets.map((m) => m.uid), { title: `@ ${firstWord(author.name)} te mencionó en Comunidad`, body: (text || postTitle || '').slice(0, 140), tag: `community:${postId}`, url: '/?open=news&tab=community' }, author)
+}
+
+export function subscribeCommunityAlerts(uid, onData) {
+  if (!uid) return () => {}
+  return subscribeToCollection('communityAlerts', [where('toUid', '==', uid), where('read', '==', false)], onData)
+}
+
+export function markCommunityAlertRead(id) {
+  if (!db) return Promise.resolve()
+  return updateDoc(doc(db, 'communityAlerts', id), { read: true })
+}
+
+export async function clearCommunityAlerts(uid) {
+  if (!db || !uid) return
+  const snap = await getDocs(query(collection(db, 'communityAlerts'), where('toUid', '==', uid), where('read', '==', false)))
+  if (snap.empty) return
+  const batch = writeBatch(db)
+  snap.docs.forEach((d) => batch.update(d.ref, { read: true }))
+  await batch.commit()
+}
+
 export function createCommunityPost(payload, actorUid, actorName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const p = typeof payload === 'string' ? { text: payload } : payload
@@ -1225,11 +1257,15 @@ export function createCommunityPost(payload, actorUid, actorName) {
     ...(p.honorees?.length ? { honorees: p.honorees } : {}),
     ...(p.resource ? { resource: p.resource } : {}),
     ...(p.type === 'idea' ? { votes: [], ideaStatus: 'nueva' } : {}),
+    mentions: p.mentions || [],
     authorUid: actorUid,
     authorName: actorName,
     reactions: {},
     commentCount: 0,
     createdAt: serverTimestamp(),
+  }).then((ref) => {
+    notifyCommunityMentions({ postId: ref.id, postTitle: p.title || p.text?.slice(0, 40), text: p.text, mentions: p.mentions, author: { uid: actorUid, name: actorName } })
+    return ref
   })
 }
 
@@ -1270,14 +1306,16 @@ export function subscribeCommunityComments(postId, onData) {
   return subscribeToCollection(`${COLLECTIONS.communityPosts}/${postId}/comments`, [orderBy('createdAt', 'asc')], onData)
 }
 
-export function addCommunityComment(postId, text, uid, name, post) {
+export function addCommunityComment(postId, text, uid, name, post, mentions = []) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   const batch = writeBatch(db)
-  batch.set(doc(collection(db, COLLECTIONS.communityPosts, postId, 'comments')), { text, authorUid: uid, authorName: name, createdAt: serverTimestamp() })
+  batch.set(doc(collection(db, COLLECTIONS.communityPosts, postId, 'comments')), { text, mentions, authorUid: uid, authorName: name, createdAt: serverTimestamp() })
   // lastActivity alimenta la campana de quien escribió la publicación.
   batch.update(doc(db, COLLECTIONS.communityPosts, postId), { commentCount: increment(1), lastActivity: { kind: 'comment', uid, name, at: serverTimestamp() } })
   return batch.commit().then((r) => {
-    if (post?.authorUid) pushNotify([post.authorUid], { title: `💬 ${firstWord(name)} comentó en tu publicación`, body: text.slice(0, 140), tag: `community:${postId}`, url: '/?open=news&tab=community' }, { uid, name })
+    notifyCommunityMentions({ postId, postTitle: post?.title || post?.text?.slice(0, 40), text, mentions, author: { uid, name } })
+    // If the author is also @mentioned they already got the mention push.
+    if (post?.authorUid && !mentions.some((m) => m.uid === post.authorUid)) pushNotify([post.authorUid], { title: `💬 ${firstWord(name)} comentó en tu publicación`, body: text.slice(0, 140), tag: `community:${postId}`, url: '/?open=news&tab=community' }, { uid, name })
     return r
   })
 }

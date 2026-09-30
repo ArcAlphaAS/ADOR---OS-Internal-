@@ -117,6 +117,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
   const canDrag = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
   const [drag, setDrag] = useState(null) // { task, mode, startX, origStart, origEnd, deltaDays, moved }
   const [links, setLinks] = useState([]) // dependency arrows, measured from the DOM
+  const [openSubs, setOpenSubs] = useState(() => new Set()) // tasks whose subtasks are unfolded into their own rows
   const trackRef = useRef(null)
   const dragRef = useRef(null)
   const [range, setRange] = useState('semana')
@@ -357,7 +358,8 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                       const dated = (task.subtasks || []).filter((x) => x.dueDate)
 
                       return (
-                        <div key={task.id} data-task-row={task.id} className="relative h-9">
+                        <div key={task.id} className="flex flex-col gap-1">
+                        <div data-task-row={task.id} className="relative h-9">
                           {isMilestone ? (
                             <div
                               className={`absolute flex items-center gap-2 ${canDrag ? 'cursor-grab' : 'cursor-pointer'} ${dragging ? 'cursor-grabbing' : ''}`}
@@ -404,7 +406,26 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                           )}
 
                           {/* Dated subtasks: thin capsules along the bar's lower
-                              edge, green once done. */}
+                              edge, green once done. The "▸ N subtareas" toggle
+                              unfolds each one into its own labelled row. */}
+                          {dated.length > 0 && (
+                            <button
+                              type="button"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenSubs((cur) => {
+                                  const next = new Set(cur)
+                                  next.has(task.id) ? next.delete(task.id) : next.add(task.id)
+                                  return next
+                                })
+                              }}
+                              className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] text-[#999999] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+                              style={{ left: (isMilestone ? left + 24 + task.title.length * 7.2 : left + width) + 8 }}
+                            >
+                              {openSubs.has(task.id) ? '▾' : '▸'} {dated.length} {dated.length === 1 ? 'subtarea' : 'subtareas'}
+                            </button>
+                          )}
                           {dated.map((sub) => {
                             const sEnd = startOfDay(new Date(`${sub.dueDate}T00:00:00`))
                             const sStart = sub.startDate ? startOfDay(new Date(`${sub.startDate}T00:00:00`)) : sEnd
@@ -434,6 +455,28 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                               {canDrag && !dragging && <div className="text-[10.5px] text-[#555555]">Arrastra para mover · estira los bordes para cambiar la duración</div>}
                             </div>
                           )}
+                        </div>
+
+                        {openSubs.has(task.id) &&
+                          dated.map((sub) => {
+                            const sEnd = startOfDay(new Date(`${sub.dueDate}T00:00:00`))
+                            const sStart = sub.startDate ? startOfDay(new Date(`${sub.startDate}T00:00:00`)) : sEnd
+                            const sl = dateToX(sStart)
+                            const sw = Math.max(70, dateToX(sEnd) - dateToX(sStart))
+                            return (
+                              <div key={sub.id} className="relative h-6">
+                                <div
+                                  className="absolute flex h-6 items-center overflow-hidden rounded-full border px-2.5"
+                                  style={{ left: sl, width: sw, borderColor: sub.done ? '#4CAF5055' : '#E8C15A55', background: sub.done ? '#4CAF5022' : '#E8C15A1F' }}
+                                  title={`${sub.title} · ${shortDate(sStart)}${sub.startDate ? ` → ${shortDate(sEnd)}` : ''}`}
+                                >
+                                  <span className="truncate text-[11.5px]" style={{ color: sub.done ? '#8FD19A' : '#EBDDB0', textDecoration: sub.done ? 'line-through' : 'none' }}>
+                                    {sub.title}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )
                     })}
