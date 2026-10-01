@@ -454,3 +454,26 @@ export function mentionVerb(kind) {
   if (kind === 'reply') return 'respondió en un hilo de'
   return 'te mencionó en'
 }
+
+// ---- Mensajes de solo emoji y horas cortas (lista de conversaciones) ----
+
+// 1–3 emoji and nothing else: shown big and without a bubble, like iMessage.
+export function isEmojiOnly(text) {
+  const t = (text || '').trim()
+  if (!t || t.length > 32 || /[\p{L}\p{N}]/u.test(t)) return false
+  const parts = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t)].map((s) => s.segment).filter((s) => s.trim()) : [...t].filter((s) => s.trim())
+  return parts.length >= 1 && parts.length <= 3 && parts.every((g) => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(g))
+}
+
+// "15:30" today, "Ayer", "lun", or "3 oct" — for the preview rows in the sidebar.
+export function shortTime(ts) {
+  const d = ts?.toDate?.()
+  if (!d) return ''
+  const now = new Date()
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((start(now) - start(d)) / 86400000)
+  if (days <= 0) return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
+  if (days === 1) return 'Ayer'
+  if (days < 7) return d.toLocaleDateString('es', { weekday: 'short' }).replace('.', '')
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '')
+}

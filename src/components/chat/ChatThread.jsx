@@ -145,6 +145,21 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
     onLoadMore()
   }
 
+  // Photos sent one after another by the same person (same block) are shown
+  // as one grid, anchored on the last of them (it carries time, ticks, actions).
+  const isImageOnly = (m) => m.attachment?.kind === 'image' && !m.attachment.expired && !m.text && !m.replyTo && !m.poll && !m.call && !m.forwarded && !m.important
+  const albumAt = new Map()
+  const skipIdx = new Set()
+  for (let i = 0; i < shown.length; i++) {
+    if (skipIdx.has(i) || !isImageOnly(shown[i])) continue
+    let j = i
+    while (j + 1 < shown.length && isImageOnly(shown[j + 1]) && shown[j + 1].authorUid === shown[i].authorUid && !flags[j].end) j++
+    if (j > i) {
+      albumAt.set(i, { to: j, msgs: shown.slice(i, j + 1) })
+      for (let k = i + 1; k <= j; k++) skipIdx.add(k)
+    }
+  }
+
   let lastDay = null
 
   return (
@@ -166,12 +181,16 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
           <p className="text-[13.5px] text-[#7A7A7A]">Sin mensajes todavía — escribe el primero.</p>
         </div>
       ) : (
-        shown.map((m, i) => {
+        shown.map((mi, i) => {
+          if (skipIdx.has(i)) return null
+          const al = albumAt.get(i)
+          const m = al ? shown[al.to] : mi
           const mine = m.authorUid === currentUid
           const key = dayKey(m.createdAt)
           const showDivider = key && key !== lastDay
           lastDay = key
-          const { start, end } = flags[i]
+          const { start } = flags[i]
+          const end = al ? flags[al.to].end : flags[i].end
           const gap = i === 0 ? 0 : start || showDivider ? 14 : 3
           return (
             <div key={m.id} id={`msg-${m.id}`} className={`flex flex-col ${isNew(m.id) ? 'ador-msg-in' : ''}`} style={{ marginTop: gap }}>
@@ -180,6 +199,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
               <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                 <MessageBubble
                   message={m}
+                  album={al?.msgs}
                   mine={mine}
                   groupStart={start || showDivider || i === firstNewIndex}
                   groupEnd={end}

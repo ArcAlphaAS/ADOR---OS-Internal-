@@ -29,6 +29,32 @@ function ToolButton({ title, onClick, active, disabled, children }) {
   )
 }
 
+// The recording's real shape, ~36 bars (0–100), measured by decoding the
+// audio — stored on the message so the player can draw a true waveform.
+// Best effort: if the browser can't decode it the note just has no waveform.
+async function computePeaks(blob, bars = 36) {
+  const AC = window.AudioContext || window.webkitAudioContext
+  if (!AC) return null
+  const ctx = new AC()
+  try {
+    const buf = await ctx.decodeAudioData(await blob.arrayBuffer())
+    const data = buf.getChannelData(0)
+    const size = Math.max(1, Math.floor(data.length / bars))
+    const raw = []
+    for (let i = 0; i < bars; i++) {
+      let max = 0
+      for (let j = i * size; j < Math.min(data.length, (i + 1) * size); j++) max = Math.max(max, Math.abs(data[j]))
+      raw.push(max)
+    }
+    const top = Math.max(...raw) || 1
+    return raw.map((v) => Math.round((v / top) * 100))
+  } catch {
+    return null
+  } finally {
+    ctx.close?.().catch(() => {})
+  }
+}
+
 function useVoiceRecorder({ onDone, onError }) {
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -55,12 +81,14 @@ function useVoiceRecorder({ onDone, onError }) {
       if (cancelRef.current) return
       const duration = (Date.now() - startedAt) / 1000
       if (duration < 1) return
+      const blob = new Blob(chunks, { type: rec.mimeType })
       const reader = new FileReader()
-      reader.onload = () => {
+      reader.onload = async () => {
         if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
-        onDone({ dataUrl: reader.result, duration })
+        const peaks = await computePeaks(blob)
+        onDone({ dataUrl: reader.result, duration, peaks })
       }
-      reader.readAsDataURL(new Blob(chunks, { type: rec.mimeType }))
+      reader.readAsDataURL(blob)
     }
     rec.start()
     recRef.current = rec

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults } from '../../lib/chat'
+import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 import MessageActionSheet from './MessageActionSheet'
+import MessageContextMenu from './MessageContextMenu'
 import { isTouchLayout } from '../../lib/motion'
 import { driveFileKind } from '../../lib/googleDrive'
 
@@ -174,6 +175,24 @@ function ImageAttachment({ attachment, onOpen }) {
   )
 }
 
+// Several photos sent one after another by the same person show as one grid
+// (ChatThread merges them); each cell opens that photo in the lightbox.
+function ImageAlbum({ attachments, onOpen }) {
+  const shown = attachments.slice(0, 4)
+  const extra = attachments.length - shown.length
+  const cols = shown.length === 2 ? 'grid-cols-2' : 'grid-cols-2'
+  return (
+    <div className={`grid w-[min(300px,100%)] gap-1 overflow-hidden rounded-xl ${cols}`}>
+      {shown.map((a, i) => (
+        <button key={i} type="button" onClick={() => onOpen(a)} className={`relative block overflow-hidden ${shown.length === 3 && i === 0 ? 'col-span-2' : ''}`} style={{ aspectRatio: shown.length === 3 && i === 0 ? '2 / 1' : '1 / 1' }}>
+          <img src={a.thumbUrl || a.dataUrl} alt={a.name || 'Imagen'} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.04]" />
+          {extra > 0 && i === shown.length - 1 && <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-[20px] font-semibold text-white">+{extra}</span>}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function VoiceNote({ attachment, mine }) {
   if (attachment.expired) return <ExpiredAttachment attachment={attachment} />
   return <VoicePlayer attachment={attachment} mine={mine} />
@@ -209,13 +228,23 @@ function VoicePlayer({ attachment, mine }) {
   }
 
   return (
-    <div className="flex w-[240px] items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
+    <div className="flex w-[260px] max-w-full items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
       <button type="button" onClick={toggle} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.15] text-white">
         {state === 'playing' ? <PauseIcon size={14} /> : state === 'loading' ? <span className="h-3 w-3 animate-spin rounded-full border border-white/60 border-t-transparent" /> : <PlayIcon size={12} />}
       </button>
-      <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.2]">
-        <div className="h-full rounded-full bg-white transition-[width] duration-200" style={{ width: `${Math.min(100, progress * 100)}%` }} />
-      </div>
+      {attachment.peaks?.length ? (
+        // The real shape of the recording (measured when it was made), played
+        // bars go white.
+        <div className="flex h-7 flex-1 items-center gap-[2px]">
+          {attachment.peaks.map((p, i) => (
+            <span key={i} className="w-[2px] flex-1 rounded-full transition-colors duration-150" style={{ height: `${Math.max(12, p)}%`, background: i / attachment.peaks.length < progress ? '#FFFFFF' : 'rgba(255,255,255,0.3)' }} />
+          ))}
+        </div>
+      ) : (
+        <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.2]">
+          <div className="h-full rounded-full bg-white transition-[width] duration-200" style={{ width: `${Math.min(100, progress * 100)}%` }} />
+        </div>
+      )}
       <span className="flex-shrink-0 text-[11px] text-white/80">{formatDuration(attachment.duration)}</span>
     </div>
   )
@@ -255,7 +284,11 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
 
   const video = call.type === 'video'
   const tone = CALL_TONE[state.key] || CALL_TONE.unknown
-  const canJoin = !callDoc || state.key === 'ringing' || state.key === 'active'
+  // An old card (no live listener) or a finished call is just a quiet line —
+  // a green "Unirse" on a call from hours ago reads as if it were still on.
+  const stale = Boolean(createdAt?.toMillis && Date.now() - createdAt.toMillis() > 3 * 60 * 60 * 1000)
+  const finished = ['ended', 'missed', 'declined', 'cancelled'].includes(state.key) || (stale && !callDoc)
+  const canJoin = !finished && (!callDoc || state.key === 'ringing' || state.key === 'active')
   const joined = callDoc?.joinedUids?.includes(currentUid)
   const title = `${video ? 'Videollamada' : 'Llamada'}${state.label && state.key !== 'unknown' ? ` ${state.label}` : ''}`
   const subtitle =
@@ -266,6 +299,19 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
   const join = () => {
     if (call.callId && !joined) respondToChatCall(call.callId, currentUid, 'joined').catch(() => {})
     window.open(call.url, '_blank', 'noopener,noreferrer')
+  }
+
+  if (finished) {
+    const bad = state.key === 'missed' || state.key === 'declined'
+    const label = state.label && state.key !== 'unknown' ? state.label : 'terminó'
+    return (
+      <div className="flex w-fit max-w-full items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] py-1.5 pl-2.5 pr-3.5 text-[12px]" style={{ color: bad ? '#EF8A88' : '#9A9A9A' }}>
+        {video ? <VideoIcon size={13} /> : <PhoneIcon size={13} />}
+        <span className="truncate">
+          {video ? 'Videollamada' : 'Llamada'} · {label}
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -285,7 +331,7 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
       {(canJoin || (mine && state.key === 'ringing')) && (
         <div className="flex items-center gap-2">
           {canJoin && (
-            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-white" style={{ background: '#4CAF50' }}>
+            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold" style={{ background: '#E8C15A', color: '#1C1A16' }}>
               {joined ? 'Volver a la llamada' : 'Unirse'}
             </button>
           )}
@@ -500,8 +546,10 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids, album }) {
   const [editing, setEditing] = useState(false)
+  const [ctx, setCtx] = useState(null) // desktop right-click position
+  const [swipe, setSwipe] = useState(0) // phones: swipe right to reply
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [picking, setPicking] = useState(false)
@@ -514,16 +562,36 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   const startPress = (e) => {
     if (!touch) return
     const t = e.touches?.[0]
+    swipeRef.current = { x: t?.clientX, y: t?.clientY, locked: false }
     press.current = { x: t?.clientX, y: t?.clientY, timer: setTimeout(() => {
       press.current = null
       navigator.vibrate?.(10)
       setSheet(true)
     }, 420) }
   }
+  const swipeRef = useRef(null)
   const movePress = (e) => {
     const p = press.current
     const t = e.touches?.[0]
     if (p && t && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 8) cancelPress()
+    // Mostly-horizontal drag to the right = swipe to reply (WhatsApp/iMessage).
+    const s = swipeRef.current
+    if (s && t && onReply) {
+      const dx = t.clientX - s.x
+      const dy = t.clientY - s.y
+      if (!s.locked && dx > 10 && dx > Math.abs(dy) * 1.6) s.locked = true
+      if (s.locked) setSwipe(Math.max(0, Math.min(72, dx)))
+    }
+  }
+  const endPress = () => {
+    cancelPress()
+    const s = swipeRef.current
+    swipeRef.current = null
+    if (s?.locked && swipe >= 56 && onReply) {
+      navigator.vibrate?.(10)
+      onReply()
+    }
+    setSwipe(0)
   }
   const cancelPress = () => {
     if (press.current) clearTimeout(press.current.timer)
@@ -534,6 +602,9 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   // A message that's nothing but a Drive link shows just the card — the
   // raw URL in a bubble above it would say the same thing twice.
   const showBubble = hasText && message.text.trim() !== driveUrl
+  // 1–3 emoji and nothing else: big, no bubble (a reply or an important
+  // flag still needs the bubble to carry its marker).
+  const emojiOnly = showBubble && isEmojiOnly(message.text) && !message.replyTo && !message.important
 
   if (editing) {
     return (
@@ -573,6 +644,19 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       </div>
     )
   }
+
+  const messageOptions = [
+    onReply && { label: 'Responder', onClick: onReply },
+    onOpenThread && { label: 'Responder en hilo', onClick: onOpenThread },
+    hasText && { label: 'Copiar texto', onClick: () => navigator.clipboard?.writeText(message.text).catch(() => {}) },
+    { label: saved ? 'Quitar de guardados' : 'Guardar', onClick: onToggleSave },
+    onForward && !message.call && !message.poll && { label: 'Reenviar', onClick: onForward },
+    onTogglePin && { label: pinned ? 'Desfijar' : 'Fijar', onClick: onTogglePin },
+    onRemind && { label: 'Recordármelo…', remind: true },
+    onCreateTask && !message.task && { label: 'Crear tarea', onClick: onCreateTask },
+    mine && hasText && !message.call && { label: 'Editar', onClick: () => setEditing(true) },
+    mine && { label: 'Eliminar', delete: true, onClick: onDelete },
+  ].filter(Boolean)
 
   const menuButton = (label, onClick) => (
     <button type="button" onClick={onClick} className="whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] text-[#CCCCCC] hover:bg-white/[0.08] hover:text-[#F5F5F5]">
@@ -709,6 +793,11 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           the row and took width even while invisible, squeezing the bubble
           in narrow layouts. */}
       <div className="relative flex items-center">
+        {swipe > 8 && (
+          <span className="pointer-events-none absolute -left-9 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full" style={{ background: swipe >= 56 ? '#E8C15A' : 'rgba(255,255,255,0.1)', color: swipe >= 56 ? '#1C1A16' : '#BBBBBB', opacity: Math.min(1, swipe / 40), transform: `translateY(-50%) scale(${0.7 + Math.min(0.3, swipe / 180)})` }}>
+            <ReplyIcon size={14} />
+          </span>
+        )}
         <div
           className={`absolute -top-4 z-10 max-w-[420px] ${touch ? 'hidden' : ''} ${mine ? 'right-0' : 'left-0'} ${menu ? '' : 'pointer-events-none group-hover:pointer-events-auto'}`}
         >
@@ -716,12 +805,18 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         </div>
         <div
           className={`flex flex-col gap-1.5 ${mine ? 'items-end' : 'items-start'} ${touch ? 'select-none' : ''}`}
-          style={touch ? { WebkitTouchCallout: 'none' } : undefined}
+          style={touch ? { WebkitTouchCallout: 'none', touchAction: 'pan-y', transform: swipe ? `translateX(${swipe}px)` : undefined, transition: swipe ? 'none' : 'transform 0.2s ease-out' } : undefined}
           onTouchStart={startPress}
           onTouchMove={movePress}
-          onTouchEnd={cancelPress}
-          onTouchCancel={cancelPress}
-          onContextMenu={touch ? (e) => e.preventDefault() : undefined}
+          onTouchEnd={endPress}
+          onTouchCancel={endPress}
+          onContextMenu={(e) => {
+            if (touch) return e.preventDefault()
+            // Links and images keep the browser's own menu (copy image, open link…).
+            if (e.target.closest?.('a,img,textarea,input')) return
+            e.preventDefault()
+            setCtx({ x: e.clientX, y: e.clientY })
+          }}
         >
           {message.forwarded && (
             <span className="flex items-center gap-1 px-1 text-[11px] italic text-[#8A8A8A]">
@@ -739,11 +834,16 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {message.replyTo && <QuoteBlock quote={message.replyTo} mine={mine} onJump={onJump} />}
           {message.poll && <PollCard message={message} mine={mine} currentUid={currentUid} userName={userName} onVote={(id) => onVote?.(id)} onClose={(closed) => onClosePoll?.(closed)} />}
           {message.call && <CallCard call={message.call} authorName={message.authorName} mine={mine} createdAt={message.createdAt} currentUid={currentUid} userName={userName} />}
-          {message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
+          {album?.length > 1 ? <ImageAlbum attachments={album.map((m) => m.attachment)} onOpen={onOpenImage} /> : message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
           {message.attachment?.kind === 'drive' && <DriveFileCard attachment={message.attachment} />}
           {message.attachment?.kind === 'entity' && <EntityCard attachment={message.attachment} onOpen={onOpenEntity} />}
-          {showBubble && (
+          {showBubble && emojiOnly && (
+            <div className="select-text px-1 py-0.5 text-[46px] leading-none" title={message.important ? 'Mensaje importante' : undefined}>
+              {message.text.trim()}
+            </div>
+          )}
+          {showBubble && !emojiOnly && (
             <div
               className="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"
               style={{
@@ -788,6 +888,18 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         </p>
       )}
       </div>
+      {ctx && (
+        <MessageContextMenu
+          x={ctx.x}
+          y={ctx.y}
+          reactions={QUICK_REACTIONS}
+          onReact={(e) => onReact(e, (message.reactions?.[e] || []).includes(currentUid))}
+          options={messageOptions}
+          reminderOptions={reminderOptions()}
+          onRemind={(at) => onRemind(at)}
+          onClose={() => setCtx(null)}
+        />
+      )}
       {sheet && (
         <MessageActionSheet
           preview={message.text ? message.text.slice(0, 200) : null}
@@ -796,18 +908,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           reminderOptions={reminderOptions()}
           onRemind={(at) => onRemind(at)}
           onClose={() => setSheet(false)}
-          options={[
-            onReply && { label: 'Responder', onClick: onReply },
-            onOpenThread && { label: 'Responder en hilo', onClick: onOpenThread },
-            hasText && { label: 'Copiar texto', onClick: () => navigator.clipboard?.writeText(message.text).catch(() => {}) },
-            { label: saved ? 'Quitar de guardados' : 'Guardar', onClick: onToggleSave },
-            onForward && !message.call && !message.poll && { label: 'Reenviar', onClick: onForward },
-            onTogglePin && { label: pinned ? 'Desfijar' : 'Fijar', onClick: onTogglePin },
-            onRemind && { label: 'Recordármelo…', remind: true },
-            onCreateTask && !message.task && { label: 'Crear tarea', onClick: onCreateTask },
-            mine && hasText && !message.call && { label: 'Editar', onClick: () => setEditing(true) },
-            mine && { label: 'Eliminar', delete: true, onClick: onDelete },
-          ].filter(Boolean)}
+          options={messageOptions}
         />
       )}
     </div>
