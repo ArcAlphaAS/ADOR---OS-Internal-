@@ -73,6 +73,7 @@ service cloud.firestore {
       match /{sub=**} { allow read, write: if isAllowed(); }
     }
     match /proyectosInternos/{id} { allow read, write: if isAllowed(); }
+    match /taskViewing/{id} { allow read, write: if isAllowed(); }
     // Bell alerts for @mentions / comments on tasks: written by whoever comments,
     // read and cleared only by the person they're for.
     match /communityAlerts/{id} {

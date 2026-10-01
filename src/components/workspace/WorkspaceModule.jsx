@@ -374,6 +374,11 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             actorName={actorName}
             initialSection={panelSection}
             allTasks={tasks}
+            siblings={visibleTasks}
+            onSwitch={(id) => {
+              setPanelSection(null)
+              setOpenTaskId(id)
+            }}
             onNavigate={onNavigate}
             onClose={() => setOpenTaskId(null)}
           />

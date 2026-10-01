@@ -236,6 +236,25 @@ export function toggleTaskComplete(task, actorName) {
 // ---- Comentarios en tareas ----
 // tasks/{id}/comments, con `commentCount` en la tarea (mismo lote). Avisa
 // por push a quien tiene la tarea asignada y a quien se menciona con @.
+// "Leonardo está viendo esta tarea": taskViewing/{taskId} holds
+// { [uid]: { name, at } }. A panel open on the task pings every 20 s and
+// removes its entry on close; readers ignore entries older than 45 s (a
+// closed laptop can't clean up after itself).
+export function subscribeTaskViewers(taskId, onData) {
+  if (!db || !taskId) return () => {}
+  return onSnapshot(doc(db, 'taskViewing', taskId), (snap) => onData(snap.exists() ? snap.data() : {}), () => onData({}))
+}
+
+export function pingTaskViewing(taskId, uid, name) {
+  if (!db || !taskId || !uid) return Promise.resolve()
+  return setDoc(doc(db, 'taskViewing', taskId), { [uid]: { name, at: Date.now() } }, { merge: true })
+}
+
+export function clearTaskViewing(taskId, uid) {
+  if (!db || !taskId || !uid) return Promise.resolve()
+  return updateDoc(doc(db, 'taskViewing', taskId), { [uid]: deleteField() }).catch(() => {})
+}
+
 export function subscribeTaskComments(taskId, onData) {
   if (!taskId) return () => {}
   return subscribeToCollection(`${COLLECTIONS.tasks}/${taskId}/comments`, [orderBy('createdAt', 'asc')], onData)
