@@ -5,10 +5,11 @@ import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos }
 import { STATUSES, PRIORITIES, RECURRENCES } from '../../lib/workspace'
 import TaskComments from './TaskComments'
 import { SubtasksBlock } from './TaskChrome'
+import { AssigneeCell } from './TaskCells'
 import { quarterKey } from '../../lib/finance'
-import { CloseIcon } from '../icons'
-import AvatarStack from './AvatarStack'
+import { CloseIcon, CheckCircleIcon, FlagIcon, UsersIcon, CalendarIcon, TimelineIcon, TargetIcon, ClockIcon, LockIcon, MoreIcon } from '../icons'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { useToast } from '../../hooks/useToast'
 
 function formatHistoryDate(value) {
   const date = value?.toDate?.()
@@ -16,24 +17,21 @@ function formatHistoryDate(value) {
   return date.toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
-
-function PillToggle({ options, value, onChange }) {
+// Compact chips for Estado / Prioridad — all options visible, the active one
+// filled with its colour.
+function Chips({ options, value, onChange }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-1">
       {options.map((opt) => {
         const active = value === opt.id
+        const color = opt.color === '#444444' ? '#9A9A9A' : opt.color
         return (
           <button
             key={opt.id}
             type="button"
             onClick={() => onChange(opt.id)}
-            className="rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-            style={{
-              borderColor: opt.color,
-              background: active ? `${opt.color}26` : 'transparent',
-              color: active ? opt.color : '#888888',
-            }}
+            className="rounded-full border px-2 py-1 text-[11.5px] font-medium transition-colors duration-150"
+            style={{ borderColor: active ? color : 'rgba(255,255,255,0.1)', background: active ? `${color}26` : 'transparent', color: active ? color : '#8A8A8A' }}
           >
             {opt.label}
           </button>
@@ -43,8 +41,30 @@ function PillToggle({ options, value, onChange }) {
   )
 }
 
+// One property row, Linear/Notion style: icon + label on the left, the
+// control on the right. Hints live in the tooltip instead of long captions.
+function Prop({ icon: Icon, label, hint, children }) {
+  return (
+    <div className="grid grid-cols-[104px_1fr] items-start gap-2 py-1.5" title={hint}>
+      <span className="flex items-center gap-2 pt-1.5 text-[12px] text-[#777777]">
+        <Icon size={13} />
+        {label}
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  )
+}
+
+const dateClass = 'w-[142px] '
+const fieldClass = 'rounded-lg border border-transparent bg-transparent px-2.5 py-1.5 text-[13px] text-[#F5F5F5] outline-none transition-colors hover:bg-white/[0.05] focus:border-white/[0.18] focus:bg-white/[0.05]'
+
 export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, initialSection, allTasks = [], onNavigate }) {
   const descRef = useRef(null)
+  const lastTitle = useRef(null)
+  const lastDesc = useRef(null)
+  const showToast = useToast()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [titleHeight, setTitleHeight] = useState(null)
   const [title, setTitle] = useState(task?.title || '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [history, setHistory] = useState([])
@@ -89,8 +109,6 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
   // Refs remember what was just written: the blur and the close both call
   // these, and `task` only catches up a moment later — without them a title
   // typed then closed would be saved (and logged) twice.
-  const lastTitle = useRef(null)
-  const lastDesc = useRef(null)
   const saveTitle = () => {
     const t = title.trim()
     if (t && t !== task.title && t !== lastTitle.current) {
@@ -129,6 +147,15 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
     onCloseRaw()
   }
 
+  const completed = task.status === 'completado'
+  const subs = task.subtasks || []
+  const subsDone = subs.filter((x) => x.done).length
+  const accent = workstream?.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
+  const copyLink = () => {
+    setMenuOpen(false)
+    navigator.clipboard.writeText(`${window.location.origin}/?open=workspace&task=${task.id}`).then(() => showToast('Enlace copiado.')).catch(() => {})
+  }
+
   return createPortal(
     <AnimatePresence>
       <motion.div
@@ -141,242 +168,212 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
       />
       <motion.div
         key={task.id}
-        initial={{ x: 440, opacity: 0 }}
+        initial={{ x: 520, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 440, opacity: 0 }}
+        exit={{ x: 520, opacity: 0 }}
         transition={SHEET}
         {...swipeToClose('x', onClose)}
-        className="fixed right-0 top-0 z-50 h-full w-[440px]"
+        className="fixed right-0 top-0 z-50 h-full w-[540px] max-w-full"
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto">
-        <div className="flex items-start justify-between px-7 pt-7">
-          <span className="font-medium text-[#444444]" style={labelStyle}>
-            {workstream?.name}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
-          >
-            <CloseIcon size={14} />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-6 px-7 pb-7 pt-4">
-          <textarea
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={saveTitle}
-            rows={2}
-            className="resize-none bg-transparent text-[18px] font-semibold text-[#F5F5F5] outline-none"
-          />
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Descripción
+        <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto">
+          {/* Sticky header: where this task lives + the ⋯ menu + close. */}
+          <div className="sticky top-0 z-10 flex items-center justify-between bg-[#0C0C0C]/90 px-6 py-3.5 backdrop-blur-md">
+            <span className="flex min-w-0 items-center gap-2 text-[12px] text-[#9A9A9A]">
+              <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: accent }} />
+              <span className="truncate">{workstream?.name || 'Sin proyecto'}</span>
+              <span className="flex-shrink-0 text-[#555555]">· {workstream?.kind === 'intervencion' ? 'Intervención' : 'Proyecto'}</span>
             </span>
-            <textarea
-              ref={descRef}
-              defaultValue={task.description || ''}
-              onBlur={(e) => saveDescription(e.target.value)}
-              rows={3}
-              placeholder="Sin descripción"
-              className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/[0.2]"
-            />
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Estado
-            </span>
-            <PillToggle options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Prioridad
-            </span>
-            <PillToggle options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Objetivo vinculado
-            </span>
-            <select
-              value={task.objetivoId || ''}
-              onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-            >
-              <option value="">Ninguno</option>
-              {currentQuarterObjetivos.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[11px] text-[#444444]">Conecta esta tarea al Objetivo que está empujando esta semana.</p>
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Fecha límite
-            </span>
-            <input
-              type="date"
-              value={dueValue}
-              onChange={(e) => applyUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-            />
-            <p className="mt-1.5 text-[11px] text-[#444444]">Es el plazo: decide cuándo aparece en Hoy y cuándo se marca atrasada.</p>
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Timeline
-            </span>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-[11px] text-[#666666]">
-                Inicio
-                <input
-                  type="date"
-                  value={startValue}
-                  onChange={(e) => applyUpdate({ startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-[11px] text-[#666666]">
-                Fin
-                <input
-                  type="date"
-                  value={endValue}
-                  onChange={(e) => applyUpdate({ endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })}
-                  className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-                />
-              </label>
-            </div>
-            <p className="mt-1.5 text-[11px] text-[#444444]">Es el tramo de trabajo: se dibuja como barra en la vista Timeline.</p>
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Subtareas{(task.subtasks || []).length ? ` · ${(task.subtasks || []).filter((x) => x.done).length}/${(task.subtasks || []).length}` : ''}
-            </span>
-            <SubtasksBlock task={task} embedded />
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Depende de
-            </span>
-            {blockers.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                {blockers.map((b) => (
-                  <span key={b.id} className="flex max-w-full items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-2.5 pr-1.5 text-[11.5px]" style={{ color: b.status === 'completado' ? '#4CAF50' : '#DDDDDD' }}>
-                    <span className="truncate">{b.title}</span>
-                    <button type="button" onClick={() => applyUpdate({ blockedBy: (task.blockedBy || []).filter((x) => x !== b.id) })} className="text-[#888888] hover:text-[#F5F5F5]">
-                      <CloseIcon size={10} />
+            <div className="relative flex items-center gap-1">
+              <button type="button" onClick={() => setMenuOpen((v) => !v)} className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]" title="Más opciones">
+                <MoreIcon size={16} />
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                  <div className="ador-glass absolute right-0 top-full z-20 mt-1 w-[190px] rounded-xl p-1.5">
+                    <button type="button" onClick={copyLink} className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E8E8E8] hover:bg-white/[0.07]">
+                      Copiar enlace
                     </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <select
-              value=""
-              onChange={(e) => e.target.value && applyUpdate({ blockedBy: [...(task.blockedBy || []), e.target.value] })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-            >
-              <option value="">{blockerOptions.length ? 'Agregar una tarea previa…' : 'No hay otras tareas del proyecto'}</option>
-              {blockerOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[11px] text-[#444444]">Esta tarea espera a las de arriba. En Timeline se dibuja una flecha, en rojo si empieza antes de que termine la previa.</p>
-          </div>
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Repetir
-            </span>
-            <select
-              value={task.recurrence || ''}
-              onChange={(e) => applyUpdate({ recurrence: e.target.value || null })}
-              className="w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none focus:border-white/[0.2]"
-            >
-              <option value="">No se repite</option>
-              {RECURRENCES.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[11px] text-[#444444]">Al completarla, se crea sola la siguiente con la fecha límite corrida.</p>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium text-[#444444]" style={labelStyle}>
-                Asignado a
-              </span>
-              <AvatarStack userIds={assignedTo} userById={userById} pendingIds={task.pendingConfirmations || []} size={22} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {users.map((u) => (
-                <label key={u.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors duration-150 hover:bg-white/[0.03]">
-                  <input
-                    type="checkbox"
-                    checked={assignedTo.includes(u.id)}
-                    onChange={() => toggleAssignee(u.id)}
-                    className="h-3.5 w-3.5 accent-[#1E5FAD]"
-                  />
-                  <span className="text-[13px] text-[#F5F5F5]">{u.displayName || u.email}</span>
-                  {(task.pendingConfirmations || []).includes(u.id) && (
-                    <span className="ml-auto text-[11px]" style={{ color: '#B8860B' }}>
-                      pendiente de confirmar
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <TaskComments task={task} users={users} userById={userById} actorUserId={actorUserId} actorName={actorName} onNavigate={onNavigate} />
-
-          <div>
-            <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
-              Historial
-            </span>
-            {history.length === 0 ? (
-              <p className="text-[13px] font-light text-[#444444]">Sin actividad registrada</p>
-            ) : (
-              <div className="flex flex-col divide-y divide-white/[0.04]">
-                {history.map((event) => (
-                  <div key={event.id} className="flex flex-col gap-0.5 py-2 first:pt-0">
-                    <span className="text-[13px] text-[#F5F5F5]">{event.description}</span>
-                    <span className="text-[11px] text-[#444444]">{formatHistoryDate(event.createdAt)}</span>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] hover:bg-white/[0.07]"
+                      style={{ color: '#EF5350' }}
+                    >
+                      {confirmingDelete ? 'Clic otra vez para eliminar' : 'Eliminar tarea'}
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                </>
+              )}
+              <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+                <CloseIcon size={14} />
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="mt-2 w-full rounded-xl border py-2.5 text-[13px] font-medium transition-colors duration-150"
-            style={{
-              borderColor: confirmingDelete ? '#EF5350' : 'rgba(255,255,255,0.08)',
-              color: confirmingDelete ? '#EF5350' : '#888888',
-              background: confirmingDelete ? 'rgba(239,83,80,0.1)' : 'transparent',
-            }}
-          >
-            {confirmingDelete ? 'Confirmar eliminación' : 'Eliminar tarea'}
-          </button>
+          <div className="flex flex-col px-6 pb-10">
+            {/* Title with a round complete button, like Reminders/Things. */}
+            <div className="flex items-start gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => applyUpdate({ status: completed ? 'por_hacer' : 'completado' })}
+                title={completed ? 'Reabrir' : 'Marcar como completada'}
+                className="mt-[7px] flex-shrink-0 transition-transform active:scale-90"
+                style={{ color: completed ? '#4CAF50' : '#555555' }}
+              >
+                {completed ? <CheckCircleIcon size={22} /> : <span className="block h-[19px] w-[19px] rounded-full border-2 border-current" />}
+              </button>
+              <textarea
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = `${e.target.scrollHeight}px`
+                }}
+                ref={(el) => {
+                  if (el && titleHeight === null) {
+                    el.style.height = 'auto'
+                    el.style.height = `${el.scrollHeight}px`
+                    setTitleHeight(el.scrollHeight)
+                  }
+                }}
+                onBlur={saveTitle}
+                rows={1}
+                className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[22px] font-semibold leading-snug outline-none"
+                style={{ color: completed ? '#777777' : '#F5F5F5', textDecoration: completed ? 'line-through' : 'none' }}
+              />
+            </div>
+
+            {/* Properties */}
+            <div className="mt-5 border-y border-white/[0.07] py-2">
+              <Prop icon={CheckCircleIcon} label="Estado">
+                <Chips options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
+              </Prop>
+              <Prop icon={FlagIcon} label="Prioridad">
+                <Chips options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
+              </Prop>
+              <Prop icon={UsersIcon} label="Asignado a">
+                <div className="px-1.5 pt-0.5">
+                  <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} pendingIds={task.pendingConfirmations || []} onChange={(next) => applyUpdate({ assignedTo: next })} />
+                </div>
+              </Prop>
+              <Prop icon={CalendarIcon} label="Fecha límite" hint="Es el plazo: decide cuándo aparece en Hoy y cuándo se marca atrasada.">
+                <input type="date" value={dueValue} onChange={(e) => applyUpdate({ dueDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={`${dateClass}${fieldClass}`} />
+              </Prop>
+              <Prop icon={TimelineIcon} label="Timeline" hint="Es el tramo de trabajo: se dibuja como barra en la vista Timeline.">
+                <div className="flex items-center gap-1">
+                  <input type="date" value={startValue} onChange={(e) => applyUpdate({ startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={`${dateClass}${fieldClass}`} />
+                  <span className="text-[#555555]">→</span>
+                  <input type="date" value={endValue} onChange={(e) => applyUpdate({ endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={`${dateClass}${fieldClass}`} />
+                </div>
+              </Prop>
+              <Prop icon={TargetIcon} label="Objetivo" hint="Conecta esta tarea al Objetivo del trimestre que está empujando.">
+                <select value={task.objetivoId || ''} onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })} className={`${fieldClass} max-w-full`}>
+                  <option value="">Ninguno</option>
+                  {currentQuarterObjetivos.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.title}
+                    </option>
+                  ))}
+                </select>
+              </Prop>
+              <Prop icon={ClockIcon} label="Repetir" hint="Al completarla, se crea sola la siguiente con la fecha límite corrida.">
+                <select value={task.recurrence || ''} onChange={(e) => applyUpdate({ recurrence: e.target.value || null })} className={fieldClass}>
+                  <option value="">No se repite</option>
+                  {RECURRENCES.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </Prop>
+              <Prop icon={LockIcon} label="Depende de" hint="Esta tarea espera a las de aquí. En Timeline se dibuja una flecha, en rojo si empieza antes de que termine la previa.">
+                <div className="flex flex-col gap-1.5">
+                  {blockers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 px-1">
+                      {blockers.map((b) => (
+                        <span key={b.id} className="flex max-w-full items-center gap-1.5 rounded-full bg-white/[0.07] py-1 pl-2.5 pr-1.5 text-[11.5px]" style={{ color: b.status === 'completado' ? '#4CAF50' : '#DDDDDD' }}>
+                          <span className="truncate">{b.title}</span>
+                          <button type="button" onClick={() => applyUpdate({ blockedBy: (task.blockedBy || []).filter((x) => x !== b.id) })} className="text-[#888888] hover:text-[#F5F5F5]">
+                            <CloseIcon size={10} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <select value="" onChange={(e) => e.target.value && applyUpdate({ blockedBy: [...(task.blockedBy || []), e.target.value] })} className={`${fieldClass} max-w-full text-[#888888]`}>
+                    <option value="">{blockerOptions.length ? '+ Agregar tarea previa' : 'No hay otras tareas en el proyecto'}</option>
+                    {blockerOptions.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </Prop>
+            </div>
+
+            {/* Description */}
+            <div className="pt-5">
+              <textarea
+                ref={descRef}
+                defaultValue={task.description || ''}
+                onBlur={(e) => saveDescription(e.target.value)}
+                onInput={(e) => {
+                  e.target.style.height = 'auto'
+                  e.target.style.height = `${e.target.scrollHeight}px`
+                }}
+                rows={3}
+                placeholder="Añade una descripción…"
+                className="w-full resize-none rounded-xl border border-transparent bg-transparent px-2 py-2 text-[14px] leading-relaxed text-[#E5E5E5] outline-none transition-colors placeholder:text-[#555555] hover:bg-white/[0.03] focus:border-white/[0.14] focus:bg-white/[0.03]"
+              />
+            </div>
+
+            {/* Subtasks with a progress bar */}
+            <div className="pt-5">
+              <div className="mb-2 flex items-center gap-3">
+                <span className="text-[13px] font-semibold text-[#F5F5F5]">Subtareas</span>
+                {subs.length > 0 && (
+                  <>
+                    <span className="text-[12px] text-[#888888]">
+                      {subsDone}/{subs.length}
+                    </span>
+                    <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+                      <span className="block h-full rounded-full bg-[#4CAF50] transition-all duration-300" style={{ width: `${(subsDone / subs.length) * 100}%` }} />
+                    </span>
+                  </>
+                )}
+              </div>
+              <SubtasksBlock task={task} embedded />
+            </div>
+
+            {/* Updates */}
+            <div className="mt-6 border-t border-white/[0.07] pt-5">
+              <TaskComments task={task} users={users} userById={userById} actorUserId={actorUserId} actorName={actorName} onNavigate={onNavigate} />
+            </div>
+
+            {/* History, collapsed: it's a log, not something you read each time. */}
+            <details className="group mt-6 border-t border-white/[0.07] pt-4">
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">
+                <span className="transition-transform group-open:rotate-90">▸</span>
+                Actividad{history.length ? ` · ${history.length}` : ''}
+              </summary>
+              {history.length === 0 ? (
+                <p className="mt-3 text-[13px] font-light text-[#555555]">Sin actividad registrada</p>
+              ) : (
+                <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
+                  {history.map((event) => (
+                    <div key={event.id} className="flex flex-col gap-0.5 py-2 first:pt-0">
+                      <span className="text-[13px] text-[#E5E5E5]">{event.description}</span>
+                      <span className="text-[11px] text-[#666666]">{formatHistoryDate(event.createdAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </details>
+          </div>
         </div>
-      </div>
       </motion.div>
     </AnimatePresence>,
     document.body
