@@ -48,9 +48,9 @@ const SEASONS = [
     tint: '#F97316',
     motes: true,
     phrases: phrases(
-      ['Hoy es Halloween y el Día de la Canción Criolla.', 'Feliz Día de la Canción Criolla.'],
+      ['Hoy es Halloween y el Día de la Canción Criolla.', 'Feliz Halloween y feliz Día de la Canción Criolla.'],
       ['Halloween y Canción Criolla — una tarde con ritmo.', 'Hoy se mezclan el vals y los fantasmas.'],
-      ['Feliz noche de Halloween.', 'Feliz noche de Canción Criolla.'],
+      ['Que tengas una linda noche de Halloween y Canción Criolla.', 'Feliz noche de Halloween y de Canción Criolla.'],
     ),
   },
   {

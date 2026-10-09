@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getActiveSeason } from '../../lib/seasons'
+import { getActiveSeason, getActiveSeasons } from '../../lib/seasons'
 import useSeasonPulse from '../../hooks/useSeasonPulse'
 
 function getGreeting(hour, name) {
@@ -37,9 +37,12 @@ function dayOfYear(date) {
   return Math.floor((date - start) / 86400000)
 }
 
-function getSubtext(date, season) {
+// Seasonal phrases only on the day itself (`always`): a month-long season
+// like October would otherwise repeat "spooky season" every single day.
+function getSubtext(date) {
   const bucket = getBucket(date.getHours())
-  const variants = season?.phrases?.[bucket] || SUBTEXT_VARIANTS[bucket]
+  const dayItself = getActiveSeasons(date).find((s) => s.always)
+  const variants = dayItself?.phrases?.[bucket] || SUBTEXT_VARIANTS[bucket]
   return variants[dayOfYear(date) % variants.length]
 }
 
@@ -89,7 +92,7 @@ export default function GreetingBlock({ name }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now, season)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now)}</p>
     </div>
   )
 }
