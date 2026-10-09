@@ -28,7 +28,7 @@ import { useToast } from '../../hooks/useToast'
 import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 import UpdateBanner from './UpdateBanner'
 import OfflineBanner from './OfflineBanner'
-import { useSeasonRuntime } from '../../hooks/useSeasonPulse'
+import { useSeasonRuntime } from '../../hooks/useSeasons'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app

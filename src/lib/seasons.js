@@ -7,7 +7,7 @@
 // this small" pattern as the hand-drawn charts elsewhere.
 //
 // What a season drives: the greeting's subtext (Home) and a small badge next
-// to the date that fades in and out (see useSeasonPulse). No background
+// to the date, always visible while the season lasts. No background
 // lighting: a gradient wash was tried twice (a fixed one, then a pulsing edge
 // glow with embers) and both were removed as looking bad.
 
@@ -35,8 +35,9 @@ function withinDaysOf(date, target, daysBefore) {
 
 const phrases = (morning, afternoon, evening) => ({ morning, afternoon, evening })
 
-// `always: true` = the day itself (Oct 31, Dec 24/25/31, Jan 1…): the glow
-// stays on all day instead of pulsing. Other days it only pulses.
+// `always: true` = the day itself (Oct 31, Dec 24/25/31, Jan 1…): only on
+// those days does the greeting use the season's own phrases; longer seasons
+// (all of October) only show the badge.
 // Order = priority: the most specific day comes first. When several seasons
 // are active at once (all of October), the pulse alternates between them.
 const SEASONS = [
@@ -44,9 +45,8 @@ const SEASONS = [
     id: 'halloween',
     always: true,
     match: (d) => between(d, [10, 31], [10, 31]),
-    badge: { emoji: '🎃', label: 'Halloween · Canción Criolla', color: '#F97316' },
+    badge: { label: 'Halloween · Canción Criolla', color: '#F97316' },
     tint: '#F97316',
-    motes: true,
     phrases: phrases(
       ['Hoy es Halloween y el Día de la Canción Criolla.', 'Feliz Halloween y feliz Día de la Canción Criolla.'],
       ['Halloween y Canción Criolla — una tarde con ritmo.', 'Hoy se mezclan el vals y los fantasmas.'],
@@ -54,23 +54,10 @@ const SEASONS = [
     ),
   },
   {
-    id: 'spooky',
-    match: (d) => between(d, [10, 1], [10, 30]),
-    badge: { emoji: '🎃', label: 'Spooky season', color: '#F97316' },
-    tint: '#F97316',
-    motes: true,
-    phrases: phrases(
-      ['Octubre, spooky season. Buen día para construir.', 'Spooky season — que la agenda no dé sustos.'],
-      ['Spooky season — que ningún pendiente dé sustos.', 'Octubre avanza, sigamos con foco.'],
-      ['Que la noche de spooky season sea tranquila.', 'Cerrando el día, sin sustos.'],
-    ),
-  },
-  {
     id: 'mes-morado',
     match: (d) => between(d, [10, 1], [10, 31]),
-    badge: { emoji: '💜', label: 'Mes morado · Señor de los Milagros', color: '#A78BFA' },
+    badge: { label: 'Mes morado', color: '#A78BFA' },
     tint: '#8B5CF6',
-    motes: false,
     phrases: phrases(
       ['Octubre, mes morado — buen día para construir.', 'Mes del Señor de los Milagros.'],
       ['Mes morado — sigamos avanzando.', 'Octubre, con fe y con foco.'],
@@ -78,25 +65,22 @@ const SEASONS = [
     ),
   },
   {
-    id: 'todos-los-santos',
-    always: true,
-    match: (d) => between(d, [11, 1], [11, 2]),
-    badge: { emoji: '🕯️', label: 'Todos los Santos', color: '#D4D4D8' },
-    tint: '#D4D4D8',
-    motes: false,
+    id: 'spooky',
+    match: (d) => between(d, [10, 1], [10, 30]),
+    badge: { label: 'Spooky season', color: '#F97316' },
+    tint: '#F97316',
     phrases: phrases(
-      ['Hoy es un día de recuerdo y calma.', 'Todos los Santos — un día más tranquilo.'],
-      ['Una tarde de recuerdo — con calma.', 'Todos los Santos — sin prisa.'],
-      ['Que tengas una noche tranquila.', 'Buen cierre de día, con calma.'],
+      ['Octubre, spooky season. Buen día para construir.', 'Spooky season — que la agenda no dé sustos.'],
+      ['Spooky season — que ningún pendiente dé sustos.', 'Octubre avanza, sigamos con foco.'],
+      ['Que la noche de spooky season sea tranquila.', 'Cerrando el día, sin sustos.'],
     ),
   },
   {
     id: 'fiestas-patrias-dia',
     always: true,
     match: (d) => between(d, [7, 28], [7, 29]),
-    badge: { emoji: '🇵🇪', label: 'Fiestas Patrias', color: '#D91023' },
+    badge: { label: 'Fiestas Patrias', color: '#D91023' },
     tint: '#D91023',
-    motes: true,
     phrases: phrases(
       ['Feliz Fiestas Patrias.', 'Hoy se celebra el Perú.'],
       ['Feliz Fiestas Patrias — ¡Viva el Perú!', 'Una tarde para celebrar el Perú.'],
@@ -106,9 +90,8 @@ const SEASONS = [
   {
     id: 'fiestas-patrias',
     match: (d) => between(d, [7, 1], [7, 31]),
-    badge: { emoji: '🇵🇪', label: 'Mes Patrio', color: '#D91023' },
+    badge: { label: 'Mes Patrio', color: '#D91023' },
     tint: '#D91023',
-    motes: false,
     phrases: phrases(
       ['Julio, mes patrio — buen día para construir país.', 'Feliz mes de la Patria.'],
       ['Mes patrio — sigamos avanzando.', 'Julio, con el Perú de fondo.'],
@@ -119,9 +102,8 @@ const SEASONS = [
     id: 'santa-rosa',
     always: true,
     match: (d) => between(d, [8, 30], [8, 30]),
-    badge: { emoji: '🌹', label: 'Santa Rosa de Lima', color: '#F472B6' },
+    badge: { label: 'Santa Rosa de Lima', color: '#F472B6' },
     tint: '#F472B6',
-    motes: false,
     phrases: phrases(
       ['Hoy es Santa Rosa de Lima.', 'Feliz día de Santa Rosa.'],
       ['Santa Rosa de Lima — una tarde tranquila.', 'Feliz Santa Rosa.'],
@@ -131,9 +113,8 @@ const SEASONS = [
   {
     id: 'dia-de-la-madre',
     match: (d) => withinDaysOf(d, nthSunday(d.getFullYear(), 4, 2), 3),
-    badge: { emoji: '💐', label: 'Día de la Madre', color: '#F472B6' },
+    badge: { label: 'Día de la Madre', color: '#F472B6' },
     tint: '#F472B6',
-    motes: false,
     phrases: phrases(
       ['Se acerca el Día de la Madre.', 'Feliz Día de la Madre a quien corresponda.'],
       ['Día de la Madre cerca — a no olvidarlo.', 'Una tarde para pensar en mamá.'],
@@ -143,9 +124,8 @@ const SEASONS = [
   {
     id: 'dia-del-padre',
     match: (d) => withinDaysOf(d, nthSunday(d.getFullYear(), 5, 3), 3),
-    badge: { emoji: '👔', label: 'Día del Padre', color: '#60A5FA' },
+    badge: { label: 'Día del Padre', color: '#60A5FA' },
     tint: '#60A5FA',
-    motes: false,
     phrases: phrases(
       ['Se acerca el Día del Padre.', 'Feliz Día del Padre a quien corresponda.'],
       ['Día del Padre cerca — a no olvidarlo.', 'Una tarde para pensar en papá.'],
@@ -155,9 +135,8 @@ const SEASONS = [
   {
     id: 'navidad-anticipo',
     match: (d) => between(d, [12, 1], [12, 23]),
-    badge: { emoji: '🎄', label: 'Diciembre', color: '#15803D' },
+    badge: { label: 'Diciembre', color: '#15803D' },
     tint: '#22C55E',
-    motes: 'snow',
     phrases: phrases(
       ['Diciembre — cerrando el año con foco.', 'Recta final del año.'],
       ['Diciembre avanza — sigamos ejecutando.', 'El año se cierra bien, con trabajo.'],
@@ -168,34 +147,31 @@ const SEASONS = [
     id: 'nochebuena',
     always: true,
     match: (d) => between(d, [12, 24], [12, 24]),
-    badge: { emoji: '🎄', label: 'Nochebuena', color: '#15803D' },
+    badge: { label: 'Nochebuena', color: '#15803D' },
     tint: '#22C55E',
-    motes: 'snow',
     phrases: phrases(
-      ['Nochebuena — buen día para cerrar temprano.', 'Hoy es Nochebuena.'],
-      ['Nochebuena — casi hora de parar.', 'Hoy es un día para cerrar temprano.'],
-      ['Feliz Nochebuena.', 'Que tengas una excelente Nochebuena.'],
+      ['Feliz Nochebuena.'],
+      ['Feliz Nochebuena.'],
+      ['Feliz Nochebuena. Que tengas una linda noche.'],
     ),
   },
   {
     id: 'navidad',
     always: true,
     match: (d) => between(d, [12, 25], [12, 25]),
-    badge: { emoji: '🎄', label: 'Navidad', color: '#15803D' },
+    badge: { label: 'Navidad', color: '#15803D' },
     tint: '#22C55E',
-    motes: 'snow',
     phrases: phrases(
-      ['Feliz Navidad.', 'Hoy es Navidad — feliz día.'],
-      ['Feliz Navidad.', 'Que tengas una linda Navidad.'],
-      ['Feliz Navidad.', 'Que tengas una linda noche de Navidad.'],
+      ['Feliz Navidad.'],
+      ['Feliz Navidad.'],
+      ['Feliz Navidad. Que tengas una linda noche.'],
     ),
   },
   {
     id: 'fin-de-ano-anticipo',
     match: (d) => between(d, [12, 26], [12, 30]),
-    badge: { emoji: '🎇', label: 'Fin de Año', color: '#F59E0B' },
+    badge: { label: 'Fin de Año', color: '#F59E0B' },
     tint: '#F59E0B',
-    motes: true,
     phrases: phrases(
       ['Últimos días del año.', 'Cerrando el año — casi listos.'],
       ['El año casi termina.', 'Últimos días — buen cierre.'],
@@ -206,9 +182,8 @@ const SEASONS = [
     id: 'fin-de-ano',
     always: true,
     match: (d) => between(d, [12, 31], [12, 31]),
-    badge: { emoji: '🎆', label: 'Fin de Año', color: '#F59E0B' },
+    badge: { label: 'Fin de Año', color: '#F59E0B' },
     tint: '#F59E0B',
-    motes: true,
     phrases: phrases(
       ['Último día del año — buen cierre.', 'Hoy termina el año.'],
       ['Último día del año.', 'Cerrando el año hoy.'],
@@ -219,9 +194,8 @@ const SEASONS = [
     id: 'ano-nuevo',
     always: true,
     match: (d) => between(d, [1, 1], [1, 1]),
-    badge: { emoji: '🎉', label: 'Año Nuevo', color: '#1E5FAD' },
+    badge: { label: 'Año Nuevo', color: '#1E5FAD' },
     tint: '#E8C15A',
-    motes: true,
     phrases: phrases(
       ['Feliz año nuevo.', 'Empezamos el año.'],
       ['Feliz año nuevo.', 'Primer día del año.'],
@@ -247,10 +221,14 @@ export function getActiveSeasons(date) {
   return SEASONS.filter((s) => s.match(date))
 }
 
-// One season for the day — stable within a day, rotates day to day when
-// several overlap (October), so the greeting subtext doesn't flip on refresh.
-export function getActiveSeason(date) {
-  const list = getActiveSeasons(date)
-  if (list.length === 0) return null
-  return list[dayOfYear(date) % list.length]
+// What the badge next to Home's date shows: every season active today, as one
+// quiet pill — dots in each season's color + the names joined by " · ", e.g.
+// "Mes morado · Spooky season" (Peru's October is both). Null most of the year.
+export function seasonBadge(date) {
+  const active = getActiveSeasons(date).filter((s) => s.badge)
+  if (active.length === 0) return null
+  return {
+    label: active.map((s) => s.badge.label).join(' · '),
+    colors: active.map((s) => s.tint),
+  }
 }

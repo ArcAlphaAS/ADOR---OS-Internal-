@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getActiveSeason, getActiveSeasons } from '../../lib/seasons'
-import useSeasonPulse from '../../hooks/useSeasonPulse'
+import { getActiveSeasons, seasonBadge } from '../../lib/seasons'
+import useSeasonsOff from '../../hooks/useSeasons'
 
 function getGreeting(hour, name) {
   if (hour >= 6 && hour < 13) return `Buenos días, ${name}.`
@@ -39,9 +39,9 @@ function dayOfYear(date) {
 
 // Seasonal phrases only on the day itself (`always`): a month-long season
 // like October would otherwise repeat "spooky season" every single day.
-function getSubtext(date) {
+function getSubtext(date, seasonsOff) {
   const bucket = getBucket(date.getHours())
-  const dayItself = getActiveSeasons(date).find((s) => s.always)
+  const dayItself = seasonsOff ? null : getActiveSeasons(date).find((s) => s.always)
   const variants = dayItself?.phrases?.[bucket] || SUBTEXT_VARIANTS[bucket]
   return variants[dayOfYear(date) % variants.length]
 }
@@ -54,10 +54,8 @@ export default function GreetingBlock({ name }) {
     return () => clearInterval(interval)
   }, [])
 
-  const season = getActiveSeason(now)
-  // The badge breathes with the ambient glow instead of sitting there all day.
-  const pulse = useSeasonPulse()
-  const badgeSeason = pulse.season?.badge ? pulse.season : season
+  const seasonsOff = useSeasonsOff()
+  const badge = seasonsOff ? null : seasonBadge(now)
 
   return (
     <div>
@@ -75,24 +73,29 @@ export default function GreetingBlock({ name }) {
       </h1>
       <div className="mt-2 flex items-center gap-2.5">
         <p className="text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
-        {badgeSeason?.badge && (
+        {badge && (
           <span
-            title={badgeSeason.badge.label}
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-            style={{
-              background: `${badgeSeason.badge.color}1F`,
-              color: badgeSeason.badge.color,
-              opacity: pulse.on ? 1 : 0,
-              transform: pulse.on ? 'translateY(0)' : 'translateY(2px)',
-              transition: 'opacity 1200ms ease-in-out, transform 1200ms ease-in-out',
-            }}
+            title={badge.label}
+            className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-2 pr-3 text-[11.5px] font-medium tracking-[0.01em] text-[#C4C4C4]"
           >
-            <span style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }}>{badgeSeason.badge.emoji}</span>
-            {badgeSeason.badge.label}
+            <span className="flex items-center">
+              {badge.colors.map((color, i) => (
+                <span
+                  key={color + i}
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    background: color,
+                    marginLeft: i === 0 ? 0 : -3,
+                    boxShadow: '0 0 0 1.5px #0A0A0A',
+                  }}
+                />
+              ))}
+            </span>
+            {badge.label}
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now, seasonsOff)}</p>
     </div>
   )
 }
