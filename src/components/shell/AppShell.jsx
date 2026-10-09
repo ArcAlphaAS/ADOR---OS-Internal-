@@ -28,7 +28,7 @@ import { useToast } from '../../hooks/useToast'
 import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 import UpdateBanner from './UpdateBanner'
 import OfflineBanner from './OfflineBanner'
-import SeasonAmbient from './SeasonAmbient'
+import { useSeasonRuntime } from '../../hooks/useSeasonPulse'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -115,6 +115,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   usePresenceHeartbeat(user?.uid)
   // Role and which modules this person can open (lib/access.js).
   const access = useAccess(user?.uid)
+  useSeasonRuntime()
   // The daily cleanup lists every conversation's old files/calls, which
   // only admins may do under the stricter Firestore rules.
   useChatRetention(access.isAdmin ? user?.uid : null)
@@ -298,7 +299,6 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         </main>
       </div>
 
-      <SeasonAmbient />
       <UpdateBanner />
       <OfflineBanner />
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />

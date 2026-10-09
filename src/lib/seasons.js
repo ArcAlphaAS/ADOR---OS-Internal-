@@ -6,10 +6,10 @@
 // API — a short, hand-maintained list, same "no dependency for something
 // this small" pattern as the hand-drawn charts elsewhere.
 //
-// What a season can drive: the greeting's subtext (Home), a small badge next
-// to the date, and — via SeasonAmbient — a faint edge glow that fades in for
-// ~15s every few minutes and then goes away (never a permanent wash: an
-// always-on gradient was tried before and removed as hurting the design).
+// What a season drives: the greeting's subtext (Home) and a small badge next
+// to the date that fades in and out (see useSeasonPulse). No background
+// lighting: a gradient wash was tried twice (a fixed one, then a pulsing edge
+// glow with embers) and both were removed as looking bad.
 
 function between(date, [startMonth, startDay], [endMonth, endDay]) {
   const m = date.getMonth() + 1
@@ -50,7 +50,7 @@ const SEASONS = [
     phrases: phrases(
       ['Hoy es Halloween y el Día de la Canción Criolla.', 'Feliz Día de la Canción Criolla.'],
       ['Halloween y Canción Criolla — una tarde con ritmo.', 'Hoy se mezclan el vals y los fantasmas.'],
-      ['Feliz Halloween.', 'Cerrando un día de Canción Criolla.'],
+      ['Feliz noche de Halloween.', 'Feliz noche de Canción Criolla.'],
     ),
   },
   {
@@ -60,9 +60,9 @@ const SEASONS = [
     tint: '#F97316',
     motes: true,
     phrases: phrases(
-      ['Octubre, spooky season. Buen día para construir.', 'Spooky season — con foco.'],
-      ['Spooky season — sigamos avanzando.', 'Octubre avanza, sin sustos.'],
-      ['Cerrando otro día de spooky season.', 'Que lo único que asuste hoy sea la bandeja de entrada.'],
+      ['Octubre, spooky season. Buen día para construir.', 'Spooky season — que la agenda no dé sustos.'],
+      ['Spooky season — que ningún pendiente dé sustos.', 'Octubre avanza, sigamos con foco.'],
+      ['Que la noche de spooky season sea tranquila.', 'Cerrando el día, sin sustos.'],
     ),
   },
   {
@@ -74,7 +74,7 @@ const SEASONS = [
     phrases: phrases(
       ['Octubre, mes morado — buen día para construir.', 'Mes del Señor de los Milagros.'],
       ['Mes morado — sigamos avanzando.', 'Octubre, con fe y con foco.'],
-      ['Cerrando otro día de nuestro mes morado.', 'Buen cierre de día en el mes morado.'],
+      ['Buen cierre de día en el mes morado.', 'Que tengas una noche tranquila en el mes morado.'],
     ),
   },
   {
@@ -87,7 +87,7 @@ const SEASONS = [
     phrases: phrases(
       ['Hoy es un día de recuerdo y calma.', 'Todos los Santos — un día más tranquilo.'],
       ['Una tarde de recuerdo — con calma.', 'Todos los Santos — sin prisa.'],
-      ['Cerrando un día de recuerdo.', 'Buen cierre de día, con calma.'],
+      ['Que tengas una noche tranquila.', 'Buen cierre de día, con calma.'],
     ),
   },
   {
@@ -100,7 +100,7 @@ const SEASONS = [
     phrases: phrases(
       ['Feliz Fiestas Patrias.', 'Hoy se celebra el Perú.'],
       ['Feliz Fiestas Patrias — ¡Viva el Perú!', 'Una tarde para celebrar el Perú.'],
-      ['Feliz Fiestas Patrias.', 'Cerrando un día patrio.'],
+      ['Feliz Fiestas Patrias.', 'Que tengas una buena noche patria.'],
     ),
   },
   {
@@ -112,7 +112,7 @@ const SEASONS = [
     phrases: phrases(
       ['Julio, mes patrio — buen día para construir país.', 'Feliz mes de la Patria.'],
       ['Mes patrio — sigamos avanzando.', 'Julio, con el Perú de fondo.'],
-      ['Cerrando otro día de nuestro mes patrio.', 'Buen día para el Perú, buen día para ADOR.'],
+      ['Buen cierre de día en nuestro mes patrio.', 'Buen día para el Perú, buen día para ADOR.'],
     ),
   },
   {
@@ -125,7 +125,7 @@ const SEASONS = [
     phrases: phrases(
       ['Hoy es Santa Rosa de Lima.', 'Feliz día de Santa Rosa.'],
       ['Santa Rosa de Lima — una tarde tranquila.', 'Feliz Santa Rosa.'],
-      ['Cerrando el día de Santa Rosa.', 'Buen cierre de día.'],
+      ['Feliz noche de Santa Rosa.', 'Buen cierre de día.'],
     ),
   },
   {
@@ -137,7 +137,7 @@ const SEASONS = [
     phrases: phrases(
       ['Se acerca el Día de la Madre.', 'Feliz Día de la Madre a quien corresponda.'],
       ['Día de la Madre cerca — a no olvidarlo.', 'Una tarde para pensar en mamá.'],
-      ['Cerrando el día — y a llamar a mamá.', 'Feliz Día de la Madre.'],
+      ['Y a llamar a mamá antes de dormir.', 'Feliz Día de la Madre.'],
     ),
   },
   {
@@ -149,7 +149,7 @@ const SEASONS = [
     phrases: phrases(
       ['Se acerca el Día del Padre.', 'Feliz Día del Padre a quien corresponda.'],
       ['Día del Padre cerca — a no olvidarlo.', 'Una tarde para pensar en papá.'],
-      ['Cerrando el día — y a llamar a papá.', 'Feliz Día del Padre.'],
+      ['Y a llamar a papá antes de dormir.', 'Feliz Día del Padre.'],
     ),
   },
   {
@@ -187,7 +187,7 @@ const SEASONS = [
     phrases: phrases(
       ['Feliz Navidad.', 'Hoy es Navidad — feliz día.'],
       ['Feliz Navidad.', 'Que tengas una linda Navidad.'],
-      ['Feliz Navidad.', 'Cerrando un lindo día de Navidad.'],
+      ['Feliz Navidad.', 'Que tengas una linda noche de Navidad.'],
     ),
   },
   {
@@ -225,7 +225,7 @@ const SEASONS = [
     phrases: phrases(
       ['Feliz año nuevo.', 'Empezamos el año.'],
       ['Feliz año nuevo.', 'Primer día del año.'],
-      ['Feliz año nuevo.', 'Cerrando el primer día del año.'],
+      ['Feliz año nuevo.', 'Que el año empiece tranquilo esta noche.'],
     ),
   },
 ]

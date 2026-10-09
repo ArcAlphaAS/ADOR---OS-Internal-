@@ -1,17 +1,16 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { getActiveSeasons } from '../lib/seasons'
+import { subscribeSeasonSettings } from '../lib/firestore'
 
-// Decides *when* the seasonal touches are visible. It's a work tool first —
+// Decides *when* the seasonal touches (the badge next to Home's date) are visible. It's a work tool first —
 // the mood should be noticed, never lived with:
 //  - On "the day itself" (Oct 31, Dec 24/25/31, Jan 1… — `season.always`) the
-//    glow stays on all day.
+//    badge stays on all day.
 //  - Any other day it breathes: it appears the first time a person opens ADOR
 //    OS that day (a few seconds after loading), stays ~15s, fades, and comes
 //    back every 3–5 minutes.
 // The on/off switch is company-wide (settings/seasons.off, set by admins in
 // Administración → Datos) and arrives through setSeasonsOffRemote.
-// One module-level store so the edge glow (SeasonAmbient) and Home's badge
-// always appear together.
 
 const FIRST_OPEN_DELAY = [2500, 4000] // first open of the day
 const LATER_OPEN_DELAY = [180000, 300000] // reopening the same day
@@ -102,4 +101,14 @@ const subscribe = (cb) => {
 
 export default function useSeasonPulse() {
   return useSyncExternalStore(subscribe, () => state)
+}
+
+// Mounted once in AppShell: starts the pulse and follows the company-wide
+// switch (admins: Administración → Datos). (There used to be an edge-glow
+// overlay driven by this too; removed 2026-10-09 — it looked bad.)
+export function useSeasonRuntime() {
+  useEffect(() => {
+    startSeasonPulse()
+    return subscribeSeasonSettings((settings) => setSeasonsOffRemote(!!settings.off))
+  }, [])
 }

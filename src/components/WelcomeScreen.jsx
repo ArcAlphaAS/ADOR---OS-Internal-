@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { getActiveSeason } from '../lib/seasons'
-import useSeasonPulse, { setSeasonsOffRemote } from '../hooks/useSeasonPulse'
-import { subscribeSeasonSettings } from '../lib/firestore'
 
 // Light of the day: warm at dawn, open blue in the afternoon, deep indigo at
 // night. Each entry is [color rgb, x%, y%, alpha, drift seconds].
@@ -86,12 +83,6 @@ export default function WelcomeScreen({ name = 'Ángel', isReturning = false, on
     return () => clearTimeout(timer)
   }, [dismissing, onDismiss])
 
-  // Company-wide seasonal switch (also listened to inside the app shell, but
-  // this screen shows first).
-  useEffect(() => subscribeSeasonSettings((settings) => setSeasonsOffRemote(!!settings.off)), [])
-  const { off: seasonsOff } = useSeasonPulse()
-  const season = seasonsOff ? null : getActiveSeason(now)
-
   const { greeting, subtext } = getMessages(now.getHours(), isReturning, name)
   const sky = SKY[skyBucket(now.getHours())]
 
@@ -112,17 +103,6 @@ export default function WelcomeScreen({ name = 'Ángel', isReturning = false, on
             }}
           />
         ))}
-        {season && (
-          <motion.div
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 2.4, delay: 0.5 }}
-            style={{
-              background: `radial-gradient(ellipse 80% 45% at 50% 105%, ${season.tint}38, transparent 70%), radial-gradient(ellipse 60% 40% at 50% -8%, ${season.tint}22, transparent 70%)`,
-            }}
-          />
-        )}
       </div>
 
       <motion.div
