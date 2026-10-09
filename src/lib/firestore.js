@@ -29,6 +29,7 @@ import {
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange, advanceByRecurrence, recurrenceMeta, layerWeekSpan, LAYERS } from './workspace'
 import { advanceRecurringDate } from './finance'
+import { haptic } from './haptics'
 import { describeKnowledgeChange } from './knowledge'
 
 // Central data model. Every entity references related entities by ID —
@@ -225,6 +226,7 @@ async function spawnRecurringTask(task, actorName) {
 
 export function toggleTaskComplete(task, actorName) {
   const completing = task.status !== 'completado'
+  if (completing) haptic('success')
   return updateTask(task.id, {
     status: completing ? 'completado' : 'por_hacer',
     completedAt: completing ? serverTimestamp() : null,
@@ -358,6 +360,7 @@ export function addTaskHistoryEvent(taskId, description) {
 // confirmed. See createTask's pendingConfirmations comment / CLAUDE.md §20.
 export function applyTaskUpdate(task, data, actorUserId, actorName) {
   const patch = { ...data }
+  if (data.status === 'completado' && task.status !== 'completado') haptic('success')
   if ('status' in data) patch.completedAt = data.status === 'completado' ? serverTimestamp() : null
   if ('assignedTo' in data) {
     const prevAssigned = task.assignedTo || []

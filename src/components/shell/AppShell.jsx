@@ -29,6 +29,8 @@ import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 import UpdateBanner from './UpdateBanner'
 import OfflineBanner from './OfflineBanner'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
+import { useAchievements } from '../../hooks/useAchievements'
+import AchievementMoment from './AchievementMoment'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -116,6 +118,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // Role and which modules this person can open (lib/access.js).
   const access = useAccess(user?.uid)
   useSeasonRuntime()
+  useAchievements(user)
   // The daily cleanup lists every conversation's old files/calls, which
   // only admins may do under the stricter Firestore rules.
   useChatRetention(access.isAdmin ? user?.uid : null)
@@ -301,6 +304,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
       <UpdateBanner />
       <OfflineBanner />
+      <AchievementMoment />
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />
 
       <AnimatePresence>{showOnboarding && <OnboardingTour key="onboarding" onFinish={finishOnboarding} />}</AnimatePresence>

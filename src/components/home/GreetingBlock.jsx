@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getActiveSeasons, seasonBadge } from '../../lib/seasons'
 import useSeasonsOff from '../../hooks/useSeasons'
+import SeasonIcon from '../common/SeasonIcon'
 
 function getGreeting(hour, name) {
   if (hour >= 6 && hour < 13) return `Buenos días, ${name}.`
@@ -26,6 +27,18 @@ const SUBTEXT_VARIANTS = {
   evening: ['Cerrando el día con ADOR.', 'Buen momento para revisar lo avanzado.', 'El día casi termina — bien hecho.'],
 }
 
+// Monday and Friday have a rhythm of their own (the summary card follows it).
+const WEEKDAY_VARIANTS = {
+  1: {
+    morning: ['Arranca la semana. Que sea con intención.', 'Lunes: la semana empieza ahora.'],
+    afternoon: ['Semana en marcha — sigamos.', 'Lunes: primer tramo en camino.'],
+  },
+  5: {
+    morning: ['Viernes: a cerrar la semana bien.', 'Último día de la semana — con foco.'],
+    afternoon: ['Viernes: toca ir cerrando.', 'La semana ya se cierra — buen tramo final.'],
+  },
+}
+
 function getBucket(hour) {
   if (hour >= 6 && hour < 13) return 'morning'
   if (hour >= 13 && hour < 19) return 'afternoon'
@@ -42,7 +55,8 @@ function dayOfYear(date) {
 function getSubtext(date, seasonsOff) {
   const bucket = getBucket(date.getHours())
   const dayItself = seasonsOff ? null : getActiveSeasons(date).find((s) => s.always)
-  const variants = dayItself?.phrases?.[bucket] || SUBTEXT_VARIANTS[bucket]
+  const variants =
+    dayItself?.phrases?.[bucket] || WEEKDAY_VARIANTS[date.getDay()]?.[bucket] || SUBTEXT_VARIANTS[bucket]
   return variants[dayOfYear(date) % variants.length]
 }
 
@@ -76,19 +90,11 @@ export default function GreetingBlock({ name }) {
         {badge && (
           <span
             title={badge.label}
-            className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-2 pr-3 text-[11.5px] font-medium tracking-[0.01em] text-[#C4C4C4]"
+            className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-2.5 pr-3 text-[11.5px] font-medium tracking-[0.01em] text-[#C4C4C4]"
           >
-            <span className="flex items-center">
-              {badge.colors.map((color, i) => (
-                <span
-                  key={color + i}
-                  className="h-2 w-2 rounded-full"
-                  style={{
-                    background: color,
-                    marginLeft: i === 0 ? 0 : -3,
-                    boxShadow: '0 0 0 1.5px #0A0A0A',
-                  }}
-                />
+            <span className="flex items-center gap-1">
+              {badge.items.map((item, i) => (
+                <SeasonIcon key={item.icon + i} name={item.icon} color={item.color} />
               ))}
             </span>
             {badge.label}

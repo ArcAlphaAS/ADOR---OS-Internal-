@@ -4,7 +4,7 @@ import { useFinanceData } from './useFinanceData'
 import { useObjetivosData } from './useObjetivosData'
 import { computeWorkload, isOverdue } from '../lib/workspace'
 import { daysSince } from '../lib/clientStages'
-import { weekRange, buildWeeklyNarrative } from '../lib/weeklySummary'
+import { weekRange, buildWeeklyNarrative, weeklyRhythm } from '../lib/weeklySummary'
 
 // Pulls together the same live data every other module already reads —
 // Finanzas' movements, Workspace's tasks/workload, Objetivos' confidence
@@ -95,5 +95,17 @@ export function useWeeklySummary() {
     birthdaysThisWeek,
   })
 
-  return { ...narrative, range }
+  const tasksDueThisWeek = tasks.filter((t) => {
+    const due = t.dueDate?.toDate?.()
+    return due && t.status !== 'completado' && due >= range.start && due <= range.end
+  }).length
+  const rhythm = weeklyRhythm(new Date(), {
+    tasksDueThisWeek,
+    pendingAmount: pendingPaymentsThisWeek.reduce((sum, p) => sum + (p.amount || 0), 0),
+    tasksOverdueCount: tasksOverdue.length,
+    tasksCompletedThisWeek,
+    incomeThisWeek,
+  })
+
+  return { ...narrative, range, rhythm }
 }

@@ -1,3 +1,5 @@
+import AnimatedNumber from '../common/AnimatedNumber'
+
 function MetricCard({ label, value, onClick }) {
   const Tag = onClick ? 'button' : 'div'
   return (
@@ -17,7 +19,7 @@ function MetricCard({ label, value, onClick }) {
       {value === undefined ? (
         <div className="ador-skeleton mt-3 h-[22px] w-14 rounded-md" />
       ) : (
-        <div className="mt-2 text-[28px] font-semibold text-[#F5F5F5]">{value}</div>
+        <div className="mt-2 text-[28px] font-semibold text-[#F5F5F5]"><AnimatedNumber value={value} /></div>
       )}
     </Tag>
   )

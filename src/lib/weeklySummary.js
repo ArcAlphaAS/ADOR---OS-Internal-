@@ -151,3 +151,38 @@ export function buildWeeklyNarrative(data) {
 export function inWeek(date, range) {
   return inRange(date, range.start, range.end)
 }
+
+function joinList(items) {
+  if (items.length <= 1) return items.join('')
+  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`
+}
+
+// Monday = "Arranque de semana" (what's ahead), Friday–Sunday = "Cierre de
+// semana" (what got done). Other days: null, the card stays a plain summary.
+export function weeklyRhythm(date, data) {
+  const day = date.getDay()
+  const { tasksDueThisWeek, pendingAmount, tasksOverdueCount, tasksCompletedThisWeek, incomeThisWeek } = data
+  if (day === 1) {
+    const pieces = []
+    if (tasksDueThisWeek > 0) pieces.push(`${tasksDueThisWeek} ${tasksDueThisWeek === 1 ? 'tarea vence' : 'tareas vencen'}`)
+    if (pendingAmount > 0) pieces.push(`${currencyPEN.format(pendingAmount)} por cobrar`)
+    if (tasksOverdueCount > 0) pieces.push(`${tasksOverdueCount} ${tasksOverdueCount === 1 ? 'arrastrada' : 'arrastradas'} de la semana anterior`)
+    return {
+      kind: 'arranque',
+      title: 'Arranque de semana',
+      line: pieces.length ? `Esta semana: ${joinList(pieces)}.` : 'Semana despejada — buen momento para planear lo importante.',
+    }
+  }
+  if (day === 5 || day === 6 || day === 0) {
+    const pieces = []
+    if (tasksCompletedThisWeek > 0) pieces.push(`${tasksCompletedThisWeek} ${tasksCompletedThisWeek === 1 ? 'tarea completada' : 'tareas completadas'}`)
+    if (incomeThisWeek > 0) pieces.push(`${currencyPEN.format(incomeThisWeek)} en ingresos`)
+    if (tasksOverdueCount > 0) pieces.push(`${tasksOverdueCount} ${tasksOverdueCount === 1 ? 'pendiente vencido' : 'pendientes vencidos'} para la próxima`)
+    return {
+      kind: 'cierre',
+      title: 'Cierre de semana',
+      line: pieces.length ? `La semana en cifras: ${joinList(pieces)}.` : 'Semana tranquila — sin movimientos registrados.',
+    }
+  }
+  return null
+}

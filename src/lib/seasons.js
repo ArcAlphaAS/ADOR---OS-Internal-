@@ -43,6 +43,7 @@ const phrases = (morning, afternoon, evening) => ({ morning, afternoon, evening 
 const SEASONS = [
   {
     id: 'halloween',
+    icon: 'pumpkin',
     always: true,
     match: (d) => between(d, [10, 31], [10, 31]),
     badge: { label: 'Halloween · Canción Criolla', color: '#F97316' },
@@ -55,6 +56,7 @@ const SEASONS = [
   },
   {
     id: 'mes-morado',
+    icon: 'cross',
     match: (d) => between(d, [10, 1], [10, 31]),
     badge: { label: 'Mes morado', color: '#A78BFA' },
     tint: '#8B5CF6',
@@ -66,6 +68,7 @@ const SEASONS = [
   },
   {
     id: 'spooky',
+    icon: 'pumpkin',
     match: (d) => between(d, [10, 1], [10, 30]),
     badge: { label: 'Spooky season', color: '#F97316' },
     tint: '#F97316',
@@ -77,6 +80,7 @@ const SEASONS = [
   },
   {
     id: 'fiestas-patrias-dia',
+    icon: 'flag',
     always: true,
     match: (d) => between(d, [7, 28], [7, 29]),
     badge: { label: 'Fiestas Patrias', color: '#D91023' },
@@ -89,6 +93,7 @@ const SEASONS = [
   },
   {
     id: 'fiestas-patrias',
+    icon: 'flag',
     match: (d) => between(d, [7, 1], [7, 31]),
     badge: { label: 'Mes Patrio', color: '#D91023' },
     tint: '#D91023',
@@ -100,6 +105,7 @@ const SEASONS = [
   },
   {
     id: 'santa-rosa',
+    icon: 'flower',
     always: true,
     match: (d) => between(d, [8, 30], [8, 30]),
     badge: { label: 'Santa Rosa de Lima', color: '#F472B6' },
@@ -112,6 +118,7 @@ const SEASONS = [
   },
   {
     id: 'dia-de-la-madre',
+    icon: 'flower',
     match: (d) => withinDaysOf(d, nthSunday(d.getFullYear(), 4, 2), 3),
     badge: { label: 'Día de la Madre', color: '#F472B6' },
     tint: '#F472B6',
@@ -123,6 +130,7 @@ const SEASONS = [
   },
   {
     id: 'dia-del-padre',
+    icon: 'star',
     match: (d) => withinDaysOf(d, nthSunday(d.getFullYear(), 5, 3), 3),
     badge: { label: 'Día del Padre', color: '#60A5FA' },
     tint: '#60A5FA',
@@ -134,6 +142,7 @@ const SEASONS = [
   },
   {
     id: 'navidad-anticipo',
+    icon: 'tree',
     match: (d) => between(d, [12, 1], [12, 23]),
     badge: { label: 'Diciembre', color: '#15803D' },
     tint: '#22C55E',
@@ -145,6 +154,7 @@ const SEASONS = [
   },
   {
     id: 'nochebuena',
+    icon: 'tree',
     always: true,
     match: (d) => between(d, [12, 24], [12, 24]),
     badge: { label: 'Nochebuena', color: '#15803D' },
@@ -157,6 +167,7 @@ const SEASONS = [
   },
   {
     id: 'navidad',
+    icon: 'tree',
     always: true,
     match: (d) => between(d, [12, 25], [12, 25]),
     badge: { label: 'Navidad', color: '#15803D' },
@@ -169,6 +180,7 @@ const SEASONS = [
   },
   {
     id: 'fin-de-ano-anticipo',
+    icon: 'sparkles',
     match: (d) => between(d, [12, 26], [12, 30]),
     badge: { label: 'Fin de Año', color: '#F59E0B' },
     tint: '#F59E0B',
@@ -180,6 +192,7 @@ const SEASONS = [
   },
   {
     id: 'fin-de-ano',
+    icon: 'sparkles',
     always: true,
     match: (d) => between(d, [12, 31], [12, 31]),
     badge: { label: 'Fin de Año', color: '#F59E0B' },
@@ -192,6 +205,7 @@ const SEASONS = [
   },
   {
     id: 'ano-nuevo',
+    icon: 'sparkles',
     always: true,
     match: (d) => between(d, [1, 1], [1, 1]),
     badge: { label: 'Año Nuevo', color: '#1E5FAD' },
@@ -222,13 +236,14 @@ export function getActiveSeasons(date) {
 }
 
 // What the badge next to Home's date shows: every season active today, as one
-// quiet pill — dots in each season's color + the names joined by " · ", e.g.
+// quiet pill — a small line icon per celebration (a cross for the mes morado,
+// a pumpkin for spooky…) + the names joined by " · ", e.g.
 // "Mes morado · Spooky season" (Peru's October is both). Null most of the year.
 export function seasonBadge(date) {
   const active = getActiveSeasons(date).filter((s) => s.badge)
   if (active.length === 0) return null
   return {
     label: active.map((s) => s.badge.label).join(' · '),
-    colors: active.map((s) => s.tint),
+    items: active.map((s) => ({ icon: s.icon, color: s.tint })),
   }
 }

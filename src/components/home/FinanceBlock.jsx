@@ -1,4 +1,5 @@
 import { currencyPEN } from '../../lib/clientStages'
+import AnimatedNumber from '../common/AnimatedNumber'
 
 // Hand-drawn sparkline (no charting library, per project convention) —
 // normalizes the last few monthly revenue points into a 240x56 viewBox.
@@ -23,8 +24,17 @@ function Sparkline({ points }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-14 w-full" preserveAspectRatio="none">
-      <path d={path} fill="none" stroke="#1E5FAD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={lastX} cy={lastY} r="3" fill="#1E5FAD" />
+      <path
+        d={path}
+        pathLength="1"
+        fill="none"
+        stroke="#1E5FAD"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ strokeDasharray: 1, animation: 'ador-draw 1.1s ease-out' }}
+      />
+      <circle cx={lastX} cy={lastY} r="3" fill="#1E5FAD" style={{ animation: 'ador-fade-in 0.4s ease-out 0.95s backwards' }} />
     </svg>
   )
 }
@@ -59,7 +69,7 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
         <>
           <p className="mt-3 text-[12px] text-[#666666]">Ingresos del mes</p>
           <div className="mt-1 flex items-baseline gap-3">
-            <span className="text-[32px] font-semibold text-[#F5F5F5]">{currencyPEN.format(ingresosDelMes)}</span>
+            <span className="text-[32px] font-semibold text-[#F5F5F5]"><AnimatedNumber value={ingresosDelMes} format={(n) => currencyPEN.format(n)} /></span>
             {ingresosDeltaPct !== null && (
               <span className="text-[13px] font-medium" style={{ color: ingresosDeltaPct >= 0 ? '#1E5FAD' : '#E05252' }}>
                 {ingresosDeltaPct >= 0 ? '+' : ''}

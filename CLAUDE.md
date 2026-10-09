@@ -874,6 +874,14 @@ Pedido: que ADOR OS "se sienta vivo" en fechas del año (Perú), corporativo y m
 
 - **Pantalla de bienvenida (2026-10-09):** la hora es la protagonista (ultrafina, `clamp(96px,17vw,210px)`, degradado blanco; el saludo pasa a segundo plano) y el fondo es una luz que cambia con la franja horaria (`SKY` en `WelcomeScreen.jsx`: dorado cálido de mañana, azul de tarde, índigo de noche) con deriva lenta. Con `?preview=1` no se puede ver (el usuario de prueba salta la bienvenida): para verla en desarrollo hay que añadir temporalmente una rama en `App.jsx` que renderice `<WelcomeScreen/>`.
 
+### 48. Vida en la plataforma: ritmo semanal, movimiento, momentos de logro (2026-10-09)
+
+Pedido: que ADOR OS no se sienta aburrido más allá de las festividades. Criterio: que reaccione a lo que pasa de verdad en la empresa, nunca decoración de fondo (las luces ya se probaron y se quitaron, §47).
+- **Insignia de temporada con iconos de línea** (`components/common/SeasonIcon.jsx`, campo `icon` en `lib/seasons.js`): cruz para el Mes morado (Señor de los Milagros), calabaza para Spooky/Halloween, árbol, estrella, destellos, bandera, flor. Reemplazó los puntos de color.
+- **Ritmo semanal** (`weeklyRhythm()` en `lib/weeklySummary.js`, usado por `WeeklySummaryCard`): lunes = "Arranque de semana" (tareas que vencen, cobros esperados, arrastradas); viernes–domingo = "Cierre de semana" (tareas completadas, ingresos, vencidas); otros días el resumen normal. El saludo de Inicio también tiene frases propias de lunes y viernes (`WEEKDAY_VARIANTS`).
+- **Movimiento:** `AnimatedNumber` (cuenta hacia arriba y se desliza al nuevo valor; `useCountUp` ahora parte del valor mostrado, no de 0) en las métricas y el ingreso del mes de Inicio; la línea del gráfico se dibuja (`ador-draw`); vibración corta al completar una tarea (`lib/haptics.js`, llamada desde `toggleTaskComplete`/`applyTaskUpdate`; funciona en Android, iOS no expone vibración a webs).
+- **Momentos de logro:** `lib/celebrate.js` (`celebrate({title, subtitle})` dispara el evento `ador:moment`) + `components/shell/AchievementMoment.jsx` (tarjeta dorada arriba al centro, anillo que se dibuja, destello pequeño, ~5 s, de a uno). `hooks/useAchievements.js` (montado en AppShell, no corre con `?preview=1`) compara cada snapshot con el anterior: pago pasa a Recibido, cliente pasa a Intervención Activa (SP), objetivo llega a 100% (solo hitos y métricas personalizadas — las métricas en vivo no guardan su valor), y "Día despejado" cuando completas lo último de hoy (una vez al día). Ignora los primeros 8 s tras cargar para no celebrar cambios que ya existían. Cada persona ve la celebración en su propia app cuando otro registra el pago. Para probar a mano: `window.dispatchEvent(new CustomEvent('ador:moment',{detail:{title:'…',subtitle:'…'}}))`.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.
