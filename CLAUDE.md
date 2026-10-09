@@ -871,6 +871,8 @@ Pedido: que ADOR OS "se sienta vivo" en fechas del año (Perú) sin ser invasivo
 - `components/shell/SeasonAmbient.jsx` (montado en AppShell): brillo muy tenue en dos esquinas + ~14 partículas (brasas / nieve) solo en fechas con `motes`; `pointer-events:none`, z-4, respeta `prefers-reduced-motion` (sin partículas). La insignia del saludo (`GreetingBlock`) aparece y se va con el mismo pulso.
 - Verificado en preview (octubre): aparece, sube, se desvanece. Falta verlo en teléfono y en las otras fechas con `?season=navidad` etc.
 
+- **Pantalla de bienvenida (2026-10-09):** la hora es la protagonista (ultrafina, `clamp(96px,17vw,210px)`, degradado blanco; el saludo pasa a segundo plano) y el fondo es una luz que cambia con la franja horaria (`SKY` en `WelcomeScreen.jsx`: dorado cálido de mañana, azul de tarde, índigo de noche) con deriva lenta. Si hay temporada activa (y el interruptor de empresa no está apagado) suma su color más presente que dentro de la app. Con `?preview=1` no se puede ver (el usuario de prueba salta la bienvenida): para verla en desarrollo hay que añadir temporalmente una rama en `App.jsx` que renderice `<WelcomeScreen/>`.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.
