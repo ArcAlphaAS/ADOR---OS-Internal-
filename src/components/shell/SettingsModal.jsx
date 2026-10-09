@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import PushNotificationsCard from './PushNotificationsCard'
 import { SPRING } from '../../lib/motion'
+import useSeasonPulse, { setSeasonsOff } from '../../hooks/useSeasonPulse'
 
 export default function SettingsModal({ user, onClose, onResetPassword, onShowOnboarding }) {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const { off: seasonsOff } = useSeasonPulse()
 
   const handleResetPassword = async () => {
     if (!user?.email) return
@@ -57,6 +59,28 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
             >
               <span className="block text-[13px] font-medium text-[#F5F5F5]">Conoce ADOR OS</span>
               <span className="mt-0.5 block text-[12px] text-[#888888]">Un repaso rápido de cada módulo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSeasonsOff(!seasonsOff)}
+              className="ador-glass flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors duration-150 hover:bg-white/[0.06]"
+            >
+              <span>
+                <span className="block text-[13px] font-medium text-[#F5F5F5]">Ambiente de temporada</span>
+                <span className="mt-0.5 block text-[12px] text-[#888888]">
+                  Un toque sutil en fechas especiales (Halloween, Navidad, Fiestas Patrias…)
+                </span>
+              </span>
+              <span
+                className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
+                style={{ background: seasonsOff ? 'rgba(255,255,255,0.12)' : '#B8860B' }}
+              >
+                <span
+                  className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-200"
+                  style={{ left: seasonsOff ? 2 : 18 }}
+                />
+              </span>
             </button>
 
             <button

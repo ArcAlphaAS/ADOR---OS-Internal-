@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getActiveSeason } from '../../lib/seasons'
+import useSeasonPulse from '../../hooks/useSeasonPulse'
 
 function getGreeting(hour, name) {
   if (hour >= 6 && hour < 13) return `Buenos días, ${name}.`
@@ -51,6 +52,9 @@ export default function GreetingBlock({ name }) {
   }, [])
 
   const season = getActiveSeason(now)
+  // The badge breathes with the ambient glow instead of sitting there all day.
+  const pulse = useSeasonPulse()
+  const badgeSeason = pulse.season?.badge ? pulse.season : season
 
   return (
     <div>
@@ -68,14 +72,20 @@ export default function GreetingBlock({ name }) {
       </h1>
       <div className="mt-2 flex items-center gap-2.5">
         <p className="text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
-        {season?.badge && (
+        {badgeSeason?.badge && (
           <span
-            title={season.badge.label}
+            title={badgeSeason.badge.label}
             className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-            style={{ background: `${season.badge.color}1F`, color: season.badge.color }}
+            style={{
+              background: `${badgeSeason.badge.color}1F`,
+              color: badgeSeason.badge.color,
+              opacity: pulse.on ? 1 : 0,
+              transform: pulse.on ? 'translateY(0)' : 'translateY(2px)',
+              transition: 'opacity 1200ms ease-in-out, transform 1200ms ease-in-out',
+            }}
           >
-            <span style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }}>{season.badge.emoji}</span>
-            {season.badge.label}
+            <span style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }}>{badgeSeason.badge.emoji}</span>
+            {badgeSeason.badge.label}
           </span>
         )}
       </div>

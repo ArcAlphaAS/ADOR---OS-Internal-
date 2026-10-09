@@ -28,6 +28,7 @@ import { useToast } from '../../hooks/useToast'
 import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 import UpdateBanner from './UpdateBanner'
 import OfflineBanner from './OfflineBanner'
+import SeasonAmbient from './SeasonAmbient'
 
 // Every module except Home is its own code-split chunk, downloaded the
 // first time someone opens it instead of all at once on login — the app
@@ -297,6 +298,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         </main>
       </div>
 
+      <SeasonAmbient />
       <UpdateBanner />
       <OfflineBanner />
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />
