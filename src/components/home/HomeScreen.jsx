@@ -3,8 +3,6 @@ import { firstName } from '../../lib/user'
 import { useHomeData } from '../../hooks/useHomeData'
 import { useFinanceData } from '../../hooks/useFinanceData'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
-import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
-import BirthdayBanner from './BirthdayBanner'
 import GreetingBlock from './GreetingBlock'
 import TuDiaCard from './TuDiaCard'
 import AttentionCard from './AttentionCard'
@@ -12,6 +10,8 @@ import WeeklySummaryCard from './WeeklySummaryCard'
 import FinanceBlock from './FinanceBlock'
 import InterventionsBlock from './InterventionsBlock'
 import LatestNewsCard from './LatestNewsCard'
+import CommunityCard from './CommunityCard'
+import HomePeople from './HomePeople'
 
 // Orchestrates a staggered reveal instead of the whole page fading in as one
 // block — each section settles in slightly after the last. Only opacity/y
@@ -56,8 +56,6 @@ export default function HomeScreen({ user, onNavigate }) {
   const calendar = useGoogleCalendar(user?.uid, { initialRange: nextTwoWeeks })
   const nextMeeting = calendar.status === 'ready' ? pickNextMeeting(calendar.events) : null
 
-  const birthdays = useTodaysBirthdays()
-
   return (
     <motion.div
       variants={containerVariants}
@@ -65,9 +63,6 @@ export default function HomeScreen({ user, onNavigate }) {
       animate="show"
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-10 lg:px-12 lg:pt-16"
     >
-      <motion.div variants={itemVariants}>
-        <BirthdayBanner birthdays={birthdays} currentUserId={user?.uid} />
-      </motion.div>
       <motion.div variants={itemVariants}>
         <GreetingBlock name={firstName(user)} />
       </motion.div>
@@ -80,15 +75,21 @@ export default function HomeScreen({ user, onNavigate }) {
         <motion.div variants={itemVariants}>
           <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
         </motion.div>
-        <div className="flex flex-col gap-6">
-          <motion.div variants={itemVariants}>
-            <WeeklySummaryCard />
-          </motion.div>
+        <motion.div variants={itemVariants}>
+          <WeeklySummaryCard />
+        </motion.div>
+      </div>
+
+      <HomePeople>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
           <motion.div variants={itemVariants}>
             <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
+          <motion.div variants={itemVariants}>
+            <CommunityCard user={user} onNavigate={onNavigate} />
+          </motion.div>
         </div>
-      </div>
+      </HomePeople>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_1.3fr] lg:gap-8">
         <motion.div variants={itemVariants}>

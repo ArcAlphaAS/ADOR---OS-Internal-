@@ -891,6 +891,13 @@ Pedido: que Inicio se sienta lujoso, calmado y de bienvenida (no un tablero de c
 - **Quitado** (archivos borrados): `MetricsBlock`, `TasksTodayBlock`, `MeetingDecisionBlock` (la última decisión ya vive en Objetivos), `ActivityBlock` ("Actividad reciente", siempre vacía) y `QuickLinksBlock` (solo Google Drive).
 - Verificado en el preview con datos de ejemplo temporales (ya retirados) y en estado vacío; las capturas pueden salir en blanco hasta que termina la animación lenta (el panel del preview es lento componiendo).
 
+### 50. Inicio: anuncio editorial + tarjeta "Comunidad" (2026-10-09)
+
+Pedido: que Inicio se sienta humano y parte de la comunidad, sin saturar. Hecho: (1) **`LatestNewsCard`** pasó de fila chica a pieza editorial: portada ancha (180/220 px), título serif, 2 líneas de extracto (`subtitle`, o el cuerpo sin Markdown), cara de quien lo publicó (`PersonAvatar`) + "hace 2 h" (`ago` de `lib/chat.js`, ahora exportada), y "Confirmar que lo leí →" en dorado si lo piden. Hasta ahí, a propósito. (2) **`CommunityCard`**: "Próximos encuentros" = publicaciones de Comunidad tipo `evento` que aún no pasan (hasta 3 h después del inicio), máx. 3, con "Domingo · 7 pm · Barranco · 2 van" y un botón "Voy" (`setCommunityRsvp`) o "✓ Vas"; sin encuentros muestra "Proponer uno →" (abre Comunidad). Encima, **solo cuando existen**: cumpleaños de hoy (con "Saludar", que abre el DM) y bienvenidas (personas de Directorio creadas en los últimos 14 días). `BirthdayBanner` se borró; la campana sigue avisando cumpleaños. (3) **`HomePeople`** da el directorio de caras a ambas tarjetas (`ChatPeopleContext`).
+- **Decidido NO hacer:** lista de "quién está en línea" (no escala a un equipo de 50). Tampoco se tocó el resumen semanal.
+- Layout: fila 2 = Atención | Resumen semanal; fila 3 = anuncio | Comunidad; fila 4 = Resumen financiero | Intervenciones. Había un bloque previo con el anuncio como barra completa bajo "Tu día" (añadido fuera de esta conversación); se quitó porque duplicaba la tarjeta nueva.
+- Verificado con datos de ejemplo temporales (retirados). Falta ver con datos reales: portada con foto, el RSVP real y bienvenidas de Directorio.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

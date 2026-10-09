@@ -220,7 +220,7 @@ export function mentionQueryAt(text, cursor) {
 const ONLINE_MS = 2.5 * 60 * 1000 // heartbeat is every 60s; allow a missed beat
 const AWAY_MS = 30 * 60 * 1000
 
-function ago(ms) {
+export function ago(ms) {
   const min = Math.floor(ms / 60000)
   if (min < 60) return `hace ${Math.max(1, min)} min`
   const h = Math.floor(min / 60)
