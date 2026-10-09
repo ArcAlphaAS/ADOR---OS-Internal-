@@ -6,14 +6,11 @@ import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import BirthdayBanner from './BirthdayBanner'
 import GreetingBlock from './GreetingBlock'
+import TuDiaCard from './TuDiaCard'
+import AttentionCard from './AttentionCard'
 import WeeklySummaryCard from './WeeklySummaryCard'
-import MetricsBlock from './MetricsBlock'
 import FinanceBlock from './FinanceBlock'
-import TasksTodayBlock from './TasksTodayBlock'
 import InterventionsBlock from './InterventionsBlock'
-import MeetingDecisionBlock from './MeetingDecisionBlock'
-import ActivityBlock from './ActivityBlock'
-import QuickLinksBlock from './QuickLinksBlock'
 import LatestNewsCard from './LatestNewsCard'
 
 // Orchestrates a staggered reveal instead of the whole page fading in as one
@@ -23,7 +20,7 @@ import LatestNewsCard from './LatestNewsCard'
 // on the same element breaks the blur in Chromium.
 const containerVariants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
 }
 // Inicio asks Google Calendar for the next two weeks (not the current
 // week) so "Próxima reunión" still finds something on a Friday afternoon.
@@ -49,18 +46,11 @@ function pickNextMeeting(events) {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
 }
 
 export default function HomeScreen({ user, onNavigate }) {
-  const {
-    pipelineSPCCount,
-    activeSPCount,
-    tasksTodayCount,
-    tasksTodayRows,
-    interventions,
-    latestDecision,
-  } = useHomeData(user?.uid)
+  const { interventions } = useHomeData(user?.uid)
   // Same numbers as Finanzas (client payments + manual incomes).
   const finance = useFinanceData()
   const calendar = useGoogleCalendar(user?.uid, { initialRange: nextTwoWeeks })
@@ -83,61 +73,37 @@ export default function HomeScreen({ user, onNavigate }) {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <WeeklySummaryCard />
-      </motion.div>
-      <motion.div variants={itemVariants}>
-        <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
+        <TuDiaCard user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
       </motion.div>
 
-      {/* Two-column "sections" layout (per reference dashboard shared by user,
-          2026-08-14): left = chart-driven overview + its paired secondary
-          cards, right = at-a-glance stats + a real data table underneath —
-          mirrors "My Campaigns" + "Total Balance"/"Popular Campaigns". */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_1.3fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
+        <motion.div variants={itemVariants}>
+          <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+        </motion.div>
         <div className="flex flex-col gap-6">
           <motion.div variants={itemVariants}>
-            <FinanceBlock
-              hasData={finance.movements.length > 0}
-              ingresosDelMes={finance.ingresosDelMes}
-              ingresosDeltaPct={finance.ingresosDeltaPct}
-              series={finance.series}
-              onOpen={() => onNavigate?.('finanzas')}
-            />
+            <WeeklySummaryCard />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <MeetingDecisionBlock
-              meeting={nextMeeting}
-              calendarStatus={calendar.status}
-              onOpenCalendar={() => onNavigate?.('calendario')}
-              latestDecision={latestDecision}
-            />
-          </motion.div>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <motion.div variants={itemVariants}>
-            <MetricsBlock
-              onNavigate={onNavigate}
-              pipelineSPCCount={pipelineSPCCount}
-              activeSPCount={activeSPCount}
-              tasksTodayCount={tasksTodayCount}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <TasksTodayBlock tasks={tasksTodayRows} />
+            <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
         </div>
       </div>
 
-      <motion.div variants={itemVariants}>
-        <InterventionsBlock interventions={interventions} />
-      </motion.div>
-      <motion.div variants={itemVariants}>
-        <ActivityBlock />
-      </motion.div>
-      <motion.div variants={itemVariants}>
-        <QuickLinksBlock />
-      </motion.div>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_1.3fr] lg:gap-8">
+        <motion.div variants={itemVariants}>
+          <FinanceBlock
+            hasData={finance.movements.length > 0}
+            ingresosDelMes={finance.ingresosDelMes}
+            ingresosDeltaPct={finance.ingresosDeltaPct}
+            series={finance.series}
+            onOpen={() => onNavigate?.('finanzas')}
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <InterventionsBlock interventions={interventions} />
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
