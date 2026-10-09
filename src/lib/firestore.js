@@ -476,6 +476,22 @@ export function setDriveFolder(folder) {
   return setDoc(doc(db, COLLECTIONS.settings, 'google'), { driveFolder: folder }, { merge: true })
 }
 
+// ---- Ambiente de temporada (lib/seasons.js) ----
+// settings/seasons = { off: bool } — company-wide; only admins can change it.
+export function subscribeSeasonSettings(onData) {
+  if (!db) return () => {}
+  return onSnapshot(
+    doc(db, COLLECTIONS.settings, 'seasons'),
+    (snap) => onData(snap.exists() ? snap.data() : {}),
+    (error) => console.error('Firestore subscription to settings/seasons failed:', error.message)
+  )
+}
+
+export function setSeasonsOff(off) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, COLLECTIONS.settings, 'seasons'), { off }, { merge: true })
+}
+
 // ---- Administración: acceso y roles (lib/access.js) ----
 export function subscribeAccessSettings(onData) {
   if (!db) return () => {}

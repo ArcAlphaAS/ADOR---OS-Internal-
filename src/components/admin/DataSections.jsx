@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeUserProfile, subscribeMaintenance, recordBackup, subscribeDriveFolder, setDriveFolder } from '../../lib/firestore'
+import { subscribeUserProfile, subscribeMaintenance, recordBackup, subscribeDriveFolder, setDriveFolder, subscribeSeasonSettings, setSeasonsOff } from '../../lib/firestore'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { isAdmin } from '../../lib/permissions'
 import { exportAllData, backupFileName } from '../../lib/backup'
@@ -144,3 +144,41 @@ export function BackupSection({ user }) {
   )
 }
 
+
+// "Ambiente de temporada": company-wide on/off for the festive touches
+// (lib/seasons.js). Only admins reach this screen.
+export function SeasonSection() {
+  const [settings, setSettings] = useState(null)
+  const [error, setError] = useState('')
+  useEffect(() => subscribeSeasonSettings(setSettings), [])
+  if (!settings) return null
+  const off = !!settings.off
+  const toggle = async () => {
+    setError('')
+    try {
+      await setSeasonsOff(!off)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+  return (
+    <div className="ador-glass flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3">
+      <span>
+        <span className="block text-[13px] font-medium text-[#F5F5F5]">Ambiente de temporada</span>
+        <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">
+          Un toque sutil en fechas especiales (Halloween, Navidad, Fiestas Patrias…). Vale para todo el equipo.
+        </span>
+        {error && <span className="mt-1 block text-[12px] text-[#EF8A88]">{error}</span>}
+      </span>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={!off}
+        className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
+        style={{ background: off ? 'rgba(255,255,255,0.12)' : '#B8860B' }}
+      >
+        <span className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-200" style={{ left: off ? 2 : 18 }} />
+      </button>
+    </div>
+  )
+}

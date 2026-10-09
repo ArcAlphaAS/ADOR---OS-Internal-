@@ -25,7 +25,7 @@ import { presenceOf } from '../../lib/chat'
 import { inviteMember, resendAccessEmail } from '../../lib/invite'
 import { withTimeout, LAYERS, PRIORITIES, layerWeekSpan } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
-import { DriveFolderSection, BackupSection } from './DataSections'
+import { DriveFolderSection, BackupSection, SeasonSection } from './DataSections'
 
 // Administración (admins only — lib/access.js). Four tabs:
 //   Personas — who has access, their role, invite / resend / remove
@@ -526,6 +526,7 @@ export default function AdminModule({ user }) {
       {tab === 'errores' && <ErrorsTab />}
       {tab === 'datos' && (
         <div className="flex flex-col gap-3">
+          <SeasonSection />
           <DriveFolderSection user={user} />
           <BackupSection user={user} />
         </div>

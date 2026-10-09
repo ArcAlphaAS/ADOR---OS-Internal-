@@ -35,11 +35,14 @@ function withinDaysOf(date, target, daysBefore) {
 
 const phrases = (morning, afternoon, evening) => ({ morning, afternoon, evening })
 
+// `always: true` = the day itself (Oct 31, Dec 24/25/31, Jan 1…): the glow
+// stays on all day instead of pulsing. Other days it only pulses.
 // Order = priority: the most specific day comes first. When several seasons
 // are active at once (all of October), the pulse alternates between them.
 const SEASONS = [
   {
     id: 'halloween',
+    always: true,
     match: (d) => between(d, [10, 31], [10, 31]),
     badge: { emoji: '🎃', label: 'Halloween · Canción Criolla', color: '#F97316' },
     tint: '#F97316',
@@ -76,6 +79,7 @@ const SEASONS = [
   },
   {
     id: 'todos-los-santos',
+    always: true,
     match: (d) => between(d, [11, 1], [11, 2]),
     badge: { emoji: '🕯️', label: 'Todos los Santos', color: '#D4D4D8' },
     tint: '#D4D4D8',
@@ -84,6 +88,19 @@ const SEASONS = [
       ['Hoy es un día de recuerdo y calma.', 'Todos los Santos — un día más tranquilo.'],
       ['Una tarde de recuerdo — con calma.', 'Todos los Santos — sin prisa.'],
       ['Cerrando un día de recuerdo.', 'Buen cierre de día, con calma.'],
+    ),
+  },
+  {
+    id: 'fiestas-patrias-dia',
+    always: true,
+    match: (d) => between(d, [7, 28], [7, 29]),
+    badge: { emoji: '🇵🇪', label: 'Fiestas Patrias', color: '#D91023' },
+    tint: '#D91023',
+    motes: true,
+    phrases: phrases(
+      ['Feliz Fiestas Patrias.', 'Hoy se celebra el Perú.'],
+      ['Feliz Fiestas Patrias — ¡Viva el Perú!', 'Una tarde para celebrar el Perú.'],
+      ['Feliz Fiestas Patrias.', 'Cerrando un día patrio.'],
     ),
   },
   {
@@ -100,6 +117,7 @@ const SEASONS = [
   },
   {
     id: 'santa-rosa',
+    always: true,
     match: (d) => between(d, [8, 30], [8, 30]),
     badge: { emoji: '🌹', label: 'Santa Rosa de Lima', color: '#F472B6' },
     tint: '#F472B6',
@@ -148,6 +166,7 @@ const SEASONS = [
   },
   {
     id: 'nochebuena',
+    always: true,
     match: (d) => between(d, [12, 24], [12, 24]),
     badge: { emoji: '🎄', label: 'Nochebuena', color: '#15803D' },
     tint: '#22C55E',
@@ -160,6 +179,7 @@ const SEASONS = [
   },
   {
     id: 'navidad',
+    always: true,
     match: (d) => between(d, [12, 25], [12, 25]),
     badge: { emoji: '🎄', label: 'Navidad', color: '#15803D' },
     tint: '#22C55E',
@@ -184,6 +204,7 @@ const SEASONS = [
   },
   {
     id: 'fin-de-ano',
+    always: true,
     match: (d) => between(d, [12, 31], [12, 31]),
     badge: { emoji: '🎆', label: 'Fin de Año', color: '#F59E0B' },
     tint: '#F59E0B',
@@ -196,6 +217,7 @@ const SEASONS = [
   },
   {
     id: 'ano-nuevo',
+    always: true,
     match: (d) => between(d, [1, 1], [1, 1]),
     badge: { emoji: '🎉', label: 'Año Nuevo', color: '#1E5FAD' },
     tint: '#E8C15A',

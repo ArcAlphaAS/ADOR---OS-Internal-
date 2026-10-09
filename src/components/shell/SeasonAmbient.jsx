@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
-import useSeasonPulse, { startSeasonPulse } from '../../hooks/useSeasonPulse'
+import useSeasonPulse, { startSeasonPulse, setSeasonsOffRemote } from '../../hooks/useSeasonPulse'
+import { subscribeSeasonSettings } from '../../lib/firestore'
 
 // A faint glow along the screen edges (plus a few drifting motes on key days)
 // that fades in for ~15s and goes away again — see useSeasonPulse. Fixed,
@@ -44,6 +45,8 @@ export default function SeasonAmbient() {
 
   useEffect(() => {
     startSeasonPulse()
+    // Company-wide switch (admins: Administración → Datos).
+    return subscribeSeasonSettings((settings) => setSeasonsOffRemote(!!settings.off))
   }, [])
 
   if (!season) return null
