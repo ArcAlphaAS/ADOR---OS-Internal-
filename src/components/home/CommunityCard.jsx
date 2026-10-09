@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { subscribeCommunityPosts, subscribeDirectoryPeople, setCommunityRsvp } from '../../lib/firestore'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
+import { useAccess } from '../../hooks/useAccess'
 import PersonAvatar from '../chat/PersonAvatar'
 
 // "Comunidad" on Inicio: the team's shared plans (events posted in Comunidad)
@@ -91,6 +92,7 @@ export default function CommunityCard({ user, onNavigate }) {
   useEffect(() => subscribeDirectoryPeople(setDirectory), [])
 
   const uid = user?.uid
+  const { canOrganizeEvents } = useAccess(uid)
   const name = user?.displayName || user?.email?.split('@')[0] || 'Alguien'
 
   const events = posts
@@ -142,9 +144,11 @@ export default function CommunityCard({ user, onNavigate }) {
       {events.length === 0 ? (
         <div className="py-4">
           <p className="text-[13.5px] text-[#7A7A7A]">Sin encuentros por ahora.</p>
-          <button type="button" onClick={() => onNavigate?.('news', { type: 'community' })} className="mt-1.5 text-[13px] font-medium text-[#E8C15A] transition-opacity hover:opacity-80">
-            Proponer uno →
-          </button>
+          {canOrganizeEvents && (
+            <button type="button" onClick={() => onNavigate?.('news', { type: 'community' })} className="mt-1.5 text-[13px] font-medium text-[#E8C15A] transition-opacity hover:opacity-80">
+              Organizar uno →
+            </button>
+          )}
         </div>
       ) : (
         <ul className="divide-y divide-white/[0.06]">

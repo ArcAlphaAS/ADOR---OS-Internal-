@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeUserProfile, subscribeAccessSettings } from '../lib/firestore'
-import { isAdmin } from '../lib/permissions'
+import { isAdmin, canOrganizeEvents } from '../lib/permissions'
 import { canSeeModule } from '../lib/access'
 
 // The signed-in person's role and which modules they can open (lib/access.js).
@@ -12,6 +12,7 @@ export function useAccess(uid) {
   const admin = isAdmin(profile)
   return {
     isAdmin: admin,
+    canOrganizeEvents: canOrganizeEvents(profile),
     memberModules: settings.memberModules || null,
     canSee: (moduleId) => canSeeModule(moduleId, { isAdmin: admin, memberModules: settings.memberModules }),
   }

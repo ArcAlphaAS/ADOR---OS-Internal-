@@ -538,6 +538,11 @@ export function setUserRole(uid, isAdminRole) {
   return setDoc(doc(db, COLLECTIONS.users, uid), { isAdmin: isAdminRole }, { merge: true })
 }
 
+export function setCommunityOrganizer(uid, allowed) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, COLLECTIONS.users, uid), { communityOrganizer: allowed }, { merge: true })
+}
+
 export function saveUserProfile(userId, data) {
   if (!db || !userId) return Promise.resolve()
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })

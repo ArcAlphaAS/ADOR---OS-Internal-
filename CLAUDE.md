@@ -898,6 +898,14 @@ Pedido: que Inicio se sienta humano y parte de la comunidad, sin saturar. Hecho:
 - Layout: fila 2 = Atención | Resumen semanal; fila 3 = anuncio | Comunidad; fila 4 = Resumen financiero | Intervenciones. Había un bloque previo con el anuncio como barra completa bajo "Tu día" (añadido fuera de esta conversación); se quitó porque duplicaba la tarjeta nueva.
 - Verificado con datos de ejemplo temporales (retirados). Falta ver con datos reales: portada con foto, el RSVP real y bienvenidas de Directorio.
 
+### 51. Quién puede organizar encuentros en Comunidad (2026-10-09)
+
+Pedido: proponer/organizar cosas de Comunidad solo para administradores y "encargados" a quienes se les dé el acceso. Interpretado como **encuentros** (publicaciones tipo `evento`); las demás (actualización, idea, pregunta, logro, recurso) siguen abiertas a todos, igual que confirmar asistencia ("Voy"). Si el usuario quiso restringir *todo* el publicar en Comunidad, falta ampliarlo (sería gatear `Composer` entero).
+- **Permiso:** `users/{uid}.communityOrganizer` (bool) + todos los administradores. `canOrganizeEvents(profile)` en `lib/permissions.js` (falla abierto como `isAdmin`: sin perfil = fundador). `useAccess` lo devuelve como `canOrganizeEvents`.
+- **Quién lo da:** Administración → Personas, botón "Organiza encuentros" por cada miembro con cuenta (`setCommunityOrganizer`); los administradores no lo necesitan.
+- **Dónde se aplica:** el compositor de Comunidad oculta el tipo "Evento" (y `submit` lo rechaza) sin el permiso; en Inicio, la tarjeta Comunidad muestra "Organizar uno →" solo a quien puede.
+- **`firestore.rules` (borrador, no activo):** `canOrganize()`, crear un `communityPosts` con `type == 'evento'` exige admin u organizador, y nadie puede ponerse `communityOrganizer` a sí mismo. Hoy, con la regla abierta en producción, es solo del lado de la app.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

@@ -8,3 +8,11 @@
 export function isAdmin(profile) {
   return profile?.isAdmin !== false
 }
+
+// Who may organize encuentros (Comunidad posts of type "evento"): every
+// administrator, plus any member an admin switched on in Administración →
+// Personas (users/{uid}.communityOrganizer). Everyone can still post the other
+// kinds (updates, ideas, questions…) and RSVP to events.
+export function canOrganizeEvents(profile) {
+  return isAdmin(profile) || profile?.communityOrganizer === true
+}

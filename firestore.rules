@@ -30,6 +30,11 @@ service cloud.firestore {
     function isAdmin() {
       return isAllowed() && (!exists(profilePath()) || get(profilePath()).data.get('isAdmin', true) != false);
     }
+    // Encuentros (communityPosts of type 'evento'): admins, plus members an
+    // admin switched on (users/{uid}.communityOrganizer).
+    function canOrganize() {
+      return isAdmin() || (isAllowed() && exists(profilePath()) && get(profilePath()).data.get('communityOrganizer', false) == true);
+    }
     function memberModules() {
       return exists(/databases/$(database)/documents/settings/access)
         ? get(/databases/$(database)/documents/settings/access).data.get('memberModules', [])
@@ -52,9 +57,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isAllowed();
       // Your own profile, but never your own role.
-      allow create: if isAllowed() && request.auth.uid == uid && !('isAdmin' in request.resource.data);
+      allow create: if isAllowed() && request.auth.uid == uid && !('isAdmin' in request.resource.data) && !('communityOrganizer' in request.resource.data);
       allow update: if isAllowed() && request.auth.uid == uid
-        && request.resource.data.get('isAdmin', null) == resource.data.get('isAdmin', null);
+        && request.resource.data.get('isAdmin', null) == resource.data.get('isAdmin', null)
+        && request.resource.data.get('communityOrganizer', null) == resource.data.get('communityOrganizer', null);
     }
     match /settings/{name} {
       allow read: if isAllowed() && (name != 'finanzas' || canUse('finanzas'));
@@ -114,7 +120,8 @@ service cloud.firestore {
       allow delete: if canUse('news') && resource.data.authorUid == request.auth.uid;
     }
     match /communityPosts/{id} {
-      allow read, create: if canUse('news');
+      allow read: if canUse('news');
+      allow create: if canUse('news') && (request.resource.data.get('type', '') != 'evento' || canOrganize());
       allow update: if canUse('news'); // reactions
       allow delete: if canUse('news') && resource.data.authorUid == request.auth.uid;
     }

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   subscribeAllowedEmails,
   subscribeUsers,
-  subscribeUsersRaw,
+  subscribeUsersRaw, setCommunityOrganizer,
   subscribeAllTasks,
   deleteUserProfile,
   unassignFromTasks,
@@ -130,6 +130,17 @@ function PeopleTab({ user }) {
     }
   }
 
+  const toggleOrganizer = async (row) => {
+    if (!row.account) return
+    const next = row.account.communityOrganizer !== true
+    try {
+      await withTimeout(setCommunityOrganizer(row.account.id, next))
+      showToast(next ? `${row.name.split(' ')[0]} ya puede organizar encuentros.` : `${row.name.split(' ')[0]} ya no organiza encuentros.`)
+    } catch (e) {
+      showToast(`No se pudo cambiar el permiso: ${e.message}`)
+    }
+  }
+
   const revoke = async (row) => {
     if (row.email === me) return showToast('No puedes quitarte el acceso a ti mismo.')
     if (row.role === 'admin' && adminCount <= 1) return showToast('Debe quedar al menos un administrador.')
@@ -234,7 +245,7 @@ function PeopleTab({ user }) {
               )
             }
             return (
-              <div key={row.email} className="flex items-center gap-3 py-3">
+              <div key={row.email} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-medium text-[#F5F5F5]">
                     {row.name}
@@ -251,6 +262,22 @@ function PeopleTab({ user }) {
                 >
                   Editar
                 </button>
+                {row.role !== 'admin' && row.account && (
+                  <button
+                    type="button"
+                    onClick={() => toggleOrganizer(row)}
+                    aria-pressed={row.account.communityOrganizer === true}
+                    title="Permite crear encuentros en Comunidad (los administradores siempre pueden)"
+                    className="rounded-full border px-3 py-1 text-[11.5px] font-medium transition-colors"
+                    style={
+                      row.account.communityOrganizer === true
+                        ? { borderColor: 'rgba(232,193,90,0.5)', color: '#E8C15A', background: 'rgba(232,193,90,0.08)' }
+                        : { borderColor: 'rgba(255,255,255,0.12)', color: '#888888' }
+                    }
+                  >
+                    {row.account.communityOrganizer === true ? '✓ Organiza encuentros' : 'Organiza encuentros'}
+                  </button>
+                )}
                 <RoleSelect value={row.role} disabled={row.email === me} onChange={(role) => changeRole(row, role)} />
                 {row.invited && (
                   <button
@@ -277,7 +304,7 @@ function PeopleTab({ user }) {
           })}
         </div>
         <p className="mt-3 text-[11.5px] leading-relaxed text-[#666666]">
-          Quitar el acceso le impide ver cualquier dato de inmediato. Su cuenta de inicio de sesión sigue existiendo en Firebase; si quieres borrarla del todo: Firebase → Authentication → Users.
+          "Organiza encuentros" deja a un miembro crear eventos en Comunidad (los administradores siempre pueden). Quitar el acceso le impide ver cualquier dato de inmediato. Su cuenta de inicio de sesión sigue existiendo en Firebase; si quieres borrarla del todo: Firebase → Authentication → Users.
         </p>
       </div>
 

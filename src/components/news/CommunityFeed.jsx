@@ -14,6 +14,7 @@ import {
   subscribeDirectoryPeople,
 } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
+import { canOrganizeEvents } from '../../lib/permissions'
 import { resizeImageToDataUrl } from '../../lib/image'
 import PhotoCropper from '../common/PhotoCropper'
 import { useToast } from '../../hooks/useToast'
@@ -82,7 +83,7 @@ const PLACEHOLDER = {
   recurso: 'Por qué este recurso es útil…',
 }
 
-function Composer({ user, actorName }) {
+function Composer({ user, actorName, canOrganize }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [text, setText] = useState('')
@@ -142,6 +143,7 @@ function Composer({ user, actorName }) {
 
   const submit = async () => {
     if ((!text.trim() && !title.trim()) || saving) return
+    if (type === 'evento' && !canOrganize) return showToast('Solo los administradores y encargados pueden organizar encuentros.')
     if (type === 'evento' && !event.date) return showToast('Ponle una fecha al evento.')
     if (type === 'recurso' && !resource?.url) return showToast('Añade el enlace o el archivo del recurso.')
     // Firestore documents top out at 1MB — keep photos comfortably under it.
@@ -242,7 +244,7 @@ function Composer({ user, actorName }) {
       </div>
 
       <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] md:pl-[56px] [&::-webkit-scrollbar]:hidden">
-        {COMMUNITY_TYPES.map((t) => {
+        {COMMUNITY_TYPES.filter((t) => t.id !== 'evento' || canOrganize).map((t) => {
           const active = open && type === t.id
           return (
             <button
@@ -563,7 +565,7 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
           ))}
         </div>
 
-        <Composer user={user} actorName={actorName} />
+        <Composer user={user} actorName={actorName} canOrganize={canOrganizeEvents(profile)} />
 
         {visible.length === 0 ? (
           <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-[22px] px-6 py-14 text-center">
