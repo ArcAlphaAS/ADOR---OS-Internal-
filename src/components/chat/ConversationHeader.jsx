@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { conversationKind, isPrivate, membersOf, userLabel, groupLabel, presenceOf } from '../../lib/chat'
-import { LockIcon, InfoIcon, PhoneIcon, SearchIcon } from '../icons'
+import { LockIcon, InfoIcon, PhoneIcon, SearchIcon, UsersIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import usePhone from '../../hooks/usePhone'
 
 // The strip above a conversation: who/what it is, presence, call buttons,
 // Detalles, and the pinned-messages bar. Split out of ChatModule.jsx.
@@ -57,7 +58,7 @@ function IconButton({ title, onClick, active, busy, children, buttonRef }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-[#AAAAAA] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.09] bg-white/[0.08] text-[#D4D4D4] backdrop-blur-xl transition-colors duration-150 hover:bg-white/[0.12] hover:text-[#F5F5F5] md:h-9 md:w-9 md:border-transparent md:bg-transparent md:text-[#AAAAAA] md:backdrop-blur-none md:hover:bg-white/[0.06]"
       style={{ ...(active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : {}), ...(busy ? { color: '#E8C15A', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
     >
       {children}
@@ -89,11 +90,12 @@ function SearchButton({ active, onClick }) {
 }
 
 export default function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy, searching, onToggleSearch }) {
+  const phone = usePhone()
   if (selected.type === 'dm') {
     const presence = presenceOf(dmPresence)
     const role = [dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')
     return (
-      <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+      <div className="flex items-center justify-between gap-3 pb-1 md:border-b md:border-white/[0.06] md:pb-3">
         <button
           type="button"
           onClick={onToggleProfile}
@@ -101,9 +103,9 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
           className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
           style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
         >
-          <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={30} showPresence />
+          <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={phone ? 46 : 30} showPresence />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{dmEntry?.name || userLabel(dmUser)}</p>
+            <p className="line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.015em] text-[#F5F5F5] md:line-clamp-1 md:text-[15px] md:tracking-normal">{dmEntry?.name || userLabel(dmUser)}</p>
             {(presence.label || role) && (
               <p className="truncate text-[12.5px] text-[#7A7A7A]">
                 {presence.label && <span style={{ color: presence.color || undefined }}>{presence.label}</span>}
@@ -116,6 +118,12 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
         <div className="flex flex-shrink-0 items-center gap-1">
           <SearchButton active={searching} onClick={onToggleSearch} />
           <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />
+          {/* Phones: an explicit profile button (on a computer, the name opens it). */}
+          <span className="md:hidden">
+            <IconButton title="Ver perfil" onClick={onToggleProfile} active={profileOpen}>
+              <UsersIcon size={15} />
+            </IconButton>
+          </span>
         </div>
       </div>
     )
@@ -133,9 +141,9 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
         : 'Canal de toda la empresa'
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+    <div className="flex items-center justify-between gap-3 pb-1 md:border-b md:border-white/[0.06] md:pb-3">
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 truncate text-[15px] font-semibold text-[#F5F5F5]">
+        <p className="flex items-center gap-1.5 truncate text-[20px] font-semibold leading-tight tracking-[-0.015em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">
           {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#858585]">#</span>)}
           <span className="truncate">{title}</span>
         </p>

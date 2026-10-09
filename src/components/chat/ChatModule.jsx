@@ -721,7 +721,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       />
       </div>
 
-      <div className={`min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`ador-chat-bg min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'flex' : 'hidden md:flex'}`}>
         <button type="button" onClick={() => setMobilePane('list')} className="mb-2 flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-[13px] text-[#AAAAAA] active:bg-white/[0.06] md:hidden">
           ← Conversaciones
         </button>

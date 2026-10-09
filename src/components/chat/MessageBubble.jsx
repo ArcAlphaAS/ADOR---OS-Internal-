@@ -6,6 +6,7 @@ import PersonAvatar from './PersonAvatar'
 import MessageActionSheet from './MessageActionSheet'
 import MessageContextMenu from './MessageContextMenu'
 import { isTouchLayout } from '../../lib/motion'
+import usePhone from '../../hooks/usePhone'
 import { driveFileKind } from '../../lib/googleDrive'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -547,6 +548,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
 export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids, album }) {
+  const phone = usePhone()
   const [editing, setEditing] = useState(false)
   const [ctx, setCtx] = useState(null) // desktop right-click position
   const [swipe, setSwipe] = useState(0) // phones: swipe right to reply
@@ -777,7 +779,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   return (
     // Capped at a comfortable reading width: on a wide screen, 75% of the
     // column made lines far too long to read.
-    <div className={`group flex max-w-[min(75%,600px)] gap-2 ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
+    <div className={`group flex max-w-[86%] gap-2 md:max-w-[min(75%,600px)] ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
         setPicking(false)
         setMenu(null)
       }}>
@@ -845,22 +847,35 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           )}
           {showBubble && !emojiOnly && (
             <div
-              className="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed"
+              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? 'rounded-[20px] px-4 py-2.5 text-[14.5px]' : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
               style={{
-                background: mine ? MINE_BG : 'rgba(255,255,255,0.06)',
-                border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent',
-                color: mine ? '#F2EBDD' : '#DDDDDD',
+                // Phones: translucent "glass" bubbles over the conversation's
+                // soft gradient (the received ones lighter, yours darker with
+                // the gold edge). Computers keep the flat graphite look.
+                background: phone ? (mine ? 'rgba(30,26,20,0.78)' : 'rgba(255,255,255,0.11)') : mine ? MINE_BG : 'rgba(255,255,255,0.06)',
+                border: mine ? `1px solid ${phone ? 'rgba(184,134,11,0.36)' : MINE_BORDER}` : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
+                color: mine ? '#F2EBDD' : phone ? '#EFEFEF' : '#DDDDDD',
                 // Only the last bubble of a block gets the "tail" corner;
                 // bubbles inside a block keep softer inner corners.
-                borderTopRightRadius: mine && !groupStart ? 6 : undefined,
-                borderBottomRightRadius: mine ? (groupEnd ? 4 : 6) : undefined,
-                borderTopLeftRadius: !mine && !groupStart ? 6 : undefined,
-                borderBottomLeftRadius: !mine ? (groupEnd ? 4 : 6) : undefined,
-                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_BG : 'rgba(184,134,11,0.08)' } : {}),
+                borderTopRightRadius: mine && !groupStart ? 8 : undefined,
+                borderBottomRightRadius: mine ? (groupEnd ? 5 : 8) : undefined,
+                borderTopLeftRadius: !mine && !groupStart ? 8 : undefined,
+                borderBottomLeftRadius: !mine ? (groupEnd ? 5 : 8) : undefined,
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? (phone ? 'rgba(30,26,20,0.78)' : MINE_BG) : 'rgba(184,134,11,0.08)' } : {}),
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
               <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
+              {/* On phones the time sits inside the bubble, at the end of the
+                  last line, like the iOS/WhatsApp style. */}
+              {phone && (
+                <span className="float-right ml-3 mt-[7px] inline-flex items-center gap-1 whitespace-nowrap text-[10.5px] opacity-60">
+                  {formatTime(message.createdAt)}
+                  {message.editedAt ? ' · editado' : ''}
+                  {pinned && <span title="Mensaje fijado">📌</span>}
+                  {mine && <Ticks receipt={receipt} userName={userName} />}
+                </span>
+              )}
             </div>
           )}
           {driveUrl && <DriveCard url={driveUrl} />}
@@ -879,7 +894,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       </div>
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
       {onOpenThread && <ThreadSummary message={message} userPhoto={userPhoto} userName={userName} onOpen={onOpenThread} />}
-      {(groupEnd || message.editedAt || pinned) && (
+      {(groupEnd || message.editedAt || pinned) && !(phone && showBubble && !emojiOnly) && (
         <p className="flex items-center gap-1.5 px-1 text-[11px] text-[#8A8A8A]">
           {groupEnd && formatTime(message.createdAt)}
           {message.editedAt ? `${groupEnd ? ' ' : ''}(editado)` : ''}

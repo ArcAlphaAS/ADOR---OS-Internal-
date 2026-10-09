@@ -301,6 +301,18 @@ export function PlayIcon(props) {
   )
 }
 
+export function CakeIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>
+      <path d="M3.5 21h17" />
+      <path d="M5 21v-6.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2V21" />
+      <path d="M5 17c1.2 0 1.2 1 2.5 1S9 17 10.2 17s1.2 1 2.4 1 1.2-1 2.4-1 1.2 1 2.4 1c.8 0 1.1-.5 1.6-.8" />
+      <path d="M12 12.5V9" />
+      <path d="M12 4.6c1 .8 1.3 1.7 0 3-1.3-1.3-1-2.2 0-3z" />
+    </svg>
+  )
+}
+
 export function GiftIcon(props) {
   return (
     <svg viewBox="0 0 24 24" width={props.size ?? 20} height={props.size ?? 20} {...base} className={props.className} style={props.style}>

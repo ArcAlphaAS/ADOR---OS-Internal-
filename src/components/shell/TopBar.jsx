@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { SearchIcon, BellIcon, ChevronDownIcon } from '../icons'
 import Logo from '../Logo'
 import NotificationCenter from './NotificationCenter'
+import BirthdayCenter from './BirthdayCenter'
 import ProfileMenu from './ProfileMenu'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
@@ -308,10 +309,6 @@ export default function TopBar({
   const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
   const bellRef = useRef(null)
   const birthdays = useTodaysBirthdays()
-  const birthdayNotifications = birthdays.map((b) => ({
-    text: b.uid === user?.uid ? 'Hoy es tu cumpleaños — feliz día' : `Hoy es el cumpleaños de ${b.displayName}`,
-    time: 'Hoy',
-  }))
   const clientNotifications = useClientNotifications()
   const taskNotifications = useTaskNotifications(user?.uid)
   // Chat items lead: a mention or a direct message is someone waiting on
@@ -320,7 +317,7 @@ export default function TopBar({
   const news = useNewsAttention(user?.uid, onNavigate)
   const communityNotifications = useCommunityNotifications(user?.uid, onNavigate)
   const taskAlerts = useTaskAlerts(user?.uid, onNavigate)
-  const notifications = [...chatNotifications, ...taskAlerts, ...news.items, ...communityNotifications, ...birthdayNotifications, ...taskNotifications, ...clientNotifications]
+  const notifications = [...chatNotifications, ...taskAlerts, ...news.items, ...communityNotifications, ...taskNotifications, ...clientNotifications]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
@@ -381,6 +378,8 @@ export default function TopBar({
 
       <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
         <SearchToggle onNavigate={onNavigate} uid={user?.uid} canSee={access.canSee} />
+
+        <BirthdayCenter birthdays={birthdays} user={user} onNavigate={onNavigate} />
 
         <motion.div layout="position" transition={REFLOW_TRANSITION} className="relative">
           <button

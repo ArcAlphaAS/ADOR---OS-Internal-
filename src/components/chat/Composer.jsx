@@ -570,7 +570,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       {/* Tools wrap onto their own line under the text when the column is
           narrow (a side panel open, or the thread composer), instead of
           squeezing the text box down to a few characters. */}
-      <div className="flex flex-wrap items-end gap-x-2 gap-y-1 rounded-[22px] border border-white/[0.1] bg-white/[0.03] py-1.5 pr-1.5 pl-4">
+      <div className="flex flex-wrap items-end gap-x-2 gap-y-1 rounded-[24px] border border-white/[0.12] bg-white/[0.07] py-1.5 pr-1.5 pl-4 backdrop-blur-xl md:rounded-[22px] md:border-white/[0.1] md:bg-white/[0.03] md:backdrop-blur-none">
         <textarea
           ref={inputRef}
           rows={1}

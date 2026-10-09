@@ -17,5 +17,5 @@ export function useTodaysBirthdays() {
 
   return users
     .filter((u) => u.birthday && u.birthday.slice(5) === todayKey)
-    .map((u) => ({ uid: u.id, displayName: u.displayName || 'Alguien del equipo', photoDataUrl: u.photoDataUrl || null }))
+    .map((u) => ({ uid: u.id, displayName: u.displayName || 'Alguien del equipo', photoDataUrl: u.photoDataUrl || null, birthday: u.birthday }))
 }
