@@ -6,6 +6,7 @@ import { useFinanceData } from '../../hooks/useFinanceData'
 import SituacionActualCard from './SituacionActualCard'
 import FinanceHero from './FinanceHero'
 import ProximosCobrosCard from './ProximosCobrosCard'
+import { IngresoRecurrenteCard, AntiguedadCobrosCard, IngresosPorClienteCard } from './FinanceInsights'
 import RequiereAtencion from './RequiereAtencion'
 import FinanceDetailPanel from './FinanceDetailPanel'
 import FinanceChart from './FinanceChart'
@@ -75,6 +76,7 @@ export default function FinanzasModule({ user, onNavigate }) {
             recaudadoAnual={data.recaudadoAnual}
             currentYear={data.currentYear}
           />
+          <IngresoRecurrenteCard clients={data.clients} onNavigate={onNavigate} />
         </div>
 
         <div className="flex flex-col gap-6 xl:gap-8">
@@ -101,6 +103,8 @@ export default function FinanzasModule({ user, onNavigate }) {
             onOpenPorCobrar={() => setDetailMode('porCobrar')}
           />
           <ProximosCobrosCard pendingPayments={data.pendingPayments} onOpen={() => setDetailMode('porCobrar')} />
+          <AntiguedadCobrosCard pendingPayments={data.pendingPayments} onOpen={() => setDetailMode('porCobrar')} />
+          <IngresosPorClienteCard movements={data.movements} />
           <RecurrentesCard templates={recurring} />
         </div>
       </div>
