@@ -352,8 +352,10 @@ input:-webkit-autofill:focus {
 
 /* Comunicación on phones: the open conversation sits on a soft warm-graphite
    gradient (so the translucent bubbles and the glass header/composer have
-   something to show through), in a rounded panel like the phone mockups. Phone
-   width only — on computers the chat is untouched. */
+   something to show through). While a conversation is open the page goes
+   full-screen like a messaging app: the top bar and bottom tab bar step aside
+   (ChatModule toggles html.ador-chat-open) and the panel loses its rounded
+   card. Phone width only — on computers the chat is untouched. */
 @media (max-width: 767px) {
   .ador-chat-bg {
     border-radius: 30px;
@@ -362,5 +364,24 @@ input:-webkit-autofill:focus {
       radial-gradient(130% 50% at 50% -8%, rgba(184, 134, 11, 0.1), transparent 62%),
       linear-gradient(180deg, #17130e 0%, #0b0b0c 46%, #0b0d11 100%);
     border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  html.ador-chat-open .ador-topbar,
+  html.ador-chat-open .ador-bottomnav {
+    display: none !important;
+  }
+  html.ador-chat-open main {
+    padding-bottom: 0 !important;
+  }
+  html.ador-chat-open .ador-chat-root {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  html.ador-chat-open .ador-chat-bg {
+    border-radius: 0;
+    border: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    background:
+      radial-gradient(120% 38% at 50% -6%, rgba(184, 134, 11, 0.07), transparent 60%),
+      linear-gradient(180deg, #15120d 0%, #0a0a0b 38%, #0a0b0e 100%);
   }
 }

@@ -358,7 +358,7 @@ export default function TopBar({
 
   return (
     <header
-      className="relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
+      className="ador-topbar relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
       style={{ height: 64, backgroundColor: '#000000' }}
     >
       {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline

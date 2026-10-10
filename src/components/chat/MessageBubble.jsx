@@ -865,16 +865,24 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
-              <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
-              {/* On phones the time sits inside the bubble, at the end of the
-                  last line, like the iOS/WhatsApp style. */}
-              {phone && (
-                <span className="float-right ml-3 mt-[7px] inline-flex items-center gap-1 whitespace-nowrap text-[10.5px] opacity-60">
-                  {formatTime(message.createdAt)}
-                  {message.editedAt ? ' · editado' : ''}
-                  {pinned && <span title="Mensaje fijado">📌</span>}
-                  {mine && <Ticks receipt={receipt} userName={userName} />}
+              {phone ? (
+                // On phones the time sits inside the bubble, at the end of the
+                // last line (iOS/WhatsApp style): text and time share a row
+                // when they fit, and the time drops below, right-aligned,
+                // when the text is long.
+                <span className="flex flex-wrap items-end justify-end gap-x-3">
+                  <span className="min-w-0 flex-1 basis-auto">
+                    <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
+                  </span>
+                  <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap pb-px text-[10.5px] opacity-60">
+                    {formatTime(message.createdAt)}
+                    {message.editedAt ? ' · editado' : ''}
+                    {pinned && <span title="Mensaje fijado">📌</span>}
+                    {mine && <Ticks receipt={receipt} userName={userName} />}
+                  </span>
                 </span>
+              ) : (
+                <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
               )}
             </div>
           )}

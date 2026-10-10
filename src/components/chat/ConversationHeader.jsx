@@ -66,6 +66,17 @@ function IconButton({ title, onClick, active, busy, children, buttonRef }) {
   )
 }
 
+function BackButton({ onBack }) {
+  if (!onBack) return null
+  return (
+    <button type="button" onClick={onBack} aria-label="Volver a las conversaciones" className="-ml-1 flex h-10 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#E8C15A] active:bg-white/[0.06] md:hidden">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 5l-7 7 7 7" />
+      </svg>
+    </button>
+  )
+}
+
 // Llamar / Videollamada both hand off to Google Meet — ADOR OS is where the
 // call starts, Meet is the call's infrastructure. No in-app video. The
 // popover's open state lives in ChatModule so the same flow can be started
@@ -89,23 +100,24 @@ function SearchButton({ active, onClick }) {
   )
 }
 
-export default function ConversationHeader({ selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy, searching, onToggleSearch }) {
+export default function ConversationHeader({ onBack, selected, conversation, dmUser, dmEntry, dmPresence, users, currentUid, infoOpen, profileOpen, onToggleInfo, onToggleProfile, openCall, onCall, callBusy, searching, onToggleSearch }) {
   const phone = usePhone()
   if (selected.type === 'dm') {
     const presence = presenceOf(dmPresence)
     const role = [dmEntry?.role, dmEntry?.area].filter(Boolean).join(' · ')
     return (
-      <div className="flex items-center justify-between gap-3 pb-1 md:border-b md:border-white/[0.06] md:pb-3">
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5 md:gap-3 md:pb-3">
+        <BackButton onBack={onBack} />
         <button
           type="button"
           onClick={onToggleProfile}
           title="Ver perfil"
-          className="-ml-2 flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04]"
+          className="-ml-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-white/[0.04] md:flex-none"
           style={profileOpen ? { background: 'rgba(255,255,255,0.05)' } : undefined}
         >
-          <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={phone ? 46 : 30} showPresence />
+          <PersonAvatar uid={dmUser?.id} name={dmEntry?.name || userLabel(dmUser)} size={phone ? 40 : 30} showPresence />
           <div className="min-w-0">
-            <p className="line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.015em] text-[#F5F5F5] md:line-clamp-1 md:text-[15px] md:tracking-normal">{dmEntry?.name || userLabel(dmUser)}</p>
+            <p className="line-clamp-1 text-[17px] font-semibold leading-tight tracking-[-0.01em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">{dmEntry?.name || userLabel(dmUser)}</p>
             {(presence.label || role) && (
               <p className="truncate text-[12.5px] text-[#7A7A7A]">
                 {presence.label && <span style={{ color: presence.color || undefined }}>{presence.label}</span>}
@@ -116,7 +128,9 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
           </div>
         </button>
         <div className="flex flex-shrink-0 items-center gap-1">
-          <SearchButton active={searching} onClick={onToggleSearch} />
+          <span className="hidden md:inline-flex">
+            <SearchButton active={searching} onClick={onToggleSearch} />
+          </span>
           <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />
           {/* Phones: an explicit profile button (on a computer, the name opens it). */}
           <span className="md:hidden">
@@ -141,9 +155,10 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
         : 'Canal de toda la empresa'
 
   return (
-    <div className="flex items-center justify-between gap-3 pb-1 md:border-b md:border-white/[0.06] md:pb-3">
-      <div className="min-w-0">
-        <p className="flex items-center gap-1.5 truncate text-[20px] font-semibold leading-tight tracking-[-0.015em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">
+    <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5 md:gap-3 md:pb-3">
+      <BackButton onBack={onBack} />
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 truncate text-[17px] font-semibold leading-tight tracking-[-0.01em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">
           {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#858585]">#</span>)}
           <span className="truncate">{title}</span>
         </p>
@@ -153,7 +168,9 @@ export default function ConversationHeader({ selected, conversation, dmUser, dmE
         </p>
       </div>
       <div className="flex flex-shrink-0 items-center gap-1">
-        <SearchButton active={searching} onClick={onToggleSearch} />
+        <span className="hidden md:inline-flex">
+          <SearchButton active={searching} onClick={onToggleSearch} />
+        </span>
         {kind === 'group' && <CallButtons openCall={openCall} onCall={onCall} busy={callBusy} />}
         <IconButton title="Detalles y permisos" onClick={onToggleInfo} active={infoOpen}>
           <InfoIcon size={16} />

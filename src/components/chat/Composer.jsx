@@ -345,7 +345,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
 
   return (
     <div
-      className={`relative flex flex-col gap-2 ${compact ? '' : 'border-t border-white/[0.06]'} pt-3`}
+      className={`relative flex flex-col gap-2 ${compact ? '' : 'md:border-t md:border-white/[0.06]'} pt-2 md:pt-3`}
       onDragOver={(e) => {
         if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
           e.preventDefault()
@@ -570,7 +570,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       {/* Tools wrap onto their own line under the text when the column is
           narrow (a side panel open, or the thread composer), instead of
           squeezing the text box down to a few characters. */}
-      <div className="flex flex-wrap items-end gap-x-2 gap-y-1 rounded-[24px] border border-white/[0.12] bg-white/[0.07] py-1.5 pr-1.5 pl-4 backdrop-blur-xl md:rounded-[22px] md:border-white/[0.1] md:bg-white/[0.03] md:backdrop-blur-none">
+      <div className="flex flex-nowrap items-end gap-x-1 rounded-[24px] border border-white/[0.12] bg-white/[0.07] py-1 pr-1 pl-3.5 backdrop-blur-xl md:flex-wrap md:gap-x-2 md:gap-y-1 md:rounded-[22px] md:py-1.5 md:pr-1.5 md:pl-4 md:border-white/[0.1] md:bg-white/[0.03] md:backdrop-blur-none">
         <textarea
           ref={inputRef}
           rows={1}
@@ -603,9 +603,9 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             }
           }}
           placeholder={placeholder || 'Escribe un mensaje...'}
-          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none ${compact ? 'basis-full' : 'basis-[220px]'}`}
+          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none md:text-[13.5px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
         />
-        <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
+        <div className="flex flex-shrink-0 items-center gap-0.5 md:ml-auto">
           {/* Only the everyday tools stay in view (emoji, imagen, voz);
               everything else lives behind "+" with its name and what it
               does — nine buttons in a row read as clutter. */}
@@ -617,9 +617,11 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#E8C15A' }} />
             )}
           </span>
-          <ToolButton title="Emoji" active={panel === 'emoji'} onClick={() => togglePanel('emoji')}>
-            <SmileIcon size={17} />
-          </ToolButton>
+          <span className="hidden md:inline-flex">
+            <ToolButton title="Emoji" active={panel === 'emoji'} onClick={() => togglePanel('emoji')}>
+              <SmileIcon size={17} />
+            </ToolButton>
+          </span>
           <ToolButton title={processing ? 'Procesando imagen…' : 'Imagen'} disabled={processing} onClick={() => fileRef.current?.click()}>
             <ImageIcon size={16} />
           </ToolButton>

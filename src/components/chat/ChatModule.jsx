@@ -79,6 +79,7 @@ import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
 import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 import { createPortal } from 'react-dom'
+import usePhone from '../../hooks/usePhone'
 import { SHEET, swipeToClose } from '../../lib/motion'
 
 // How many messages a conversation streams at first; "Cargar mensajes
@@ -675,13 +676,23 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   }, [selectedConversationId])
 
   const showInfo = panel?.type === 'info' && conversation
+  // On a phone, an open conversation takes the whole screen — the top bar and
+  // the bottom tab bar step aside (index.css, html.ador-chat-open), like every
+  // messaging app. They come back when you go back to the list.
+  const phone = usePhone()
+  const immersive = phone && mobilePane === 'conv' && !view && Boolean(selected)
+  useEffect(() => {
+    document.documentElement.classList.toggle('ador-chat-open', immersive)
+    return () => document.documentElement.classList.remove('ador-chat-open')
+  }, [immersive])
+
   const profileUid = panel?.type === 'profile' ? panel.uid : null
   const profileUser = profileUid ? users.find((u) => u.id === profileUid) : null
   const profileInDm = selected?.type === 'dm' && selected.id === profileUid
 
   return (
     <ChatPeopleContext.Provider value={{ users, directory, presence }}>
-    <div className={`mx-auto flex h-full w-full max-w-[1320px] px-3 py-3 md:py-8 ${panel && !view ? 'md:gap-5 md:px-8' : 'md:gap-8 md:px-12'}`}>
+    <div className={`ador-chat-root mx-auto flex h-full w-full max-w-[1320px] px-3 py-3 md:py-8 ${panel && !view ? 'md:gap-5 md:px-8' : 'md:gap-8 md:px-12'}`}>
       <div className={mobilePane === 'list' ? 'flex w-full md:w-auto' : 'hidden md:flex'}>
       <ChatSidebar
         channels={channels}
@@ -722,7 +733,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       </div>
 
       <div className={`ador-chat-bg min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'flex' : 'hidden md:flex'}`}>
-        <button type="button" onClick={() => setMobilePane('list')} className="mb-2 flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-[13px] text-[#AAAAAA] active:bg-white/[0.06] md:hidden">
+        <button type="button" onClick={() => setMobilePane('list')} className={`mb-2 items-center gap-1.5 self-start rounded-full px-2 py-1 text-[13px] text-[#AAAAAA] active:bg-white/[0.06] md:hidden ${immersive ? 'hidden' : 'flex'}`}>
           ← Conversaciones
         </button>
         {view === 'inbox' ? (
@@ -757,6 +768,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         ) : selected && (conversation || dmUser) ? (
           <>
             <ConversationHeader
+              onBack={() => setMobilePane('list')}
               selected={selected}
               conversation={conversation}
               dmUser={dmUser}

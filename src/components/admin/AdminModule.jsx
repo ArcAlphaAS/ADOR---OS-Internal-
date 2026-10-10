@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   subscribeAllowedEmails,
@@ -25,6 +25,8 @@ import { presenceOf } from '../../lib/chat'
 import { inviteMember, resendAccessEmail } from '../../lib/invite'
 import { withTimeout, LAYERS, PRIORITIES, layerWeekSpan } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
+import Avatar from '../shell/Avatar'
+import PhotoCropper from '../common/PhotoCropper'
 import { DriveFolderSection, BackupSection, SeasonSection } from './DataSections'
 
 // Administración (admins only — lib/access.js). Four tabs:
@@ -73,6 +75,9 @@ function PeopleTab({ user }) {
   const [cleaning, setCleaning] = useState(false)
   const [editing, setEditing] = useState(null) // { email (original), name, newEmail }
   const [saving, setSaving] = useState(false)
+  const [photoTarget, setPhotoTarget] = useState(null) // the row whose photo is being set
+  const [cropFile, setCropFile] = useState(null)
+  const photoInput = useRef(null)
   const showToast = useToast()
 
   useEffect(() => subscribeAllowedEmails(setAllowed), [])
@@ -141,6 +146,23 @@ function PeopleTab({ user }) {
     }
   }
 
+  // The admin sets (or removes) a member's photo. It's the account's own
+  // photo (users/{uid}.photoDataUrl), so it shows everywhere that person does
+  // — unless their Directorio entry has a photo of its own, which wins.
+  const pickPhotoFor = (row) => {
+    setPhotoTarget(row)
+    photoInput.current?.click()
+  }
+  const savePhoto = async (row, photoDataUrl) => {
+    if (!row?.account) return
+    try {
+      await withTimeout(saveUserProfile(row.account.id, { photoDataUrl }))
+      showToast(photoDataUrl ? `Foto de ${row.name.split(' ')[0]} actualizada.` : `Foto de ${row.name.split(' ')[0]} quitada.`)
+    } catch (e) {
+      showToast(`No se pudo guardar la foto: ${e.message}`)
+    }
+  }
+
   const revoke = async (row) => {
     if (row.email === me) return showToast('No puedes quitarte el acceso a ti mismo.')
     if (row.role === 'admin' && adminCount <= 1) return showToast('Debe quedar al menos un administrador.')
@@ -198,6 +220,35 @@ function PeopleTab({ user }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <input
+        ref={photoInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) setCropFile(file)
+        }}
+      />
+      {cropFile && photoTarget && (
+        <PhotoCropper
+          file={cropFile}
+          round
+          outWidth={256}
+          title={`Foto de ${photoTarget.name.split(' ')[0]}`}
+          onDone={(url) => {
+            const row = photoTarget
+            setCropFile(null)
+            setPhotoTarget(null)
+            savePhoto(row, url)
+          }}
+          onCancel={() => {
+            setCropFile(null)
+            setPhotoTarget(null)
+          }}
+        />
+      )}
       <form onSubmit={invite} className={card}>
         <h3 className="text-[15px] font-semibold text-[#F5F5F5]">Invitar a alguien</h3>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#888888]">
@@ -246,6 +297,7 @@ function PeopleTab({ user }) {
             }
             return (
               <div key={row.email} className="flex flex-wrap items-center gap-3 py-3">
+                <Avatar photoURL={row.account?.photoDataUrl} displayName={row.name} email={row.email} size={38} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-medium text-[#F5F5F5]">
                     {row.name}
@@ -262,6 +314,22 @@ function PeopleTab({ user }) {
                 >
                   Editar
                 </button>
+                {row.account && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => pickPhotoFor(row)}
+                      className="rounded-lg px-2.5 py-1.5 text-[12px] text-[#AAAAAA] hover:text-[#F5F5F5]"
+                    >
+                      {row.account.photoDataUrl ? 'Cambiar foto' : 'Poner foto'}
+                    </button>
+                    {row.account.photoDataUrl && (
+                      <button type="button" onClick={() => savePhoto(row, null)} className="rounded-lg px-2 py-1.5 text-[12px] text-[#777777] hover:text-[#EF8A88]">
+                        Quitar foto
+                      </button>
+                    )}
+                  </>
+                )}
                 {row.role !== 'admin' && row.account && (
                   <button
                     type="button"
