@@ -350,62 +350,45 @@ input:-webkit-autofill:focus {
   box-shadow: inset 3px 0 0 var(--attn), 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
-/* Comunicación on phones — "liquid glass": translucent shapes with a thin lit
-   rim along the top/left edges, a soft inner sheen and a deep drop shadow; the
-   active/primary control is a solid white disc (like iOS's selected pill).
-   The surface keeps the graphite palette (#212227 → #18191d) with two very
-   faint neutral lights so the glass has something to catch. The open
-   conversation goes full-screen like a messaging app (ChatModule toggles
-   html.ador-chat-open: top bar and bottom tab bar step aside). Phone width
-   only — on computers the chat is untouched. */
+/* Comunicación on phones — flat, Apple dark-mode greys on the app's own black
+   background (the user rejected glass/neumorphic/3D looks: "no lo quiero 3d" and
+   "que el fondo sea el mismo que tiene todo el software"). Your bubbles are the
+   elevated grey (#2c2c2e), what you receive the darker one (#1c1c1e); no
+   shadows, rims or gradients. The primary/active control is a flat white disc.
+   The open conversation goes full-screen like a messaging app (ChatModule
+   toggles html.ador-chat-open: top bar and bottom tab bar step aside). Phone
+   width only — on computers the chat is untouched. Class names keep the
+   ador-lg-* prefix from the earlier glass attempt. */
 @media (max-width: 767px) {
   .ador-chat-bg {
-    border-radius: 30px;
     padding: 12px 10px 10px;
-    background:
-      radial-gradient(90% 34% at 10% 0%, rgba(255, 255, 255, 0.075), transparent 62%),
-      radial-gradient(80% 34% at 100% 100%, rgba(255, 255, 255, 0.05), transparent 62%),
-      linear-gradient(155deg, #212227 0%, #181a1e 100%);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: transparent;
+    border: 0;
   }
   .ador-lg-mine {
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.09) 52%, rgba(255, 255, 255, 0.15) 100%);
-    box-shadow:
-      inset 0 1px 0.5px rgba(255, 255, 255, 0.6),
-      inset 1px 0 0.5px rgba(255, 255, 255, 0.24),
-      inset 0 -1px 0.5px rgba(255, 255, 255, 0.14),
-      inset -1px 0 0.5px rgba(255, 255, 255, 0.1),
-      0 8px 20px rgba(0, 0, 0, 0.42);
+    background: #2c2c2e;
+    box-shadow: none;
     border: 0;
   }
   .ador-lg-theirs {
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.095) 0%, rgba(255, 255, 255, 0.03) 52%, rgba(255, 255, 255, 0.06) 100%);
-    box-shadow:
-      inset 0 1px 0.5px rgba(255, 255, 255, 0.34),
-      inset 1px 0 0.5px rgba(255, 255, 255, 0.13),
-      inset 0 -1px 0.5px rgba(255, 255, 255, 0.07),
-      0 6px 16px rgba(0, 0, 0, 0.36);
+    background: #1c1c1e;
+    box-shadow: none;
     border: 0;
   }
   .ador-lg-btn,
   .ador-lg-bar {
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0.06) 52%, rgba(255, 255, 255, 0.11) 100%);
-    -webkit-backdrop-filter: blur(16px) saturate(170%);
-    backdrop-filter: blur(16px) saturate(170%);
-    box-shadow:
-      inset 0 1px 0.5px rgba(255, 255, 255, 0.55),
-      inset 1px 0 0.5px rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0.5px rgba(255, 255, 255, 0.12),
-      inset -1px 0 0.5px rgba(255, 255, 255, 0.08),
-      0 8px 22px rgba(0, 0, 0, 0.4);
+    background: #1c1c1e;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
     border: 0;
   }
   .ador-lg-white {
-    background: #fafafa;
-    color: #16171a;
+    background: #f5f5f5;
+    color: #0a0a0a;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.45);
+    box-shadow: none;
     border: 0;
   }
   html.ador-chat-open .ador-topbar,
@@ -420,8 +403,6 @@ input:-webkit-autofill:focus {
     max-width: none !important;
   }
   html.ador-chat-open .ador-chat-bg {
-    border-radius: 0;
-    border: 0;
     padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 }

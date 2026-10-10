@@ -22,7 +22,6 @@ const MINE_BG = '#1C1A16' // voice notes, polls: dark graphite cards
 // receive is darker glass (a cream/ivory fill was tried and looked beige, not
 // Apple). Gold is reserved for what deserves to interrupt: important messages,
 // mentions of you, pinned.
-const MINE_GLASS = 'linear-gradient(180deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.2) 100%)'
 const MINE_INK = '#FFFFFF'
 const MINE_BORDER = 'rgba(244,238,226,0.28)'
 
@@ -888,15 +887,14 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
             <div
               className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
               style={{
-                // Phones: "liquid glass" bubbles — a lit rim and a soft inner
-                // sheen (index.css .ador-lg-*), yours brighter, what you
-                // receive darker. Computers keep the flat look below.
+                // Phones: flat Apple dark-mode greys (index.css .ador-lg-*) —
+                // yours the elevated grey, what you receive the darker one.
+                // Computers keep the flat look below.
                 ...(phone
                   ? {}
                   : {
-                      background: mine ? MINE_GLASS : 'rgba(255,255,255,0.06)',
-                      boxShadow: mine ? 'inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 8px rgba(0,0,0,0.25)' : undefined,
-                      border: mine ? '1px solid rgba(255,255,255,0.24)' : '1px solid transparent',
+                      background: mine ? '#2C2C2E' : '#1C1C1E',
+                      border: '1px solid transparent',
                     }),
                 color: mine ? MINE_INK : phone ? '#E8E8E8' : '#DDDDDD',
                 // Only the last bubble of a block gets the "tail" corner;
@@ -905,7 +903,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 borderBottomRightRadius: mine ? (groupEnd ? 5 : 8) : undefined,
                 borderTopLeftRadius: !mine && !groupStart ? 8 : undefined,
                 borderBottomLeftRadius: !mine ? (groupEnd ? 5 : 8) : undefined,
-                ...(message.important ? { borderLeft: '3px solid #E8C15A', ...(phone ? {} : { background: mine ? MINE_GLASS : 'rgba(184,134,11,0.08)' }) } : {}),
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', ...(phone ? {} : { background: mine ? '#2C2C2E' : 'rgba(184,134,11,0.08)' }) } : {}),
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
