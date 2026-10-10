@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import ParticleLogo from '../ParticleLogo'
+import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 function InterventionRow({ client, week, totalWeeks, progress }) {
   return (
@@ -24,19 +25,8 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
 
 export default function InterventionsBlock({ interventions = [] }) {
   return (
-    <div className="ador-glass ador-grain ador-card-hover rounded-[20px] px-7 py-6">
-      <div className="flex items-center gap-2">
-        <span
-          className="font-medium text-[#7A7A7A]"
-          style={{ fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Intervenciones Activas
-        </span>
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-[#F4EEE2]"
-          style={{ animation: 'ador-pulse 2s ease-in-out infinite' }}
-        />
-      </div>
+    <div className={`ador-glass ador-grain ador-card-hover h-full ${CARD_RADIUS} ${CARD_PAD}`}>
+      <CardHeader label="Intervenciones activas" count={interventions.length > 0 ? interventions.length : null} />
 
       {interventions.length === 0 ? (
         <div className="flex flex-col items-center gap-1.5 py-6">

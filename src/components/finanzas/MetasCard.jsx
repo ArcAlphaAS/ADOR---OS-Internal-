@@ -86,11 +86,9 @@ export default function MetasCard({ quarterKey, quarterlyTarget, recaudadoTrimes
   }
 
   return (
-    <div className="ador-glass ador-grain rounded-[16px] px-6 py-5">
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex items-center justify-between">
-        <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Metas
-        </span>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Metas</h3>
         <div className="flex items-center gap-1">
           <div className="flex items-center gap-0.5 rounded-full bg-white/[0.05] p-0.5">
             {[
@@ -115,7 +113,7 @@ export default function MetasCard({ quarterKey, quarterlyTarget, recaudadoTrimes
             ))}
           </div>
           {!editing && target > 0 && (
-            <button type="button" onClick={openEdit} className="flex h-6 w-6 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+            <button type="button" onClick={openEdit} className="flex h-6 w-6 items-center justify-center rounded-full text-[#767676] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]">
               <EditIcon size={13} />
             </button>
           )}
@@ -158,7 +156,7 @@ export default function MetasCard({ quarterKey, quarterlyTarget, recaudadoTrimes
             </button>
           </div>
           {error && <p className="text-[11.5px] text-[#EF5350]">{error}</p>}
-          <p className="text-[11px] text-[#444444]">Esc para cerrar sin guardar.</p>
+          <p className="text-[11px] text-[#767676]">Esc para cerrar sin guardar.</p>
         </div>
       ) : !target ? (
         <button

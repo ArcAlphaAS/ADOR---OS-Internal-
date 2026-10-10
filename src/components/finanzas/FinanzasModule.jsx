@@ -4,7 +4,8 @@ import RecurrentesCard from './RecurrentesCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFinanceData } from '../../hooks/useFinanceData'
 import SituacionActualCard from './SituacionActualCard'
-import FinancialHealthCard from './FinancialHealthCard'
+import FinanceHero from './FinanceHero'
+import ProximosCobrosCard from './ProximosCobrosCard'
 import RequiereAtencion from './RequiereAtencion'
 import FinanceDetailPanel from './FinanceDetailPanel'
 import FinanceChart from './FinanceChart'
@@ -37,60 +38,26 @@ export default function FinanzasModule({ user, onNavigate }) {
   return (
     <motion.div
       initial={false}
-      className="mx-auto max-w-[1400px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
+      className="mx-auto max-w-[1480px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="ador-title">Finanzas</h1>
-          <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setModal('ingreso')}
-            className="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors duration-150 hover:bg-white/10"
-            style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
-          >
-            + Ingreso
-          </button>
-          <button type="button" onClick={() => setModal('gasto')} className="ador-btn-primary rounded-full px-4 py-2 text-[13px] font-medium">
-            + Gasto
-          </button>
-        </div>
+      <div className="mb-8">
+        <h1 className="ador-title">Finanzas</h1>
+        <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
       </div>
 
-      <FinancialHealthCard
-        cashBalance={data.cashBalance}
-        runwayMonths={data.runwayMonths}
-        margenNetoPct={data.margenNetoPct}
-        totalPorCobrar={data.totalPorCobrar}
-        porCobrarClientCount={data.porCobrarClientCount}
-        onOpenPorCobrar={() => setDetailMode('porCobrar')}
-        onOpenRunway={() => setDetailMode('runway')}
-      />
-
-      <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-        <div className="flex w-full flex-col gap-6 lg:w-[66%]">
-          <SituacionActualCard
-            monthLabel={currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}
-            ingresosDelMes={data.ingresosDelMes}
-            gastosDelMes={data.gastosDelMes}
-            utilidadNeta={data.utilidadNeta}
-            resultDeltaPct={data.resultDeltaPct}
-          />
-          <FinanceChart series={data.series} />
-          <MovimientosTable movements={data.movements} />
-        </div>
-
-        <div className="flex w-full flex-col gap-5 lg:w-[34%]">
-          <RequiereAtencion
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 xl:grid-cols-3 xl:gap-8">
+        <div className="flex flex-col gap-6 xl:gap-8">
+          <FinanceHero
+            cashBalance={data.cashBalance}
             runwayMonths={data.runwayMonths}
+            margenNetoPct={data.margenNetoPct}
             totalPorCobrar={data.totalPorCobrar}
             porCobrarClientCount={data.porCobrarClientCount}
-            overdueCount={data.overdueCount}
-            categorySpikes={data.categorySpikes}
-            onOpenRunway={() => setDetailMode('runway')}
+            estado={data.estadoSalud}
             onOpenPorCobrar={() => setDetailMode('porCobrar')}
+            onOpenRunway={() => setDetailMode('runway')}
+            onIngreso={() => setModal('ingreso')}
+            onGasto={() => setModal('gasto')}
           />
           <RunwayCard
             cashBalance={data.cashBalance}
@@ -100,8 +67,6 @@ export default function FinanzasModule({ user, onNavigate }) {
             inflowIn30={data.inflowIn30}
             inflowIn90={data.inflowIn90}
           />
-          <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
-          <RecurrentesCard templates={recurring} />
           <MetasCard
             quarterKey={data.quarterKey}
             quarterlyTarget={data.quarterlyTarget}
@@ -111,6 +76,36 @@ export default function FinanzasModule({ user, onNavigate }) {
             currentYear={data.currentYear}
           />
         </div>
+
+        <div className="flex flex-col gap-6 xl:gap-8">
+          <SituacionActualCard
+            monthLabel={currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}
+            ingresosDelMes={data.ingresosDelMes}
+            gastosDelMes={data.gastosDelMes}
+            utilidadNeta={data.utilidadNeta}
+            resultDeltaPct={data.resultDeltaPct}
+          />
+          <FinanceChart series={data.series} />
+          <CategoryBreakdownCard categoryTotals={data.categoryTotals} />
+        </div>
+
+        <div className="flex flex-col gap-6 lg:col-span-2 xl:col-span-1 xl:gap-8">
+          <RequiereAtencion
+            runwayMonths={data.runwayMonths}
+            totalPorCobrar={data.totalPorCobrar}
+            porCobrarClientCount={data.porCobrarClientCount}
+            overdueCount={data.overdueCount}
+            categorySpikes={data.categorySpikes}
+            onOpenRunway={() => setDetailMode('runway')}
+            onOpenPorCobrar={() => setDetailMode('porCobrar')}
+          />
+          <ProximosCobrosCard pendingPayments={data.pendingPayments} onOpen={() => setDetailMode('porCobrar')} />
+          <RecurrentesCard templates={recurring} />
+        </div>
+      </div>
+
+      <div className="mt-6 xl:mt-8">
+        <MovimientosTable movements={data.movements} />
       </div>
 
       <AnimatePresence>

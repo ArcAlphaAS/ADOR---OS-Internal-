@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 import { subscribeCommunityPosts, subscribeDirectoryPeople, setCommunityRsvp } from '../../lib/firestore'
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useAccess } from '../../hooks/useAccess'
@@ -129,8 +130,8 @@ export default function CommunityCard({ user, onNavigate }) {
   ]
 
   return (
-    <div className="ador-glass ador-grain rounded-[24px] px-6 py-7 sm:px-8">
-      <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Comunidad</h3>
+    <div className={`ador-glass ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
+      <CardHeader label="Comunidad" />
 
       {moments.length > 0 && (
         <ul className="mt-2 divide-y divide-white/[0.06] border-b border-white/[0.06] pb-1">

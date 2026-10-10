@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useAttention } from '../../hooks/useAttention'
+import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 // "Necesita tu atención" — the firm-wide list of what's late, cold or stuck,
 // ranked, each row one click from fixing it. Quiet when everything's fine.
@@ -12,11 +13,8 @@ export default function AttentionCard({ finance, uid, onNavigate }) {
   const hasUrgent = items.some((i) => i.level === 'urgent')
 
   return (
-    <div className={`ador-glass ador-grain rounded-[24px] px-7 py-7 sm:px-9 ${!loaded || items.length === 0 ? '' : hasUrgent ? 'ador-card-urgent' : 'ador-card-attention'}`}>
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Necesita tu atención</h3>
-        {items.length > 0 && <span className="text-[12px] tabular-nums text-[#767676]">{items.length}</span>}
-      </div>
+    <div className={`ador-glass ador-grain h-full ${CARD_RADIUS} ${CARD_PAD} ${!loaded || items.length === 0 ? '' : hasUrgent ? 'ador-card-urgent' : 'ador-card-attention'}`}>
+      <CardHeader label="Necesita tu atención" count={items.length > 0 ? items.length : null} />
 
       {!loaded ? (
         <div className="mt-4 space-y-3 py-1">

@@ -17,16 +17,11 @@ export default function CategoryBreakdownCard({ categoryTotals }) {
   const active = EXPENSE_CATEGORIES.filter((c) => categoryTotals.has(c))
 
   return (
-    <div className="ador-glass ador-grain rounded-[16px] px-6 py-5">
-      <span
-        className="font-medium text-[#444444]"
-        style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-      >
-        Gastos por Categoría — este mes
-      </span>
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
+      <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Gastos por Categoría — este mes</h3>
 
       {total === 0 ? (
-        <p className="mt-5 text-center text-[13px] font-light text-[#444444]">Sin gastos registrados</p>
+        <p className="mt-5 text-center text-[13px] font-light text-[#767676]">Sin gastos registrados</p>
       ) : (
         <>
           <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>

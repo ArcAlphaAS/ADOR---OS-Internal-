@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useWeeklySummary } from '../../hooks/useWeeklySummary'
 import WeeklySummaryPanel from './WeeklySummaryPanel'
+import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 export default function WeeklySummaryCard() {
   const summary = useWeeklySummary()
@@ -12,20 +13,9 @@ export default function WeeklySummaryCard() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`ador-glass ador-grain ador-card-hover w-full rounded-[20px] px-7 py-6 text-left ${summary.level === 'urgent' ? 'ador-card-urgent' : summary.level === 'warn' ? 'ador-card-attention' : ''}`}
+        className={`ador-glass ador-grain ador-card-hover flex h-full w-full flex-col items-start ${CARD_RADIUS} ${CARD_PAD} text-left ${summary.level === 'urgent' ? 'ador-card-urgent' : summary.level === 'warn' ? 'ador-card-attention' : ''}`}
       >
-        <div className="flex items-center gap-2">
-          <span
-            className="font-medium text-[#7A7A7A]"
-            style={{ fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-          >
-            {summary.rhythm?.title || 'Resumen Semanal'}
-          </span>
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ animation: 'ador-pulse 2s ease-in-out infinite', background: summary.level === 'urgent' ? '#EF5350' : summary.level === 'warn' ? '#E8C15A' : '#4CAF50' }}
-          />
-        </div>
+        <CardHeader label={summary.rhythm?.title || 'Resumen semanal'} dot={summary.level === 'urgent' ? '#EF5350' : summary.level === 'warn' ? '#E8C15A' : '#4CAF50'} />
         {summary.rhythm ? (
           <>
             <p className="mt-3 text-[14px] font-light text-[#F5F5F5]">{summary.rhythm.line}</p>
@@ -34,7 +24,7 @@ export default function WeeklySummaryCard() {
         ) : (
           <p className={`mt-3 text-[#F5F5F5] ${summary.level === 'calm' ? 'text-[14px] font-light' : 'text-[15px] font-medium'}`}>{summary.tldr}</p>
         )}
-        <span className="mt-3 inline-block text-[12px] font-medium text-[#F4EEE2]">Ver resumen completo →</span>
+        <span className="mt-auto inline-block pt-4 text-[12px] font-medium text-[#F4EEE2]">Ver resumen completo →</span>
       </button>
 
       <AnimatePresence>{open && <WeeklySummaryPanel summary={summary} onClose={() => setOpen(false)} />}</AnimatePresence>

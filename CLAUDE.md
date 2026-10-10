@@ -993,6 +993,14 @@ The user asked for service types to carry **how they are billed**, with the fixe
 - **Verified** in the preview with a temporary seed (removed): the contract ficha (terms, "quedan 53 días", options), the Cobros panel, the setup modal; and, directly in the console, `coverageEnd`/`amountAt`/month-end anchoring/`allPayments`/`pendingPaymentAmount`, the attention item, and a replica of the generation loop (subscription → 3 monthly cobros, contract with an exercised option → second cobro at the option's amount, without options it stops at coverage end, one-off closes). **Not exercised against Firestore:** the transaction in `materializeClientCobros`, `configureClientService`, option writes and `markCobroReceived` (no Firestore access in the preview) — test with a throwaway client.
 - **Not built:** milestone billing (explicitly declined), a Clientes-panel "Vencimientos" list, push notifications for renewals (bell + Inicio only), changing a service's modality for clients that already have cobros (editing billing keeps `nextDue`; the cobros already generated stay).
 
+### 62. Inicio and Finanzas reordered (2026-10-10)
+
+From the user's feedback that Inicio looked uneven and Finanzas "basic", plus a fintech reference image (shapes taken, not its light palette).
+- **Inicio:** `home/CardHeader.jsx` is the one header (label, count/dot, quiet action) plus shared `CARD_PAD`/`CARD_RADIUS` (24px) for every card, and `Zone` groups the page as **Hoy** (Tu día, Atención | Resumen semanal) → **Pulso de la empresa** (Resumen financiero | Intervenciones) → **Equipo** (anuncio | Comunidad). Rows are `items-stretch` so paired cards share height (content pinned with `mt-auto`). If there is no recent announcement, Comunidad takes the full row (`has(>div:first-child:empty)`).
+- **Finanzas:** three columns (xl). Left: `FinanceHero` (cash as the one big number, estado, + Ingreso / + Gasto, Runway / Margen / Por cobrar as three mini-stats), Proyección, Metas. Middle: `SituacionActualCard` as three separate metric cards with delta badge, flujo de caja, categorías. Right: Requiere atención, `ProximosCobrosCard` (new, who owes what and when, opens the Por cobrar panel), Recurrentes. Movimientos full width below. `FinancialHealthCard` was replaced by `FinanceHero`. All cards use the same 24px radius and label style (`text-[#444]` labels became `#767676` for contrast).
+- **Not built yet (proposed):** MRR/ARR from contratos y suscripciones, antigüedad de cuentas por cobrar (0–30/31–60/+60), ingresos por cliente/servicio, presupuesto por categoría, escenarios sobre la proyección, exportar para el contador, selector de periodo.
+- Checked in the preview with empty data only (no Firestore access there); look at it with real numbers.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

@@ -18,7 +18,7 @@ function AlertRow({ color, title, sub, onClick }) {
         <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{title}</p>
         <p className="truncate text-[11.5px] text-[#888888]">{sub}</p>
       </div>
-      {onClick && <ChevronRightIcon size={14} className="flex-shrink-0 text-[#444444]" />}
+      {onClick && <ChevronRightIcon size={14} className="flex-shrink-0 text-[#767676]" />}
     </button>
   )
 }
@@ -59,12 +59,10 @@ export default function RequiereAtencion({ runwayMonths, totalPorCobrar, porCobr
   }
 
   return (
-    <div className="ador-glass ador-grain rounded-[18px] px-5 py-4">
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex items-center gap-2">
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: alerts.length ? (alerts.some((a) => a.color === RED) ? RED : AMBER) : GREEN }} />
-        <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Requiere atención
-        </span>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Requiere atención</h3>
         {alerts.length > 0 && (
           <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: `${alerts.some((a) => a.color === RED) ? RED : AMBER}22`, color: alerts.some((a) => a.color === RED) ? RED : AMBER }}>
             {alerts.length}

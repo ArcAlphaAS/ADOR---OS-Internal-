@@ -52,14 +52,9 @@ export default function FinanceChart({ series }) {
   const activeCenter = activeIndex !== null ? (activeIndex + 0.5) * colWidth : 0
 
   return (
-    <div className="ador-glass ador-grain rounded-[20px] px-7 py-6">
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex items-center justify-between">
-        <span
-          className="font-medium text-[#444444]"
-          style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Flujo de Caja — últimos 6 meses
-        </span>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Flujo de caja</h3>
         <div className="ador-glass flex items-center gap-1 rounded-full p-1">
           {TOGGLES.map((t) => (
             <button
@@ -81,7 +76,7 @@ export default function FinanceChart({ series }) {
       {!hasData ? (
         <div className="flex flex-col items-center gap-3 py-14">
           <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[13px] font-light text-[#444444]">Sin movimientos registrados aún</p>
+          <p className="text-[13px] font-light text-[#767676]">Sin movimientos registrados aún</p>
         </div>
       ) : (
         <div className="relative mt-4">
@@ -165,7 +160,7 @@ export default function FinanceChart({ series }) {
             {series.map((p) => (
               <span
                 key={p.month}
-                className="text-center text-[11px] text-[#444444]"
+                className="text-center text-[11px] text-[#767676]"
                 style={{ width: `${colWidth}%` }}
               >
                 {monthLabel(p.month)}

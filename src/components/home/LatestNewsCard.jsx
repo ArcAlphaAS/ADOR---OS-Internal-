@@ -35,12 +35,12 @@ export default function LatestNewsCard({ uid, onNavigate }) {
     <button
       type="button"
       onClick={() => onNavigate?.('news', { type: 'news', id: post.id })}
-      className={`ador-glass ador-grain ador-card-hover ador-wrap group block w-full overflow-hidden rounded-[24px] text-left ${mustAck ? 'ador-card-attention' : ''}`}
+      className={`ador-glass ador-grain ador-card-hover ador-wrap group flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left ${mustAck ? 'ador-card-attention' : ''}`}
     >
       <span className="block h-[180px] w-full overflow-hidden sm:h-[220px]">
         <Cover post={post} zoom />
       </span>
-      <span className="block px-6 pb-6 pt-5 sm:px-8">
+      <span className="flex flex-1 flex-col px-7 pb-6 pt-5 sm:px-8">
         <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#7A7A7A]">
           Último anuncio{post.category ? ` · ${post.category}` : ''}
           {unread && <span className="h-1.5 w-1.5 rounded-full bg-[#E8C15A]" />}
@@ -49,7 +49,7 @@ export default function LatestNewsCard({ uid, onNavigate }) {
           {post.title}
         </span>
         {excerpt && <span className="mt-2 line-clamp-2 block text-[14px] leading-relaxed text-[#9A9A9A]">{excerpt}</span>}
-        <span className="mt-4 flex items-center gap-2.5">
+        <span className="mt-auto flex items-center gap-2.5 pt-4">
           <PersonAvatar uid={post.createdByUid} name={post.createdBy} size={26} />
           <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#8A8A8A]">
             {post.createdBy || 'ADOR'}

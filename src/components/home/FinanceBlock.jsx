@@ -1,5 +1,6 @@
 import { currencyPEN } from '../../lib/clientStages'
 import AnimatedNumber from '../common/AnimatedNumber'
+import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 // Hand-drawn sparkline (no charting library, per project convention) —
 // normalizes the last few monthly revenue points into a 240x56 viewBox.
@@ -46,28 +47,17 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
   const points = series.map((p) => ({ month: p.month, amount: p.ingresos }))
 
   return (
-    <button type="button" onClick={onOpen} className="ador-glass ador-grain ador-card-hover block w-full rounded-[20px] px-7 py-6 text-left">
-      <div className="flex items-center gap-2">
-        <span
-          className="font-medium text-[#7A7A7A]"
-          style={{ fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Resumen Financiero
-        </span>
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-[#F4EEE2]"
-          style={{ animation: 'ador-pulse 2s ease-in-out infinite' }}
-        />
-      </div>
+    <button type="button" onClick={onOpen} className={`ador-glass ador-grain ador-card-hover flex h-full w-full flex-col ${CARD_RADIUS} ${CARD_PAD} text-left`}>
+      <CardHeader label="Resumen financiero" dot="#F4EEE2" action="Abrir →" />
 
       {!hasData ? (
         <div className="flex flex-col items-center gap-4 py-10">
           <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[14px] font-light text-[#444444]">Sin datos financieros aún</p>
+          <p className="text-[14px] font-light text-[#767676]">Sin datos financieros aún</p>
         </div>
       ) : (
         <>
-          <p className="mt-3 text-[12px] text-[#666666]">Ingresos del mes</p>
+          <p className="mt-4 text-[12px] text-[#767676]">Ingresos del mes</p>
           <div className="mt-1 flex items-baseline gap-3">
             <span className="text-[32px] font-semibold text-[#F5F5F5]"><AnimatedNumber value={ingresosDelMes} format={(n) => currencyPEN.format(n)} /></span>
             {ingresosDeltaPct !== null && (
@@ -77,7 +67,9 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
               </span>
             )}
           </div>
-          <Sparkline points={points} />
+          <div className="mt-auto">
+            <Sparkline points={points} />
+          </div>
         </>
       )}
     </button>

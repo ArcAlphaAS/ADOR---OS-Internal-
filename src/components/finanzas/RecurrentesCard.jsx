@@ -23,9 +23,9 @@ export default function RecurrentesCard({ templates }) {
   const run = (promise) => withTimeout(promise).catch((e) => showToast(`No se pudo guardar: ${e.message}`))
 
   return (
-    <div className="ador-glass ador-grain rounded-2xl p-5">
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-[14px] font-semibold text-[#F5F5F5]">Recurrentes</h3>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Recurrentes</h3>
         {monthly > 0 && <span className="text-[11.5px] text-[#888888]">≈ {currencyPEN.format(monthly)} al mes en gastos</span>}
       </div>
       <div className="mt-3 flex flex-col divide-y divide-white/[0.06]">

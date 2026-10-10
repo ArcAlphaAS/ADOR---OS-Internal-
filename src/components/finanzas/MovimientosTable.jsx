@@ -36,14 +36,9 @@ export default function MovimientosTable({ movements }) {
   })
 
   return (
-    <div className="ador-glass ador-grain rounded-[20px] px-7 py-6">
+    <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex items-center justify-between">
-        <span
-          className="font-medium text-[#444444]"
-          style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Movimientos
-        </span>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Movimientos</h3>
         <div className="relative">
           <SearchIcon size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#444444' }} />
           <input
@@ -51,15 +46,15 @@ export default function MovimientosTable({ movements }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar movimiento..."
-            className="rounded-full border border-white/[0.08] bg-[#1A1A1A] py-1.5 pl-8 pr-3.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]"
+            className="rounded-full border border-white/[0.08] bg-[#1A1A1A] py-1.5 pl-8 pr-3.5 text-[12px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors duration-150 focus:border-white/[0.2]"
           />
         </div>
       </div>
 
       {movements.length === 0 ? (
-        <p className="mt-8 text-center text-[13px] font-light text-[#444444]">Sin movimientos registrados</p>
+        <p className="mt-8 text-center text-[13px] font-light text-[#767676]">Sin movimientos registrados</p>
       ) : filtered.length === 0 ? (
-        <p className="mt-8 text-center text-[13px] font-light text-[#444444]">Sin resultados para "{search}"</p>
+        <p className="mt-8 text-center text-[13px] font-light text-[#767676]">Sin resultados para "{search}"</p>
       ) : (
         <div className="mt-4 max-h-[280px] overflow-y-auto">
           <table className="w-full border-collapse">
@@ -68,7 +63,7 @@ export default function MovimientosTable({ movements }) {
                 {['Movimiento', 'Fecha', 'Monto', 'Estado'].map((h) => (
                   <th
                     key={h}
-                    className="sticky top-0 bg-[#000000] pb-2 text-left font-medium text-[#444444]"
+                    className="sticky top-0 bg-[#000000] pb-2 text-left font-medium text-[#767676]"
                     style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   >
                     {h}
@@ -94,7 +89,7 @@ export default function MovimientosTable({ movements }) {
                       </a>
                     )}
                   </td>
-                  <td className="py-2.5 pr-3 text-[12px] text-[#444444]">{formatDate(m.date)}</td>
+                  <td className="py-2.5 pr-3 text-[12px] text-[#767676]">{formatDate(m.date)}</td>
                   <td
                     className="py-2.5 pr-3 font-semibold"
                     style={{ fontSize: 13, color: m.type === 'ingreso' ? '#4CAF50' : '#EF5350' }}

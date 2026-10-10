@@ -12,6 +12,7 @@ import InterventionsBlock from './InterventionsBlock'
 import LatestNewsCard from './LatestNewsCard'
 import CommunityCard from './CommunityCard'
 import HomePeople from './HomePeople'
+import { Zone } from './CardHeader'
 
 // Orchestrates a staggered reveal instead of the whole page fading in as one
 // block — each section settles in slightly after the last. Only opacity/y
@@ -61,50 +62,55 @@ export default function HomeScreen({ user, onNavigate }) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-10 lg:px-12 lg:pt-16"
+      className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-12 lg:px-12 lg:pt-16"
     >
       <motion.div variants={itemVariants}>
         <GreetingBlock name={firstName(user)} />
       </motion.div>
 
-      <motion.div variants={itemVariants}>
-        <TuDiaCard user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
-      </motion.div>
-
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
+      <Zone title="Hoy">
         <motion.div variants={itemVariants}>
-          <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+          <TuDiaCard user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
         </motion.div>
-        <motion.div variants={itemVariants}>
-          <WeeklySummaryCard />
-        </motion.div>
-      </div>
-
-      <HomePeople>
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
-          <motion.div variants={itemVariants}>
-            <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8 lg:[&:has(>div:first-child:empty)]:grid-cols-1">
+          <motion.div variants={itemVariants} className="h-full">
+            <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
-          <motion.div variants={itemVariants}>
-            <CommunityCard user={user} onNavigate={onNavigate} />
+          <motion.div variants={itemVariants} className="h-full">
+            <WeeklySummaryCard />
           </motion.div>
         </div>
-      </HomePeople>
+      </Zone>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_1.3fr] lg:gap-8">
-        <motion.div variants={itemVariants}>
-          <FinanceBlock
-            hasData={finance.movements.length > 0}
-            ingresosDelMes={finance.ingresosDelMes}
-            ingresosDeltaPct={finance.ingresosDeltaPct}
-            series={finance.series}
-            onOpen={() => onNavigate?.('finanzas')}
-          />
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <InterventionsBlock interventions={interventions} />
-        </motion.div>
-      </div>
+      <Zone title="Pulso de la empresa">
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_1.3fr] lg:gap-8">
+          <motion.div variants={itemVariants} className="h-full">
+            <FinanceBlock
+              hasData={finance.movements.length > 0}
+              ingresosDelMes={finance.ingresosDelMes}
+              ingresosDeltaPct={finance.ingresosDeltaPct}
+              series={finance.series}
+              onOpen={() => onNavigate?.('finanzas')}
+            />
+          </motion.div>
+          <motion.div variants={itemVariants} className="h-full empty:hidden">
+            <InterventionsBlock interventions={interventions} />
+          </motion.div>
+        </div>
+      </Zone>
+
+      <Zone title="Equipo">
+        <HomePeople>
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8 lg:[&:has(>div:first-child:empty)]:grid-cols-1">
+            <motion.div variants={itemVariants} className="h-full empty:hidden">
+              <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
+            </motion.div>
+            <motion.div variants={itemVariants} className="h-full">
+              <CommunityCard user={user} onNavigate={onNavigate} />
+            </motion.div>
+          </div>
+        </HomePeople>
+      </Zone>
     </motion.div>
   )
 }

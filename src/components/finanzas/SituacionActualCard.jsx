@@ -1,42 +1,44 @@
 import { currencyPEN } from '../../lib/clientStages'
-import { useCountUp } from '../../hooks/useCountUp'
+import AnimatedNumber from '../common/AnimatedNumber'
+import CardHeader, { CARD_RADIUS } from '../home/CardHeader'
 
-// "Resultados del mes" — Ingresos/Gastos/Resultado read together as one
-// unit instead of three isolated cards (the old MetricCards.jsx), matching
-// the reference's own framing: this answers "how is ADOR doing right now,"
-// not three separate facts. Delta compares utilidadNeta itself (the number
-// that actually matters), not ingresos alone.
-export default function SituacionActualCard({ monthLabel, ingresosDelMes, gastosDelMes, utilidadNeta, resultDeltaPct }) {
-  const ingresosDisplay = useCountUp(ingresosDelMes)
-  const gastosDisplay = useCountUp(gastosDelMes)
-  const resultColor = utilidadNeta >= 0 ? '#4CAF50' : '#EF5350'
-
+function Badge({ pct }) {
+  if (pct == null) return null
+  const up = pct >= 0
   return (
-    <div className="ador-glass ador-grain rounded-[18px] px-6 py-5">
-      <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        {monthLabel}
-      </span>
-      <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-4">
-        <div>
-          <p className="text-[12px] text-[#888888]">Ingresos</p>
-          <p className="mt-0.5 text-[24px] font-semibold text-[#F5F5F5]">{currencyPEN.format(Math.round(ingresosDisplay))}</p>
-        </div>
-        <div>
-          <p className="text-[12px] text-[#888888]">Gastos</p>
-          <p className="mt-0.5 text-[24px] font-semibold text-[#888888]">{currencyPEN.format(Math.round(gastosDisplay))}</p>
-        </div>
-        <div>
-          <p className="text-[12px] text-[#888888]">Resultado</p>
-          <p className="mt-0.5 text-[24px] font-semibold" style={{ color: resultColor }}>
-            {utilidadNeta >= 0 ? '+' : ''}
-            {currencyPEN.format(utilidadNeta)}
-          </p>
-        </div>
-        {resultDeltaPct !== null && (
-          <span className="mb-1.5 text-[12px] font-medium" style={{ color: resultDeltaPct >= 0 ? '#4CAF50' : '#EF5350' }}>
-            {resultDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(resultDeltaPct).toFixed(0)}% vs. mes anterior
-          </span>
-        )}
+    <span className="rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums" style={{ color: up ? '#4CAF50' : '#EF5350', background: up ? 'rgba(76,175,80,0.12)' : 'rgba(239,83,80,0.12)' }}>
+      {up ? '+' : '−'}
+      {Math.abs(pct).toFixed(0)}%
+    </span>
+  )
+}
+
+function Metric({ label, value, color = '#F5F5F5', badge }) {
+  return (
+    <div className={`ador-glass ador-grain flex-1 ${CARD_RADIUS} px-6 py-5`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12px] text-[#8A8A8A]">{label}</span>
+        {badge}
+      </div>
+      <p className="mt-3 text-[26px] font-semibold tracking-tight tabular-nums" style={{ color }}>
+        <AnimatedNumber value={value} format={(n) => currencyPEN.format(n)} />
+      </p>
+    </div>
+  )
+}
+
+// The month read as one unit: income, spending, and what's left. The delta
+// sits on the result (the number that matters), not on income alone.
+export default function SituacionActualCard({ monthLabel, ingresosDelMes, gastosDelMes, utilidadNeta, resultDeltaPct }) {
+  return (
+    <div>
+      <div className="mb-3 px-1">
+        <CardHeader label={monthLabel} />
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Metric label="Ingresos" value={ingresosDelMes} />
+        <Metric label="Gastos" value={gastosDelMes} color="#B5B5B5" />
+        <Metric label="Resultado" value={utilidadNeta} color={utilidadNeta >= 0 ? '#4CAF50' : '#EF5350'} badge={<Badge pct={resultDeltaPct} />} />
       </div>
     </div>
   )
