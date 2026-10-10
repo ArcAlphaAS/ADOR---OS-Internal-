@@ -120,7 +120,7 @@ export default function ConversationHeader({ onBack, selected, conversation, dmU
             <p className="line-clamp-1 text-[17px] font-semibold leading-tight tracking-[-0.01em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">{dmEntry?.name || userLabel(dmUser)}</p>
             {(presence.label || role) && (
               <p className="truncate text-[12.5px] text-[#7A7A7A]">
-                {presence.label && <span style={{ color: presence.color || undefined }}>{presence.label}</span>}
+                {presence.label && <span style={{ color: presence.status === 'away' ? '#8A8A8A' : presence.color || undefined }}>{presence.label}</span>}
                 {presence.label && role ? ' · ' : ''}
                 {role}
               </p>

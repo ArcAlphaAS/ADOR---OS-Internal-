@@ -17,11 +17,12 @@ import { driveFileKind } from '../../lib/googleDrive'
 // own messages are warm graphite with a thin gold edge, and gold marks
 // what's yours or new — unread, mentions of you, read receipts, send.
 const MINE_BG = '#1C1A16' // voice notes, polls: dark graphite cards
-// Your text messages are ivory with dark ink (iMessage-style); what you receive
-// stays dark glass. Gold is reserved for what deserves to interrupt: important
-// messages, mentions of you, pinned.
-const MINE_BUBBLE = '#F2EDE2'
-const MINE_INK = '#1A1814'
+// Your text messages are brighter frosted glass with white ink; what you
+// receive is darker glass (a cream/ivory fill was tried and looked beige, not
+// Apple). Gold is reserved for what deserves to interrupt: important messages,
+// mentions of you, pinned.
+const MINE_GLASS = 'linear-gradient(180deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.2) 100%)'
+const MINE_INK = '#FFFFFF'
 const MINE_BORDER = 'rgba(244,238,226,0.28)'
 
 function formatTime(ts) {
@@ -857,8 +858,9 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 // Phones: translucent "glass" bubbles over the conversation's
                 // soft gradient (the received ones lighter, yours darker with
                 // the gold edge). Computers keep the flat graphite look.
-                background: mine ? MINE_BUBBLE : phone ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.06)',
-                border: mine ? '1px solid transparent' : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
+                background: mine ? MINE_GLASS : phone ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.06)',
+                boxShadow: mine ? 'inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 8px rgba(0,0,0,0.25)' : undefined,
+                border: mine ? '1px solid rgba(255,255,255,0.24)' : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
                 color: mine ? MINE_INK : phone ? '#EFEFEF' : '#DDDDDD',
                 // Only the last bubble of a block gets the "tail" corner;
                 // bubbles inside a block keep softer inner corners.
@@ -866,7 +868,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 borderBottomRightRadius: mine ? (groupEnd ? 5 : 8) : undefined,
                 borderTopLeftRadius: !mine && !groupStart ? 8 : undefined,
                 borderBottomLeftRadius: !mine ? (groupEnd ? 5 : 8) : undefined,
-                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_BUBBLE : 'rgba(184,134,11,0.08)' } : {}),
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_GLASS : 'rgba(184,134,11,0.08)' } : {}),
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
@@ -877,17 +879,17 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 // when the text is long.
                 <span className="flex flex-wrap items-end justify-end gap-x-3">
                   <span className="min-w-0 flex-1 basis-auto">
-                    <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} onIvory={mine} />
+                    <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
                   </span>
                   <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap pb-px text-[10.5px] opacity-60">
                     {formatTime(message.createdAt)}
                     {message.editedAt ? ' · editado' : ''}
                     {pinned && <span title="Mensaje fijado">📌</span>}
-                    {mine && <Ticks receipt={receipt} userName={userName} onIvory />}
+                    {mine && <Ticks receipt={receipt} userName={userName} />}
                   </span>
                 </span>
               ) : (
-                <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} onIvory={mine} />
+                <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
               )}
             </div>
           )}
