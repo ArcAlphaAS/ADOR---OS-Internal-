@@ -70,7 +70,7 @@ export default function MessageActionSheet({ preview, reactions, onReact, option
           </div>
         )}
         <div className="max-h-[52vh] overflow-y-auto rounded-2xl bg-[#1C1C1E] [&>button+button]:border-t [&>button+button]:border-white/[0.07]">{list}</div>
-        <button type="button" onClick={onClose} className="mt-2 w-full rounded-2xl bg-[#1C1C1E] py-3.5 text-[16px] font-semibold text-[#E8C15A] active:bg-[#2A2A2C]">
+        <button type="button" onClick={onClose} className="mt-2 w-full rounded-2xl bg-[#1C1C1E] py-3.5 text-[16px] font-semibold text-[#F4EEE2] active:bg-[#2A2A2C]">
           Cancelar
         </button>
       </motion.div>

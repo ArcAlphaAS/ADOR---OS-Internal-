@@ -41,7 +41,7 @@ export default function PersonAvatar({ uid, name, size = 28, showPresence = fals
       ) : (
         <span
           className="flex items-center justify-center rounded-full font-medium"
-          style={{ width: size, height: size, fontSize: Math.max(9, size * 0.38), background: '#26231E', color: '#D9CFBF', boxShadow: 'inset 0 0 0 1px rgba(232,193,90,0.14)' }}
+          style={{ width: size, height: size, fontSize: Math.max(9, size * 0.38), background: '#26231E', color: '#D9CFBF', boxShadow: 'inset 0 0 0 1px rgba(244,238,226,0.1)' }}
         >
           {initials(label)}
         </span>

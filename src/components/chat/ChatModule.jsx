@@ -202,7 +202,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     if (!el) return
     jumpToRef.current = null
     el.scrollIntoView({ block: 'center' })
-    el.animate([{ background: 'rgba(184,134,11,0.18)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+    el.animate([{ background: 'rgba(244,238,226,0.12)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
   }, [messages])
 
   // Marks the open conversation read whenever its message list changes —
@@ -536,7 +536,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     const el = document.getElementById(`msg-${id}`)
     if (!el) return showToast('Ese mensaje es más antiguo que los cargados — usa "Cargar mensajes anteriores".')
     el.scrollIntoView({ block: 'center' })
-    el.animate([{ background: 'rgba(184,134,11,0.18)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+    el.animate([{ background: 'rgba(244,238,226,0.12)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
   }
 
   // Tied to the conversation it was opened in; switching away hides it.
@@ -854,7 +854,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               <div className="mb-1 flex flex-col gap-1">
                 {myScheduled.map((x) =>
                   editingScheduled?.id === x.id ? (
-                    <div key={x.id} className="flex flex-col gap-2 rounded-xl border border-[#B8860B]/40 bg-white/[0.03] px-3 py-2.5">
+                    <div key={x.id} className="flex flex-col gap-2 rounded-xl border border-[#F4EEE2]/40 bg-white/[0.03] px-3 py-2.5">
                       <textarea
                         autoFocus
                         rows={2}
@@ -864,7 +864,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
                         className="w-full resize-none bg-transparent text-[13.5px] text-[#F5F5F5] outline-none"
                       />
                       <div className="flex flex-wrap items-center gap-2">
-                        <ClockIcon size={13} className="text-[#E8C15A]" />
+                        <ClockIcon size={13} className="text-[#F4EEE2]" />
                         <input
                           type="datetime-local"
                           value={editingScheduled.at}
@@ -875,7 +875,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
                           <button type="button" onClick={() => setEditingScheduled(null)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
                             Descartar cambios
                           </button>
-                          <button type="button" onClick={saveScheduledEdit} className="rounded-full px-3 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+                          <button type="button" onClick={saveScheduledEdit} className="rounded-full px-3 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
                             Guardar
                           </button>
                         </span>
@@ -883,9 +883,9 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
                     </div>
                   ) : (
                     <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">
-                      <ClockIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
+                      <ClockIcon size={13} className="flex-shrink-0 text-[#F4EEE2]" />
                       <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#AAAAAA]">
-                        <span className="font-medium text-[#E8C15A]">Programado · {formatReminderTime(x.sendAt)}</span> {x.payload?.text}
+                        <span className="font-medium text-[#F4EEE2]">Programado · {formatReminderTime(x.sendAt)}</span> {x.payload?.text}
                       </span>
                       <button
                         type="button"
@@ -1092,7 +1092,7 @@ function ReadyCallSheet({ call, onClose }) {
           rel="noopener noreferrer"
           onClick={onClose}
           className="mt-4 flex w-full items-center justify-center rounded-2xl py-3.5 text-[15px] font-semibold text-[#1C1A16] active:opacity-80"
-          style={{ background: '#E8C15A' }}
+          style={{ background: '#F4EEE2' }}
         >
           Unirse a Meet
         </a>

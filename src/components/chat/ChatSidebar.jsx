@@ -10,7 +10,7 @@ import PushNotificationsCard from '../shell/PushNotificationsCard'
 // Archivos views, DMs, groups and channels. Split out of ChatModule.jsx.
 
 function UnreadDot() {
-  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#B8860B' }} />
+  return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#F4EEE2' }} />
 }
 
 function SectionHeader({ label, onAdd, addTitle }) {
@@ -38,7 +38,7 @@ function SubLabel({ children }) {
 // A half-written message waiting in a conversation you're not looking at.
 function DraftMark() {
   return (
-    <span title="Tienes un borrador aquí" className="flex flex-shrink-0 items-center text-[#E8C15A]">
+    <span title="Tienes un borrador aquí" className="flex flex-shrink-0 items-center text-[#F4EEE2]">
       <EditIcon size={11} />
     </span>
   )
@@ -51,8 +51,8 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
       onClick={onClick}
       className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13.5px] transition-colors duration-150 hover:bg-white/[0.04]"
       style={{
-        background: active ? 'rgba(184,134,11,0.14)' : undefined,
-        color: active ? '#E8C15A' : unread ? '#F5F5F5' : '#CCCCCC',
+        background: active ? 'rgba(244,238,226,0.1)' : undefined,
+        color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#CCCCCC',
         fontWeight: unread ? 600 : 500,
       }}
     >
@@ -77,24 +77,24 @@ function PreviewRow({ active, unreadCount, unread, draftText, preview, time, onC
         type="button"
         onClick={onClick}
         className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors duration-150 hover:bg-white/[0.04]"
-        style={{ background: active ? 'rgba(184,134,11,0.14)' : undefined }}
+        style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
         <span className="flex-shrink-0">{avatar}</span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[13.5px]" style={{ color: active ? '#E8C15A' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
+            <span className="truncate text-[13.5px]" style={{ color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
               {label}
             </span>
-            <span className="flex-shrink-0 text-[10.5px]" style={{ color: unread ? '#E8C15A' : '#6E6E6E' }}>
+            <span className="flex-shrink-0 text-[10.5px]" style={{ color: unread ? '#F4EEE2' : '#6E6E6E' }}>
               {time}
             </span>
           </span>
           <span className="flex items-center justify-between gap-2">
-            <span className="truncate text-[12px]" style={{ color: draftText && !active ? '#E8C15A' : unread ? '#BBBBBB' : '#7E7E7E' }}>
+            <span className="truncate text-[12px]" style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#BBBBBB' : '#7E7E7E' }}>
               {draftText && !active ? `Borrador: ${draftText}` : preview || 'Sin mensajes todavía'}
             </span>
             {unread && !active && (
-              <span className="flex h-[16px] min-w-[16px] flex-shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: '#E8C15A', color: '#1C1A16' }}>
+              <span className="flex h-[16px] min-w-[16px] flex-shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: '#F4EEE2', color: '#1C1A16' }}>
                 {unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : ''}
               </span>
             )}
@@ -105,8 +105,8 @@ function PreviewRow({ active, unreadCount, unread, draftText, preview, time, onC
         type="button"
         onClick={onTogglePin}
         title={pinned ? 'Quitar de fijados' : 'Fijar arriba'}
-        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#141414] text-[#888888] opacity-0 transition-opacity hover:text-[#E8C15A] group-hover/row:opacity-100"
-        style={pinned ? { color: '#E8C15A' } : undefined}
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#141414] text-[#888888] opacity-0 transition-opacity hover:text-[#F4EEE2] group-hover/row:opacity-100"
+        style={pinned ? { color: '#F4EEE2' } : undefined}
       >
         <PinIcon size={10} />
       </button>
@@ -153,7 +153,7 @@ function ViewNav({ view, counts, onSelectView }) {
             aria-label={label}
             onClick={() => onSelectView(id)}
             className={`relative flex h-9 items-center justify-center gap-1.5 rounded-lg transition-[flex,background-color] duration-200 hover:bg-white/[0.05] ${active ? 'flex-[2.6] px-2' : 'flex-1'}`}
-            style={{ background: active ? 'rgba(184,134,11,0.16)' : undefined, color: active ? '#E8C15A' : count ? '#F5F5F5' : '#9A9A9A' }}
+            style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined, color: active ? '#F4EEE2' : count ? '#F5F5F5' : '#9A9A9A' }}
           >
             <Icon size={active ? 15 : 17} />
             {active && <span className="truncate text-[12.5px] font-medium">{short}</span>}
@@ -264,7 +264,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           {locked ? <LockIcon size={11} className="w-3 flex-shrink-0 text-[#858585]" /> : <span className="w-3 text-center text-[#858585]">#</span>}
           <span className="truncate">{c.name}</span>
         </ConversationButton>
-        <button type="button" onClick={() => togglePin(c.id)} title={isPinned(c.id) ? 'Quitar de fijados' : 'Fijar arriba'} className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#141414] text-[#888888] opacity-0 transition-opacity hover:text-[#E8C15A] group-hover/row:opacity-100" style={isPinned(c.id) ? { color: '#E8C15A' } : undefined}>
+        <button type="button" onClick={() => togglePin(c.id)} title={isPinned(c.id) ? 'Quitar de fijados' : 'Fijar arriba'} className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#141414] text-[#888888] opacity-0 transition-opacity hover:text-[#F4EEE2] group-hover/row:opacity-100" style={isPinned(c.id) ? { color: '#F4EEE2' } : undefined}>
           <PinIcon size={10} />
         </button>
       </div>
@@ -292,7 +292,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           <button
             type="button"
             onClick={() => onSearchMessages(search.trim())}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E8C15A] hover:bg-white/[0.04]"
+            className="mt-2 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#F4EEE2] hover:bg-white/[0.04]"
           >
             <SearchIcon size={12} />
             <span className="truncate">Buscar “{search.trim()}” en todos los mensajes</span>

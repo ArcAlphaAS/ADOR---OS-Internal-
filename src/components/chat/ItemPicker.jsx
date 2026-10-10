@@ -46,7 +46,7 @@ export default function ItemPicker({ onPick, onClose }) {
             type="button"
             onClick={() => setType(t.id)}
             className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors"
-            style={{ background: type === t.id ? 'rgba(184,134,11,0.18)' : 'transparent', color: type === t.id ? '#E8C15A' : '#999999' }}
+            style={{ background: type === t.id ? 'rgba(244,238,226,0.12)' : 'transparent', color: type === t.id ? '#F4EEE2' : '#999999' }}
           >
             {t.emoji} {t.label}
           </button>

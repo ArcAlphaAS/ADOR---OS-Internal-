@@ -336,7 +336,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         <button type="button" onClick={voice.cancel} className="text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">
           Cancelar
         </button>
-        <button type="button" onClick={voice.stop} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white" style={{ background: '#B8860B' }} title="Enviar nota de voz">
+        <button type="button" onClick={voice.stop} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#1A1814]" style={{ background: '#F4EEE2' }} title="Enviar nota de voz">
           <ArrowRightIcon size={16} />
         </button>
       </div>
@@ -356,7 +356,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       onDrop={onDrop}
     >
       {dragging && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#B8860B]/60 bg-[#000000]/80 text-[13.5px] text-[#E8C15A]">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-[#F4EEE2]/60 bg-[#000000]/80 text-[13.5px] text-[#F4EEE2]">
           Suelta la imagen para adjuntarla
         </div>
       )}
@@ -420,13 +420,13 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={o.onPick}
                 className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-white/[0.05]"
-                style={o.active ? { background: 'rgba(184,134,11,0.12)' } : undefined}
+                style={o.active ? { background: 'rgba(244,238,226,0.08)' } : undefined}
               >
-                <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06]" style={{ color: o.active ? '#E8C15A' : '#CCCCCC' }}>
+                <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/[0.06]" style={{ color: o.active ? '#F4EEE2' : '#CCCCCC' }}>
                   {o.icon}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[12.5px] font-medium" style={{ color: o.active ? '#E8C15A' : '#E5E5E5' }}>
+                  <span className="block text-[12.5px] font-medium" style={{ color: o.active ? '#F4EEE2' : '#E5E5E5' }}>
                     {o.label}
                   </span>
                   <span className="block text-[11px] leading-snug text-[#858585]">{o.hint}</span>
@@ -509,7 +509,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               className="rounded-full border border-white/[0.1] bg-transparent px-2.5 py-1 text-[12.5px] text-[#CCCCCC] outline-none [color-scheme:dark]"
             />
             {customAt && (
-              <button type="button" onClick={() => schedule(new Date(customAt))} className="rounded-full px-2.5 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+              <button type="button" onClick={() => schedule(new Date(customAt))} className="rounded-full px-2.5 py-1 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
                 Programar {formatReminderTime(new Date(customAt))}
               </button>
             )}
@@ -540,10 +540,10 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       )}
 
       {replyTo && (
-        <div className="flex items-center gap-2.5 rounded-xl border-l-2 border-[#B8860B] bg-white/[0.03] py-1.5 pr-2 pl-3">
-          <ReplyIcon size={13} className="flex-shrink-0 text-[#E8C15A]" />
+        <div className="flex items-center gap-2.5 rounded-xl border-l-2 border-[#F4EEE2] bg-white/[0.03] py-1.5 pr-2 pl-3">
+          <ReplyIcon size={13} className="flex-shrink-0 text-[#F4EEE2]" />
           <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-medium text-[#E8C15A]">Respondiendo a {replyTo.authorName}</span>
+            <span className="block text-[11px] font-medium text-[#F4EEE2]">Respondiendo a {replyTo.authorName}</span>
             <span className="block truncate text-[12.5px] text-[#AAAAAA]">{replyTo.text}</span>
           </span>
           <button type="button" onClick={onCancelReply} title="Cancelar respuesta" className="flex-shrink-0 text-[#858585] hover:text-[#F5F5F5]">
@@ -614,7 +614,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               <PlusIcon size={16} />
             </ToolButton>
             {(important || panel === 'format' || panel === 'poll' || panel === 'schedule') && panel !== 'more' && (
-              <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#E8C15A' }} />
+              <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#F4EEE2' }} />
             )}
           </span>
           <span className="hidden md:inline-flex">
@@ -632,8 +632,8 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className="ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#F5F5F5] transition-opacity duration-150 disabled:opacity-40"
-            style={{ background: '#B8860B' }}
+            className="ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#1A1814] transition-opacity duration-150 disabled:opacity-40"
+            style={{ background: '#F4EEE2' }}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />
@@ -690,19 +690,19 @@ function PollForm({ onPublish, onCancel, onError }) {
       ))}
       <div className="flex flex-wrap items-center gap-3">
         {options.length < MAX_POLL_OPTIONS && (
-          <button type="button" onClick={() => setOptions((list) => [...list, newOption()])} className="text-[12.5px] text-[#E8C15A] hover:underline">
+          <button type="button" onClick={() => setOptions((list) => [...list, newOption()])} className="text-[12.5px] text-[#F4EEE2] hover:underline">
             + Opción
           </button>
         )}
         <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[#AAAAAA]">
-          <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} className="accent-[#B8860B]" />
+          <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} className="accent-[#F4EEE2]" />
           Permitir varias respuestas
         </label>
         <span className="ml-auto flex items-center gap-2">
           <button type="button" onClick={onCancel} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
             Cancelar
           </button>
-          <button type="button" onClick={publish} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+          <button type="button" onClick={publish} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
             Publicar encuesta
           </button>
         </span>

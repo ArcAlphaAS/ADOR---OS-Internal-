@@ -34,9 +34,9 @@ function DateDivider({ ts }) {
 function NewDivider() {
   return (
     <div id="chat-new-divider" className="flex items-center gap-3 py-2">
-      <div className="h-px flex-1 bg-[#B8860B]/50" />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#E8C15A]">Nuevos mensajes</span>
-      <div className="h-px flex-1 bg-[#B8860B]/50" />
+      <div className="h-px flex-1 bg-[#F4EEE2]/50" />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#F4EEE2]">Nuevos mensajes</span>
+      <div className="h-px flex-1 bg-[#F4EEE2]/50" />
     </div>
   )
 }
@@ -240,7 +240,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
       <button
         type="button"
         onClick={scrollToBottom}
-        className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[#B8860B]/50 bg-[#1C1A16] px-3.5 py-1.5 text-[12.5px] font-medium text-[#E8C15A] shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-colors hover:bg-[#26231E]"
+        className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[#F4EEE2]/50 bg-[#1C1A16] px-3.5 py-1.5 text-[12.5px] font-medium text-[#F4EEE2] shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-colors hover:bg-[#26231E]"
       >
         ↓ {unseen} {unseen === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}
       </button>
@@ -303,11 +303,11 @@ export function ImageLightbox({ attachment, onClose }) {
                   .then(() => setCopied('Copiada — pégala con Ctrl+V'))
                   .catch(() => setCopied('Tu navegador no permitió copiarla'))
               }}
-              className="ml-3 text-[#E8C15A] hover:underline"
+              className="ml-3 text-[#F4EEE2] hover:underline"
             >
               {copied || 'Copiar imagen'}
             </button>
-            <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#E8C15A] hover:underline">
+            <a href={src} download={attachment.name} onClick={(e) => e.stopPropagation()} className="ml-3 text-[#F4EEE2] hover:underline">
               Descargar
             </a>
           </>

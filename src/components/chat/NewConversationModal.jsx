@@ -22,7 +22,7 @@ export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids
             key={u.id}
             className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] ${locked ? 'text-[#888888]' : 'cursor-pointer text-[#DDDDDD] hover:bg-white/[0.04]'}`}
           >
-            <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#B8860B]" />
+            <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#F4EEE2]" />
             <PersonAvatar uid={u.id} name={userLabel(u)} size={20} />
             <span className="truncate">{userLabel(u)}</span>
             {u.id === currentUid && <span className="ml-auto text-[11px] text-[#7A7A7A]">tú</span>}
@@ -49,9 +49,9 @@ export function VisibilityToggle({ value, onChange }) {
             onClick={() => onChange(id)}
             className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[12.5px] font-medium transition-colors duration-150"
             style={{
-              borderColor: value === id ? 'rgba(184,134,11,0.6)' : 'rgba(255,255,255,0.08)',
-              background: value === id ? 'rgba(184,134,11,0.14)' : 'transparent',
-              color: value === id ? '#E8C15A' : '#888888',
+              borderColor: value === id ? 'rgba(244,238,226,0.4)' : 'rgba(255,255,255,0.08)',
+              background: value === id ? 'rgba(244,238,226,0.1)' : 'transparent',
+              color: value === id ? '#F4EEE2' : '#888888',
             }}
           >
             <Icon size={13} /> {label}
@@ -135,7 +135,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
                       type="button"
                       onClick={() => applySuggestion(s)}
                       className="flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[12.5px] text-[#AAAAAA] transition-colors hover:border-white/[0.2] hover:text-[#F5F5F5]"
-                      style={normalized === s.name ? { borderColor: 'rgba(184,134,11,0.6)', color: '#E8C15A' } : undefined}
+                      style={normalized === s.name ? { borderColor: 'rgba(244,238,226,0.4)', color: '#F4EEE2' } : undefined}
                     >
                       {s.visibility === 'private' ? <LockIcon size={10} /> : '#'} {s.name}
                     </button>
@@ -146,7 +146,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
 
             <div>
               <label className={labelClass} style={labelStyle}>
-                Nombre {!isGroup && <span style={{ color: '#B8860B' }}>*</span>}
+                Nombre {!isGroup && <span style={{ color: '#F4EEE2' }}>*</span>}
               </label>
               <input
                 type="text"
@@ -181,7 +181,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
             {(isGroup || visibility === 'private') && (
               <div>
                 <label className={labelClass} style={labelStyle}>
-                  Miembros {isGroup && <span style={{ color: '#B8860B' }}>*</span>}
+                  Miembros {isGroup && <span style={{ color: '#F4EEE2' }}>*</span>}
                 </label>
                 <MemberPicker users={users} currentUid={currentUid} selected={members} onToggle={toggle} />
               </div>

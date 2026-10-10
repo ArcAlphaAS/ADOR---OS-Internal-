@@ -16,8 +16,13 @@ import { driveFileKind } from '../../lib/googleDrive'
 // Graphite and gold (user's choice over the generic bright blue): your
 // own messages are warm graphite with a thin gold edge, and gold marks
 // what's yours or new — unread, mentions of you, read receipts, send.
-const MINE_BG = '#1C1A16'
-const MINE_BORDER = 'rgba(184,134,11,0.42)'
+const MINE_BG = '#1C1A16' // voice notes, polls: dark graphite cards
+// Your text messages are ivory with dark ink (iMessage-style); what you receive
+// stays dark glass. Gold is reserved for what deserves to interrupt: important
+// messages, mentions of you, pinned.
+const MINE_BUBBLE = '#F2EDE2'
+const MINE_INK = '#1A1814'
+const MINE_BORDER = 'rgba(244,238,226,0.28)'
 
 function formatTime(ts) {
   if (!ts?.toDate) return ''
@@ -54,10 +59,10 @@ function Formatted({ text }) {
   })
 }
 
-function RichText({ text, mentions, currentUid }) {
+function RichText({ text, mentions, currentUid, onIvory = false }) {
   return splitLinks(text).map((part, i) =>
     part.type === 'link' ? (
-      <a key={i} href={part.value} target="_blank" rel="noopener noreferrer" className="break-all underline decoration-white/30 underline-offset-2 hover:decoration-white/70">
+      <a key={i} href={part.value} target="_blank" rel="noopener noreferrer" className={`break-all underline underline-offset-2 ${onIvory ? 'decoration-black/30 hover:decoration-black/70' : 'decoration-white/30 hover:decoration-white/70'}`}>
         {part.value}
       </a>
     ) : (
@@ -67,7 +72,7 @@ function RichText({ text, mentions, currentUid }) {
             <span
               key={j}
               className="rounded px-0.5 font-medium"
-              style={seg.uid === currentUid ? { background: 'rgba(184,134,11,0.25)', color: '#E8C15A' } : { background: 'rgba(255,255,255,0.1)', color: '#F2EBDD' }}
+              style={onIvory ? (seg.uid === currentUid ? { background: 'rgba(184,134,11,0.22)', color: '#6B4A00' } : { background: 'rgba(0,0,0,0.08)', color: MINE_INK }) : seg.uid === currentUid ? { background: 'rgba(184,134,11,0.25)', color: '#E8C15A' } : { background: 'rgba(255,255,255,0.1)', color: '#F2EBDD' }}
             >
               {seg.value}
             </span>
@@ -92,12 +97,12 @@ function EntityCard({ attachment, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen?.(attachment)}
-      className="flex max-w-[320px] items-center gap-2.5 rounded-xl border border-[#B8860B]/40 bg-white/[0.04] px-3 py-2 text-left transition-colors hover:bg-white/[0.07]"
+      className="flex max-w-[320px] items-center gap-2.5 rounded-xl border border-[#F4EEE2]/40 bg-white/[0.04] px-3 py-2 text-left transition-colors hover:bg-white/[0.07]"
     >
       <span className="text-[18px]">{meta.emoji}</span>
       <span className="min-w-0">
         <span className="block truncate text-[12.5px] font-medium text-[#F5F5F5]">{attachment.title}</span>
-        <span className="block text-[11px] text-[#B8860B]">
+        <span className="block text-[11px] text-[#BDB7AB]">
           {meta.label}
           {attachment.subtitle ? ` · ${attachment.subtitle}` : ''} · abrir
         </span>
@@ -116,12 +121,12 @@ function DriveFileCard({ attachment }) {
       rel="noopener noreferrer"
       className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.2]"
     >
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(244,238,226,0.1)', color: '#F4EEE2' }}>
         {attachment.iconUrl ? <img src={attachment.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={16} />}
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[12.5px] font-medium text-[#F5F5F5]">{attachment.name}</span>
-        <span className="block text-[11px] text-[#B8860B]">{driveFileKind(attachment.mimeType)} en Google Drive · abrir</span>
+        <span className="block text-[11px] text-[#BDB7AB]">{driveFileKind(attachment.mimeType)} en Google Drive · abrir</span>
       </span>
     </a>
   )
@@ -136,12 +141,12 @@ function DriveCard({ url }) {
       rel="noopener noreferrer"
       className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.2]"
     >
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(244,238,226,0.1)', color: '#F4EEE2' }}>
         {type === 'Carpeta' ? <FolderIcon size={16} /> : <FileIcon size={16} />}
       </span>
       <span className="min-w-0">
         <span className="block text-[12.5px] font-medium text-[#F5F5F5]">{type} en Google Drive</span>
-        <span className="block text-[11px] text-[#B8860B]">Documento oficial · abrir en Drive</span>
+        <span className="block text-[11px] text-[#BDB7AB]">Documento oficial · abrir en Drive</span>
       </span>
     </a>
   )
@@ -332,7 +337,7 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
       {(canJoin || (mine && state.key === 'ringing')) && (
         <div className="flex items-center gap-2">
           {canJoin && (
-            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold" style={{ background: '#E8C15A', color: '#1C1A16' }}>
+            <button type="button" onClick={join} className="rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold" style={{ background: '#F4EEE2', color: '#1C1A16' }}>
               {joined ? 'Volver a la llamada' : 'Unirse'}
             </button>
           )}
@@ -367,8 +372,8 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
             onClick={() => onReact(emoji, mine)}
             className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12.5px] transition-colors"
             style={{
-              borderColor: mine ? 'rgba(184,134,11,0.6)' : 'rgba(255,255,255,0.1)',
-              background: mine ? 'rgba(184,134,11,0.18)' : 'rgba(255,255,255,0.03)',
+              borderColor: mine ? 'rgba(244,238,226,0.4)' : 'rgba(255,255,255,0.1)',
+              background: mine ? 'rgba(244,238,226,0.12)' : 'rgba(255,255,255,0.03)',
               color: '#DDDDDD',
             }}
           >
@@ -382,13 +387,13 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
 
 // ✓ sent · ✓✓ read (blue) · a small clock while the server hasn't
 // confirmed it yet. Hover says who has read it in a group.
-function Ticks({ receipt, userName }) {
+function Ticks({ receipt, userName, onIvory = false }) {
   if (!receipt) return null
   if (receipt.state === 'sending') return <span className="text-[10px] text-[#7A7A7A]" title="Enviando">◷</span>
   const read = receipt.state === 'read'
   const title = read ? 'Leído' : receipt.readers.length ? `Leído por ${receipt.readers.map(userName).join(', ')}` : 'Enviado'
   return (
-    <span title={title} className="inline-flex items-center" style={{ color: read ? '#E8C15A' : '#858585' }}>
+    <span title={title} className="inline-flex items-center" style={{ color: onIvory ? (read ? MINE_INK : 'rgba(26,24,20,0.45)') : read ? '#F4EEE2' : '#858585' }}>
       <svg width={read ? 16 : 11} height="10" viewBox={read ? '0 0 16 10' : '0 0 11 10'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 5.2 3.8 8 10 1.8" />
         {read && <path d="M6.5 7.3 7.2 8 13.4 1.8" />}
@@ -420,7 +425,7 @@ function ThreadSummary({ message, userName, onOpen }) {
           </span>
         ))}
       </span>
-      <span className="whitespace-nowrap text-[12.5px] font-medium text-[#E8C15A] group-hover/thread:underline">
+      <span className="whitespace-nowrap text-[12.5px] font-medium text-[#F4EEE2] group-hover/thread:underline">
         {message.replyCount} {message.replyCount === 1 ? 'respuesta' : 'respuestas'}
       </span>
       <span className="whitespace-nowrap text-[11px] text-[#7A7A7A]">Última {timeAgoShort(message.lastReplyAt)}</span>
@@ -437,9 +442,9 @@ function QuoteBlock({ quote, mine, onJump }) {
       onClick={() => onJump?.(quote.id)}
       title="Ir al mensaje original"
       className="block max-w-[360px] rounded-xl border-l-2 px-3 py-1.5 text-left transition-colors hover:bg-white/[0.06]"
-      style={{ borderColor: '#B8860B', background: mine ? 'rgba(184,134,11,0.08)' : 'rgba(255,255,255,0.04)' }}
+      style={{ borderColor: '#F4EEE2', background: mine ? 'rgba(244,238,226,0.06)' : 'rgba(255,255,255,0.04)' }}
     >
-      <span className="block text-[11px] font-medium text-[#E8C15A]">{quote.authorName || 'Mensaje'}</span>
+      <span className="block text-[11px] font-medium text-[#F4EEE2]">{quote.authorName || 'Mensaje'}</span>
       <span className="line-clamp-2 block text-[12.5px] text-[#AAAAAA]">{quote.text}</span>
     </button>
   )
@@ -455,7 +460,7 @@ function PollCard({ message, mine, currentUid, userName, onVote, onClose }) {
   return (
     <div className="flex w-[320px] flex-col gap-2 rounded-2xl border px-3.5 py-3" style={{ borderColor: mine ? MINE_BORDER : 'rgba(255,255,255,0.1)', background: mine ? MINE_BG : 'rgba(255,255,255,0.04)' }}>
       <p className="flex items-start gap-2 text-[13.5px] font-medium leading-snug text-[#F5F5F5]">
-        <PollIcon size={14} className="mt-0.5 flex-shrink-0 text-[#E8C15A]" />
+        <PollIcon size={14} className="mt-0.5 flex-shrink-0 text-[#F4EEE2]" />
         {poll.question}
       </p>
       <div className="flex flex-col gap-1.5">
@@ -471,11 +476,11 @@ function PollCard({ message, mine, currentUid, userName, onVote, onClose }) {
               onClick={() => onVote(o.id)}
               title={o.uids.length ? o.uids.map(userName).join(', ') : 'Sin votos'}
               className="relative overflow-hidden rounded-lg border px-3 py-2 text-left transition-colors enabled:hover:border-white/[0.25] disabled:cursor-default"
-              style={{ borderColor: voted ? 'rgba(232,193,90,0.7)' : 'rgba(255,255,255,0.1)' }}
+              style={{ borderColor: voted ? 'rgba(244,238,226,0.55)' : 'rgba(255,255,255,0.1)' }}
             >
-              <span className="absolute inset-y-0 left-0 transition-[width] duration-300" style={{ width: `${pct}%`, background: voted || leading ? 'rgba(184,134,11,0.22)' : 'rgba(255,255,255,0.06)' }} />
+              <span className="absolute inset-y-0 left-0 transition-[width] duration-300" style={{ width: `${pct}%`, background: voted || leading ? 'rgba(244,238,226,0.14)' : 'rgba(255,255,255,0.06)' }} />
               <span className="relative flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: voted ? '#E8C15A' : '#DDDDDD', fontWeight: voted || leading ? 600 : 400 }}>
+                <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: voted ? '#F4EEE2' : '#DDDDDD', fontWeight: voted || leading ? 600 : 400 }}>
                   {voted && '✓ '}
                   {o.label}
                 </span>
@@ -497,7 +502,7 @@ function PollCard({ message, mine, currentUid, userName, onVote, onClose }) {
       <p className="flex items-center gap-1.5 text-[11px] text-[#858585]">
         {totalVoters} {totalVoters === 1 ? 'voto' : 'votos'} · {closed ? 'Encuesta cerrada' : poll.multi ? 'Varias respuestas' : 'Una respuesta'}
         {mine && (
-          <button type="button" onClick={() => onClose(!closed)} className="ml-auto text-[#E8C15A] hover:underline">
+          <button type="button" onClick={() => onClose(!closed)} className="ml-auto text-[#F4EEE2] hover:underline">
             {closed ? 'Reabrir' : 'Cerrar encuesta'}
           </button>
         )}
@@ -537,7 +542,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
       title={title}
       onClick={onClick}
       className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/[0.08]"
-      style={{ color: danger ? '#EF5350' : active ? '#E8C15A' : '#888888' }}
+      style={{ color: danger ? '#EF5350' : active ? '#F4EEE2' : '#888888' }}
     >
       {children}
     </button>
@@ -638,7 +643,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               onEdit(draft.trim())
               setEditing(false)
             }}
-            className="text-[12.5px] font-semibold text-[#E8C15A]"
+            className="text-[12.5px] font-semibold text-[#F4EEE2]"
           >
             Guardar
           </button>
@@ -796,7 +801,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           in narrow layouts. */}
       <div className="relative flex items-center">
         {swipe > 8 && (
-          <span className="pointer-events-none absolute -left-9 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full" style={{ background: swipe >= 56 ? '#E8C15A' : 'rgba(255,255,255,0.1)', color: swipe >= 56 ? '#1C1A16' : '#BBBBBB', opacity: Math.min(1, swipe / 40), transform: `translateY(-50%) scale(${0.7 + Math.min(0.3, swipe / 180)})` }}>
+          <span className="pointer-events-none absolute -left-9 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full" style={{ background: swipe >= 56 ? '#F4EEE2' : 'rgba(255,255,255,0.1)', color: swipe >= 56 ? '#1C1A16' : '#BBBBBB', opacity: Math.min(1, swipe / 40), transform: `translateY(-50%) scale(${0.7 + Math.min(0.3, swipe / 180)})` }}>
             <ReplyIcon size={14} />
           </span>
         )}
@@ -829,7 +834,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {/* Importante reads as a gold edge on the bubble (below); the
               label only shows when there's no text bubble to carry it. */}
           {message.important && !showBubble && (
-            <span className="flex items-center gap-1 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#E8C15A]">
+            <span className="flex items-center gap-1 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#F4EEE2]">
               <AlertIcon size={11} /> Importante
             </span>
           )}
@@ -852,16 +857,16 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 // Phones: translucent "glass" bubbles over the conversation's
                 // soft gradient (the received ones lighter, yours darker with
                 // the gold edge). Computers keep the flat graphite look.
-                background: phone ? (mine ? 'rgba(30,26,20,0.78)' : 'rgba(255,255,255,0.11)') : mine ? MINE_BG : 'rgba(255,255,255,0.06)',
-                border: mine ? `1px solid ${phone ? 'rgba(184,134,11,0.36)' : MINE_BORDER}` : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
-                color: mine ? '#F2EBDD' : phone ? '#EFEFEF' : '#DDDDDD',
+                background: mine ? MINE_BUBBLE : phone ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.06)',
+                border: mine ? '1px solid transparent' : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
+                color: mine ? MINE_INK : phone ? '#EFEFEF' : '#DDDDDD',
                 // Only the last bubble of a block gets the "tail" corner;
                 // bubbles inside a block keep softer inner corners.
                 borderTopRightRadius: mine && !groupStart ? 8 : undefined,
                 borderBottomRightRadius: mine ? (groupEnd ? 5 : 8) : undefined,
                 borderTopLeftRadius: !mine && !groupStart ? 8 : undefined,
                 borderBottomLeftRadius: !mine ? (groupEnd ? 5 : 8) : undefined,
-                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? (phone ? 'rgba(30,26,20,0.78)' : MINE_BG) : 'rgba(184,134,11,0.08)' } : {}),
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_BUBBLE : 'rgba(184,134,11,0.08)' } : {}),
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >
@@ -872,17 +877,17 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 // when the text is long.
                 <span className="flex flex-wrap items-end justify-end gap-x-3">
                   <span className="min-w-0 flex-1 basis-auto">
-                    <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
+                    <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} onIvory={mine} />
                   </span>
                   <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap pb-px text-[10.5px] opacity-60">
                     {formatTime(message.createdAt)}
                     {message.editedAt ? ' · editado' : ''}
                     {pinned && <span title="Mensaje fijado">📌</span>}
-                    {mine && <Ticks receipt={receipt} userName={userName} />}
+                    {mine && <Ticks receipt={receipt} userName={userName} onIvory />}
                   </span>
                 </span>
               ) : (
-                <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} />
+                <RichText text={message.text} mentions={message.mentions} currentUid={currentUid} onIvory={mine} />
               )}
             </div>
           )}

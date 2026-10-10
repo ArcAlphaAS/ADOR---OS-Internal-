@@ -51,7 +51,7 @@ function Row({ unread, onClick, leading, title, meta, preview }) {
             {title}
           </span>
           <span className="ml-auto flex-shrink-0 text-[11px] text-[#7A7A7A]">{meta}</span>
-          {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#B8860B' }} />}
+          {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#F4EEE2' }} />}
         </span>
         <span className="mt-0.5 block truncate text-[12.5px] text-[#777777]">{preview}</span>
       </span>
@@ -148,7 +148,7 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
   const where = c.convType === 'dm' ? 'Mensaje directo' : c.kind === 'group' ? `Grupo · ${c.label}` : `#${c.label}`
   return (
     <div className="group relative flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-white/[0.04]">
-      <span className="absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-full" style={{ background: c.unread ? '#B8860B' : 'transparent' }} />
+      <span className="absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-full" style={{ background: c.unread ? '#F4EEE2' : 'transparent' }} />
       <button type="button" onClick={() => onOpen(c)} className="flex min-w-0 flex-1 items-start gap-3 text-left">
         <span className="mt-0.5 flex-shrink-0">
           <ConvGlyph conv={c} />
@@ -168,7 +168,7 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
                 last message, so you remember you were in the middle of it. */}
             {draft ? (
               <span className="truncate text-[12.5px] text-[#858585]">
-                <span className="font-medium text-[#E8C15A]">Borrador:</span> {draft}
+                <span className="font-medium text-[#F4EEE2]">Borrador:</span> {draft}
               </span>
             ) : (
               <span className="truncate text-[12.5px]" style={{ color: c.unread ? '#BBBBBB' : '#858585' }}>
@@ -176,7 +176,7 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
               </span>
             )}
             {c.unread && (
-              <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-[#000000]" style={{ background: '#E8C15A' }}>
+              <span className="ml-auto flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-[#000000]" style={{ background: '#F4EEE2' }}>
                 {c.unreadCount || '•'}
               </span>
             )}
@@ -261,7 +261,7 @@ export function SavedView({ saved, reminders = [], onOpen, onUnsave, onCancelRem
                   <Row
                     onClick={() => onOpen(r)}
                     leading={
-                      <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[#E8C15A]" style={{ background: 'rgba(184,134,11,0.14)' }}>
+                      <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[#F4EEE2]" style={{ background: 'rgba(244,238,226,0.1)' }}>
                         ⏰
                       </span>
                     }
@@ -325,7 +325,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
             <div className="flex flex-col gap-0.5">
               {docs.map((f) => (
                 <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/[0.04]">
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(184,134,11,0.14)', color: '#E8C15A' }}>
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(244,238,226,0.1)', color: '#F4EEE2' }}>
                     <FileIcon size={14} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -392,7 +392,7 @@ function Highlight({ text, words }) {
     if (a < last) return
     if (a > last) parts.push(<span key={`t${k}`}>{text.slice(last, a)}</span>)
     parts.push(
-      <mark key={`m${k}`} className="rounded bg-[#B8860B]/30 px-0.5 text-[#F2EBDD]">
+      <mark key={`m${k}`} className="rounded bg-[#F4EEE2]/30 px-0.5 text-[#F2EBDD]">
         {text.slice(a, b)}
       </mark>
     )

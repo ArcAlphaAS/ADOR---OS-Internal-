@@ -81,7 +81,7 @@ export default function TaskFromMessageModal({ message, conversationLabel, users
           <div className="mt-6 flex flex-col gap-4">
             <div>
               <label className={labelClass} style={labelStyle}>
-                Tarea <span style={{ color: '#B8860B' }}>*</span>
+                Tarea <span style={{ color: '#F4EEE2' }}>*</span>
               </label>
               <input autoFocus type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
             </div>
@@ -171,7 +171,7 @@ export default function TaskFromMessageModal({ message, conversationLabel, users
               disabled={!title.trim() || saving}
               onClick={confirm}
               className="rounded-xl px-5 py-2 text-[13.5px] font-medium text-[#1C1A16] transition-opacity disabled:opacity-40"
-              style={{ background: '#E8C15A' }}
+              style={{ background: '#F4EEE2' }}
             >
               {saving ? 'Creando…' : 'Crear tarea'}
             </button>

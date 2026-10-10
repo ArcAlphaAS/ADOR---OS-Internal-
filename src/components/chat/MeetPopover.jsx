@@ -93,10 +93,10 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
         </p>
 
         {canConnect && (
-          <div className="mt-3 rounded-xl border border-[#B8860B]/35 bg-[#B8860B]/[0.07] p-3">
+          <div className="mt-3 rounded-xl border border-[#F4EEE2]/35 bg-[#F4EEE2]/[0.07] p-3">
             <p className="text-[12.5px] font-medium text-[#F2EBDD]">Llama en un clic</p>
             <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#999999]">Conecta tu cuenta de Google una sola vez: ADOR OS crea la reunión, le suena a la otra persona y te abre Meet.</p>
-            <button type="button" onClick={onConnect} className="mt-2 w-full rounded-lg px-3 py-2 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+            <button type="button" onClick={onConnect} className="mt-2 w-full rounded-lg px-3 py-2 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
               Conectar Google
             </button>
           </div>

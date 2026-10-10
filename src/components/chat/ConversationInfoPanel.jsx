@@ -106,7 +106,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
               {conversation.description}
             </button>
           ) : (
-            <button type="button" onClick={() => setEditingDesc(true)} className="rounded-lg px-1.5 py-1 text-left text-[12.5px] text-[#E8C15A] hover:bg-white/[0.04]">
+            <button type="button" onClick={() => setEditingDesc(true)} className="rounded-lg px-1.5 py-1 text-left text-[12.5px] text-[#F4EEE2] hover:bg-white/[0.04]">
               + Añadir descripción
             </button>
           )}
@@ -122,16 +122,16 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   type="button"
                   onClick={() => !active && onSetNotify(l.id)}
                   className="flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
-                  style={active ? { background: 'rgba(184,134,11,0.12)' } : undefined}
+                  style={active ? { background: 'rgba(244,238,226,0.08)' } : undefined}
                 >
                   <span
                     className="mt-[3px] flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full border"
-                    style={{ borderColor: active ? '#E8C15A' : 'rgba(255,255,255,0.25)' }}
+                    style={{ borderColor: active ? '#F4EEE2' : 'rgba(255,255,255,0.25)' }}
                   >
-                    {active && <span className="h-1.5 w-1.5 rounded-full bg-[#E8C15A]" />}
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-[#F4EEE2]" />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[12.5px] font-medium" style={{ color: active ? '#E8C15A' : '#DDDDDD' }}>
+                    <span className="block text-[12.5px] font-medium" style={{ color: active ? '#F4EEE2' : '#DDDDDD' }}>
                       {l.label}
                     </span>
                     <span className="block text-[11px] text-[#858585]">{l.hint}</span>
@@ -213,7 +213,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   </div>
                 </div>
               ) : (
-                <button type="button" onClick={() => setAdding(true)} className="mt-1 rounded-lg px-1.5 py-1.5 text-left text-[12.5px] text-[#E8C15A] hover:bg-white/[0.04]">
+                <button type="button" onClick={() => setAdding(true)} className="mt-1 rounded-lg px-1.5 py-1.5 text-left text-[12.5px] text-[#F4EEE2] hover:bg-white/[0.04]">
                   + Invitar personas
                 </button>
               )}
@@ -256,7 +256,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
             ) : (
               <>
                 <p className="text-[12.5px] leading-relaxed text-[#858585]">Si este grupo ya es un espacio fijo de trabajo, conviértelo en canal — se conservan los mensajes.</p>
-                <button type="button" onClick={() => setConverting(true)} className="mt-2 text-[12.5px] text-[#E8C15A] hover:underline">
+                <button type="button" onClick={() => setConverting(true)} className="mt-2 text-[12.5px] text-[#F4EEE2] hover:underline">
                   Convertir en canal
                 </button>
               </>

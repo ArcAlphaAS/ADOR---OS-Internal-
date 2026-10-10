@@ -62,11 +62,11 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
       >
         <div className="ador-modal-surface ador-grain flex max-h-[80vh] w-[440px] flex-col rounded-[28px] p-7">
           <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[#F5F5F5]">
-            <ForwardIcon size={15} className="text-[#E8C15A]" /> Reenviar mensaje
+            <ForwardIcon size={15} className="text-[#F4EEE2]" /> Reenviar mensaje
           </h2>
 
-          <div className="mt-4 rounded-xl border-l-2 border-[#B8860B] bg-white/[0.03] px-3 py-2">
-            <p className="text-[11px] font-medium text-[#E8C15A]">
+          <div className="mt-4 rounded-xl border-l-2 border-[#F4EEE2] bg-white/[0.03] px-3 py-2">
+            <p className="text-[11px] font-medium text-[#F4EEE2]">
               {message.authorName} · {fromLabel}
             </p>
             <p className="line-clamp-2 text-[12.5px] text-[#AAAAAA]">{messageSnippet(message)}</p>
@@ -93,10 +93,10 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
                 type="button"
                 onClick={() => setTarget(o.target)}
                 className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/[0.05]"
-                style={isSelected(o) ? { background: 'rgba(184,134,11,0.16)' } : undefined}
+                style={isSelected(o) ? { background: 'rgba(244,238,226,0.1)' } : undefined}
               >
                 {o.icon}
-                <span className="min-w-0 flex-1 truncate text-[13.5px]" style={{ color: isSelected(o) ? '#E8C15A' : '#DDDDDD' }}>
+                <span className="min-w-0 flex-1 truncate text-[13.5px]" style={{ color: isSelected(o) ? '#F4EEE2' : '#DDDDDD' }}>
                   {o.label}
                 </span>
                 <span className="flex-shrink-0 text-[11px] text-[#7A7A7A]">{o.hint}</span>
@@ -121,7 +121,7 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
               disabled={!target || sending}
               onClick={send}
               className="rounded-xl px-5 py-2 text-[13.5px] font-medium text-[#1C1A16] transition-opacity disabled:opacity-40"
-              style={{ background: '#E8C15A' }}
+              style={{ background: '#F4EEE2' }}
             >
               {sending ? 'Reenviando…' : 'Reenviar'}
             </button>

@@ -67,7 +67,7 @@ export default function ThreadPanel({
     const target = jumpToId && document.getElementById(`reply-${jumpToId}`)
     if (target) {
       target.scrollIntoView({ block: 'center' })
-      target.animate([{ background: 'rgba(184,134,11,0.18)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+      target.animate([{ background: 'rgba(244,238,226,0.12)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
     } else el.scrollTop = el.scrollHeight
   }, [replies.length, jumpToId])
 
