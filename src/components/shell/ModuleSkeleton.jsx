@@ -3,7 +3,7 @@
 // short delay, so a module that loads instantly never flashes a skeleton.
 export default function ModuleSkeleton() {
   return (
-    <div className="ador-skeleton-in mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10" aria-hidden="true">
+    <div className="ador-skeleton-in mx-auto w-full max-w-[1680px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10" aria-hidden="true">
       <div className="ador-skeleton h-8 w-48 rounded-full" />
       <div className="ador-skeleton mt-3 h-3 w-72 max-w-full rounded-full" />
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
