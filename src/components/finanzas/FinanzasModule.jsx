@@ -105,7 +105,7 @@ export default function FinanzasModule({ user, onNavigate }) {
       </div>
 
       <div className="mt-6 xl:mt-8">
-        <MovimientosTable movements={data.movements} />
+        <MovimientosTable movements={data.movements} onNavigate={onNavigate} />
       </div>
 
       <AnimatePresence>

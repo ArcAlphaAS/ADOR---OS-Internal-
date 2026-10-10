@@ -358,7 +358,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main ref={mainRef} className="ador-main-fade min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           {mountedIds.map((id) => {
             const visible = id === activeModule
             return (

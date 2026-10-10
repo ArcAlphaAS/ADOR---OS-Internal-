@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { currencyPEN } from '../../lib/clientStages'
 import { SearchIcon } from '../icons'
+import { MovimientoMenu, EditMovimientoModal } from './MovimientoMenu'
 
 function formatDate(dateStr) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short' })
@@ -27,8 +28,10 @@ function StatusPill({ movement }) {
   )
 }
 
-export default function MovimientosTable({ movements }) {
+export default function MovimientosTable({ movements, onNavigate }) {
   const [search, setSearch] = useState('')
+  const [menu, setMenu] = useState(null) // { movement, x, y }
+  const [editing, setEditing] = useState(null)
 
   const filtered = movements.filter((m) => {
     const label = m.type === 'ingreso' ? m.name : m.description
@@ -60,10 +63,10 @@ export default function MovimientosTable({ movements }) {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {['Movimiento', 'Fecha', 'Monto', 'Estado'].map((h) => (
+                {['Movimiento', 'Fecha', 'Monto', 'Estado', ''].map((h, i) => (
                   <th
                     key={h}
-                    className="sticky top-0 bg-[#000000] pb-2 text-left font-medium text-[#767676]"
+                    className="pb-2 text-left font-medium text-[#767676]"
                     style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   >
                     {h}
@@ -73,7 +76,14 @@ export default function MovimientosTable({ movements }) {
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {filtered.map((m) => (
-                <tr key={`${m.type}-${m.id}`}>
+                <tr
+                  key={`${m.type}-${m.id}`}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setMenu({ movement: m, x: e.clientX, y: e.clientY })
+                  }}
+                  className="transition-colors hover:bg-white/[0.025]"
+                >
                   <td className="py-2.5 pr-3 text-[13px] text-[#F5F5F5]">
                     {m.type === 'ingreso' ? m.name : m.description}
                     {m.recurringId && <span title="Recurrente" className="ml-1.5 text-[11px] text-[#E8C15A]">↻</span>}
@@ -99,12 +109,27 @@ export default function MovimientosTable({ movements }) {
                   <td className="py-2.5">
                     <StatusPill movement={m} />
                   </td>
+                  <td className="w-8 py-2.5 text-right">
+                    <button
+                      type="button"
+                      aria-label="Más acciones"
+                      onClick={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect()
+                        setMenu({ movement: m, x: r.left - 190, y: r.bottom + 4 })
+                      }}
+                      className="rounded-full px-2 py-0.5 text-[16px] leading-none text-[#767676] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+                    >
+                      ⋯
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      {menu && <MovimientoMenu movement={menu.movement} x={menu.x} y={menu.y} onClose={() => setMenu(null)} onEdit={setEditing} onOpenClient={() => onNavigate?.('clientes')} />}
+      {editing && <EditMovimientoModal movement={editing} onClose={() => setEditing(null)} />}
     </div>
   )
 }

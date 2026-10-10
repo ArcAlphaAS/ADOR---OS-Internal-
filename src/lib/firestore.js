@@ -1075,6 +1075,25 @@ export function addManualIncome(data, actorName) {
   })
 }
 
+// Edit / delete a manual movement (an expense or a manual income). Income that
+// comes from a client's payment is edited in Clientes → Pagos, not here.
+export function updateExpense(id, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.expenses, id), data)
+}
+export function deleteExpense(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.expenses, id))
+}
+export function updateManualIncome(id, data) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.incomes, id), data)
+}
+export function deleteManualIncome(id) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return deleteDoc(doc(db, COLLECTIONS.incomes, id))
+}
+
 // Single shared doc rather than a collection — one quarterly target at a
 // time, editable inline from the Finanzas dashboard.
 export function subscribeFinanceSettings(onData) {

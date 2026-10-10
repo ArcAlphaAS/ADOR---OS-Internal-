@@ -438,3 +438,10 @@ input:-webkit-autofill:focus {
     padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 }
+
+/* Content dissolves as it scrolls up under the top bar instead of being cut
+   by a hard edge (the bar itself has no visible background or border). */
+.ador-main-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 28px);
+}
