@@ -71,6 +71,10 @@ function App() {
     setSplashDone(true)
   }
 
+  // The login form's own back arrow goes through the browser history, so the
+  // device's Back gesture and the arrow behave the same.
+  const handleLoginBack = () => window.history.back()
+
   const handleSubmit = async ({ email, password }) => {
     setLoginError('')
     try {
@@ -97,16 +101,19 @@ function App() {
 
   let content = null
 
-  if (!splashDone) {
-    content = <SplashScreen key="splash" onFinish={handleSplashFinish} />
-  } else if (loading) {
+  // The welcome screen is only for people who arrive without a session;
+  // anyone already signed in goes straight in.
+  if (loading) {
     content = null
+  } else if (!user && !splashDone) {
+    content = <SplashScreen key="splash" onFinish={handleSplashFinish} />
   } else if (!user) {
     content = (
       <LoginScreen
         key="login"
         onSubmit={handleSubmit}
         onForgotPassword={handleForgotPassword}
+        onBack={handleLoginBack}
         error={loginError}
         notice={loginNotice}
       />

@@ -34,6 +34,7 @@ Last updated: 2026-10-09 (later the same day: the **accent unification** across 
 | Inicio redesigned (Tu día, Necesita tu atención, anuncio editorial, tarjeta Comunidad, ritmo semanal, momentos de logro) | ✅ Done (2026-10-09) — needs a look with real data |
 | Comunicación on the phone (full-screen conversation, flat Apple-dark greys on black, one-row composer, photo fan) | ✅ Done (2026-10-09) — user confirmed it on his iPhone; latest flat look awaiting his reaction |
 | Accent-color unification across the whole app + login (white/ivory as main accent; gold and status colors kept) | ✅ Done (2026-10-09 evening) — needs a look on his devices |
+| Welcome + login redesign (particle logo, two steps, frosted "Continuar", welcome only without a session) | ✅ Done (2026-10-09 night) — needs a look on his iPhone; tagline provisional |
 | Perceived speed (module skeleton, no false "todo en orden" while loading) | ✅ First pass done (2026-10-09 evening) |
 
 ## What's actually built

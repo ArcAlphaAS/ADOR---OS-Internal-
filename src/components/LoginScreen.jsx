@@ -1,18 +1,46 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion, useAnimationControls } from 'framer-motion'
 import Logo from './Logo'
+
+// Step two of the way in (step one is SplashScreen's welcome). Both fields
+// are visible at once, joined in one block, so the phone's password manager
+// can fill email and password together.
+const SLOW = [0.22, 1, 0.36, 1]
+const rise = (delay) => ({
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.7, delay, ease: SLOW },
+})
+
+function MailIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M3.5 7l8.5 6 8.5-6" />
+    </svg>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  )
+}
 
 function EyeIcon({ open }) {
   if (open) {
     return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
     )
   }
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
       <path d="M3 3l18 18" />
       <path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c7 0 11 7 11 7a13.6 13.6 0 0 1-3.4 4.1M6.6 6.6C3.4 8.5 1 12 1 12s4 7 11 7a10.4 10.4 0 0 0 5.4-1.5" />
       <path d="M9.5 9.5a3 3 0 0 0 4.2 4.2" />
@@ -20,20 +48,22 @@ function EyeIcon({ open }) {
   )
 }
 
-const glassInput =
-  'w-full rounded-xl bg-[#1A1A1A] border px-4 py-[14px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
-
-export default function LoginScreen({ onSubmit, onForgotPassword, error, notice }) {
+export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error, notice }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [emailFocused, setEmailFocused] = useState(false)
-  const [passwordFocused, setPasswordFocused] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [capsLock, setCapsLock] = useState(false)
+  const shake = useAnimationControls()
+
+  // A short sideways nudge when a sign-in attempt fails.
+  useEffect(() => {
+    if (error) shake.start({ x: [0, -4, 4, -3, 0], transition: { duration: 0.3 } })
+  }, [error, shake])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!onSubmit) return
+    if (!onSubmit || submitting) return
     setSubmitting(true)
     try {
       await onSubmit({ email, password })
@@ -42,133 +72,140 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
     }
   }
 
-  const borderColor = (focused) =>
-    error
-      ? 'rgba(255,100,100,0.3)'
-      : focused
-        ? 'rgba(244,238,226,0.45)'
-        : 'rgba(255,255,255,0.08)'
+  const message = error || notice
+  const messageColor = error ? '#EF5350' : '#8A8A8A'
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#000000]"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse at center, rgba(244,238,226,0.08) 0%, transparent 70%)',
-      }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 flex flex-col bg-[#000000] px-6 pb-8 pt-[calc(env(safe-area-inset-top)+20px)] sm:px-10"
     >
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          width: 900,
-          height: 260,
-          left: '50%',
-          top: '38%',
-          transform: 'translate(-50%, -50%) rotate(-22deg)',
-          background:
-            'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 45%, rgba(244,238,226,0.10) 55%, transparent)',
-          filter: 'blur(40px)',
-        }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-        className="ador-grain w-[380px] rounded-[32px] border border-white/[0.08] bg-white/[0.04] p-10"
-        style={{
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow:
-            '0 40px 80px -24px rgba(0,0,0,0.65), 0 12px 32px -12px rgba(0,0,0,0.5), inset 0 1px 0 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(255,255,255,0.03)',
-        }}
-      >
-        <div className="flex justify-center">
-          <img src="/logo.svg" alt="ADOR" width={39} height={36} style={{ height: 36, width: 39 }} />
-        </div>
-        <div className="mt-4 flex items-baseline justify-center gap-[7px]">
-          <Logo size={22} />
-          <span className="font-semibold text-[#F5F5F5]" style={{ fontSize: 22, letterSpacing: '0.15em' }}>
-            OS
-          </span>
-        </div>
-        <div className="my-8 h-px bg-white/[0.06]" />
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
-              placeholder="Correo electrónico"
-              autoComplete="email"
-              className={glassInput}
-              style={{ borderColor: borderColor(emailFocused) }}
-            />
-          </div>
-
-          <div>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                placeholder="Contraseña"
-                autoComplete="current-password"
-                className={glassInput}
-                style={{ borderColor: borderColor(passwordFocused), paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#888888] transition-colors hover:bg-white/[0.06] hover:text-[#F5F5F5]"
-                tabIndex={-1}
-              >
-                <EyeIcon open={showPassword} />
-              </button>
-            </div>
-            {error && (
-              <p className="mt-2 px-1 text-[12px] text-[#888888]">{error}</p>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onForgotPassword?.(email)}
-            className="self-end text-[12px] text-[#888888] transition-colors hover:text-[#F5F5F5]"
-          >
-            Olvidé mi contraseña
-          </button>
-
-          {notice && (
-            <p className="-mt-2 text-right text-[12px] text-[#888888]">{notice}</p>
+      <div className="flex h-9 items-center justify-between">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Volver"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.1] text-[#F5F5F5] transition-colors hover:bg-white/[0.06]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
           )}
+          <img src="/logo.svg" alt="" width={22} height={20} style={{ height: 20, width: 22 }} />
+          <div className="flex items-baseline gap-[5px]">
+            <Logo size={13} />
+            <span className="text-[13px] font-medium text-[#9A9A9A]">OS</span>
+          </div>
+        </div>
+        <span className="hidden text-[13px] text-[#767676] sm:block">Acceso por invitación</span>
+      </div>
 
-          <motion.button
-            type="submit"
-            disabled={submitting}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.15 }}
-            className="ador-btn-primary mt-1 w-full rounded-xl py-[14px] text-[14px] font-medium"
+      <div className="flex flex-1 items-center justify-center">
+        <div className="w-full max-w-[340px]">
+          <motion.div
+            {...rise(0.05)}
+            className="mb-[22px] flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.09] bg-[#0F0F0F]"
           >
-            {submitting ? 'Ingresando…' : 'Ingresar'}
-          </motion.button>
-        </form>
-      </motion.div>
+            <img src="/logo.svg" alt="ADOR" width={22} height={20} style={{ height: 20, width: 22 }} />
+          </motion.div>
+          <motion.h1 {...rise(0.12)} className="text-[26px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">
+            Bienvenido de nuevo
+          </motion.h1>
+          <motion.p {...rise(0.18)} className="mb-[26px] mt-2 text-[14px] leading-relaxed text-[#8A8A8A]">
+            Inicia sesión para continuar en ADOR OS.
+          </motion.p>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="text-[12px] text-[#444444]"
-      >
-        Acceso por invitación únicamente
-      </motion.p>
-    </div>
+          <form onSubmit={handleSubmit}>
+            <motion.div {...rise(0.24)}>
+            <motion.div
+              animate={shake}
+              className="overflow-hidden rounded-[10px] border bg-[#0A0A0A] transition-[border-color,box-shadow] duration-150 focus-within:border-[#FAFAFA] focus-within:shadow-[0_0_0_3px_rgba(250,250,250,0.07)]"
+              style={{ borderColor: error ? '#5A2A2A' : '#262626' }}
+            >
+              <label className="flex h-[52px] items-center gap-3 px-4 text-[#5E5E5E] sm:h-12">
+                <MailIcon />
+                <input
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Correo electrónico"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-label="Correo electrónico"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-[#FAFAFA] outline-none placeholder:text-[#5E5E5E]"
+                />
+              </label>
+              <label className="flex h-[52px] items-center gap-3 border-t border-[#1C1C1C] px-4 text-[#5E5E5E] sm:h-12">
+                <LockIcon />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyUp={(e) => setCapsLock(Boolean(e.getModifierState?.('CapsLock')))}
+                  placeholder="Contraseña"
+                  autoComplete="current-password"
+                  aria-label="Contraseña"
+                  className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-[#FAFAFA] outline-none placeholder:text-[#5E5E5E]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-md text-[#6B6B6B] transition-colors hover:text-[#EDEDED]"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </label>
+            </motion.div>
+            </motion.div>
+
+            <div className="flex min-h-[34px] items-center text-[12.5px]" style={{ color: capsLock && !message ? '#A1A1A1' : messageColor }}>
+              {message || (capsLock ? 'Bloq Mayús está activado.' : '')}
+            </div>
+
+            <motion.button
+              {...rise(0.3)}
+              type="submit"
+              disabled={submitting}
+              className="ador-btn-glass flex h-[52px] w-full items-center justify-center gap-2 rounded-[10px] text-[15px] font-medium sm:h-[46px]"
+            >
+              {submitting ? (
+                <>
+                  <span className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-[#FAFAFA] border-r-transparent" />
+                  Ingresando
+                </>
+              ) : (
+                <>
+                  Continuar
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </>
+              )}
+            </motion.button>
+          </form>
+
+          <motion.div {...rise(0.36)} className="mt-4 flex justify-center sm:justify-start">
+            <button
+              type="button"
+              onClick={() => onForgotPassword?.(email)}
+              className="text-[13px] text-[#8A8A8A] transition-colors hover:text-[#EDEDED]"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </motion.div>
+          <p className="mt-6 text-center text-[12.5px] text-[#767676] sm:hidden">Acceso por invitación únicamente</p>
+        </div>
+      </div>
+    </motion.div>
   )
 }

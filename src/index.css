@@ -288,6 +288,24 @@ input:-webkit-autofill:focus {
   opacity: 0.6;
 }
 
+/* Frosted-glass button (login "Continuar"): translucent white with blur, a
+   fine light border, no shadow or gradient. */
+.ador-btn-glass {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  color: #fafafa;
+  transition: background-color 200ms ease-out, border-color 200ms ease-out;
+}
+.ador-btn-glass:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.ador-btn-glass:disabled {
+  opacity: 0.6;
+}
+
 /* A message that just arrived settles into place (Comunicación). */
 @keyframes ador-msg-in {
   from { opacity: 0; transform: translateY(6px); }
