@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -17,7 +17,8 @@ import {
   workstreamId as buildWorkstreamId,
 } from '../../lib/workspace'
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
-import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto, subscribeObjetivos } from '../../lib/firestore'
+import AvatarStack from './AvatarStack'
 import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
@@ -353,6 +354,111 @@ function SectionIcon({ Icon, color }) {
   )
 }
 
+
+// "Hecho": a light track record of what you finished — today, the last 7 days
+// or the last 30, grouped by day. Each row shows where it belongs (project),
+// which objetivo it moved, and who else worked on it, so finished work stays
+// connected to the rest of the system instead of just disappearing.
+const HECHO_RANGES = [
+  { id: 'hoy', label: 'Hoy', days: 0 },
+  { id: '7', label: '7 días', days: 7 },
+  { id: '30', label: '30 días', days: 30 },
+]
+
+function dayLabel(d) {
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const diff = Math.round((start(new Date()) - start(d)) / 86400000)
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Ayer'
+  return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' })
+}
+
+function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
+  const [range, setRange] = useState('hoy')
+  const [open, setOpen] = useState(true)
+  const [objetivos, setObjetivos] = useState([])
+  useEffect(() => subscribeObjetivos(setObjetivos), [])
+  const objetivoById = Object.fromEntries(objetivos.map((o) => [o.id, o]))
+
+  const days = HECHO_RANGES.find((r) => r.id === range).days
+  const since = new Date()
+  since.setHours(0, 0, 0, 0)
+  since.setDate(since.getDate() - days)
+  const done = tasks
+    .filter((t) => (t.assignedTo || []).includes(userId) && t.status === 'completado' && t.completedAt?.toDate?.() >= since)
+    .sort((a, b) => b.completedAt.toDate() - a.completedAt.toDate())
+
+  const groups = []
+  for (const t of done) {
+    const label = dayLabel(t.completedAt.toDate())
+    const last = groups[groups.length - 1]
+    if (last && last.label === label) last.items.push(t)
+    else groups.push({ label, items: [t] })
+  }
+
+  return (
+    <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
+      <div className="flex items-center justify-between gap-2 px-5 py-3.5">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2.5 text-left">
+          <ChevronDownIcon size={13} className="text-[#767676] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          <SectionIcon Icon={CheckCircleIcon} color="#4CAF50" />
+          <span className="text-[14px] font-semibold text-[#4CAF50]">Hecho</span>
+          <span className="text-[12px] text-[#767676]">{done.length}</span>
+        </button>
+        <div className="flex items-center gap-0.5 rounded-full bg-white/[0.05] p-0.5">
+          {HECHO_RANGES.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setRange(r.id)}
+              className="rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors"
+              style={{ background: range === r.id ? '#F5F5F5' : 'transparent', color: range === r.id ? '#0A0A0A' : '#8A8A8A' }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {open && (
+        <div className="px-5 pb-4">
+          {done.length === 0 ? (
+            <p className="py-2 text-[13px] text-[#767676]">{range === 'hoy' ? 'Todavía no completaste nada hoy.' : 'Nada completado en este periodo.'}</p>
+          ) : (
+            groups.map((g) => (
+              <div key={g.label} className="mt-1">
+                <p className="pb-1 pt-2 text-[11px] font-medium capitalize tracking-wide text-[#767676]">{g.label}</p>
+                <ul className="divide-y divide-white/[0.04]">
+                  {g.items.map((t) => {
+                    const ws = workstreamById[t.workstreamId]
+                    const obj = t.objetivoId ? objetivoById[t.objetivoId] : null
+                    const others = (t.assignedTo || []).filter((u) => u !== userId)
+                    return (
+                      <li key={t.id}>
+                        <button type="button" onClick={() => onOpenTask?.(t)} className="flex w-full items-center gap-3 py-2.5 text-left">
+                          <span className="text-[#4CAF50]">✓</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13.5px] text-[#C9C9C9]">{t.title}</span>
+                            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#767676]">
+                              {ws && <span>{ws.name}</span>}
+                              {obj && <span className="text-[#F4EEE2]">↗ {obj.title}</span>}
+                            </span>
+                          </span>
+                          {others.length > 0 && <AvatarStack userIds={others} userById={userById} size={20} />}
+                          <span className="flex-shrink-0 text-[11.5px] tabular-nums text-[#767676]">{t.completedAt.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Collapsible — a small chevron next to the count, matching the reference's
 // "click the header to fold a group" behavior. Defaults open; state is
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
@@ -661,19 +767,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           </Section>
         </div>
 
-        <Section
-          title="Completado"
-          color="#4CAF50"
-          Icon={CheckCircleIcon}
-          tasks={completedToday}
-          onOpenTask={onOpenTask}
-          actorName={actorName}
-          actorUserId={actorUserId}
-          userById={userById}
-          users={users}
-          workstreamById={workstreamById}
-          workstreams={workstreams}
-        />
+        <HechoCard tasks={tasks} userId={userId} userById={userById} workstreamById={workstreamById} onOpenTask={onOpenTask} />
       </div>
 
       <div className="flex flex-col gap-4">
