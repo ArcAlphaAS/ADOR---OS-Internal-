@@ -5,16 +5,31 @@ import { answerLocally } from '../../lib/adorIA'
 import { parseAction, describeAction } from '../../lib/adorIAActions'
 import { createTask, applyTaskUpdate, toggleTaskComplete, createDecision, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/workspace'
-import { SparkleIcon } from '../icons'
+import { SparkleIcon, WalletIcon, TargetIcon, UsersIcon, PlusIcon } from '../icons'
+import { SERIF } from '../news/NewsLayout'
 import { firstName } from '../../lib/user'
 
-const SUGGESTIONS = [
-  '¿Cómo vamos este mes en ingresos?',
-  '¿Qué objetivo necesita atención?',
-  '¿Quién tiene más carga esta semana?',
-  '¿Hay clientes sin contacto reciente?',
-  'Crea una tarea para mí: revisar propuesta, mañana',
+// The four starting points on the empty screen: a short title and the full
+// question each one sends.
+const STARTERS = [
+  { Icon: WalletIcon, title: 'Ingresos del mes', prompt: '¿Cómo vamos este mes en ingresos?' },
+  { Icon: TargetIcon, title: 'Objetivos en riesgo', prompt: '¿Qué objetivo necesita atención?' },
+  { Icon: UsersIcon, title: 'Carga del equipo', prompt: '¿Quién tiene más carga esta semana?' },
+  { Icon: PlusIcon, title: 'Crear una tarea', prompt: 'Crea una tarea para mí: revisar propuesta, mañana' },
 ]
+
+// A soft light that breathes — ADOR IA's "presence" in the input bar.
+function Orb({ size = 34 }) {
+  return (
+    <span className="relative flex flex-shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-hidden>
+      <span
+        className="absolute inset-0 rounded-full blur-[10px]"
+        style={{ background: 'radial-gradient(circle, rgba(232,193,90,0.75), rgba(244,238,226,0.25) 60%, transparent 75%)', animation: 'ador-pulse 3.2s ease-in-out infinite' }}
+      />
+      <span className="relative h-[60%] w-[60%] rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%, #FFFFFF, #F4EEE2 35%, #E8C15A 80%)' }} />
+    </span>
+  )
+}
 
 // Messages live only in memory for the life of this panel (never persisted,
 // see lib/adorIA.js's header comment) — nothing stops a very long session
@@ -155,35 +170,72 @@ export default function AdorIAModule({ user }) {
       initial={false}
       className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pb-8 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
-      <div className="flex items-center gap-2.5">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full text-[#F4EEE2]"
-          style={{ backgroundColor: 'rgba(244,238,226,0.12)', border: '1px solid rgba(244,238,226,0.25)' }}
-        >
-          <SparkleIcon size={17} />
+      {messages.length > 0 && (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Orb size={30} />
+            <h1 className="text-[18px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMessages([])
+              lastTopicRef.current = null
+              setTrimmedOnce(false)
+            }}
+            className="rounded-full border border-white/[0.12] px-3.5 py-1.5 text-[12.5px] text-[#B5B5B5] transition-colors hover:border-white/[0.24] hover:text-[#F5F5F5]"
+          >
+            Nueva conversación
+          </button>
         </div>
-        <div>
-          <h1 className="ador-title">ADOR IA</h1>
-          <p className="text-[12px] text-[#888888]">Responde con los datos reales de la empresa y ejecuta órdenes sencillas — siempre pide confirmación.</p>
-        </div>
-      </div>
+      )}
 
-      <div ref={scrollRef} className="mt-6 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className={`flex-1 overflow-y-auto ${messages.length > 0 ? 'mt-6' : ''}`}>
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-6 pb-16 text-center">
-            <p className="text-[14px] font-light text-[#888888]">
-              {firstName(user) ? `¿En qué te ayudo, ${firstName(user)}?` : '¿En qué te ayudo?'}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
+          <div className="flex h-full flex-col justify-end pb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-auto mt-10 sm:mt-16"
+            >
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#767676]">ADOR IA</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <h1 className="text-[40px] leading-[1.05] tracking-[-0.02em] sm:text-[52px]" style={SERIF}>
+                <span className="text-[#F5F5F5]">Hola</span>
+                {firstName(user) && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {firstName(user)}</span>}
+              </h1>
+              <h2 className="mt-1 text-[40px] leading-[1.05] tracking-[-0.02em] text-[#F5F5F5] sm:text-[52px]" style={SERIF}>
+                ¿En qué te ayudo hoy?
+              </h2>
+              <p className="mt-5 max-w-[460px] text-[14.5px] leading-relaxed text-[#8A8A8A]">
+                Respondo con los datos reales de la empresa y ejecuto órdenes sencillas. Antes de cambiar algo, siempre te pido confirmación.
+              </p>
+            </motion.div>
+            <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {STARTERS.map(({ Icon, title, prompt }, i) => (
+                <motion.button
+                  key={title}
                   type="button"
-                  onClick={() => send(s)}
-                  className="rounded-full border border-white/[0.1] px-3.5 py-2 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]"
+                  onClick={() => send(prompt)}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.3 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex items-center gap-4 rounded-[22px] bg-white/[0.045] p-2.5 pr-5 text-left transition-colors duration-150 hover:bg-white/[0.08]"
                 >
-                  {s}
-                </button>
+                  <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/[0.08] text-[#F4EEE2]">
+                    <Icon size={20} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[14.5px] font-medium text-[#F0F0F0]">{title}</span>
+                    <span className="block truncate text-[12px] text-[#767676]">{prompt}</span>
+                  </span>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -221,20 +273,22 @@ export default function AdorIAModule({ user }) {
           e.preventDefault()
           send(input)
         }}
-        className="ador-glass ador-grain mt-4 flex items-center gap-2 rounded-full px-2 py-2"
+        className="mt-4 flex items-center gap-2 rounded-full bg-white/[0.06] py-2 pl-3 pr-2 transition-colors focus-within:bg-white/[0.09]"
       >
+        <Orb />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Pregúntale a ADOR IA sobre tu empresa..."
-          className="flex-1 bg-transparent px-3 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+          placeholder="Pregunta o escribe una orden…"
+          className="flex-1 bg-transparent px-2 text-[14px] text-[#F5F5F5] placeholder:text-[#6A6A6A] outline-none"
         />
         <button
           type="submit"
           disabled={!input.trim() || sending}
-          className="ador-btn-primary rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-40"
+          aria-label="Enviar"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A] transition-opacity disabled:opacity-30"
         >
-          Enviar
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
         </button>
       </form>
     </motion.div>
