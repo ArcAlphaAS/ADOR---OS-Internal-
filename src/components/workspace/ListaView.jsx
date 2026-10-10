@@ -178,6 +178,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
 
 function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, users, onOpenTask, actorUserId, actorName, selectMode, selectedIds, onToggleSelect }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [showDone, setShowDone] = useState(false)
   const completedCount = tasks.filter((t) => t.status === 'completado').length
   const pct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0
   const showToast = useToast()
@@ -201,6 +202,12 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
     }
   }
   const virtual = workstream.kind === 'virtual' // grouped by estado/prioridad/responsable, not a real project
+  // Finished tasks fold into one quiet line ("N completadas · ver") so the list
+  // shows what is still open, but what was done stays one click away.
+  const openTasks = virtual ? tasks : tasks.filter((t) => t.status !== 'completado')
+  const doneTasks = virtual
+    ? []
+    : tasks.filter((t) => t.status === 'completado').sort((a, b) => (b.completedAt?.toMillis?.() || 0) - (a.completedAt?.toMillis?.() || 0))
   const accent = virtual ? workstream.accent : workstream.kind === 'intervencion' ? '#1E5FAD' : '#B8860B'
   // Real, live-derived status pill (never a manually-set field) — see
   // workstreamHealth's own comment for the reference this was adapted from.
@@ -316,7 +323,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
                 </div>
 
                 <div className="flex flex-col divide-y divide-white/[0.04]">
-                  {tasks.map((task) => (
+                  {openTasks.map((task) => (
                     <TaskRow
                       key={task.id}
                       task={task}
@@ -332,6 +339,42 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
                     />
                   ))}
                 </div>
+
+                {doneTasks.length > 0 && (
+                  <div className="border-t border-white/[0.04]">
+                    <button
+                      type="button"
+                      onClick={() => setShowDone((v) => !v)}
+                      className="flex w-full items-center gap-2 px-2 py-2.5 text-left text-[12px] text-[#767676] transition-colors hover:text-[#C9C9C9]"
+                    >
+                      <ChevronDownIcon size={12} style={{ transform: showDone ? 'none' : 'rotate(-90deg)', transition: 'transform 150ms ease-out' }} />
+                      <span className="text-[#4CAF50]">✓</span>
+                      {doneTasks.length} completada{doneTasks.length === 1 ? '' : 's'}
+                      <span className="text-[#5A5A5A]">· {showDone ? 'ocultar' : 'ver'}</span>
+                    </button>
+                    {showDone && (
+                      <div className="flex flex-col divide-y divide-white/[0.04]">
+                  {doneTasks.map((task) => (
+                    <div key={task.id} className="opacity-60 transition-opacity hover:opacity-100">
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      userById={userById}
+                      users={users}
+                      workstreams={allWorkstreams}
+                      onOpen={onOpenTask}
+                      actorUserId={actorUserId}
+                      actorName={actorName}
+                      selectMode={selectMode}
+                      selected={selectedIds?.has(task.id)}
+                      onSelect={onToggleSelect}
+                    />
+                    </div>
+                  ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {!virtual && (
                   <div className="pt-1">
