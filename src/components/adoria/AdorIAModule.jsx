@@ -49,8 +49,8 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${isUser ? 'ador-btn-primary' : 'ador-glass ador-grain'}`}
-        style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap' }}
+        className="max-w-[80%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed"
+        style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: isUser ? '#2C2C2E' : '#1C1C1E' }}
       >
         {content}
         {card && (
@@ -251,7 +251,7 @@ export default function AdorIAModule({ user }) {
             ))}
             {sending && (
               <div className="flex justify-start">
-                <div className="ador-glass ador-grain flex items-center gap-1.5 rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-1.5 rounded-[20px] bg-[#1C1C1E] px-4 py-3">
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
