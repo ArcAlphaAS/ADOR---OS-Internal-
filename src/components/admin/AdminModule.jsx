@@ -28,6 +28,7 @@ import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import PhotoCropper from '../common/PhotoCropper'
 import { DriveFolderSection, BackupSection, SeasonSection } from './DataSections'
+import ServicesTab from './ServicesTab'
 
 // Administración (admins only — lib/access.js). Four tabs:
 //   Personas — who has access, their role, invite / resend / remove
@@ -38,6 +39,7 @@ const TABS = [
   { id: 'personas', label: 'Personas' },
   { id: 'accesos', label: 'Accesos' },
   { id: 'plantilla', label: 'Plantilla' },
+  { id: 'servicios', label: 'Servicios' },
   { id: 'errores', label: 'Errores' },
   { id: 'datos', label: 'Datos' },
 ]
@@ -616,6 +618,7 @@ export default function AdminModule({ user }) {
       {tab === 'personas' && <PeopleTab user={user} />}
       {tab === 'accesos' && <AccessTab />}
       {tab === 'plantilla' && <TemplateTab user={user} />}
+      {tab === 'servicios' && <ServicesTab user={user} />}
       {tab === 'errores' && <ErrorsTab />}
       {tab === 'datos' && (
         <div className="flex flex-col gap-3">

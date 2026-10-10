@@ -17,7 +17,7 @@ export function useWorkspaceData() {
   useEffect(() => subscribeUsers(setUsers), [])
 
   const intervenciones = clients
-    .filter((c) => c.stage === 'intervencion_activa')
+    .filter((c) => c.stage === 'intervencion_activa' && !c.completed)
     .map((c) => ({
       id: workstreamId('intervencion', c.id),
       kind: 'intervencion',

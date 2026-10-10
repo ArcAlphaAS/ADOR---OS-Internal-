@@ -772,6 +772,65 @@ export async function restoreClient(client, actorName) {
   })
 }
 
+// Completado: the work is done, the relationship isn't over. The client keeps
+// its stage (like `lost`), history and payments; it leaves the active
+// pipeline/Workspace views and shows in "Completados".
+export async function markClientCompleted(client, note, actorName) {
+  await updateClient(client.id, { completed: true, completedAt: serverTimestamp(), completedNote: note || null })
+  await addHistoryEvent(client.id, {
+    type: 'completed',
+    description: `Servicio completado — marcado por ${actorName}${note ? ` · ${note}` : ''}`,
+  })
+}
+
+// Nuevo servicio: closes the finished cycle into `serviceHistory` (its
+// payments are archived there, still counted by Finanzas via allPayments())
+// and puts the client back in the pipeline at `stage` with fresh payments.
+export async function startNewService(client, { serviceType, amount, stage }, actorName) {
+  const cycle = {
+    id: Math.random().toString(36).slice(2, 10),
+    type: client.serviceType || 'intervencion',
+    amount: client.montoAcordado || 0,
+    completedAt: client.completedAt?.toMillis?.() || Date.now(),
+    note: client.completedNote || '',
+    pagos: { pago1: client.pago1 || null, pago2: client.pago2 || null },
+  }
+  await updateClient(client.id, {
+    serviceHistory: [...(client.serviceHistory || []), cycle],
+    completed: false,
+    completedAt: null,
+    completedNote: null,
+    lost: false,
+    serviceType,
+    montoAcordado: amount || null,
+    stage,
+    stageEnteredAt: serverTimestamp(),
+    pago1: { status: 'Pendiente' },
+    pago2: { status: 'Pendiente' },
+    templateAppliedAt: null,
+  })
+  await addHistoryEvent(client.id, {
+    type: 'new_service',
+    description: `Nuevo servicio abierto por ${actorName} — ${serviceType}`,
+    meta: { from: client.stage, to: stage },
+  })
+  if (stage === 'intervencion_activa') applyInterventionTemplate(client.id, actorName).catch(() => {})
+}
+
+// settings/clientServices: { types: [{ id, label }] } — edited by admins.
+export function subscribeClientServices(onData) {
+  if (!db) {
+    onData(null)
+    return () => {}
+  }
+  return onSnapshot(doc(db, 'settings', 'clientServices'), (snap) => onData(snap.exists() ? snap.data().types || null : null), () => onData(null))
+}
+
+export function saveClientServices(types, actorName) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return setDoc(doc(db, 'settings', 'clientServices'), { types, updatedBy: actorName, updatedAt: serverTimestamp() })
+}
+
 export function subscribeClientHistory(clientId, onData) {
   if (!db) return () => {}
   const ref = collection(db, COLLECTIONS.clients, clientId, 'history')

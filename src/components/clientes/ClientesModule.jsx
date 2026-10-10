@@ -9,6 +9,10 @@ import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
 import LostClientsView from './LostClientsView'
 import ClientContextMenu from './ClientContextMenu'
+import CompleteClientModal from './CompleteClientModal'
+import NewServiceModal from './NewServiceModal'
+import CompletedClientsView from './CompletedClientsView'
+import { useClientServices } from '../../hooks/useClientServices'
 import DeleteClientModal from './DeleteClientModal'
 import { useAccess } from '../../hooks/useAccess'
 import ClientDetailPanel from './ClientDetailPanel'
@@ -306,11 +310,17 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   const access = useAccess(user?.uid)
   const [menu, setMenu] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [completing, setCompleting] = useState(null)
+  const [reopening, setReopening] = useState(null)
+  const services = useClientServices()
   const openMenu = (client, x, y) => setMenu({ client, x, y })
 
   const selectedClient = clients.find((c) => c.id === selectedClientId) || null
-  const activeClients = clients.filter((c) => !c.lost)
+  const activeClients = clients.filter((c) => !c.lost && !c.completed)
   const lostClients = clients.filter((c) => c.lost)
+  const completedClients = clients.filter((c) => c.completed && !c.lost)
+  // Completed SP can still owe money (Por cobrar keeps showing them).
+  const spWithBalance = clients.filter((c) => !c.lost && c.stage === 'intervencion_activa')
 
   // Pipeline stats row — every number here is derived live from the same
   // `clients` collection everything else in this module reads, never a
@@ -335,6 +345,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           <p className="mt-1 text-[13px] text-[#888888]">
             {activeClients.filter((c) => c.stage !== 'intervencion_activa').length} SPC en pipeline ·{' '}
             {activeClients.filter((c) => c.stage === 'intervencion_activa').length} SP activos
+            {completedClients.length > 0 && ` · ${completedClients.length} completados`}
             {lostClients.length > 0 && ` · ${lostClients.length} perdidos`}
           </p>
         </div>
@@ -370,6 +381,19 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
             ))}
           </div>
 
+          {completedClients.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setView(view === 'completados' ? 'kanban' : 'completados')}
+              className="rounded-full px-3.5 py-2 text-[12px] font-medium transition-colors duration-150"
+              style={{
+                background: view === 'completados' ? 'rgba(76,175,80,0.14)' : 'transparent',
+                color: view === 'completados' ? '#4CAF50' : '#767676',
+              }}
+            >
+              Completados ({completedClients.length})
+            </button>
+          )}
           {lostClients.length > 0 && (
             <button
               type="button"
@@ -428,7 +452,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
               }}
             />
             <PorCobrar
-              clients={spActivos}
+              clients={spWithBalance}
               onOpenClient={(c) => {
                 setSelectedClientId(c.id)
                 setOriginRect(null)
@@ -459,6 +483,17 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           }}
           actorName={actorName}
         />
+      ) : view === 'completados' ? (
+        <CompletedClientsView
+          clients={completedClients}
+          services={services}
+          onOpenClient={(c) => {
+            setSelectedClientId(c.id)
+            setOriginRect(null)
+          }}
+          onContextClient={openMenu}
+          onNewService={setReopening}
+        />
       ) : (
         <LostClientsView
           clients={lostClients}
@@ -484,8 +519,12 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
             setOriginRect(null)
           }}
           onDelete={setDeleting}
+          onComplete={setCompleting}
+          onNewService={setReopening}
         />
       )}
+      {completing && <CompleteClientModal client={completing} services={services} actorName={actorName} onClose={() => setCompleting(null)} />}
+      {reopening && <NewServiceModal client={reopening} services={services} actorName={actorName} onClose={() => setReopening(null)} />}
       {deleting && (
         <DeleteClientModal
           client={deleting}
@@ -497,6 +536,9 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
       <ClientDetailPanel
         client={selectedClient}
         actorName={actorName}
+        services={services}
+        onComplete={setCompleting}
+        onNewService={setReopening}
         originRect={originRect}
         onClose={() => setSelectedClientId(null)}
       />

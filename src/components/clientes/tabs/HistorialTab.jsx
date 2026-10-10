@@ -17,6 +17,8 @@ const EVENT_DOT = {
   payment_complete: '#1E5FAD',
   document: '#888888',
   interaction: '#B8860B',
+  completed: '#4CAF50',
+  new_service: '#F4EEE2',
 }
 
 export default function HistorialTab({ client, actorName }) {

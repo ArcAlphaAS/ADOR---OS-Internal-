@@ -5,6 +5,7 @@ import { useObjetivosData } from './useObjetivosData'
 import { computeWorkload, isOverdue } from '../lib/workspace'
 import { daysSince } from '../lib/clientStages'
 import { weekRange, buildWeeklyNarrative, weeklyRhythm } from '../lib/weeklySummary'
+import { allPayments } from '../lib/clientStages'
 
 // Pulls together the same live data every other module already reads —
 // Finanzas' movements, Workspace's tasks/workload, Objetivos' confidence
@@ -41,8 +42,7 @@ export function useWeeklySummary() {
   const newClients = []
   const staleClients = []
   for (const client of finance.clients) {
-    for (const key of ['pago1', 'pago2']) {
-      const payment = client[key]
+    for (const { payment } of allPayments(client)) {
       if (!payment?.date) continue
       if (payment.status === 'Recibido' && payment.date >= startStr && payment.date <= endStr) {
         paymentsReceivedThisWeek.push({ clientName: client.name, amount: payment.amount })

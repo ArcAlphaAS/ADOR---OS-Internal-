@@ -41,7 +41,7 @@ export function useAdorIAContext() {
     tasksOverdueCount: overdueTasks.length,
     workload,
     clientsPipeline: clients.filter((c) => clientType(c.stage) === 'SPC' && !c.lost).length,
-    clientsActive: clients.filter((c) => c.stage === 'intervencion_activa').length,
+    clientsActive: clients.filter((c) => c.stage === 'intervencion_activa' && !c.completed).length,
     staleClients,
   }
 
@@ -49,7 +49,7 @@ export function useAdorIAContext() {
   // the formatted context block kept ready for when GEMINI_API_KEY is added.
   // What the action parser (lib/adorIAActions.js) matches names against.
   const workstreams = [
-    ...clients.filter((c) => c.stage === 'intervencion_activa').map((c) => ({ id: `client:${c.id}`, name: c.name })),
+    ...clients.filter((c) => c.stage === 'intervencion_activa' && !c.completed).map((c) => ({ id: `client:${c.id}`, name: c.name })),
     ...proyectos.map((p) => ({ id: `proyecto:${p.id}`, name: p.name })),
   ]
   return { data, text: buildAdorIAContext(data), actionCtx: { tasks: openTasks, users, workstreams } }

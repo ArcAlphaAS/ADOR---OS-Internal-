@@ -9,6 +9,7 @@ import PagosTab from './tabs/PagosTab'
 import DocumentosTab from './tabs/DocumentosTab'
 import HistorialTab from './tabs/HistorialTab'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { serviceLabel } from '../../lib/clientStages'
 
 const TABS = [
   { id: 'general', label: 'General' },
@@ -16,6 +17,46 @@ const TABS = [
   { id: 'documentos', label: 'Documentos' },
   { id: 'historial', label: 'Historial' },
 ]
+
+// Completado / servicios: the closing state of a client whose work is done,
+// plus the cycles it has already gone through. "Nuevo servicio" reopens it.
+function ServiceBar({ client, services, onComplete, onNewService }) {
+  const past = client.serviceHistory || []
+  const date = client.completedAt?.toDate?.()
+  const fmt = (ms) => (ms ? new Date(ms).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
+  if (!client.completed && client.stage !== 'intervencion_activa' && past.length === 0) return null
+  return (
+    <div className="mx-7 mt-4 space-y-2">
+      {client.completed ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#4CAF50]/30 bg-[#4CAF50]/10 px-4 py-2.5">
+          <div className="min-w-0">
+            <p className="text-[12px] font-medium text-[#4CAF50]">
+              Completado{date ? ` el ${date.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''} — {serviceLabel(client.serviceType, services)}
+            </p>
+            {client.completedNote && <p className="mt-0.5 truncate text-[11.5px] text-[#8A8A8A]">{client.completedNote}</p>}
+          </div>
+          <button type="button" onClick={() => onNewService(client)} className="flex-shrink-0 rounded-full border border-white/[0.16] px-3 py-1 text-[11.5px] font-medium text-[#F5F5F5] transition-colors hover:bg-white/10">
+            Nuevo servicio
+          </button>
+        </div>
+      ) : (
+        client.stage === 'intervencion_activa' && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] px-4 py-2.5">
+            <span className="text-[12px] text-[#8A8A8A]">Servicio actual: <span className="text-[#C8C8C8]">{serviceLabel(client.serviceType, services)}</span></span>
+            <button type="button" onClick={() => onComplete(client)} className="text-[12px] font-medium text-[#C8C8C8] transition-colors hover:text-[#F5F5F5]">
+              Marcar como completado
+            </button>
+          </div>
+        )
+      )}
+      {past.length > 0 && (
+        <p className="px-1 text-[11.5px] leading-relaxed text-[#767676]">
+          Servicios anteriores: {past.map((c) => `${serviceLabel(c.type, services)}${c.completedAt ? ` (${fmt(c.completedAt)})` : ''}`).join(' · ')}
+        </p>
+      )}
+    </div>
+  )
+}
 
 function LostControl({ client, actorName }) {
   const [pickingReason, setPickingReason] = useState(false)
@@ -96,7 +137,7 @@ function originTransform(originRect) {
   }
 }
 
-export default function ClientDetailPanel({ client, actorName, originRect, onClose }) {
+export default function ClientDetailPanel({ client, actorName, originRect, onClose, services = [], onComplete, onNewService }) {
   const [activeTab, setActiveTab] = useState('general')
 
   if (!client) return null
@@ -155,6 +196,7 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
         </div>
 
         {(type !== 'SP' || client.lost) && <LostControl client={client} actorName={actorName} />}
+        <ServiceBar client={client} services={services} onComplete={onComplete} onNewService={onNewService} />
 
         <div className="mt-5 flex gap-1 px-7">
           {TABS.map((tab) => (

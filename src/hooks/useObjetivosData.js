@@ -32,7 +32,7 @@ export function useObjetivosData(selectedQuarter) {
   const currentQuarter = quarterKey()
   const qKey = selectedQuarter || currentQuarter
   const isCurrent = qKey === currentQuarter
-  const spActivos = clients.filter((c) => c.stage === 'intervencion_activa').length
+  const spActivos = clients.filter((c) => c.stage === 'intervencion_activa' && !c.completed).length
   const spcPipeline = clients.filter((c) => clientType(c.stage) === 'SPC').length
   const tasksCompletadas = tasks.filter(
     (t) => t.status === 'completado' && t.createdAt?.toDate && isInQuarter(t.createdAt.toDate().toISOString().slice(0, 10), qKey)

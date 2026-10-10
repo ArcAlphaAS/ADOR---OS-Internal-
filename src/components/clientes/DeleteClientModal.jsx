@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { deleteClient } from '../../lib/firestore'
-import { clientType, currencyPEN } from '../../lib/clientStages'
+import { allPayments, clientType, currencyPEN } from '../../lib/clientStages'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
@@ -19,9 +19,9 @@ export default function DeleteClientModal({ client, onClose, onDeleted }) {
   const [busy, setBusy] = useState(false)
   const matches = norm(typed) === norm(client.name)
 
-  const received = ['pago1', 'pago2']
-    .filter((k) => client[k]?.status === 'Recibido')
-    .reduce((sum, k) => sum + (Number(client[k]?.amount) || 0), 0)
+  const received = allPayments(client)
+    .filter((p) => p.payment?.status === 'Recibido')
+    .reduce((sum, p) => sum + (Number(p.payment?.amount) || 0), 0)
   const isSP = clientType(client.stage) === 'SP'
 
   useEffect(() => {

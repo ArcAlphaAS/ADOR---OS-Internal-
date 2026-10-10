@@ -27,7 +27,7 @@ function Item({ label, onClick, danger, hint }) {
 
 const Divider = () => <div className="my-1 h-px bg-white/[0.08]" />
 
-export default function ClientContextMenu({ client, x, y, canDelete, actorName, onClose, onOpen, onDelete }) {
+export default function ClientContextMenu({ client, x, y, canDelete, actorName, onClose, onOpen, onDelete, onComplete, onNewService }) {
   const showToast = useToast()
   const ref = useRef(null)
   const [pos, setPos] = useState({ left: x, top: y })
@@ -65,7 +65,8 @@ export default function ClientContextMenu({ client, x, y, canDelete, actorName, 
   const copy = (text, done) => run(() => navigator.clipboard.writeText(text).then(() => showToast(done)))
 
   const index = STAGES.findIndex((s) => s.id === client.stage)
-  const next = !client.lost && index >= 0 ? STAGES[index + 1] : null
+  const next = !client.lost && !client.completed && index >= 0 ? STAGES[index + 1] : null
+  const isActiveSP = clientType(client.stage) === 'SP' && !client.lost && !client.completed
 
   return createPortal(
     <>
@@ -105,6 +106,18 @@ export default function ClientContextMenu({ client, x, y, canDelete, actorName, 
                 label={`Mover a ${next.label}`}
                 onClick={run(() => moveClientStage(client, next.id, actorName).then(() => showToast(`Movido a ${next.label}.`)))}
               />
+            </>
+          )}
+          {isActiveSP && (
+            <>
+              <Divider />
+              <Item label="Marcar como completado…" onClick={() => { onClose(); onComplete(client) }} />
+            </>
+          )}
+          {client.completed && (
+            <>
+              <Divider />
+              <Item label="Nuevo servicio…" onClick={() => { onClose(); onNewService(client) }} />
             </>
           )}
           {canDelete && (

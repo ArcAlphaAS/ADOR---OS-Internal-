@@ -6,6 +6,7 @@ import {
   subscribeFinanceSettings,
 } from '../lib/firestore'
 import { quarterKey, isInQuarter } from '../lib/finance'
+import { allPayments } from '../lib/clientStages'
 
 function sumByMonth(entries) {
   const map = new Map()
@@ -33,8 +34,7 @@ export function useFinanceData() {
 
   const clientIncomeEntries = []
   for (const client of clients) {
-    for (const key of ['pago1', 'pago2']) {
-      const payment = client[key]
+    for (const { key, payment } of allPayments(client)) {
       if (payment?.status === 'Recibido' && payment.date && payment.amount) {
         clientIncomeEntries.push({
           id: `${client.id}-${key}`,
@@ -122,15 +122,14 @@ export function useFinanceData() {
   // decision input (who to follow up with), unlike a static promo card.
   const pendingPayments = []
   for (const client of clients) {
-    for (const key of ['pago1', 'pago2']) {
-      const payment = client[key]
+    for (const { key, baseKey, payment } of allPayments(client)) {
       if (payment?.status === 'Pendiente' && payment.amount) {
         pendingPayments.push({
           clientId: client.id,
           clientName: client.name,
           amount: payment.amount,
           date: payment.date || null,
-          label: key === 'pago1' ? 'Pago 1 (60%)' : 'Pago 2 (40%)',
+          label: (baseKey || key) === 'pago1' ? 'Pago 1 (60%)' : 'Pago 2 (40%)',
         })
       }
     }

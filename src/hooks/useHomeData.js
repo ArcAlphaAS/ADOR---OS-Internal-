@@ -27,7 +27,7 @@ export function useHomeData(userId) {
     return subscribeTasksForUser(userId, setTasks)
   }, [userId])
 
-  const activeSPs = clients.filter((c) => c.stage === 'intervencion_activa')
+  const activeSPs = clients.filter((c) => c.stage === 'intervencion_activa' && !c.completed)
   const pipelineSPCs = clients.filter((c) => c.stage !== 'intervencion_activa')
 
   const clientNameById = Object.fromEntries(clients.map((c) => [c.id, c.name]))

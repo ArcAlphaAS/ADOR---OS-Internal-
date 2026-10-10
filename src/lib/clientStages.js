@@ -33,6 +33,41 @@ export const INTERACTION_TYPES = ['Llamada', 'Reunión', 'Lectura', 'Email', 'Wh
 // known — same rationale as Finanzas' EXPENSE_CATEGORIES.
 export const LOST_REASONS = ['Presupuesto', 'Timing', 'Eligió otra opción', 'Sin respuesta', 'Otro']
 
+// "Completado": a client whose work is done but who may come back (a new
+// service later). Like `lost`, it is a flag on top of the frozen stage
+// (`completed`, `completedAt`, `completedNote`) — it keeps its history and
+// payments, leaves the active pipeline and Workspace, and "Nuevo servicio"
+// reopens it. Each closed cycle is archived in `serviceHistory`
+// ([{ id, type, amount, completedAt, note, pagos: { pago1, pago2 } }]) so the
+// old payments keep counting in Finanzas. A client is "open" when it's in
+// neither end state.
+export const isOpenClient = (c) => !c.lost && !c.completed
+
+// Service types are managed by administrators (settings/clientServices);
+// these are the defaults until they change them.
+export const DEFAULT_SERVICES = [
+  { id: 'intervencion', label: 'Intervención' },
+  { id: 'suscripcion', label: 'Suscripción mensual' },
+]
+export const serviceLabel = (id, services = DEFAULT_SERVICES) =>
+  (services.find((s) => s.id === id) || DEFAULT_SERVICES.find((s) => s.id === id))?.label || (id ? id : 'Intervención')
+
+// Every payment of a client, current and from archived cycles, with a stable
+// key. Finanzas and the weekly summary read this so reopening a client for a
+// new service never makes past income disappear.
+export function allPayments(client) {
+  const out = []
+  for (const key of ['pago1', 'pago2']) {
+    if (client?.[key]) out.push({ key, payment: client[key], archived: false })
+  }
+  ;(client?.serviceHistory || []).forEach((cycle, i) => {
+    for (const key of ['pago1', 'pago2']) {
+      if (cycle?.pagos?.[key]) out.push({ key: `h${i}-${key}`, baseKey: key, payment: cycle.pagos[key], archived: true })
+    }
+  })
+  return out
+}
+
 export function daysSince(date) {
   if (!date) return null
   const ms = Date.now() - date.getTime()
