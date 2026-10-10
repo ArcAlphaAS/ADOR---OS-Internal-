@@ -84,6 +84,7 @@ export default function FinanzasModule({ user, onNavigate }) {
             gastosDelMes={data.gastosDelMes}
             utilidadNeta={data.utilidadNeta}
             resultDeltaPct={data.resultDeltaPct}
+            series={data.series}
           />
           <FinanceChart series={data.series} />
           <CategoryBreakdownCard categoryTotals={data.categoryTotals} />

@@ -1,71 +1,69 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { currencyPEN } from '../../lib/clientStages'
 import { monthLabel } from '../../lib/finance'
-
-const HEIGHT = 200
-const PAD_BOTTOM = 24
-const PAD_TOP = 36
-const BAR_RADIUS = 6
 
 const TOGGLES = [
   { id: 'ambos', label: 'Ambos' },
   { id: 'ingresos', label: 'Ingresos' },
   { id: 'gastos', label: 'Gastos' },
 ]
+const PLOT_H = 190
 
-function Bar({ x, width, value, max, color, gradientId, highlighted }) {
-  const plotHeight = HEIGHT - PAD_BOTTOM - PAD_TOP
-  const h = max ? (value / max) * plotHeight : 0
-  const y = HEIGHT - PAD_BOTTOM - h
+const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace('.0', '')}k` : String(Math.round(n)))
 
+// Rounds the top of the scale to a friendly number so the gridlines read as
+// 0 / half / full instead of an arbitrary maximum.
+function niceMax(v) {
+  if (v <= 0) return 1
+  const pow = 10 ** Math.floor(Math.log10(v))
+  const n = v / pow
+  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10
+  return step * pow
+}
+
+function Stat({ label, value, color }) {
   return (
-    <motion.rect
-      x={x}
-      width={width}
-      rx={BAR_RADIUS}
-      fill={highlighted ? `url(#${gradientId})` : color}
-      initial={{ y: HEIGHT - PAD_BOTTOM, height: 0 }}
-      animate={{ y, height: h }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-    />
+    <div>
+      <p className="text-[11px] text-[#767676]">{label}</p>
+      <p className="mt-0.5 text-[16px] font-semibold tabular-nums tracking-tight" style={{ color }}>
+        {value}
+      </p>
+    </div>
   )
 }
 
+// Cash flow of the last six months as plain HTML columns (no stretched SVG, so
+// the rounded corners stay round): income in ivory, spending in gold, a scale
+// on the left, and a tooltip with the month's income, spending and result.
 export default function FinanceChart({ series }) {
   const [mode, setMode] = useState('ambos')
   const [hoverIndex, setHoverIndex] = useState(null)
 
   const hasData = series.some((p) => p.ingresos > 0 || p.gastos > 0)
-  const max = Math.max(1, ...series.map((p) => Math.max(p.ingresos, p.gastos)))
-
   const showIngresos = mode === 'ambos' || mode === 'ingresos'
   const showGastos = mode === 'ambos' || mode === 'gastos'
-  const paired = showIngresos && showGastos
+  const visibleMax = Math.max(...series.map((p) => Math.max(showIngresos ? p.ingresos : 0, showGastos ? p.gastos : 0)))
+  const top = niceMax(visibleMax)
 
-  const colWidth = 100 / series.length
-  const barWidth = paired ? colWidth * 0.28 : colWidth * 0.4
+  const totalIn = series.reduce((s, p) => s + p.ingresos, 0)
+  const totalOut = series.reduce((s, p) => s + p.gastos, 0)
+  const net = totalIn - totalOut
 
   const activeIndex = hoverIndex !== null ? hoverIndex : series.length - 1
   const active = series[activeIndex]
-  const activeValue = mode === 'gastos' ? active?.gastos : active?.ingresos
-  const activeCenter = activeIndex !== null ? (activeIndex + 0.5) * colWidth : 0
 
   return (
     <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Flujo de caja</h3>
-        <div className="ador-glass flex items-center gap-1 rounded-full p-1">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Flujo de caja · 6 meses</h3>
+        <div className="flex items-center gap-0.5 rounded-full bg-white/[0.06] p-0.5">
           {TOGGLES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setMode(t.id)}
               className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150"
-              style={{
-                background: mode === t.id ? '#F5F5F5' : 'transparent',
-                color: mode === t.id ? '#F5F5F5' : '#888888',
-              }}
+              style={{ background: mode === t.id ? '#F5F5F5' : 'transparent', color: mode === t.id ? '#0A0A0A' : '#8A8A8A' }}
             >
               {t.label}
             </button>
@@ -79,96 +77,89 @@ export default function FinanceChart({ series }) {
           <p className="text-[13px] font-light text-[#767676]">Sin movimientos registrados aún</p>
         </div>
       ) : (
-        <div className="relative mt-4">
-          {active && activeValue > 0 && (
-            <div
-              className="ador-modal-surface pointer-events-none absolute rounded-xl px-3 py-1.5"
-              style={{
-                left: `${activeCenter}%`,
-                top: 0,
-                transform: 'translate(-50%, 0)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span className="text-[13px] font-semibold" style={{ color: mode === 'gastos' ? '#B8860B' : '#F4EEE2' }}>
-                {currencyPEN.format(activeValue)}
-              </span>
+        <>
+          <div className="mt-5 flex gap-7">
+            <Stat label="Ingresos" value={currencyPEN.format(totalIn)} color="#F5F5F5" />
+            <Stat label="Gastos" value={currencyPEN.format(totalOut)} color="#D9A62B" />
+            <Stat label="Resultado" value={`${net >= 0 ? '+' : '−'}${currencyPEN.format(Math.abs(net))}`} color={net >= 0 ? '#4CAF50' : '#EF5350'} />
+          </div>
+
+          <div className="mt-6 flex">
+            <div className="relative mr-3 w-9 flex-shrink-0 text-right text-[10.5px] tabular-nums text-[#767676]" style={{ height: PLOT_H }}>
+              {[1, 0.5, 0].map((f) => (
+                <span key={f} className="absolute right-0 -translate-y-1/2" style={{ top: `${(1 - f) * 100}%` }}>
+                  {f === 0 ? '0' : compact(top * f)}
+                </span>
+              ))}
             </div>
-          )}
 
-          <svg viewBox={`0 0 100 ${HEIGHT}`} preserveAspectRatio="none" className="w-full" style={{ height: 220 }}>
-            <defs>
-              <linearGradient id="finanzas-bar-ingresos" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F4EEE2" />
-                <stop offset="100%" stopColor="#F4EEE2" stopOpacity="0.35" />
-              </linearGradient>
-              <linearGradient id="finanzas-bar-gastos" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D9A62B" />
-                <stop offset="100%" stopColor="#B8860B" />
-              </linearGradient>
-            </defs>
+            <div className="relative flex-1" style={{ height: PLOT_H }}>
+              {[0, 0.5, 1].map((f) => (
+                <div key={f} className="absolute inset-x-0 border-t border-dashed border-white/[0.06]" style={{ top: `${(1 - f) * 100}%` }} />
+              ))}
 
-            {[0, 0.5, 1].map((f) => (
-              <line
-                key={f}
-                x1={0}
-                x2={100}
-                y1={HEIGHT - PAD_BOTTOM - f * (HEIGHT - PAD_BOTTOM - PAD_TOP)}
-                y2={HEIGHT - PAD_BOTTOM - f * (HEIGHT - PAD_BOTTOM - PAD_TOP)}
-                stroke="rgba(255,255,255,0.04)"
-                strokeWidth="0.3"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
+              <div className="absolute inset-0 flex">
+                {series.map((p, i) => {
+                  const isActive = i === activeIndex
+                  const hIn = (p.ingresos / top) * 100
+                  const hOut = (p.gastos / top) * 100
+                  return (
+                    <div
+                      key={p.month}
+                      onMouseEnter={() => setHoverIndex(i)}
+                      onMouseLeave={() => setHoverIndex(null)}
+                      className="relative flex flex-1 items-end justify-center gap-[5px] rounded-xl px-1 transition-colors duration-150"
+                      style={{ background: isActive ? 'rgba(255,255,255,0.04)' : 'transparent' }}
+                    >
+                      {showIngresos && (
+                        <span
+                          className="w-full max-w-[22px] rounded-t-[7px] transition-all duration-500"
+                          style={{ height: `${hIn}%`, minHeight: p.ingresos > 0 ? 3 : 0, background: isActive ? 'linear-gradient(#F5F5F5, rgba(245,245,245,0.45))' : 'rgba(244,238,226,0.5)' }}
+                        />
+                      )}
+                      {showGastos && (
+                        <span
+                          className="w-full max-w-[22px] rounded-t-[7px] transition-all duration-500"
+                          style={{ height: `${hOut}%`, minHeight: p.gastos > 0 ? 3 : 0, background: isActive ? 'linear-gradient(#E8C15A, #B8860B)' : 'rgba(184,134,11,0.45)' }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
 
-            {series.map((p, i) => {
-              const colStart = i * colWidth
-              const center = colStart + colWidth / 2
-              const isActive = i === activeIndex
-
-              return (
-                <g key={p.month} onMouseEnter={() => setHoverIndex(i)} onMouseLeave={() => setHoverIndex(null)}>
-                  <rect x={colStart} y={0} width={colWidth} height={HEIGHT} fill="transparent" />
-                  {showIngresos && (
-                    <Bar
-                      x={paired ? center - barWidth - 1 : center - barWidth / 2}
-                      width={barWidth}
-                      value={p.ingresos}
-                      max={max}
-                      color="rgba(244,238,226,0.55)"
-                      gradientId="finanzas-bar-ingresos"
-                      highlighted={isActive && mode !== 'gastos'}
-                    />
-                  )}
-                  {showGastos && (
-                    <Bar
-                      x={paired ? center + 1 : center - barWidth / 2}
-                      width={barWidth}
-                      value={p.gastos}
-                      max={max}
-                      color="rgba(184,134,11,0.4)"
-                      gradientId="finanzas-bar-gastos"
-                      highlighted={isActive && mode === 'gastos'}
-                    />
-                  )}
-                </g>
-              )
-            })}
-          </svg>
-
-          <div className="mt-1 flex">
-            {series.map((p) => (
-              <span
-                key={p.month}
-                className="text-center text-[11px] text-[#767676]"
-                style={{ width: `${colWidth}%` }}
-              >
+          <div className="ml-12 mt-2 flex">
+            {series.map((p, i) => (
+              <span key={p.month} className="flex-1 text-center text-[11px]" style={{ color: i === activeIndex ? '#F5F5F5' : '#767676', fontWeight: i === series.length - 1 ? 600 : 400 }}>
                 {monthLabel(p.month)}
               </span>
             ))}
           </div>
-        </div>
+
+          {active && (
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl bg-white/[0.04] px-4 py-3 text-[12.5px]">
+              <span className="font-medium capitalize text-[#F5F5F5]">{monthLabel(active.month)}</span>
+              {showIngresos && <span className="text-[#C9C9C9]">Ingresos <b className="font-semibold tabular-nums text-[#F5F5F5]">{currencyPEN.format(active.ingresos)}</b></span>}
+              {showGastos && <span className="text-[#C9C9C9]">Gastos <b className="font-semibold tabular-nums text-[#D9A62B]">{currencyPEN.format(active.gastos)}</b></span>}
+              {paired(showIngresos, showGastos) && (
+                <span className="text-[#C9C9C9]">
+                  Resultado{' '}
+                  <b className="font-semibold tabular-nums" style={{ color: active.ingresos - active.gastos >= 0 ? '#4CAF50' : '#EF5350' }}>
+                    {active.ingresos - active.gastos >= 0 ? '+' : '−'}
+                    {currencyPEN.format(Math.abs(active.ingresos - active.gastos))}
+                  </b>
+                </span>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
+}
+
+function paired(a, b) {
+  return a && b
 }

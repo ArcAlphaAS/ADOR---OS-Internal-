@@ -1075,6 +1075,38 @@ export function addManualIncome(data, actorName) {
   })
 }
 
+// Renewal notices for contracts (push, with ADOR OS closed on the receiving
+// side). No server: whoever has ADOR OS open and sees Clientes checks every
+// contract; one notice goes out per threshold (90, 60, 30 and 7 days before
+// the coverage ends, and once when it has already ended). A transaction on the
+// client doc claims each threshold so two devices never send it twice, and
+// exercising an option moves the end date, which starts the cycle again.
+export const RENEWAL_NOTICE_STEPS = [90, 60, 30, 7, 0]
+
+export async function claimRenewalNotice(clientId, end, days) {
+  if (!db) return null
+  const step = RENEWAL_NOTICE_STEPS.slice().reverse().find((t) => days <= t)
+  if (step === undefined) return null
+  const ref = doc(db, COLLECTIONS.clients, clientId)
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) return null
+    const c = snap.data()
+    const sent = c.renewalNoticeFor === end ? c.renewalNotices || [] : []
+    if (sent.includes(step)) return null
+    tx.update(ref, { renewalNoticeFor: end, renewalNotices: [...sent, step] })
+    return step
+  })
+}
+
+export function sendRenewalPush(client, status, recipients, sender) {
+  const name = client.name || 'Cliente'
+  const d = status.days
+  const when = d <= 0 ? 'ya terminó su cobertura' : d === 1 ? 'vence mañana' : `vence en ${d} días`
+  const option = status.nextOption ? `Opción pendiente: ${status.nextOption.label || 'renovación'}.` : 'Sin opciones de renovación pendientes.'
+  pushNotify(recipients, { title: `⏳ El contrato de ${name} ${when}`, body: `Cubierto hasta ${status.end}. ${option}`.slice(0, 170), tag: `renewal:${client.id}`, url: `/?open=clientes&client=${client.id}` }, sender)
+}
+
 // Edit / delete a manual movement (an expense or a manual income). Income that
 // comes from a client's payment is edited in Clientes → Pagos, not here.
 export function updateExpense(id, data) {

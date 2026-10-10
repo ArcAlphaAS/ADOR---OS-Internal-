@@ -125,7 +125,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // only admins may do under the stricter Firestore rules.
   useChatRetention(access.isAdmin ? user?.uid : null)
   useFinanceRecurring(access.canSee('finanzas'), user?.uid)
-  useClientBilling(access.canSee('clientes'), user?.uid)
+  useClientBilling(access.canSee('clientes'), user?.uid, user?.displayName || user?.email?.split('@')[0])
   // One-time fix-up for channels created before `visibility` existed —
   // needed by the split channel query (lib/firestore.js).
   useEffect(() => {
