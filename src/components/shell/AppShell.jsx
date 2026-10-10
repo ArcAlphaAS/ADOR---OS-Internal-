@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
@@ -189,9 +190,22 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     return () => navigator.serviceWorker.removeEventListener('message', onMessage)
   }, [])
 
+  // Switching modules uses the browser's View Transitions (a snapshot
+  // cross-fade done off the main thread). Animating the module's own root
+  // with Framer Motion was janky: that container holds many blurred glass
+  // cards, which are expensive to fade/translate. Browsers without the API
+  // (or with reduced motion) simply switch instantly.
   const navigateTo = (moduleId, focusTarget = null) => {
-    setActiveModule(moduleId)
-    setFocus(focusTarget)
+    const apply = () => {
+      setActiveModule(moduleId)
+      setFocus(focusTarget)
+    }
+    const canAnimate =
+      typeof document.startViewTransition === 'function' &&
+      moduleId !== activeModule &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (canAnimate) document.startViewTransition(() => flushSync(apply))
+    else apply()
   }
 
   // First-login gate lives on the profile doc (not localStorage) so it's
@@ -248,7 +262,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main className="ador-vt-main min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           <ModuleErrorBoundary resetKey={activeModule}>
           <Suspense fallback={<ModuleSkeleton />}>
           <AnimatePresence mode="wait">

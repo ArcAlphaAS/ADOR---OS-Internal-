@@ -422,9 +422,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      initial={false}
       className={`mx-auto flex w-full flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10 ${tab === 'comunidad' ? 'max-w-[1040px]' : 'max-w-[1440px]'}`}
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
