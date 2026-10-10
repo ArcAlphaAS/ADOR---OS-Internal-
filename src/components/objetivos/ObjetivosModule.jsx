@@ -247,7 +247,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
                 type="button"
                 onClick={() => setViewQuarter(q)}
                 className="rounded-xl px-4 py-2 text-[13px] font-medium transition-colors"
-                style={{ background: q === viewQuarter ? 'rgba(59,130,246,0.18)' : 'transparent', color: q === viewQuarter ? '#F5F5F5' : '#8A8A8A' }}
+                style={{ background: q === viewQuarter ? '#F5F5F5' : 'transparent', color: q === viewQuarter ? '#0A0A0A' : '#8A8A8A' }}
               >
                 {quarterLabel(q)}
               </button>

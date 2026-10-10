@@ -104,8 +104,8 @@ export default function FinanceChart({ series }) {
           <svg viewBox={`0 0 100 ${HEIGHT}`} preserveAspectRatio="none" className="w-full" style={{ height: 220 }}>
             <defs>
               <linearGradient id="finanzas-bar-ingresos" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3A8DE8" />
-                <stop offset="100%" stopColor="#F4EEE2" />
+                <stop offset="0%" stopColor="#F4EEE2" />
+                <stop offset="100%" stopColor="#F4EEE2" stopOpacity="0.35" />
               </linearGradient>
               <linearGradient id="finanzas-bar-gastos" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#D9A62B" />

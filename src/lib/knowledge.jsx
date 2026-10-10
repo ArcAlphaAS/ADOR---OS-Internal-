@@ -153,7 +153,7 @@ function renderInline(text, keyPrefix) {
       )
     else if (match[4] !== undefined)
       nodes.push(
-        <a key={key} href={match[5]} target="_blank" rel="noreferrer" className="text-[#F4EEE2] underline underline-offset-2 hover:text-[#7BAEE0]">
+        <a key={key} href={match[5]} target="_blank" rel="noreferrer" className="text-[#F4EEE2] underline underline-offset-2 hover:text-white">
           {match[4]}
         </a>
       )

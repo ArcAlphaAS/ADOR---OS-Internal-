@@ -371,7 +371,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
         </div>
       </div>
       {!showAll && total > docs.length && (
-        <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#F4EEE2] hover:text-[#7BAEE0]">
+        <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#F4EEE2] hover:text-white">
           Ver todos los documentos →
         </button>
       )}

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import ParticleLogo from '../ParticleLogo'
 
 function InterventionRow({ client, week, totalWeeks, progress }) {
   return (
@@ -38,9 +39,10 @@ export default function InterventionsBlock({ interventions = [] }) {
       </div>
 
       {interventions.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 py-10">
-          <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[14px] font-light text-[#444444]">Sin intervenciones activas</p>
+        <div className="flex flex-col items-center gap-1.5 py-6">
+          <ParticleLogo size={96} />
+          <p className="mt-2 text-[14px] text-[#D4D4D4]">Aún no hay intervenciones activas</p>
+          <p className="text-[12.5px] text-[#767676]">Aparecen aquí cuando un SPC pasa a Intervención.</p>
         </div>
       ) : (
         <div className="mt-3 divide-y divide-white/[0.06]">

@@ -47,7 +47,7 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
       const so = scatterAt.current ? Math.min(1, (now - scatterAt.current) / 700) : 0
       ctx.clearRect(0, 0, size, size)
       ctx.lineCap = 'round'
-      ctx.lineWidth = 1.35
+      ctx.lineWidth = size < 140 ? 1 : 1.35
       for (let i = 0; i < pts.length; i += 1) {
         const p = pts[i]
         const e = ease((t - p.delay) / 1.5)
@@ -91,7 +91,9 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
       const h = w * LOGO_RATIO
       octx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h)
       const data = octx.getImageData(0, 0, size, size).data
-      const step = size / 36
+      // Small marks (empty states) need a fixed fine grain, or the strokes vanish.
+      const small = size < 140
+      const step = small ? 3 : size / 36
       const next = []
       for (let y = 0; y < size; y += step) {
         for (let x = 0; x < size; x += step) {
@@ -107,7 +109,7 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
               delay: Math.random() * 0.9,
               ox: (Math.random() - 0.5) * 90,
               oy: (Math.random() - 0.5) * 90,
-              len: size / 150 + Math.random() * (size / 190),
+              len: small ? 1.2 + Math.random() * 0.6 : size / 150 + Math.random() * (size / 190),
             })
           }
         }

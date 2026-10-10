@@ -34,7 +34,7 @@ function ProjectionBar({ cashBalance, projectedIn30, projectedIn90 }) {
     <div className="flex h-[110px] w-6 flex-shrink-0 flex-col-reverse overflow-hidden rounded-md bg-white/[0.04]">
       <div style={{ height: `${baseH}%`, background: '#F4EEE2' }} />
       <div style={{ height: `${midH}%`, background: '#4CAF50' }} />
-      <div style={{ height: `${topH}%`, background: '#3A8DE8' }} />
+      <div style={{ height: `${topH}%`, background: 'rgba(244,238,226,0.5)' }} />
     </div>
   )
 }
