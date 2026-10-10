@@ -70,7 +70,7 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
 
       <TaskTitleCell task={task} completed={completed} expanded={expanded} onToggleExpand={() => setExpanded((v) => !v)} onOpen={onOpen} />
 
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
         <WorkstreamCell workstreams={workstreams} value={workstream?.id ?? ''} onChange={changeWorkstream} variant="label" accentColor={accent} />
         {onReschedule && (
           <button
@@ -94,10 +94,11 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
               onFocus(task)
             }}
             title="Enfocar esta tarea"
-            className="flex flex-shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors duration-150 hover:bg-white/[0.06]"
+            aria-label="Enfocar esta tarea"
+            className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
             style={{ borderColor: 'rgba(255,255,255,0.14)', color: '#888888' }}
           >
-            <PlayIcon size={8} /> Enfocar
+            <PlayIcon size={8} />
           </button>
         )}
       </div>

@@ -86,7 +86,7 @@ export function WorkstreamCell({ workstreams = [], value, onChange, variant = 'b
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       {variant === 'label' ? (
         <button
           ref={triggerRef}

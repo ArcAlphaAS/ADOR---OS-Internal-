@@ -975,6 +975,10 @@ Prompted by the user: a client whose work ended isn't "Perdido", and may return 
 - **Not built (the user's next step, by design):** recurring monthly **collections** for a subscription. The 60/40 `pago1/pago2` model can't express it; that's the trigger noted in §8 to extract a real payments collection, probably reusing the `financeRecurring` pattern (§46). Design it with the first real subscription in hand.
 - **Verified** in the preview with a temporary seed of three clients (removed): header counts split correctly, Completados view (cobrado S/ 23,000 = archived cycle + current), Nuevo servicio and Completar modals, the right-click menu items, the Servicios tab. The writes themselves (`markClientCompleted`, `startNewService`, `saveClientServices`) and the Ficha's `ServiceBar` weren't exercised (no Firestore access in the preview).
 
+### 60. Project column overflow in task tables (2026-10-09, night)
+
+In Workspace's `ProjectTaskRow` (Hoy and Personal) the "Enfocar" pill in the Proyecto cell (108 px) overflowed into the Asignado column and sat under the avatar. Causes: the pill was text + `flex-shrink-0`, and `WorkstreamCell`'s wrapper `div` had no `min-w-0`, so the project label could never truncate. Fix: Proyecto column 132 px (`PROJECT_TASK_ROW_GRID`), the pill is now an 18 px icon-only button (`aria-label="Enfocar esta tarea"`), the cell has `overflow-hidden`, `WorkstreamCell`'s wrapper is `min-w-0`. Measured with a replica of the markup using the app's own classes and a long project name: the button's right edge equals the cell's right edge and the next column starts 8 px later.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

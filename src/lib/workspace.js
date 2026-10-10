@@ -267,4 +267,4 @@ export const TASK_ROW_GRID = '28px minmax(200px,1.6fr) 92px 88px 108px 128px 104
 // Personal's task table and Hoy's sections. Grupo/Lista deliberately keeps
 // TASK_ROW_GRID as-is, no Proyecto column, since that would just repeat
 // the group header on every row.
-export const PROJECT_TASK_ROW_GRID = '28px minmax(190px,1.5fr) 108px 88px 84px 108px 128px 100px'
+export const PROJECT_TASK_ROW_GRID = '28px minmax(190px,1.5fr) 132px 88px 84px 108px 128px 100px'
