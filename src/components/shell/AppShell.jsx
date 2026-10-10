@@ -201,6 +201,16 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // scrolling up (the profile/search/bell cluster always stays).
   const [navHidden, setNavHidden] = useState(false)
   const lastTop = useRef(0)
+  // Desktop: bringing the cursor to the top edge brings the bar back (like the
+  // Dock or the menu bar), so you never have to scroll up just to switch module.
+  useEffect(() => {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+    const onMove = (e) => {
+      if (e.clientY < 56) setNavHidden(false)
+    }
+    window.addEventListener('mousemove', onMove, { passive: true })
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
   const onMainScroll = (e) => {
     const top = e.currentTarget.scrollTop
     const delta = top - lastTop.current
