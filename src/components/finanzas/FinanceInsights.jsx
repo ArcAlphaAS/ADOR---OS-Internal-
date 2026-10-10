@@ -1,4 +1,4 @@
-import { currencyPEN, contractStatus } from '../../lib/clientStages'
+import { currencyPEN, contractStatus, clientType } from '../../lib/clientStages'
 import CardHeader, { CARD_PAD, CARD_RADIUS } from '../home/CardHeader'
 
 const card = `ador-glass ador-grain ${CARD_RADIUS} ${CARD_PAD}`
@@ -163,6 +163,83 @@ export function IngresosPorClienteCard({ movements }) {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// ───────────────────────── Panorama para Dirección ─────────────────────────
+// Three questions management asks every week, answered from live data:
+// how much of our spending is already covered by recurring income, how far we
+// are from the quarter's goal counting what is already collected, what is
+// owed to us and what is still in the pipeline, and what the next 90 days
+// leave us with.
+function recurringMonthly(clients) {
+  return clients
+    .filter((c) => c.billing?.active && (c.billing.modality === 'contrato' || c.billing.modality === 'suscripcion') && !c.completed && !c.lost)
+    .reduce((s, c) => s + (Number(c.billing.amount) || 0) / (PERIOD_MONTHS[c.billing.every] || 1), 0)
+}
+
+function Gauge({ pct, color }) {
+  return (
+    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: color }} />
+    </div>
+  )
+}
+
+export function PanoramaDireccionCard({ clients, monthlyBurnRate, quarterlyTarget, recaudadoTrimestre, totalPorCobrar, inflowIn90 }) {
+  const mrr = recurringMonthly(clients)
+  const coverage = monthlyBurnRate > 0 ? (mrr / monthlyBurnRate) * 100 : null
+  const coverageColor = coverage === null ? '#767676' : coverage >= 100 ? '#4CAF50' : coverage >= 50 ? '#E8C15A' : '#EF5350'
+
+  const pipeline = clients
+    .filter((c) => !c.lost && !c.completed && clientType(c.stage) === 'SPC')
+    .reduce((s, c) => s + (Number(c.montoAcordado) || 0), 0)
+  const secured = recaudadoTrimestre + totalPorCobrar
+  const gap = quarterlyTarget ? Math.max(0, quarterlyTarget - secured) : null
+  const goalPct = quarterlyTarget ? (secured / quarterlyTarget) * 100 : 0
+
+  return (
+    <div className={card}>
+      <CardHeader label="Panorama para Dirección" />
+
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12.5px] text-[#C9C9C9]">Gastos cubiertos por ingreso recurrente</span>
+          <span className="text-[15px] font-semibold tabular-nums" style={{ color: coverageColor }}>{coverage === null ? '—' : `${Math.round(coverage)}%`}</span>
+        </div>
+        <Gauge pct={coverage || 0} color={coverageColor} />
+        <p className="mt-1.5 text-[11.5px] text-[#767676]">
+          {coverage === null ? 'Aparece cuando haya gasto registrado en los últimos meses.' : coverage >= 100 ? 'El recurrente ya paga la operación completa.' : `Faltan ${money(Math.max(0, monthlyBurnRate - mrr))} al mes de ingreso recurrente para cubrir todo el gasto.`}
+        </p>
+      </div>
+
+      <div className="mt-5 border-t border-white/[0.06] pt-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12.5px] text-[#C9C9C9]">Meta del trimestre asegurada</span>
+          <span className="text-[15px] font-semibold tabular-nums text-[#F5F5F5]">{quarterlyTarget ? `${Math.round(goalPct)}%` : '—'}</span>
+        </div>
+        <Gauge pct={goalPct} color="#F4EEE2" />
+        {quarterlyTarget ? (
+          <p className="mt-1.5 text-[11.5px] text-[#767676]">
+            {money(recaudadoTrimestre)} cobrado + {money(totalPorCobrar)} por cobrar.{' '}
+            {gap > 0 ? `Faltan ${money(gap)} por cerrar${pipeline > 0 ? `; en el pipeline hay ${money(pipeline)}.` : '.'}` : 'La meta ya está cubierta.'}
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[11.5px] text-[#767676]">Define la meta del trimestre en "Metas" para ver cuánto falta cerrar.</p>
+        )}
+      </div>
+
+      <div className="mt-5 border-t border-white/[0.06] pt-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[12.5px] text-[#C9C9C9]">Balance previsto a 90 días</span>
+          <span className="text-[15px] font-semibold tabular-nums" style={{ color: inflowIn90 >= 0 ? '#4CAF50' : '#EF5350' }}>
+            {inflowIn90 >= 0 ? '+' : '−'}
+            {money(Math.abs(inflowIn90))}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[11.5px] text-[#767676]">Lo que entra por cobros con fecha menos el gasto promedio de 3 meses.</p>
+      </div>
     </div>
   )
 }

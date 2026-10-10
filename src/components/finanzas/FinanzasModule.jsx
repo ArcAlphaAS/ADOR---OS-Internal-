@@ -6,7 +6,7 @@ import { useFinanceData } from '../../hooks/useFinanceData'
 import SituacionActualCard from './SituacionActualCard'
 import FinanceHero from './FinanceHero'
 import ProximosCobrosCard from './ProximosCobrosCard'
-import { IngresoRecurrenteCard, AntiguedadCobrosCard, IngresosPorClienteCard } from './FinanceInsights'
+import { PanoramaDireccionCard, IngresoRecurrenteCard, AntiguedadCobrosCard, IngresosPorClienteCard } from './FinanceInsights'
 import RequiereAtencion from './RequiereAtencion'
 import FinanceDetailPanel from './FinanceDetailPanel'
 import FinanceChart from './FinanceChart'
@@ -101,6 +101,14 @@ export default function FinanzasModule({ user, onNavigate }) {
             categorySpikes={data.categorySpikes}
             onOpenRunway={() => setDetailMode('runway')}
             onOpenPorCobrar={() => setDetailMode('porCobrar')}
+          />
+          <PanoramaDireccionCard
+            clients={data.clients}
+            monthlyBurnRate={data.monthlyBurnRate}
+            quarterlyTarget={data.quarterlyTarget}
+            recaudadoTrimestre={data.recaudadoTrimestre}
+            totalPorCobrar={data.totalPorCobrar}
+            inflowIn90={data.inflowIn90}
           />
           <ProximosCobrosCard pendingPayments={data.pendingPayments} onOpen={() => setDetailMode('porCobrar')} />
           <AntiguedadCobrosCard pendingPayments={data.pendingPayments} onOpen={() => setDetailMode('porCobrar')} />
