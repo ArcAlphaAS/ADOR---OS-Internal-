@@ -197,6 +197,18 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // kept). Switching is therefore instant and never rebuilds a page — the
   // way a native app switches sections. See CLAUDE.md §57.
   const mainRef = useRef(null)
+  // The top bar's pill and logo tuck away while scrolling down and return on
+  // scrolling up (the profile/search/bell cluster always stays).
+  const [navHidden, setNavHidden] = useState(false)
+  const lastTop = useRef(0)
+  const onMainScroll = (e) => {
+    const top = e.currentTarget.scrollTop
+    const delta = top - lastTop.current
+    if (top < 60) setNavHidden(false)
+    else if (delta > 6) setNavHidden(true)
+    else if (delta < -6) setNavHidden(false)
+    lastTop.current = top
+  }
   const scrollPos = useRef({})
   const loaded = useRef(new Set())
   const [kept, setKept] = useState(() => [activeModule])
@@ -225,6 +237,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // Each module keeps its own scroll position inside the shared <main>.
   useLayoutEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = scrollPos.current[activeModule] || 0
+    lastTop.current = mainRef.current?.scrollTop || 0
+    setNavHidden(false)
   }, [activeModule])
 
   // First-login gate lives on the profile doc (not localStorage) so it's
@@ -352,13 +366,14 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         onNavigate={navigateTo}
         onShowOnboarding={() => setShowOnboarding(true)}
         access={access}
+        navHidden={navHidden}
       />
 
       <div className="flex min-h-0 flex-1">
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto pt-16 overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main ref={mainRef} onScroll={onMainScroll} className="min-w-0 flex-1 overflow-y-auto pt-16 overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           {mountedIds.map((id) => {
             const visible = id === activeModule
             return (

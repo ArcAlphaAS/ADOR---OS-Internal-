@@ -301,6 +301,7 @@ export default function TopBar({
   onNavigate,
   onShowOnboarding,
   access = { isAdmin: true, canSee: () => true },
+  navHidden = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
@@ -364,19 +365,31 @@ export default function TopBar({
       {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline
           (see Logo.jsx), so "OS" sits on the same line. It used to have
           0.3em tracking, which read as "O S". */}
-      <div className="flex items-baseline gap-[5px] justify-self-start" aria-label="ADOR OS">
+      <motion.div
+        animate={{ opacity: navHidden ? 0 : 1, y: navHidden ? -16 : 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-baseline gap-[5px] justify-self-start"
+        aria-label="ADOR OS"
+      >
         <Logo size={13} />
         <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
           OS
         </span>
-      </div>
+      </motion.div>
 
       {/* Below 1024px these tabs live in the bottom bar (BottomNav). */}
-      <div className="hidden justify-self-center lg:block">
+      <motion.div
+        animate={{ opacity: navHidden ? 0 : 1, y: navHidden ? -16 : 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        style={{ pointerEvents: navHidden ? 'none' : 'auto' }}
+        className="hidden justify-self-center lg:block"
+      >
         <PillTabs activeModule={activeModule} onNavigate={onNavigate} canSee={access.canSee} />
-      </div>
+      </motion.div>
 
-      <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center gap-2 justify-self-end">
+      <motion.div layout="position" transition={REFLOW_TRANSITION} className="justify-self-end">
+        <div className={`flex items-center gap-2 rounded-full p-1 transition-[background-color,backdrop-filter] duration-300 ${navHidden ? 'bg-transparent' : 'bg-black/55 backdrop-blur-xl'}`}>
+        <div className={`flex items-center gap-2 transition-opacity duration-200 ${navHidden ? 'pointer-events-none opacity-0' : 'opacity-100'}`} aria-hidden={navHidden}>
         <SearchToggle onNavigate={onNavigate} uid={user?.uid} canSee={access.canSee} />
 
         <BirthdayCenter birthdays={birthdays} user={user} onNavigate={onNavigate} />
@@ -404,6 +417,8 @@ export default function TopBar({
           <NotificationCenter items={notifications} anchorRect={notifRect} open={notifOpen} onItemClick={() => setNotifOpen(false)} />
         </motion.div>
 
+        </div>
+
         <ProfileTrigger
           user={user}
           expanded={profileExpanded}
@@ -414,6 +429,7 @@ export default function TopBar({
           onSelect={handleMenuSelect}
           isAdmin={access.isAdmin}
         />
+        </div>
       </motion.div>
 
       <AnimatePresence>
