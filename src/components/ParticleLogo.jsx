@@ -7,7 +7,9 @@ import { useEffect, useRef } from 'react'
 //
 // Motion: the strokes fly in and assemble, then keep breathing (each one
 // rotates a little, and a soft wave of brightness crosses the mark). Pointer
-// or finger near the mark pushes strokes aside. When `scatter` turns true they
+// or finger near the mark pushes strokes aside — on touch screens that is
+// switched off and the animation is lightened (fewer strokes, ~30 fps), since
+// there is no hover and phones should spend as little as possible. When `scatter` turns true they
 // disperse outward and fade (used when leaving the welcome screen). With
 // prefers-reduced-motion it is drawn once, still.
 const LOGO_SRC = '/logo.svg'
@@ -33,6 +35,8 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const touch = window.matchMedia?.('(hover: none), (pointer: coarse)').matches
+    let last = 0
     let pts = []
     let raf = 0
     let alive = true
@@ -43,6 +47,8 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
       if (!alive) return
       if (!reduce) raf = requestAnimationFrame(draw)
       if (document.hidden) return
+      if (touch && now - last < 33) return
+      last = now
       const t = reduce ? 99 : (now - t0) / 1000
       const so = scatterAt.current ? Math.min(1, (now - scatterAt.current) / 700) : 0
       ctx.clearRect(0, 0, size, size)
@@ -93,7 +99,7 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
       const data = octx.getImageData(0, 0, size, size).data
       // Small marks (empty states) need a fixed fine grain, or the strokes vanish.
       const small = size < 140
-      const step = small ? 3 : size / 36
+      const step = (small ? 3 : size / 36) * (touch ? 1.3 : 1)
       const next = []
       for (let y = 0; y < size; y += step) {
         for (let x = 0; x < size; x += step) {
@@ -124,9 +130,11 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
       pointer = { x: ev.clientX - r.left, y: ev.clientY - r.top }
     }
     const onLeave = () => { pointer = null }
-    canvas.addEventListener('pointermove', onMove)
-    canvas.addEventListener('pointerleave', onLeave)
-    canvas.addEventListener('pointerup', onLeave)
+    if (!touch) {
+      canvas.addEventListener('pointermove', onMove)
+      canvas.addEventListener('pointerleave', onLeave)
+      canvas.addEventListener('pointerup', onLeave)
+    }
 
     return () => {
       alive = false
@@ -141,7 +149,7 @@ export default function ParticleLogo({ size = 260, scatter = false, className = 
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: size, height: size, touchAction: 'none' }}
+      style={{ width: size, height: size }}
       role="img"
       aria-label="ADOR"
     />
