@@ -277,9 +277,9 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
           />
         )}
 
-        <AnimatePresence mode="wait">
+        <AnimatePresence initial={false}>
           {view === 'hoy' ? (
-            <motion.div key="hoy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key="hoy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <HoyView
                 user={user}
                 tasks={tasks}
@@ -296,7 +296,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
               />
             </motion.div>
           ) : view === 'lista' ? (
-            <motion.div key="lista" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key="lista" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               {onlyMine ? (
                 <PersonalOverview
                   user={user}
@@ -333,7 +333,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
               )}
             </motion.div>
           ) : view === 'kanban' ? (
-            <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key="kanban" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <KanbanView
                 tasks={visibleTasks}
                 workstreamById={workstreamById}
@@ -344,11 +344,11 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
               />
             </motion.div>
           ) : view === 'calendario' ? (
-            <motion.div key="calendario" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key="calendario" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <CalendarView tasks={visibleTasks} onOpenTask={openTaskPanel} actorUserId={user?.uid} actorName={actorName} />
             </motion.div>
           ) : (
-            <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key="timeline" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <TimelineView
                 workstreams={visibleWorkstreams}
                 tasksByWorkstream={visibleTasksByWorkstream}

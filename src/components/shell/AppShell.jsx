@@ -1,5 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
-import { flushSync } from 'react-dom'
+import { Activity, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
@@ -190,23 +189,41 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     return () => navigator.serviceWorker.removeEventListener('message', onMessage)
   }, [])
 
-  // Switching modules uses the browser's View Transitions (a snapshot
-  // cross-fade done off the main thread). Animating the module's own root
-  // with Framer Motion was janky: that container holds many blurred glass
-  // cards, which are expensive to fade/translate. Browsers without the API
-  // (or with reduced motion) simply switch instantly.
+  // Modules are kept alive: the first visit mounts one, later visits just
+  // reveal it (React <Activity>: hidden modules are display:none, their
+  // effects/subscriptions are paused and their state, scroll and tab are
+  // kept). Switching is therefore instant and never rebuilds a page — the
+  // way a native app switches sections. See CLAUDE.md §57.
+  const mainRef = useRef(null)
+  const scrollPos = useRef({})
+  const loaded = useRef(new Set())
+  const [kept, setKept] = useState(() => [activeModule])
+
   const navigateTo = (moduleId, focusTarget = null) => {
+    if (mainRef.current) scrollPos.current[activeModule] = mainRef.current.scrollTop
     const apply = () => {
       setActiveModule(moduleId)
       setFocus(focusTarget)
     }
-    const canAnimate =
-      typeof document.startViewTransition === 'function' &&
-      moduleId !== activeModule &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (canAnimate) document.startViewTransition(() => flushSync(apply))
-    else apply()
+    const load = moduleLoaders[moduleId]
+    // A module visited for the first time whose code isn't downloaded yet:
+    // fetch it first, so the screen never flashes a skeleton mid-switch.
+    if (load && !loaded.current.has(moduleId)) {
+      load().then(() => { loaded.current.add(moduleId); apply() }).catch(apply)
+    } else {
+      apply()
+    }
   }
+
+  const mountedIds = kept.includes(activeModule) ? kept : [...kept, activeModule]
+  useEffect(() => {
+    if (!kept.includes(activeModule)) setKept(mountedIds)
+  }, [activeModule]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Each module keeps its own scroll position inside the shared <main>.
+  useLayoutEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = scrollPos.current[activeModule] || 0
+  }, [activeModule])
 
   // First-login gate lives on the profile doc (not localStorage) so it's
   // per-account, not per-device — see markOnboardingSeen in lib/firestore.js.
@@ -230,13 +247,90 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   useEffect(() => {
     const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1500))
     const cancel = window.cancelIdleCallback || clearTimeout
-    const handle = idle(() => Object.values(moduleLoaders).forEach((load) => load().catch(() => {})))
+    const handle = idle(() => Object.entries(moduleLoaders).forEach(([id, load]) => load().then(() => loaded.current.add(id)).catch(() => {})))
     return () => cancel(handle)
   }, [])
+
+  // After the app settles, pre-render the four main modules in the
+  // background (hidden; React does it at low priority and runs no effects,
+  // so nothing subscribes or fetches until you actually open one). Their
+  // first visit is then a reveal, not a build.
+  useEffect(() => {
+    if (window.matchMedia?.('(max-width: 767px)').matches || navigator.connection?.saveData) return undefined
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200))
+    const cancel = window.cancelIdleCallback || clearTimeout
+    let handle
+    let cancelled = false
+    const list = ['workspace', 'objetivos', 'clientes', 'finanzas']
+    const step = () => {
+      if (cancelled) return
+      const id = list.shift()
+      if (!id) return
+      if (access.canSee(id)) setKept((prev) => (prev.includes(id) ? prev : [...prev, id]))
+      handle = idle(step, { timeout: 5000 })
+    }
+    const start = setTimeout(() => { handle = idle(step, { timeout: 5000 }) }, 3000)
+    return () => {
+      cancelled = true
+      clearTimeout(start)
+      if (handle) cancel(handle)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const finishOnboarding = () => {
     setShowOnboarding(false)
     if (user?.uid && user.uid !== 'preview') markOnboardingSeen(user.uid)
+  }
+
+  const renderModule = (id) => {
+    if (!access.canSee(id)) return <NoAccess onHome={() => navigateTo('inicio')} />
+    switch (id) {
+      case 'admin':
+        return <AdminModule user={user} />
+      case 'inicio':
+        return <HomeScreen user={user} onNavigate={navigateTo} />
+      case 'workspace':
+        return (
+          <WorkspaceModule
+            user={user}
+            focusTaskId={focus?.type === 'task' ? focus.id : null}
+            onFocusHandled={() => setFocus(null)}
+            onNavigate={navigateTo}
+          />
+        )
+      case 'clientes':
+        return (
+          <ClientesModule
+            user={user}
+            focusClientId={focus?.type === 'client' ? focus.id : null}
+            onFocusHandled={() => setFocus(null)}
+          />
+        )
+      case 'finanzas':
+        return <FinanzasModule user={user} onNavigate={navigateTo} />
+      case 'objetivos':
+        return <ObjetivosModule user={user} onNavigate={navigateTo} />
+      case 'calendario':
+        return <CalendarioModule user={user} />
+      case 'directorio':
+        return <DirectorioModule user={user} focus={focus?.type === 'person' ? focus : null} onFocusHandled={() => setFocus(null)} />
+      case 'conocimiento':
+        return (
+          <ConocimientoModule
+            user={user}
+            focusDocId={focus?.type === 'knowledge' ? focus.id : null}
+            onFocusHandled={() => setFocus(null)}
+          />
+        )
+      case 'news':
+        return <NewsModule user={user} focus={focus?.type === 'news' || focus?.type === 'community' ? focus : null} onFocusHandled={() => setFocus(null)} />
+      case 'chat':
+        return <ChatModule user={user} scheduledMessages={scheduledMessages} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
+      case 'ador-ia':
+        return <AdorIAModule user={user} />
+      default:
+        return <ModulePlaceholder name={MODULE_LABELS[id]} />
+    }
   }
 
   return (
@@ -262,58 +356,19 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main className="ador-vt-main min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
-          <ModuleErrorBoundary resetKey={activeModule}>
-          <Suspense fallback={<ModuleSkeleton />}>
-          <AnimatePresence mode="wait">
-            {!access.canSee(activeModule) ? (
-              <NoAccess key="no-access" onHome={() => navigateTo('inicio')} />
-            ) : activeModule === 'admin' ? (
-              <AdminModule key="admin" user={user} />
-            ) : activeModule === 'inicio' ? (
-              <HomeScreen key="inicio" user={user} onNavigate={navigateTo} />
-            ) : activeModule === 'workspace' ? (
-              <WorkspaceModule
-                key="workspace"
-                user={user}
-                focusTaskId={focus?.type === 'task' ? focus.id : null}
-                onFocusHandled={() => setFocus(null)}
-                onNavigate={navigateTo}
-              />
-            ) : activeModule === 'clientes' ? (
-              <ClientesModule
-                key="clientes"
-                user={user}
-                focusClientId={focus?.type === 'client' ? focus.id : null}
-                onFocusHandled={() => setFocus(null)}
-              />
-            ) : activeModule === 'finanzas' ? (
-              <FinanzasModule key="finanzas" user={user} onNavigate={navigateTo} />
-            ) : activeModule === 'objetivos' ? (
-              <ObjetivosModule key="objetivos" user={user}  onNavigate={navigateTo} />
-            ) : activeModule === 'calendario' ? (
-              <CalendarioModule key="calendario" user={user} />
-            ) : activeModule === 'directorio' ? (
-              <DirectorioModule key="directorio" user={user} focus={focus?.type === 'person' ? focus : null} onFocusHandled={() => setFocus(null)} />
-            ) : activeModule === 'conocimiento' ? (
-              <ConocimientoModule
-                key="conocimiento"
-                user={user}
-                focusDocId={focus?.type === 'knowledge' ? focus.id : null}
-                onFocusHandled={() => setFocus(null)}
-              />
-            ) : activeModule === 'news' ? (
-              <NewsModule key="news" user={user} focus={focus?.type === 'news' || focus?.type === 'community' ? focus : null} onFocusHandled={() => setFocus(null)} />
-            ) : activeModule === 'chat' ? (
-              <ChatModule key="chat" user={user} scheduledMessages={scheduledMessages} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
-            ) : activeModule === 'ador-ia' ? (
-              <AdorIAModule key="ador-ia" user={user} />
-            ) : (
-              <ModulePlaceholder key={activeModule} name={MODULE_LABELS[activeModule]} />
-            )}
-          </AnimatePresence>
-          </Suspense>
-          </ModuleErrorBoundary>
+        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
+          {mountedIds.map((id) => {
+            const visible = id === activeModule
+            return (
+              <Activity key={id} mode={visible ? 'visible' : 'hidden'}>
+                <div className="ador-module-in h-full">
+                  <ModuleErrorBoundary resetKey={visible}>
+                    <Suspense fallback={<ModuleSkeleton />}>{renderModule(id)}</Suspense>
+                  </ModuleErrorBoundary>
+                </div>
+              </Activity>
+            )
+          })}
         </main>
       </div>
 

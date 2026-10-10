@@ -337,21 +337,17 @@ input:-webkit-autofill:focus {
   animation: ador-shimmer 2.6s ease-in-out infinite;
 }
 
-/* Module switch (see navigateTo in AppShell): only <main> is transitioned;
-   the rest of the shell is shown as-is. The old module stays opaque under the
-   new one, which fades and rises in — a cross-fade without a dark dip. */
-@media (prefers-reduced-motion: no-preference) {
-  .ador-vt-main { view-transition-name: ador-module; }
-  ::view-transition-old(root) { display: none; }
-  ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-  ::view-transition-old(ador-module) { animation: none; mix-blend-mode: normal; }
-  ::view-transition-new(ador-module) {
-    animation: ador-vt-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    mix-blend-mode: normal;
-  }
+/* A module arriving (AppShell keeps modules alive with <Activity>; a revealed
+   module goes display:none → block, which restarts this). A short, soft rise
+   and fade on an already-rendered page: cheap, never a rebuild. */
+@keyframes ador-module-in {
+  from { opacity: 0; transform: translateY(6px); }
 }
-@keyframes ador-vt-in {
-  from { opacity: 0; transform: translateY(8px); }
+.ador-module-in {
+  animation: ador-module-in 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ador-module-in { animation: none; }
 }
 
 /* Skeletons appear only if loading lasts longer than a blink. */

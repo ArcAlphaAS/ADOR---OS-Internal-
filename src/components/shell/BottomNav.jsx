@@ -46,10 +46,18 @@ function Tab({ label, Icon, active, badge, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label} className="relative flex flex-1 items-center justify-center">
       <span
-        className="relative flex h-12 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 ease-out active:scale-90"
-        style={{ background: active ? '#F5F5F5' : 'transparent', color: active ? '#0A0A0A' : '#8E8E93' }}
+        className="relative flex h-12 w-12 items-center justify-center rounded-full transition-[color,transform] duration-200 ease-out active:scale-90"
+        style={{ color: active ? '#0A0A0A' : '#8E8E93' }}
       >
-        <Icon size={21} />
+        {/* One white circle that slides between tabs (shared layoutId) instead of each tab fading its own. */}
+        {active && (
+          <motion.span
+            layoutId="bottomnav-active-circle"
+            className="absolute inset-0 rounded-full bg-[#F5F5F5]"
+            transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+          />
+        )}
+        <Icon size={21} className="relative" />
         {badge > 0 && (
           <span className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: '#F4EEE2' }}>
             {badge > 9 ? '9+' : badge}
