@@ -16,7 +16,7 @@ function AsociadoAvatar({ uid, users }) {
   )
 }
 
-export default function ClientCard({ client, users, onOpen, onDropStage, resolveDropStage, justConverted }) {
+export default function ClientCard({ client, users, onOpen, onContext, onDropStage, resolveDropStage, justConverted }) {
   const type = clientType(client.stage)
   const daysSinceContact = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
   const payment = paymentStatusLabel(client)
@@ -54,6 +54,11 @@ export default function ClientCard({ client, users, onOpen, onDropStage, resolve
       onClick={(e) => {
         if (didDragRef.current) return
         onOpen(client, e.currentTarget.getBoundingClientRect())
+      }}
+      onContextMenu={(e) => {
+        if (!onContext) return
+        e.preventDefault()
+        onContext(client, e.clientX, e.clientY)
       }}
       initial={justConverted ? { boxShadow: '0 0 0px rgba(244,238,226,0)' } : false}
       animate={

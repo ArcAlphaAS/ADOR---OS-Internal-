@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react'
 import { STAGES } from '../../lib/clientStages'
 import KanbanColumn from './KanbanColumn'
 
-export default function KanbanBoard({ clients, users, onOpenClient, onDropStage, justConvertedId, onAddOpportunity }) {
+export default function KanbanBoard({ clients, users, onOpenClient, onContextClient, onDropStage, justConvertedId, onAddOpportunity }) {
   const columnRefs = useRef({})
 
   const registerRef = useCallback((stageId, el) => {
@@ -36,6 +36,7 @@ export default function KanbanBoard({ clients, users, onOpenClient, onDropStage,
           users={users}
           registerRef={registerRef}
           onOpenClient={onOpenClient}
+          onContextClient={onContextClient}
           onDropStage={onDropStage}
           resolveDropStage={resolveDropStage}
           justConvertedId={justConvertedId}

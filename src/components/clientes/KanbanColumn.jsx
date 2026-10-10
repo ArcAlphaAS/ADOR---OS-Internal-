@@ -3,7 +3,7 @@ import { stageColor } from '../../lib/clientStages'
 import { PlusIcon } from '../icons'
 import ClientCard from './ClientCard'
 
-export default function KanbanColumn({ stage, clients, users, registerRef, onOpenClient, onDropStage, resolveDropStage, justConvertedId, onAddOpportunity }) {
+export default function KanbanColumn({ stage, clients, users, registerRef, onOpenClient, onContextClient, onDropStage, resolveDropStage, justConvertedId, onAddOpportunity }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -47,6 +47,7 @@ export default function KanbanColumn({ stage, clients, users, registerRef, onOpe
               client={client}
               users={users}
               onOpen={onOpenClient}
+              onContext={onContextClient}
               onDropStage={onDropStage}
               resolveDropStage={resolveDropStage}
               justConverted={client.id === justConvertedId}

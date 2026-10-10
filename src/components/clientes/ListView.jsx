@@ -61,7 +61,7 @@ function NextStepCell({ client }) {
 
 const FILTERS_DEFAULT = { stage: 'all', type: 'all', assignedTo: 'all', payment: 'all' }
 
-export default function ListView({ clients, users, onOpenClient, actorName }) {
+export default function ListView({ clients, users, onOpenClient, onContextClient, actorName }) {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(FILTERS_DEFAULT)
   const [sortKey, setSortKey] = useState('name')
@@ -213,6 +213,11 @@ export default function ListView({ clients, users, onOpenClient, actorName }) {
                   <tr
                     key={client.id}
                     onClick={() => onOpenClient(client)}
+                    onContextMenu={(e) => {
+                      if (!onContextClient) return
+                      e.preventDefault()
+                      onContextClient(client, e.clientX, e.clientY)
+                    }}
                     className="group cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.03]"
                   >
                     <td className="px-5 py-3">

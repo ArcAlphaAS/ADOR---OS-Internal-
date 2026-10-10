@@ -7,7 +7,7 @@ function formatDate(value) {
   return date.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function LostClientsView({ clients, onOpenClient, actorName }) {
+export default function LostClientsView({ clients, onOpenClient, onContextClient, actorName }) {
   if (clients.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-24">
@@ -36,6 +36,11 @@ export default function LostClientsView({ clients, onOpenClient, actorName }) {
               <tr
                 key={client.id}
                 onClick={() => onOpenClient(client)}
+                onContextMenu={(e) => {
+                  if (!onContextClient) return
+                  e.preventDefault()
+                  onContextClient(client, e.clientX, e.clientY)
+                }}
                 className="group cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.03]"
               >
                 <td className="px-5 py-3">

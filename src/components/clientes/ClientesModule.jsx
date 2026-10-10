@@ -8,6 +8,9 @@ import { useToast } from '../../hooks/useToast'
 import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
 import LostClientsView from './LostClientsView'
+import ClientContextMenu from './ClientContextMenu'
+import DeleteClientModal from './DeleteClientModal'
+import { useAccess } from '../../hooks/useAccess'
 import ClientDetailPanel from './ClientDetailPanel'
 import NewClientModal from './NewClientModal'
 
@@ -300,6 +303,11 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
     if (user?.uid && user.uid !== 'preview') saveUserProfile(user.uid, { clientesView: next })
   }
 
+  const access = useAccess(user?.uid)
+  const [menu, setMenu] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  const openMenu = (client, x, y) => setMenu({ client, x, y })
+
   const selectedClient = clients.find((c) => c.id === selectedClientId) || null
   const activeClients = clients.filter((c) => !c.lost)
   const lostClients = clients.filter((c) => c.lost)
@@ -402,6 +410,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           <KanbanBoard
             clients={activeClients}
             users={users}
+            onContextClient={openMenu}
             onOpenClient={(c, rect) => {
               setSelectedClientId(c.id)
               setOriginRect(rect || null)
@@ -443,6 +452,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         <ListView
           clients={activeClients}
           users={users}
+          onContextClient={openMenu}
           onOpenClient={(c) => {
             setSelectedClientId(c.id)
             setOriginRect(null)
@@ -452,11 +462,35 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
       ) : (
         <LostClientsView
           clients={lostClients}
+          onContextClient={openMenu}
           onOpenClient={(c) => {
             setSelectedClientId(c.id)
             setOriginRect(null)
           }}
           actorName={actorName}
+        />
+      )}
+
+      {menu && (
+        <ClientContextMenu
+          client={menu.client}
+          x={menu.x}
+          y={menu.y}
+          canDelete={access.isAdmin}
+          actorName={actorName}
+          onClose={() => setMenu(null)}
+          onOpen={(c) => {
+            setSelectedClientId(c.id)
+            setOriginRect(null)
+          }}
+          onDelete={setDeleting}
+        />
+      )}
+      {deleting && (
+        <DeleteClientModal
+          client={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={(c) => selectedClientId === c.id && setSelectedClientId(null)}
         />
       )}
 
