@@ -58,8 +58,8 @@ function IconButton({ title, onClick, active, busy, children, buttonRef }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.09] bg-white/[0.08] text-[#D4D4D4] backdrop-blur-xl transition-colors duration-150 hover:bg-white/[0.12] hover:text-[#F5F5F5] md:h-9 md:w-9 md:border-transparent md:bg-transparent md:text-[#AAAAAA] md:backdrop-blur-none md:hover:bg-white/[0.06]"
-      style={{ ...(active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : {}), ...(busy ? { color: '#F4EEE2', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
+      className={`ador-neu-btn flex h-10 w-10 items-center justify-center rounded-full text-[#D4D4D4] transition-colors duration-150 md:h-9 md:w-9 md:border md:border-transparent md:bg-transparent md:text-[#AAAAAA] md:backdrop-blur-none md:hover:bg-white/[0.06] md:hover:text-[#F5F5F5] ${active ? 'ador-neu-pressed md:bg-white/[0.08]' : ''}`}
+      style={{ ...(active ? { color: '#F5F5F5' } : {}), ...(busy ? { color: '#F4EEE2', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
     >
       {children}
     </button>

@@ -853,22 +853,26 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           )}
           {showBubble && !emojiOnly && (
             <div
-              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? 'rounded-[20px] px-4 py-2.5 text-[14.5px]' : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
+              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-neu-raised' : 'ador-neu-inset'}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
               style={{
-                // Phones: translucent "glass" bubbles over the conversation's
-                // soft gradient (the received ones lighter, yours darker with
-                // the gold edge). Computers keep the flat graphite look.
-                background: mine ? MINE_GLASS : phone ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.06)',
-                boxShadow: mine ? 'inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 8px rgba(0,0,0,0.25)' : undefined,
-                border: mine ? '1px solid rgba(255,255,255,0.24)' : phone ? '1px solid rgba(255,255,255,0.09)' : '1px solid transparent',
-                color: mine ? MINE_INK : phone ? '#EFEFEF' : '#DDDDDD',
+                // Phones: soft "neumorphic" bubbles — yours rise out of the
+                // surface, what you receive is pressed into it (index.css
+                // .ador-neu-*). Computers keep the flat look below.
+                ...(phone
+                  ? {}
+                  : {
+                      background: mine ? MINE_GLASS : 'rgba(255,255,255,0.06)',
+                      boxShadow: mine ? 'inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 8px rgba(0,0,0,0.25)' : undefined,
+                      border: mine ? '1px solid rgba(255,255,255,0.24)' : '1px solid transparent',
+                    }),
+                color: mine ? MINE_INK : phone ? '#E8E8E8' : '#DDDDDD',
                 // Only the last bubble of a block gets the "tail" corner;
                 // bubbles inside a block keep softer inner corners.
                 borderTopRightRadius: mine && !groupStart ? 8 : undefined,
                 borderBottomRightRadius: mine ? (groupEnd ? 5 : 8) : undefined,
                 borderTopLeftRadius: !mine && !groupStart ? 8 : undefined,
                 borderBottomLeftRadius: !mine ? (groupEnd ? 5 : 8) : undefined,
-                ...(message.important ? { borderLeft: '3px solid #E8C15A', background: mine ? MINE_GLASS : 'rgba(184,134,11,0.08)' } : {}),
+                ...(message.important ? { borderLeft: '3px solid #E8C15A', ...(phone ? {} : { background: mine ? MINE_GLASS : 'rgba(184,134,11,0.08)' }) } : {}),
               }}
               title={message.important ? 'Mensaje importante — pide confirmación de lectura' : undefined}
             >

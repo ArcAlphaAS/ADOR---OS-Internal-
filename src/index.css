@@ -350,20 +350,40 @@ input:-webkit-autofill:focus {
   box-shadow: inset 3px 0 0 var(--attn), 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
-/* Comunicación on phones: the open conversation sits on a soft warm-graphite
-   gradient (so the translucent bubbles and the glass header/composer have
-   something to show through). While a conversation is open the page goes
-   full-screen like a messaging app: the top bar and bottom tab bar step aside
-   (ChatModule toggles html.ador-chat-open) and the panel loses its rounded
-   card. Phone width only — on computers the chat is untouched. */
+/* Comunicación on phones — neumorphism (soft UI): everything is the same dark
+   surface; shapes are lit by a pale shadow on one side and a deep one on the
+   other, so yours bubbles rise out of it and what you receive is pressed in.
+   The open conversation goes full-screen like a messaging app (ChatModule
+   toggles html.ador-chat-open: top bar and bottom tab bar step aside).
+   Phone width only — on computers the chat is untouched. */
 @media (max-width: 767px) {
   .ador-chat-bg {
     border-radius: 30px;
     padding: 12px 10px 10px;
-    background:
-      radial-gradient(130% 50% at 50% -8%, rgba(184, 134, 11, 0.1), transparent 62%),
-      linear-gradient(180deg, #17130e 0%, #0b0b0c 46%, #0b0d11 100%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(155deg, #212227 0%, #181a1e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .ador-neu-raised {
+    background: linear-gradient(145deg, #2c2d33 0%, #212227 100%);
+    box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.55), -4px -4px 10px rgba(255, 255, 255, 0.05);
+    border: 0;
+  }
+  .ador-neu-inset {
+    background: #17181c;
+    box-shadow: inset 4px 4px 9px rgba(0, 0, 0, 0.6), inset -3px -3px 8px rgba(255, 255, 255, 0.045);
+    border: 0;
+  }
+  .ador-neu-btn {
+    background: linear-gradient(145deg, #2c2d33 0%, #212227 100%);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.55), -3px -3px 8px rgba(255, 255, 255, 0.05);
+    border: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .ador-neu-btn:active,
+  .ador-neu-pressed {
+    background: #17181c;
+    box-shadow: inset 3px 3px 7px rgba(0, 0, 0, 0.6), inset -2px -2px 6px rgba(255, 255, 255, 0.045);
   }
   html.ador-chat-open .ador-topbar,
   html.ador-chat-open .ador-bottomnav {
@@ -379,9 +399,7 @@ input:-webkit-autofill:focus {
   html.ador-chat-open .ador-chat-bg {
     border-radius: 0;
     border: 0;
-    padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
-    background:
-      radial-gradient(120% 38% at 50% -6%, rgba(184, 134, 11, 0.07), transparent 60%),
-      linear-gradient(180deg, #15120d 0%, #0a0a0b 38%, #0a0b0e 100%);
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    background: linear-gradient(170deg, #212227 0%, #18191d 100%);
   }
 }

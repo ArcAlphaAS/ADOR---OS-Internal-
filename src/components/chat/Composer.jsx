@@ -570,7 +570,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       {/* Tools wrap onto their own line under the text when the column is
           narrow (a side panel open, or the thread composer), instead of
           squeezing the text box down to a few characters. */}
-      <div className="flex flex-nowrap items-end gap-x-1 rounded-[24px] border border-white/[0.12] bg-white/[0.07] py-1 pr-1 pl-3.5 backdrop-blur-xl md:flex-wrap md:gap-x-2 md:gap-y-1 md:rounded-[22px] md:py-1.5 md:pr-1.5 md:pl-4 md:border-white/[0.1] md:bg-white/[0.03] md:backdrop-blur-none">
+      <div className="ador-neu-inset flex flex-nowrap items-end gap-x-1 rounded-[24px] py-1 pr-1 pl-3.5 md:flex-wrap md:gap-x-2 md:gap-y-1 md:rounded-[22px] md:border md:border-white/[0.1] md:bg-white/[0.03] md:py-1.5 md:pr-1.5 md:pl-4">
         <textarea
           ref={inputRef}
           rows={1}
@@ -632,8 +632,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className="ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#1A1814] transition-opacity duration-150 disabled:opacity-40"
-            style={{ background: '#F4EEE2' }}
+            className="ador-neu-btn ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-opacity duration-150 disabled:opacity-40 max-md:text-[#F4EEE2]"
             title="Enviar"
           >
             <ArrowRightIcon size={15} />
