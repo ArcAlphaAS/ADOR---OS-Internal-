@@ -58,8 +58,8 @@ function IconButton({ title, onClick, active, busy, children, buttonRef }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`ador-neu-btn flex h-10 w-10 items-center justify-center rounded-full text-[#D4D4D4] transition-colors duration-150 md:h-9 md:w-9 md:border md:border-transparent md:bg-transparent md:text-[#AAAAAA] md:backdrop-blur-none md:hover:bg-white/[0.06] md:hover:text-[#F5F5F5] ${active ? 'ador-neu-pressed md:bg-white/[0.08]' : ''}`}
-      style={{ ...(active ? { color: '#F5F5F5' } : {}), ...(busy ? { color: '#F4EEE2', animation: 'ador-pulse 1s ease-in-out infinite' } : {}) }}
+      className={`ador-lg-btn flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 active:scale-95 md:h-9 md:w-9 md:border md:border-transparent md:bg-transparent md:backdrop-blur-none md:hover:bg-white/[0.06] md:hover:text-[#F5F5F5] ${active ? 'ador-lg-white text-[#16171a] md:bg-white/[0.08] md:text-[#F5F5F5]' : 'text-[#E4E4E4] md:text-[#AAAAAA]'}`}
+      style={busy ? { color: '#F4EEE2', animation: 'ador-pulse 1s ease-in-out infinite' } : undefined}
     >
       {children}
     </button>

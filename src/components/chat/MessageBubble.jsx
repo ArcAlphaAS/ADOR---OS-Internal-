@@ -7,6 +7,7 @@ import MessageActionSheet from './MessageActionSheet'
 import MessageContextMenu from './MessageContextMenu'
 import { isTouchLayout } from '../../lib/motion'
 import usePhone from '../../hooks/usePhone'
+import { createPortal } from 'react-dom'
 import { driveFileKind } from '../../lib/googleDrive'
 
 // One message in a conversation: its bubble, attachments (image, voice,
@@ -182,21 +183,53 @@ function ImageAttachment({ attachment, onOpen }) {
   )
 }
 
-// Several photos sent one after another by the same person show as one grid
-// (ChatThread merges them); each cell opens that photo in the lightbox.
+// Several photos sent one after another by the same person show as ONE fanned
+// stack of cards with a "N fotos" pill (ChatThread merges them). Tapping opens
+// a gallery of all of them; each photo there opens in the lightbox.
 function ImageAlbum({ attachments, onOpen }) {
-  const shown = attachments.slice(0, 4)
-  const extra = attachments.length - shown.length
-  const cols = shown.length === 2 ? 'grid-cols-2' : 'grid-cols-2'
+  const [open, setOpen] = useState(false)
+  const n = attachments.length
+  const pick = [attachments[0], attachments[Math.floor(n / 2)], attachments[n - 1]].filter((a, i, arr) => arr.indexOf(a) === i).slice(0, 3)
+  const src = (a) => a.thumbUrl || a.dataUrl
+  // back card centered and a little higher; front cards fan out to each side
+  const cards = pick.length === 1 ? [{ a: pick[0], x: 70, y: 8, r: 0, z: 1 }] : pick.length === 2 ? [{ a: pick[0], x: 22, y: 14, r: -6, z: 2 }, { a: pick[1], x: 108, y: 10, r: 6, z: 3 }] : [{ a: pick[1], x: 66, y: 2, r: 0, z: 1 }, { a: pick[0], x: 14, y: 16, r: -7, z: 2 }, { a: pick[2], x: 118, y: 16, r: 7, z: 3 }]
   return (
-    <div className={`grid w-[min(300px,100%)] gap-1 overflow-hidden rounded-xl ${cols}`}>
-      {shown.map((a, i) => (
-        <button key={i} type="button" onClick={() => onOpen(a)} className={`relative block overflow-hidden ${shown.length === 3 && i === 0 ? 'col-span-2' : ''}`} style={{ aspectRatio: shown.length === 3 && i === 0 ? '2 / 1' : '1 / 1' }}>
-          <img src={a.thumbUrl || a.dataUrl} alt={a.name || 'Imagen'} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.04]" />
-          {extra > 0 && i === shown.length - 1 && <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-[20px] font-semibold text-white">+{extra}</span>}
-        </button>
-      ))}
-    </div>
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={`Ver ${n} fotos`} className="relative block h-[214px] w-[270px] max-w-full text-left">
+        {cards.map(({ a, x, y, r, z }, i) => (
+          <img
+            key={i}
+            src={src(a)}
+            alt=""
+            loading="lazy"
+            className="absolute h-[184px] w-[138px] rounded-[18px] border-[3px] border-white object-cover shadow-[0_10px_28px_rgba(0,0,0,0.5)]"
+            style={{ left: x, top: y, zIndex: z, transform: `rotate(${r}deg)` }}
+          />
+        ))}
+        <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-white/50 bg-white/35 px-4 py-1.5 text-[14px] font-medium text-white shadow-[0_4px_14px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          {n} {n === 1 ? 'foto' : 'fotos'}
+        </span>
+      </button>
+      {open &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex flex-col bg-black/90 backdrop-blur-md" onClick={() => setOpen(false)}>
+            <div className="flex items-center justify-between px-5 pb-3 pt-[calc(env(safe-area-inset-top,0px)+16px)]" onClick={(e) => e.stopPropagation()}>
+              <p className="text-[15px] font-semibold text-[#F5F5F5]">{n} fotos</p>
+              <button type="button" onClick={() => setOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.1] text-[#F5F5F5]" aria-label="Cerrar">
+                <CloseIcon size={14} />
+              </button>
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-1.5 overflow-y-auto px-3 pb-8" onClick={(e) => e.stopPropagation()}>
+              {attachments.map((a, i) => (
+                <button key={i} type="button" onClick={() => onOpen(a)} className="aspect-square overflow-hidden rounded-xl">
+                  <img src={src(a)} alt={a.name || 'Foto'} loading="lazy" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   )
 }
 
@@ -853,11 +886,11 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           )}
           {showBubble && !emojiOnly && (
             <div
-              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-neu-raised' : 'ador-neu-inset'}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
+              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
               style={{
-                // Phones: soft "neumorphic" bubbles — yours rise out of the
-                // surface, what you receive is pressed into it (index.css
-                // .ador-neu-*). Computers keep the flat look below.
+                // Phones: "liquid glass" bubbles — a lit rim and a soft inner
+                // sheen (index.css .ador-lg-*), yours brighter, what you
+                // receive darker. Computers keep the flat look below.
                 ...(phone
                   ? {}
                   : {
