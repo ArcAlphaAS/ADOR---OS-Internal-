@@ -337,7 +337,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
   return (
     <div
-      className="flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
+      className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
       style={{
         backgroundImage:
           'radial-gradient(ellipse at 50% 30%, rgba(244,238,226,0.06) 0%, transparent 60%)',
@@ -358,7 +358,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         <Sidebar activeModule={activeModule} onNavigate={navigateTo} badges={{ chat: chatUnread, news: newsAttention.count }} canSee={access.canSee} />
 
         {/* pb on small screens leaves room for the bottom tab bar. */}
-        <main ref={mainRef} className="ador-main-fade min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto pt-16 overflow-x-hidden [scrollbar-gutter:stable] pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           {mountedIds.map((id) => {
             const visible = id === activeModule
             return (

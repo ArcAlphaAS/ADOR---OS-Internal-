@@ -358,8 +358,8 @@ export default function TopBar({
 
   return (
     <header
-      className="ador-topbar relative z-40 grid w-full flex-shrink-0 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5"
-      style={{ height: 64, backgroundColor: '#000000' }}
+      className="ador-topbar pointer-events-none absolute inset-x-0 top-0 z-40 grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-4 lg:grid-cols-3 lg:px-5 [&>*]:pointer-events-auto"
+      style={{ height: 64 }}
     >
       {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline
           (see Logo.jsx), so "OS" sits on the same line. It used to have
