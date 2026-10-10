@@ -43,27 +43,110 @@ export const LOST_REASONS = ['Presupuesto', 'Timing', 'Eligió otra opción', 'S
 // neither end state.
 export const isOpenClient = (c) => !c.lost && !c.completed
 
-// Service types are managed by administrators (settings/clientServices);
-// these are the defaults until they change them.
-export const DEFAULT_SERVICES = [
-  { id: 'intervencion', label: 'Intervención' },
-  { id: 'suscripcion', label: 'Suscripción mensual' },
+// Service types are managed by administrators (settings/clientServices); each
+// one has a MODALITY — how that kind of service is billed and how long it
+// lasts. These are the defaults until they change them.
+export const MODALITIES = [
+  { id: 'proyecto', label: 'Proyecto fijo', hint: 'Intervención con 2 pagos: 60 % y 40 %' },
+  { id: 'contrato', label: 'Contrato', hint: 'Periodo base y opciones de renovación, cobros periódicos' },
+  { id: 'suscripcion', label: 'Suscripción', hint: 'Un cobro que se repite, sin fecha de fin' },
+  { id: 'unico', label: 'Pago único', hint: 'Un solo cobro' },
 ]
-export const serviceLabel = (id, services = DEFAULT_SERVICES) =>
-  (services.find((s) => s.id === id) || DEFAULT_SERVICES.find((s) => s.id === id))?.label || (id ? id : 'Intervención')
+export const modalityLabel = (id) => MODALITIES.find((m) => m.id === id)?.label || 'Proyecto fijo'
+
+// How often a contract / subscription bills.
+export const BILLING_EVERY = [
+  { id: 'mes', months: 1, label: 'Mensual', per: 'mes' },
+  { id: 'trimestre', months: 3, label: 'Trimestral', per: 'trimestre' },
+  { id: 'anio', months: 12, label: 'Anual', per: 'año' },
+]
+export const everyMeta = (id) => BILLING_EVERY.find((e) => e.id === id) || BILLING_EVERY[2]
+
+export const DEFAULT_SERVICES = [
+  { id: 'intervencion', label: 'Intervención', modality: 'proyecto' },
+  { id: 'contrato', label: 'Contrato', modality: 'contrato' },
+  { id: 'suscripcion', label: 'Suscripción mensual', modality: 'suscripcion' },
+]
+const findService = (id, services) => (services || []).find((s) => s.id === id) || DEFAULT_SERVICES.find((s) => s.id === id)
+export const serviceLabel = (id, services = DEFAULT_SERVICES) => findService(id, services)?.label || (id ? id : 'Intervención')
+export const serviceModality = (id, services = DEFAULT_SERVICES) => findService(id, services)?.modality || 'proyecto'
+
+// ---- dates as 'YYYY-MM-DD' strings (same convention as pago1/pago2) ----
+const pad = (n) => String(n).padStart(2, '0')
+export const todayISO = () => {
+  const t = new Date()
+  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
+}
+// Adds whole months keeping the anchor day (31 → 28 → 31).
+export function addMonthsISO(iso, n, anchorDay) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const total = m - 1 + n
+  const ny = y + Math.floor(total / 12)
+  const nm = ((total % 12) + 12) % 12
+  const last = new Date(ny, nm + 1, 0).getDate()
+  return `${ny}-${pad(nm + 1)}-${pad(Math.min(anchorDay || d, last))}`
+}
+export function daysUntilISO(iso) {
+  if (!iso) return null
+  return Math.round((new Date(`${iso}T00:00:00`) - new Date(`${todayISO()}T00:00:00`)) / 86400000)
+}
+
+// ---- contracts: base term + renewal options ----
+// client.billing = { modality, amount, every, startDate, termMonths (contrato),
+//   options: [{ id, label, months, amount, status: 'pendiente'|'ejercida'|'no_renovada' }],
+//   nextDue, active }. Coverage ends (exclusive) at start + base term + the
+// months of every option that was exercised.
+export function coverageEnd(billing) {
+  if (!billing || billing.modality !== 'contrato' || !billing.startDate) return null
+  const extra = (billing.options || []).filter((o) => o.status === 'ejercida').reduce((sum, o) => sum + (Number(o.months) || 0), 0)
+  return addMonthsISO(billing.startDate, (Number(billing.termMonths) || 0) + extra)
+}
+// The amount a cobro of `date` should carry: the base amount during the base
+// term, then the amount of the renewal option that covers that date.
+export function amountAt(billing, date) {
+  const base = Number(billing?.amount) || 0
+  if (!billing || billing.modality !== 'contrato') return base
+  let end = addMonthsISO(billing.startDate, Number(billing.termMonths) || 0)
+  if (date < end) return base
+  for (const o of (billing.options || []).filter((x) => x.status === 'ejercida')) {
+    end = addMonthsISO(end, Number(o.months) || 0)
+    if (date < end) return Number(o.amount) || base
+  }
+  return base
+}
+export const RENEWAL_ALERT_DAYS = 90 // "un trimestre antes"
+// Where a contract stands: when coverage ends, how many days are left, the
+// next renewal option still open, and whether the renewal alert applies.
+export function contractStatus(client) {
+  const b = client?.billing
+  if (!b || b.modality !== 'contrato' || client.completed || client.lost) return null
+  const end = coverageEnd(b)
+  const days = daysUntilISO(end)
+  const nextOption = (b.options || []).find((o) => o.status === 'pendiente') || null
+  return { end, days, nextOption, alert: days !== null && days <= RENEWAL_ALERT_DAYS }
+}
 
 // Every payment of a client, current and from archived cycles, with a stable
 // key. Finanzas and the weekly summary read this so reopening a client for a
-// new service never makes past income disappear.
+// new service never makes past income disappear. Includes the periodic
+// `cobros` of contracts, subscriptions and one-off payments.
 export function allPayments(client) {
   const out = []
   for (const key of ['pago1', 'pago2']) {
     if (client?.[key]) out.push({ key, payment: client[key], archived: false })
   }
+  const cobroEntry = (c, prefix) => ({
+    key: `${prefix}c-${c.id}`,
+    label: c.label,
+    payment: { status: c.status, amount: c.amount, date: c.status === 'Recibido' ? c.receivedAt || c.date : c.date },
+    archived: Boolean(prefix),
+  })
+  for (const c of client?.cobros || []) out.push(cobroEntry(c, ''))
   ;(client?.serviceHistory || []).forEach((cycle, i) => {
     for (const key of ['pago1', 'pago2']) {
       if (cycle?.pagos?.[key]) out.push({ key: `h${i}-${key}`, baseKey: key, payment: cycle.pagos[key], archived: true })
     }
+    for (const c of cycle?.cobros || []) out.push(cobroEntry(c, `h${i}-`))
   })
   return out
 }
@@ -109,6 +192,8 @@ export const currencyPEN = new Intl.NumberFormat('es-PE', {
 // time since pago2 stays locked until pago1 is Recibido (see PagosTab.jsx).
 // Returns 0 for a client with nothing pending, never a negative or double count.
 export function pendingPaymentAmount(client) {
+  // Contracts / subscriptions / one-off payments bill through `cobros`.
+  if (client?.billing) return (client.cobros || []).filter((c) => c.status === 'Pendiente').reduce((sum, c) => sum + (Number(c.amount) || 0), 0)
   const monto = client?.montoAcordado || 0
   if (client?.pago1?.status !== 'Recibido') return Math.round((monto * PAGO1_PERCENT) / 100)
   if (client?.pago2?.status !== 'Recibido') return Math.round((monto * PAGO2_PERCENT) / 100)

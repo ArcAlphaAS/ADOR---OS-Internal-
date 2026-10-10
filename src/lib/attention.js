@@ -1,4 +1,4 @@
-import { currencyPEN, daysSince } from './clientStages'
+import { contractStatus, currencyPEN, daysSince } from './clientStages'
 import { computeWorkload, isOverdue, isPendingFor } from './workspace'
 
 // What needs a person's attention across the whole firm, ranked — the Inicio
@@ -21,6 +21,19 @@ export function buildAttention({ finance, clients, objetivos, tasks, users, uid 
       title: `${currencyPEN.format(p.amount)} por cobrar a ${p.clientName}`,
       detail: `Vencido hace ${days} ${days === 1 ? 'día' : 'días'} · ${p.label}`,
       target: ['clientes', { type: 'client', id: p.clientId }],
+    })
+  }
+
+  // Contracts whose coverage ends within a quarter (or already ended).
+  for (const c of clients) {
+    const st = contractStatus(c)
+    if (!st || !st.alert) continue
+    items.push({
+      id: `contract-${c.id}`,
+      level: st.days <= 30 ? 'urgent' : 'warn',
+      title: st.days < 0 ? `El contrato de ${c.name} venció hace ${-st.days} ${-st.days === 1 ? 'día' : 'días'}` : `El contrato de ${c.name} vence en ${st.days} ${st.days === 1 ? 'día' : 'días'}`,
+      detail: st.nextOption ? `${st.nextOption.label} pendiente de ejercer` : 'Sin opciones de renovación abiertas',
+      target: ['clientes', { type: 'client', id: c.id }],
     })
   }
 

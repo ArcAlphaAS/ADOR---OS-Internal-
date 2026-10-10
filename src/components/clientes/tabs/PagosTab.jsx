@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { updateClient, registerPayment } from '../../../lib/firestore'
-import { PAGO1_PERCENT, PAGO2_PERCENT, currencyPEN } from '../../../lib/clientStages'
+import { updateClient, registerPayment, markCobroReceived } from '../../../lib/firestore'
+import { PAGO1_PERCENT, PAGO2_PERCENT, currencyPEN, everyMeta, modalityLabel, todayISO } from '../../../lib/clientStages'
 import { CheckCircleIcon } from '../../icons'
 import { useToast } from '../../../hooks/useToast'
 
@@ -59,7 +59,78 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
   )
 }
 
+const fmtDate = (iso) => (iso ? new Date(`${iso}T00:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
+
+// Contracts, subscriptions and one-off payments bill through generated
+// cobros (one per period) instead of the fixed 60/40 payments.
+function CobrosPanel({ client, actorName }) {
+  const showToast = useToast()
+  const b = client.billing
+  const cobros = [...(client.cobros || [])].sort((a, c) => c.date.localeCompare(a.date))
+  const received = cobros.filter((c) => c.status === 'Recibido').reduce((sum, c) => sum + (Number(c.amount) || 0), 0)
+  const pending = cobros.filter((c) => c.status === 'Pendiente').reduce((sum, c) => sum + (Number(c.amount) || 0), 0)
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-white/[0.08] px-4 py-3.5">
+        <p className="text-[13px] font-medium text-[#F5F5F5]">{modalityLabel(b.modality)}</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[#8A8A8A]">
+          {currencyPEN.format(b.amount || 0)}{b.every ? ` ${everyMeta(b.every).label.toLowerCase()}` : ''} · desde {fmtDate(b.startDate)}
+          {b.active && b.nextDue ? ` · próximo cobro ${fmtDate(b.nextDue)}` : ''}
+        </p>
+      </div>
+      {cobros.length === 0 ? (
+        <p className="py-6 text-center text-[13px] text-[#767676]">Todavía no hay cobros: se generan solos cuando llega su fecha.</p>
+      ) : (
+        <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/[0.08]">
+          {cobros.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-[13px] text-[#F5F5F5]">{c.label}</p>
+                <p className="text-[11.5px] text-[#767676]">
+                  {c.status === 'Recibido' ? `Recibido el ${fmtDate(c.receivedAt || c.date)}` : `Vence ${fmtDate(c.date)}`}
+                </p>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-3">
+                <span className="text-[13px] font-medium text-[#F5F5F5]">{currencyPEN.format(c.amount || 0)}</span>
+                {c.status === 'Recibido' ? (
+                  <CheckCircleIcon size={16} style={{ color: '#4CAF50' }} />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await markCobroReceived(client, c.id, todayISO(), actorName)
+                      showToast(`${c.label} registrado como recibido.`)
+                    }}
+                    className="ador-btn-primary rounded-full px-3.5 py-1 text-[12px] font-medium"
+                  >
+                    Marcar recibido
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+          <p className="text-[11.5px] text-[#888888]">Total recibido</p>
+          <p className="mt-0.5 text-[15px] font-semibold text-[#F5F5F5]">{currencyPEN.format(received)}</p>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+          <p className="text-[11.5px] text-[#888888]">Por cobrar</p>
+          <p className="mt-0.5 text-[15px] font-semibold" style={{ color: pending > 0 ? '#C9A227' : '#F5F5F5' }}>{currencyPEN.format(pending)}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PagosTab({ client, actorName }) {
+  if (client.billing) return <CobrosPanel client={client} actorName={actorName} />
+  return <FixedPagos client={client} actorName={actorName} />
+}
+
+function FixedPagos({ client, actorName }) {
   const [total, setTotal] = useState(client.montoAcordado || '')
   const pago1Received = client.pago1?.status === 'Recibido'
   const pago2Received = client.pago2?.status === 'Recibido'

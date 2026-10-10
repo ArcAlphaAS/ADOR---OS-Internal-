@@ -312,6 +312,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   const [deleting, setDeleting] = useState(null)
   const [completing, setCompleting] = useState(null)
   const [reopening, setReopening] = useState(null)
+  const [configuring, setConfiguring] = useState(null)
   const services = useClientServices()
   const openMenu = (client, x, y) => setMenu({ client, x, y })
 
@@ -521,10 +522,12 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           onDelete={setDeleting}
           onComplete={setCompleting}
           onNewService={setReopening}
+          onConfigure={setConfiguring}
         />
       )}
       {completing && <CompleteClientModal client={completing} services={services} actorName={actorName} onClose={() => setCompleting(null)} />}
       {reopening && <NewServiceModal client={reopening} services={services} actorName={actorName} onClose={() => setReopening(null)} />}
+      {configuring && <NewServiceModal mode="setup" client={configuring} services={services} actorName={actorName} onClose={() => setConfiguring(null)} />}
       {deleting && (
         <DeleteClientModal
           client={deleting}
@@ -539,6 +542,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         services={services}
         onComplete={setCompleting}
         onNewService={setReopening}
+        onConfigure={setConfiguring}
         originRect={originRect}
         onClose={() => setSelectedClientId(null)}
       />

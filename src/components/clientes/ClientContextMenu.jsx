@@ -27,7 +27,7 @@ function Item({ label, onClick, danger, hint }) {
 
 const Divider = () => <div className="my-1 h-px bg-white/[0.08]" />
 
-export default function ClientContextMenu({ client, x, y, canDelete, actorName, onClose, onOpen, onDelete, onComplete, onNewService }) {
+export default function ClientContextMenu({ client, x, y, canDelete, actorName, onClose, onOpen, onDelete, onComplete, onNewService, onConfigure }) {
   const showToast = useToast()
   const ref = useRef(null)
   const [pos, setPos] = useState({ left: x, top: y })
@@ -111,6 +111,7 @@ export default function ClientContextMenu({ client, x, y, canDelete, actorName, 
           {isActiveSP && (
             <>
               <Divider />
+              <Item label="Servicio y cobro…" onClick={() => { onClose(); onConfigure(client) }} />
               <Item label="Marcar como completado…" onClick={() => { onClose(); onComplete(client) }} />
             </>
           )}

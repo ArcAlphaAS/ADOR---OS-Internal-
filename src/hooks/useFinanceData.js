@@ -122,14 +122,14 @@ export function useFinanceData() {
   // decision input (who to follow up with), unlike a static promo card.
   const pendingPayments = []
   for (const client of clients) {
-    for (const { key, baseKey, payment } of allPayments(client)) {
+    for (const { key, baseKey, label: cobroLabel, payment } of allPayments(client)) {
       if (payment?.status === 'Pendiente' && payment.amount) {
         pendingPayments.push({
           clientId: client.id,
           clientName: client.name,
           amount: payment.amount,
           date: payment.date || null,
-          label: (baseKey || key) === 'pago1' ? 'Pago 1 (60%)' : 'Pago 2 (40%)',
+          label: cobroLabel || ((baseKey || key) === 'pago1' ? 'Pago 1 (60%)' : 'Pago 2 (40%)'),
         })
       }
     }

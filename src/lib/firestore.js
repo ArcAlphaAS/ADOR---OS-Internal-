@@ -29,6 +29,7 @@ import {
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange, advanceByRecurrence, recurrenceMeta, layerWeekSpan, LAYERS } from './workspace'
 import { advanceRecurringDate } from './finance'
+import { addMonthsISO, amountAt, coverageEnd, todayISO, everyMeta } from './clientStages'
 import { haptic } from './haptics'
 import { describeKnowledgeChange } from './knowledge'
 
@@ -786,7 +787,7 @@ export async function markClientCompleted(client, note, actorName) {
 // Nuevo servicio: closes the finished cycle into `serviceHistory` (its
 // payments are archived there, still counted by Finanzas via allPayments())
 // and puts the client back in the pipeline at `stage` with fresh payments.
-export async function startNewService(client, { serviceType, amount, stage }, actorName) {
+export async function startNewService(client, { serviceType, amount, stage, billing }, actorName) {
   const cycle = {
     id: Math.random().toString(36).slice(2, 10),
     type: client.serviceType || 'intervencion',
@@ -794,6 +795,8 @@ export async function startNewService(client, { serviceType, amount, stage }, ac
     completedAt: client.completedAt?.toMillis?.() || Date.now(),
     note: client.completedNote || '',
     pagos: { pago1: client.pago1 || null, pago2: client.pago2 || null },
+    cobros: client.cobros || [],
+    billing: client.billing || null,
   }
   await updateClient(client.id, {
     serviceHistory: [...(client.serviceHistory || []), cycle],
@@ -802,11 +805,13 @@ export async function startNewService(client, { serviceType, amount, stage }, ac
     completedNote: null,
     lost: false,
     serviceType,
-    montoAcordado: amount || null,
+    montoAcordado: billing ? billing.amount || null : amount || null,
     stage,
     stageEnteredAt: serverTimestamp(),
     pago1: { status: 'Pendiente' },
     pago2: { status: 'Pendiente' },
+    cobros: [],
+    billing: billing ? { ...billing, nextDue: billing.startDate, active: true } : null,
     templateAppliedAt: null,
   })
   await addHistoryEvent(client.id, {
@@ -814,8 +819,91 @@ export async function startNewService(client, { serviceType, amount, stage }, ac
     description: `Nuevo servicio abierto por ${actorName} — ${serviceType}`,
     meta: { from: client.stage, to: stage },
   })
-  if (stage === 'intervencion_activa') applyInterventionTemplate(client.id, actorName).catch(() => {})
+  // The Intervención template belongs to fixed projects only.
+  if (stage === 'intervencion_activa' && !billing) applyInterventionTemplate(client.id, actorName).catch(() => {})
+  if (billing) materializeClientCobros(client.id).catch(() => {})
 }
+
+// Sets (or changes) the service type and billing of an active client: a
+// contract, a subscription or a one-off payment. Fixed projects pass
+// `billing: null` and keep the 60/40 payments.
+export async function configureClientService(client, { serviceType, billing }, actorName) {
+  await updateClient(client.id, {
+    serviceType,
+    montoAcordado: billing ? billing.amount || null : client.montoAcordado || null,
+    billing: billing ? { ...billing, nextDue: billing.nextDue || billing.startDate, active: true } : null,
+  })
+  await addHistoryEvent(client.id, {
+    type: 'service_config',
+    description: `Servicio y cobro definidos por ${actorName} — ${serviceType}${billing ? ` · ${billing.modality}` : ''}`,
+  })
+  if (billing) materializeClientCobros(client.id).catch(() => {})
+}
+
+// Generates the cobros (charges) whose date has arrived for a contract,
+// subscription or one-off payment. A transaction per client re-reads the
+// cursor (`billing.nextDue`), so two devices can't create the same one.
+// A contract stops at the end of its coverage (base term + exercised options).
+export async function materializeClientCobros(clientId) {
+  if (!db) return 0
+  const ref = doc(db, COLLECTIONS.clients, clientId)
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) return 0
+    const c = snap.data()
+    const b = c.billing
+    if (!b || !b.active || !b.nextDue || c.completed || c.lost) return 0
+    const today = todayISO()
+    const end = b.modality === 'contrato' ? coverageEnd(b) : null
+    const step = everyMeta(b.every).months
+    const anchor = Number((b.startDate || b.nextDue).slice(8, 10))
+    const existing = c.cobros || []
+    const add = []
+    let next = b.nextDue
+    while (next && next <= today && (!end || next < end) && add.length < 24) {
+      const n = existing.length + add.length + 1
+      add.push({
+        id: Math.random().toString(36).slice(2, 10),
+        date: next,
+        amount: amountAt(b, next),
+        status: 'Pendiente',
+        label: b.modality === 'unico' ? 'Pago único' : b.modality === 'suscripcion' ? `Suscripción ${n}` : `Cobro ${everyMeta(b.every).label.toLowerCase()} ${n}`,
+      })
+      next = b.modality === 'unico' ? null : addMonthsISO(next, step, anchor)
+    }
+    if (!add.length) return 0
+    tx.update(ref, { cobros: [...existing, ...add], 'billing.nextDue': next, 'billing.active': next !== null })
+    return add.length
+  })
+}
+
+export async function markCobroReceived(client, cobroId, date, actorName) {
+  const cobros = (client.cobros || []).map((c) => (c.id === cobroId ? { ...c, status: 'Recibido', receivedAt: date || todayISO() } : c))
+  await updateClient(client.id, { cobros })
+  const c = cobros.find((x) => x.id === cobroId)
+  await addHistoryEvent(client.id, {
+    type: 'payment',
+    description: `${c?.label || 'Cobro'} recibido — registrado por ${actorName}`,
+  })
+}
+
+// Renewal options of a contract: the client decides each one. Exercising it
+// extends the coverage (and so the cobros that will be generated).
+async function setContractOption(client, optionId, status, actorName) {
+  const options = (client.billing?.options || []).map((o) => (o.id === optionId ? { ...o, status } : o))
+  await updateClient(client.id, { 'billing.options': options })
+  const o = options.find((x) => x.id === optionId)
+  await addHistoryEvent(client.id, {
+    type: 'contract',
+    description: `${o?.label || 'Opción'} ${status === 'ejercida' ? 'ejercida' : 'no renovada'} — registrado por ${actorName}`,
+  })
+  if (status === 'ejercida') {
+    // Coverage grew: the cursor may have been waiting at the old end.
+    setTimeout(() => materializeClientCobros(client.id).catch(() => {}), 600)
+  }
+}
+export const exerciseContractOption = (client, optionId, actorName) => setContractOption(client, optionId, 'ejercida', actorName)
+export const declineContractOption = (client, optionId, actorName) => setContractOption(client, optionId, 'no_renovada', actorName)
 
 // settings/clientServices: { types: [{ id, label }] } — edited by admins.
 export function subscribeClientServices(onData) {

@@ -9,7 +9,9 @@ import PagosTab from './tabs/PagosTab'
 import DocumentosTab from './tabs/DocumentosTab'
 import HistorialTab from './tabs/HistorialTab'
 import { SHEET, swipeToClose } from '../../lib/motion'
-import { serviceLabel } from '../../lib/clientStages'
+import { contractStatus, currencyPEN, everyMeta, modalityLabel, serviceLabel, serviceModality } from '../../lib/clientStages'
+import { declineContractOption, exerciseContractOption } from '../../lib/firestore'
+import { useToast } from '../../hooks/useToast'
 
 const TABS = [
   { id: 'general', label: 'General' },
@@ -19,12 +21,68 @@ const TABS = [
 ]
 
 // Completado / servicios: the closing state of a client whose work is done,
-// plus the cycles it has already gone through. "Nuevo servicio" reopens it.
-function ServiceBar({ client, services, onComplete, onNewService }) {
+// the current service and its contract terms (renewal options), plus the
+// cycles it has already gone through. "Nuevo servicio" reopens it.
+const fmtDay = (iso) => (iso ? new Date(`${iso}T00:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
+
+function ContractTerms({ client, actorName }) {
+  const showToast = useToast()
+  const st = contractStatus(client)
+  if (!st) return null
+  const b = client.billing
+  const act = (fn, msg) => async (o) => {
+    try {
+      await fn(client, o.id, actorName)
+      showToast(msg(o))
+    } catch (e) {
+      showToast(`No se pudo guardar: ${e.message}`)
+    }
+  }
+  const exercise = act(exerciseContractOption, (o) => `${o.label} ejercida.`)
+  const decline = act(declineContractOption, (o) => `${o.label} marcada como no renovada.`)
+  return (
+    <div className="rounded-xl border border-white/[0.08] px-4 py-3">
+      <p className="text-[12px] text-[#8A8A8A]">
+        {currencyPEN.format(b.amount || 0)} {everyMeta(b.every).label.toLowerCase()} · cubierto hasta{' '}
+        <span className="text-[#C8C8C8]">{fmtDay(st.end)}</span>
+        {st.days !== null && (
+          <span style={{ color: st.alert ? (st.days <= 30 ? '#EF5350' : '#C9A227') : '#767676' }}>
+            {' '}· {st.days < 0 ? `venció hace ${-st.days} días` : `quedan ${st.days} días`}
+          </span>
+        )}
+      </p>
+      {(b.options || []).length > 0 && (
+        <ul className="mt-2.5 space-y-1.5">
+          {b.options.map((o) => (
+            <li key={o.id} className="flex items-center justify-between gap-3 text-[12px]">
+              <span className="min-w-0 truncate text-[#C8C8C8]">
+                {o.label} <span className="text-[#767676]">· {o.months} meses · {currencyPEN.format(o.amount || 0)}</span>
+              </span>
+              {o.status === 'pendiente' ? (
+                <span className="flex flex-shrink-0 items-center gap-2">
+                  <button type="button" onClick={() => exercise(o)} className="rounded-full border border-white/[0.16] px-2.5 py-0.5 text-[11px] font-medium text-[#F5F5F5] hover:bg-white/10">Ejercer</button>
+                  <button type="button" onClick={() => decline(o)} className="text-[11px] text-[#767676] hover:text-[#F5F5F5]">No renovar</button>
+                </span>
+              ) : (
+                <span className="flex-shrink-0 text-[11px]" style={{ color: o.status === 'ejercida' ? '#4CAF50' : '#767676' }}>
+                  {o.status === 'ejercida' ? 'Ejercida' : 'No renovada'}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function ServiceBar({ client, services, actorName, onComplete, onNewService, onConfigure }) {
   const past = client.serviceHistory || []
   const date = client.completedAt?.toDate?.()
   const fmt = (ms) => (ms ? new Date(ms).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
-  if (!client.completed && client.stage !== 'intervencion_activa' && past.length === 0) return null
+  const activeSP = client.stage === 'intervencion_activa' && !client.completed
+  if (!client.completed && !activeSP && past.length === 0) return null
+  const modality = client.billing ? client.billing.modality : serviceModality(client.serviceType, services)
   return (
     <div className="mx-7 mt-4 space-y-2">
       {client.completed ? (
@@ -40,13 +98,23 @@ function ServiceBar({ client, services, onComplete, onNewService }) {
           </button>
         </div>
       ) : (
-        client.stage === 'intervencion_activa' && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] px-4 py-2.5">
-            <span className="text-[12px] text-[#8A8A8A]">Servicio actual: <span className="text-[#C8C8C8]">{serviceLabel(client.serviceType, services)}</span></span>
-            <button type="button" onClick={() => onComplete(client)} className="text-[12px] font-medium text-[#C8C8C8] transition-colors hover:text-[#F5F5F5]">
-              Marcar como completado
-            </button>
-          </div>
+        activeSP && (
+          <>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] px-4 py-2.5">
+              <span className="min-w-0 truncate text-[12px] text-[#8A8A8A]">
+                Servicio: <span className="text-[#C8C8C8]">{serviceLabel(client.serviceType, services)}</span>{serviceLabel(client.serviceType, services) !== modalityLabel(modality) ? ` · ${modalityLabel(modality)}` : ''}
+              </span>
+              <span className="flex flex-shrink-0 items-center gap-3">
+                <button type="button" onClick={() => onConfigure(client)} className="text-[12px] font-medium text-[#C8C8C8] transition-colors hover:text-[#F5F5F5]">
+                  Servicio y cobro
+                </button>
+                <button type="button" onClick={() => onComplete(client)} className="text-[12px] font-medium text-[#C8C8C8] transition-colors hover:text-[#F5F5F5]">
+                  Completar
+                </button>
+              </span>
+            </div>
+            <ContractTerms client={client} actorName={actorName} />
+          </>
         )
       )}
       {past.length > 0 && (
@@ -137,7 +205,7 @@ function originTransform(originRect) {
   }
 }
 
-export default function ClientDetailPanel({ client, actorName, originRect, onClose, services = [], onComplete, onNewService }) {
+export default function ClientDetailPanel({ client, actorName, originRect, onClose, services = [], onComplete, onNewService, onConfigure }) {
   const [activeTab, setActiveTab] = useState('general')
 
   if (!client) return null
@@ -196,7 +264,7 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
         </div>
 
         {(type !== 'SP' || client.lost) && <LostControl client={client} actorName={actorName} />}
-        <ServiceBar client={client} services={services} onComplete={onComplete} onNewService={onNewService} />
+        <ServiceBar client={client} services={services} actorName={actorName} onComplete={onComplete} onNewService={onNewService} onConfigure={onConfigure} />
 
         <div className="mt-5 flex gap-1 px-7">
           {TABS.map((tab) => (
