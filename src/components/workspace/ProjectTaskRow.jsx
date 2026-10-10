@@ -80,8 +80,8 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
               onReschedule(task)
             }}
             title="Mover a hoy"
-            className="flex-shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
-            style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+            className="flex-shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors duration-150 hover:bg-white/10"
+            style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
           >
             → Hoy
           </button>

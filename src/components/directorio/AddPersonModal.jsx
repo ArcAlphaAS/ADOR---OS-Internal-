@@ -136,7 +136,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
 
           <div className="mt-5 flex items-center gap-4">
             <Avatar photoURL={shownPhoto} displayName={name} size={56} />
-            <label className="cursor-pointer text-[13px] font-medium text-[#1E5FAD] hover:underline">
+            <label className="cursor-pointer text-[13px] font-medium text-[#F4EEE2] hover:underline">
               {photoDataUrl ? 'Cambiar foto' : accountPhoto ? 'Usar otra foto' : 'Subir foto'}
               <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
             </label>
@@ -220,7 +220,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
             </div>
 
             <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[#F5F5F5]">
-              <input type="checkbox" checked={isDirectivo} onChange={(e) => setIsDirectivo(e.target.checked)} className="h-3.5 w-3.5 accent-[#1E5FAD]" />
+              <input type="checkbox" checked={isDirectivo} onChange={(e) => setIsDirectivo(e.target.checked)} className="h-3.5 w-3.5 accent-[#F4EEE2]" />
               Forma parte de Dirección
             </label>
 

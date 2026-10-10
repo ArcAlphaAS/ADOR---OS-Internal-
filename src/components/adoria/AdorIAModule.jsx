@@ -159,8 +159,8 @@ export default function AdorIAModule({ user }) {
     >
       <div className="flex items-center gap-2.5">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-full text-[#1E5FAD]"
-          style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[#F4EEE2]"
+          style={{ backgroundColor: 'rgba(244,238,226,0.12)', border: '1px solid rgba(244,238,226,0.25)' }}
         >
           <SparkleIcon size={17} />
         </div>

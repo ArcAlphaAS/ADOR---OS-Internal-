@@ -148,7 +148,7 @@ export default function WelcomeScreen({ name = 'Ángel', isReturning = false, on
         className="mt-8"
       >
         <div
-          className="h-1 w-1 rounded-full bg-[#1E5FAD]"
+          className="h-1 w-1 rounded-full bg-[#F4EEE2]"
           style={{ animation: 'ador-pulse 2s ease-in-out infinite' }}
         />
       </motion.div>

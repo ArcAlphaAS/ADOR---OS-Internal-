@@ -111,7 +111,7 @@ export default function NewClientModal({ users, actorName, onClose, onCreated })
             <div
               key={s}
               className="h-1 flex-1 rounded-full"
-              style={{ background: s <= step ? '#1E5FAD' : 'rgba(255,255,255,0.08)' }}
+              style={{ background: s <= step ? '#F4EEE2' : 'rgba(255,255,255,0.08)' }}
             />
           ))}
         </div>

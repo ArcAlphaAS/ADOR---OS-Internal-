@@ -14,7 +14,7 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
           initial={{ width: '0%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="h-full rounded-full bg-[#1E5FAD]"
+          className="h-full rounded-full bg-[#F4EEE2]"
         />
       </div>
     </div>
@@ -32,7 +32,7 @@ export default function InterventionsBlock({ interventions = [] }) {
           Intervenciones Activas
         </span>
         <span
-          className="h-1.5 w-1.5 rounded-full bg-[#1E5FAD]"
+          className="h-1.5 w-1.5 rounded-full bg-[#F4EEE2]"
           style={{ animation: 'ador-pulse 2s ease-in-out infinite' }}
         />
       </div>

@@ -134,7 +134,7 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
                   fontSize: 10,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  color: type === 'SP' ? '#1E5FAD' : '#888888',
+                  color: type === 'SP' ? '#F4EEE2' : '#888888',
                 }}
               >
                 {type}

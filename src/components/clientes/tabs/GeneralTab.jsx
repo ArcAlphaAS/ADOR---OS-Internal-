@@ -46,7 +46,7 @@ export default function GeneralTab({ client }) {
               href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
               target="_blank"
               rel="noreferrer"
-              className="block truncate text-[13px] text-[#1E5FAD] hover:underline"
+              className="block truncate text-[13px] text-[#F4EEE2] hover:underline"
             >
               {client.website}
             </a>
@@ -63,7 +63,7 @@ export default function GeneralTab({ client }) {
               href={client.linkedin.startsWith('http') ? client.linkedin : `https://${client.linkedin}`}
               target="_blank"
               rel="noreferrer"
-              className="block truncate text-[13px] text-[#1E5FAD] hover:underline"
+              className="block truncate text-[13px] text-[#F4EEE2] hover:underline"
             >
               Ver perfil
             </a>
@@ -100,7 +100,7 @@ export default function GeneralTab({ client }) {
             <button
               type="button"
               onClick={() => navigator.clipboard?.writeText(client.contactEmail)}
-              className="block truncate text-left text-[13px] text-[#F5F5F5] hover:text-[#1E5FAD]"
+              className="block truncate text-left text-[13px] text-[#F5F5F5] hover:text-[#F4EEE2]"
               title="Click para copiar"
             >
               {client.contactEmail}
@@ -118,7 +118,7 @@ export default function GeneralTab({ client }) {
               href={`https://wa.me/${client.contactWhatsapp.replace(/\D/g, '')}`}
               target="_blank"
               rel="noreferrer"
-              className="block truncate text-[13px] text-[#1E5FAD] hover:underline"
+              className="block truncate text-[13px] text-[#F4EEE2] hover:underline"
             >
               {client.contactWhatsapp}
             </a>

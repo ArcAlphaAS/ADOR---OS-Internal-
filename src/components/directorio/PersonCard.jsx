@@ -14,7 +14,7 @@ export default function PersonCard({ person, selected, onClick }) {
       type="button"
       onClick={onClick}
       className="ador-glass ador-grain flex flex-col items-start gap-3 rounded-2xl p-5 text-left transition-colors duration-150 hover:bg-white/[0.04]"
-      style={selected ? { boxShadow: '0 0 0 1.5px #1E5FAD' } : undefined}
+      style={selected ? { boxShadow: '0 0 0 1.5px #F4EEE2' } : undefined}
     >
       <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={56} />
       <div className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: meta.color }}>

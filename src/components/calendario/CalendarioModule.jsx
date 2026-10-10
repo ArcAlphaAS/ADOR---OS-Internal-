@@ -122,8 +122,8 @@ function ConnectCTA({ onConnect, headline, sublabel }) {
   return (
     <div className="ador-glass ador-grain flex flex-col items-center gap-5 rounded-[24px] px-8 py-20 text-center">
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-full text-[#1E5FAD]"
-        style={{ backgroundColor: 'rgba(30,95,173,0.1)', border: '1px solid rgba(30,95,173,0.25)', animation: 'ador-pulse 3s ease-in-out infinite' }}
+        className="flex h-14 w-14 items-center justify-center rounded-full text-[#F4EEE2]"
+        style={{ backgroundColor: 'rgba(244,238,226,0.1)', border: '1px solid rgba(244,238,226,0.25)', animation: 'ador-pulse 3s ease-in-out infinite' }}
       >
         <CalendarIcon size={24} />
       </div>
@@ -289,13 +289,13 @@ export default function CalendarioModule({ user }) {
                   type="button"
                   onClick={() => setView(v.id)}
                   className="relative rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-                  style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
+                  style={{ color: view === v.id ? '#0A0A0A' : '#888888' }}
                 >
                   {view === v.id && (
                     <motion.div
                       layoutId="calendario-view-indicator"
                       className="absolute inset-0 rounded-full"
-                      style={{ background: '#1E5FAD' }}
+                      style={{ background: '#F5F5F5' }}
                       transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                     />
                   )}

@@ -50,7 +50,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
               onClick={() => setSubcategory(cat.subcategories[0].id)}
               className="flex-shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-150"
               style={{
-                background: activeCategoryId === cat.id ? '#1E5FAD' : 'rgba(255,255,255,0.04)',
+                background: activeCategoryId === cat.id ? 'rgba(244,238,226,0.22)' : 'rgba(255,255,255,0.04)',
                 color: activeCategoryId === cat.id ? '#F5F5F5' : '#888888',
               }}
             >
@@ -66,8 +66,8 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
               onClick={() => setSubcategory(sub.id)}
               className="flex-shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-[11.5px] font-medium transition-colors duration-150"
               style={{
-                borderColor: subcategory === sub.id ? '#5B9BD9' : 'rgba(255,255,255,0.1)',
-                color: subcategory === sub.id ? '#5B9BD9' : '#888888',
+                borderColor: subcategory === sub.id ? '#F4EEE2' : 'rgba(255,255,255,0.1)',
+                color: subcategory === sub.id ? '#F4EEE2' : '#888888',
               }}
             >
               {sub.label}

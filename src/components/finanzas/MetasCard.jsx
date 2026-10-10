@@ -51,7 +51,7 @@ export default function MetasCard({ quarterKey, quarterlyTarget, recaudadoTrimes
   const recaudado = isQuarter ? recaudadoTrimestre : recaudadoAnual
   const label = isQuarter ? `Trimestre — ${quarterLabel(quarterKey)}` : `Año ${currentYear}`
   const pct = target ? Math.min(100, Math.round((recaudado / target) * 100)) : 0
-  const color = pct >= 100 ? '#4CAF50' : pct >= 60 ? '#1E5FAD' : '#B8860B'
+  const color = pct >= 100 ? '#4CAF50' : pct >= 60 ? '#F4EEE2' : '#B8860B'
 
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)

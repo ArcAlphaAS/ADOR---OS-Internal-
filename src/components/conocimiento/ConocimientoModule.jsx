@@ -171,7 +171,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
           type="button"
           onClick={onSelectAll}
           className="flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-150"
-          style={{ color: filter.type === 'all' ? '#5B9BD9' : '#CCCCCC' }}
+          style={{ color: filter.type === 'all' ? '#F4EEE2' : '#CCCCCC' }}
         >
           <span className="flex items-center gap-2">
             <BookIcon size={14} />
@@ -185,7 +185,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
           const isCollapsed = collapsed.has(cat.id)
           return (
             <div key={cat.id}>
-              <div className="flex items-center rounded-lg transition-colors duration-150" style={{ color: catActive ? '#5B9BD9' : '#CCCCCC' }}>
+              <div className="flex items-center rounded-lg transition-colors duration-150" style={{ color: catActive ? '#F4EEE2' : '#CCCCCC' }}>
                 <button
                   type="button"
                   onClick={() => toggleCollapsed(cat.id)}
@@ -209,7 +209,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                         type="button"
                         onClick={() => onSelectSubcategory(sub.id)}
                         className="relative flex items-center justify-between gap-2 rounded-lg py-1.5 pl-4 pr-2 text-left text-[12px] transition-colors duration-150"
-                        style={{ color: subActive ? '#5B9BD9' : '#888888', background: subActive ? 'rgba(30,95,173,0.1)' : 'transparent' }}
+                        style={{ color: subActive ? '#F4EEE2' : '#888888', background: subActive ? 'rgba(244,238,226,0.1)' : 'transparent' }}
                       >
                         <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-white/[0.12]" />
                         <span className="flex min-w-0 items-center gap-1.5">
@@ -351,7 +351,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
                 <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
                 {docPreview(doc) && <p className="truncate text-[11.5px] text-[#666666]">{docPreview(doc)}</p>}
               </div>
-              <span className="truncate text-[12px] text-[#5B9BD9]">
+              <span className="truncate text-[12px] text-[#F4EEE2]">
                 {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
               </span>
               <span className="text-[12px] text-[#888888]">{timeAgo(doc.updatedAt)}</span>
@@ -371,7 +371,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
         </div>
       </div>
       {!showAll && total > docs.length && (
-        <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#5B9BD9] hover:text-[#7BAEE0]">
+        <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#F4EEE2] hover:text-[#7BAEE0]">
           Ver todos los documentos →
         </button>
       )}

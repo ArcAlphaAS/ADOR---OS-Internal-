@@ -277,7 +277,7 @@ function NewTeamCard({ people, onCreate }) {
       <div className="max-h-[140px] overflow-y-auto">
         {people.map((p) => (
           <label key={p.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1.5 text-[12px] text-[#F5F5F5] hover:bg-white/[0.04]">
-            <input type="checkbox" checked={memberIds.includes(p.id)} onChange={() => toggle(p.id)} className="h-3.5 w-3.5 accent-[#1E5FAD]" />
+            <input type="checkbox" checked={memberIds.includes(p.id)} onChange={() => toggle(p.id)} className="h-3.5 w-3.5 accent-[#F4EEE2]" />
             {p.name}
           </label>
         ))}
@@ -507,13 +507,13 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
               type="button"
               onClick={() => setTab(t.id)}
               className="relative rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150"
-              style={{ color: tab === t.id ? '#F5F5F5' : '#888888' }}
+              style={{ color: tab === t.id ? '#0A0A0A' : '#888888' }}
             >
               {tab === t.id && (
                 <motion.div
                   layoutId="directorio-tab-indicator"
                   className="absolute inset-0 rounded-full"
-                  style={{ background: '#1E5FAD' }}
+                  style={{ background: '#F5F5F5' }}
                   transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                 />
               )}

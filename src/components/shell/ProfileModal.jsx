@@ -103,7 +103,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
         <div className="mt-5 flex items-center gap-4">
           <Avatar photoURL={photoDataUrl} displayName={name} email={user?.email} size={56} />
           <div>
-            <label className="cursor-pointer text-[13px] font-medium text-[#1E5FAD] hover:underline">
+            <label className="cursor-pointer text-[13px] font-medium text-[#F4EEE2] hover:underline">
               {photoDataUrl ? 'Cambiar foto' : 'Subir foto'}
               <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
             </label>

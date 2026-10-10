@@ -88,7 +88,7 @@ export default function MovimientosTable({ movements }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         title={`Comprobante: ${m.receipt.name}`}
-                        className="ml-2 text-[11px] text-[#6FA3E0] hover:underline"
+                        className="ml-2 text-[11px] text-[#F4EEE2] hover:underline"
                       >
                         comprobante ↗
                       </a>

@@ -65,7 +65,7 @@ const TABS = [
 function StatCard({ Icon, value, label }) {
   return (
     <div className="ador-glass ador-grain flex flex-1 items-center gap-3 rounded-2xl px-4 py-3.5">
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">
         <Icon size={16} />
       </span>
       <div>
@@ -167,7 +167,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Título — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
@@ -236,7 +236,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
           <div>
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[13px] font-semibold text-[#F5F5F5]">Mis proyectos</span>
-              <button type="button" onClick={onToggleOnlyMine} className="text-[12px] font-medium text-[#1E5FAD] hover:underline">
+              <button type="button" onClick={onToggleOnlyMine} className="text-[12px] font-medium text-[#F4EEE2] hover:underline">
                 Ver todos →
               </button>
             </div>
@@ -256,7 +256,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
                 type="button"
                 onClick={() => setTab(t.id)}
                 className="rounded-t-lg px-3 pb-2.5 text-[13px] font-medium transition-colors duration-150"
-                style={{ color: tab === t.id ? '#F5F5F5' : '#888888', borderBottom: tab === t.id ? '2px solid #1E5FAD' : '2px solid transparent' }}
+                style={{ color: tab === t.id ? '#F5F5F5' : '#888888', borderBottom: tab === t.id ? '2px solid #F4EEE2' : '2px solid transparent' }}
               >
                 {t.label}
               </button>
@@ -314,8 +314,8 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
               <button
                 type="button"
                 onClick={() => onOpenTask(focusTask)}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2 text-[13px] font-medium text-[#F5F5F5] transition-opacity duration-150 hover:opacity-90"
-                style={{ background: '#1E5FAD' }}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2 text-[13px] font-medium text-[#0A0A0A] transition-opacity duration-150 hover:opacity-90"
+                style={{ background: '#F5F5F5' }}
               >
                 <PlayIcon size={12} /> Continuar
               </button>
@@ -335,7 +335,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
                 cy="32"
                 r="26"
                 fill="none"
-                stroke="#1E5FAD"
+                stroke="#F4EEE2"
                 strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 26}
@@ -356,7 +356,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#F5F5F5]">Calendario de hoy</span>
             {onNavigate && (
-              <button type="button" onClick={() => onNavigate('calendario')} className="text-[12px] font-medium text-[#1E5FAD] hover:underline">
+              <button type="button" onClick={() => onNavigate('calendario')} className="text-[12px] font-medium text-[#F4EEE2] hover:underline">
                 Ver calendario →
               </button>
             )}
@@ -384,14 +384,14 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
           <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">Acciones rápidas</span>
           <div className="flex flex-col gap-0.5 pt-1">
             <button type="button" onClick={quickNewTask} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">
                 <PlusIcon size={14} />
               </span>
               <span className="text-[13px] text-[#F5F5F5]">Nueva tarea</span>
             </button>
             {onGoToHoy && (
               <button type="button" onClick={onGoToHoy} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">
                   <NoteIcon size={14} />
                 </span>
                 <span className="text-[13px] text-[#F5F5F5]">Nueva nota</span>
@@ -399,7 +399,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
             )}
             {onNewProyecto && (
               <button type="button" onClick={onNewProyecto} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">
                   <BriefcaseIcon size={14} />
                 </span>
                 <span className="text-[13px] text-[#F5F5F5]">Nuevo Proyecto Interno</span>

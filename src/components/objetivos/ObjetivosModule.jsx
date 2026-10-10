@@ -33,10 +33,10 @@ function EmptyBoardCTA({ quarterKey, onCreate, onPreset }) {
   return (
     <div className="ador-glass ador-grain flex flex-col items-center gap-5 rounded-[24px] px-8 py-20 text-center">
       <div
-        className="flex h-14 w-14 items-center justify-center rounded-full text-[#1E5FAD]"
+        className="flex h-14 w-14 items-center justify-center rounded-full text-[#F4EEE2]"
         style={{
-          backgroundColor: 'rgba(30,95,173,0.1)',
-          border: '1px solid rgba(30,95,173,0.25)',
+          backgroundColor: 'rgba(244,238,226,0.1)',
+          border: '1px solid rgba(244,238,226,0.25)',
           animation: 'ador-pulse 3s ease-in-out infinite',
         }}
       >
@@ -129,7 +129,7 @@ function IniciativasCard({ tasks, onNavigate }) {
             const due = t.dueDate?.toDate?.()
             return (
               <div key={t.id} className="flex items-center gap-3 py-3">
-                <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#3B82F6]" />
+                <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#F4EEE2]" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] text-[#EDEDED]">{t.title}</p>
                   <p className="truncate text-[12px] text-[#7A7A7A]">
@@ -181,7 +181,7 @@ function MetricasCard({ liveValues, objetivos, isCurrentQuarter }) {
             </div>
             {r.pct !== null ? (
               <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.08]">
-                <div className="h-full rounded-full" style={{ width: `${r.pct}%`, background: r.pct >= 100 ? '#4CAF50' : '#3B82F6' }} />
+                <div className="h-full rounded-full" style={{ width: `${r.pct}%`, background: r.pct >= 100 ? '#4CAF50' : '#F4EEE2' }} />
               </div>
             ) : (
               <p className="text-[11.5px] text-[#6A6A6A]">Sin meta este trimestre</p>
@@ -213,8 +213,8 @@ export default function ObjetivosModule({ user, onNavigate }) {
   const statuses = objetivos.map((o) => objetivoStatus(o, elapsed, isCurrentQuarter))
   const avg = objetivos.length ? Math.round(objetivos.reduce((n, o) => n + objetivoPct(o), 0) / objetivos.length) : 0
   const summary = [
-    { icon: '◎', value: objetivos.filter((o, i) => statuses[i] !== 'logrado').length, label: 'Objetivos activos', color: '#3B82F6' },
-    { icon: '▮', value: `${avg}%`, label: 'Progreso promedio', color: '#3B82F6' },
+    { icon: '◎', value: objetivos.filter((o, i) => statuses[i] !== 'logrado').length, label: 'Objetivos activos', color: '#F4EEE2' },
+    { icon: '▮', value: `${avg}%`, label: 'Progreso promedio', color: '#F4EEE2' },
     { icon: '●', value: statuses.filter((s) => s === 'riesgo' || s === 'bloqueado').length, label: 'En riesgo', color: '#EF5350' },
     { icon: '↗', value: openLinkedTasks.length, label: 'Iniciativas en curso', color: '#4CAF50' },
     { icon: '⚗', value: activeExperiments, label: 'Experimentos activos', color: '#A78BDA' },
@@ -259,7 +259,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
           <p className="text-[12px] text-[#7A7A7A]">
             {isCurrentQuarter ? `${daysLeft} días restantes en el trimestre` : viewQuarter < currentQuarterKey() ? 'Trimestre cerrado' : 'Trimestre por venir'}
             {!isCurrentQuarter && (
-              <button type="button" onClick={() => setViewQuarter(currentQuarterKey())} className="ml-2 text-[#E8C15A] hover:underline">
+              <button type="button" onClick={() => setViewQuarter(currentQuarterKey())} className="ml-2 text-[#F4EEE2] hover:underline">
                 Volver al actual
               </button>
             )}

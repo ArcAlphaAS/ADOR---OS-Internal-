@@ -41,7 +41,7 @@ function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
     if (timerRef.current) clearTimeout(timerRef.current)
   }
 
-  const color = active || hovered ? '#F5F5F5' : accent ? '#1E5FAD' : '#444444'
+  const color = active || hovered ? '#F5F5F5' : accent ? '#F4EEE2' : '#444444'
 
   return (
     <div className="relative flex justify-center" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
@@ -65,7 +65,7 @@ function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
         {badge > 0 && (
           <span
             className="absolute top-0.5 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-semibold text-[#1C1A16]"
-            style={{ background: '#E8C15A' }}
+            style={{ background: '#F4EEE2' }}
           >
             {badge > 9 ? '9+' : badge}
           </span>

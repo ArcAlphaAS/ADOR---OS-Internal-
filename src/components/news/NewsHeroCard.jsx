@@ -39,7 +39,7 @@ export default function NewsHeroCard({ post, onOpen }) {
       ) : (
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(120% 100% at 30% 0%, #1E5FAD22 0%, transparent 55%), linear-gradient(160deg, #1C1C20 0%, #0A0A0B 100%)' }}
+          style={{ background: 'radial-gradient(120% 100% at 30% 0%, rgba(244,238,226,0.10) 0%, transparent 55%), linear-gradient(160deg, #1C1C20 0%, #0A0A0B 100%)' }}
         />
       )}
 

@@ -79,7 +79,7 @@ function WorkloadRow({ row, maxCount }) {
       <div className="h-[3px] w-full overflow-hidden rounded-full" style={{ background: overloaded ? 'rgba(224,82,82,0.12)' : 'rgba(255,255,255,0.06)' }}>
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: overloaded ? '#E05252' : '#1E5FAD' }}
+          style={{ width: `${pct}%`, background: overloaded ? '#E05252' : '#F4EEE2' }}
         />
       </div>
     </div>
@@ -154,7 +154,7 @@ export default function WorkspaceSidebar({
         <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Mi trabajo
         </span>
-        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#1E5FAD" Icon={UsersIcon} onClick={onToggleOnlyMine} />
+        <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#F4EEE2" Icon={UsersIcon} onClick={onToggleOnlyMine} />
       </div>
 
       <div className="h-px bg-white/[0.06]" />
@@ -174,7 +174,7 @@ export default function WorkspaceSidebar({
                 key={w.id}
                 label={w.name}
                 sublabel={`Semana ${w.interventionWeek} de ${w.interventionTotalWeeks}`}
-                accentColor="#1E5FAD"
+                accentColor="#F4EEE2"
                 active={selectedId === w.id}
                 onClick={() => onSelect(w.id)}
               />

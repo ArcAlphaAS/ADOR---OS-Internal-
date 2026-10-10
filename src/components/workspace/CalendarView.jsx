@@ -122,7 +122,7 @@ export default function CalendarView({ tasks, onOpenTask, actorUserId, actorName
                 >
                   <span
                     className="mb-0.5 flex h-5 w-5 items-center justify-center self-end rounded-full text-[11px]"
-                    style={{ background: k === todayKey ? '#1E5FAD' : 'transparent', color: k === todayKey ? '#F5F5F5' : inMonth ? '#999999' : '#444444' }}
+                    style={{ background: k === todayKey ? '#F5F5F5' : 'transparent', color: k === todayKey ? '#0A0A0A' : inMonth ? '#999999' : '#444444' }}
                   >
                     {d.getDate()}
                   </span>

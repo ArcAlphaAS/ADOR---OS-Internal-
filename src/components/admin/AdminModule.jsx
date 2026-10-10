@@ -445,7 +445,7 @@ function TemplateTab({ user }) {
         return (
           <div key={name} className={card}>
             <div className="flex flex-wrap items-baseline gap-x-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1E5FAD] text-[11px] font-semibold text-[#F5F5F5]">{i + 1}</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2C2C2E] text-[11px] font-semibold text-[#F5F5F5]">{i + 1}</span>
               <h4 className="text-[14px] font-semibold text-[#F5F5F5]">{name}</h4>
               {span && <span className="text-[11.5px] text-[#777777]">{span.startWeek === span.endWeek ? `Semana ${span.startWeek}` : `Semanas ${span.startWeek}–${span.endWeek}`} de 8</span>}
             </div>
@@ -514,9 +514,9 @@ function AccessTab() {
             <label
               key={m.id}
               className="flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors"
-              style={{ borderColor: on ? 'rgba(30,95,173,0.5)' : 'rgba(255,255,255,0.08)', background: on ? 'rgba(30,95,173,0.08)' : 'transparent', opacity: m.always ? 0.6 : 1 }}
+              style={{ borderColor: on ? 'rgba(244,238,226,0.5)' : 'rgba(255,255,255,0.08)', background: on ? 'rgba(244,238,226,0.08)' : 'transparent', opacity: m.always ? 0.6 : 1 }}
             >
-              <input type="checkbox" checked={on} disabled={m.always} onChange={() => toggle(m.id)} className="accent-[#1E5FAD]" />
+              <input type="checkbox" checked={on} disabled={m.always} onChange={() => toggle(m.id)} className="accent-[#F4EEE2]" />
               <span className="text-[13px] text-[#DDDDDD]">{m.label}</span>
               {m.sensitive && <span className="ml-auto text-[11px] text-[#E8C15A]">datos sensibles</span>}
               {m.always && <span className="ml-auto text-[11px] text-[#777777]">siempre</span>}

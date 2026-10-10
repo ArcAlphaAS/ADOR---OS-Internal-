@@ -7,18 +7,27 @@ const LEVEL = { urgent: '#EF5350', warn: '#E8C15A' }
 const MAX_ROWS = 6
 
 export default function AttentionCard({ finance, uid, onNavigate }) {
-  const items = useAttention(finance, uid)
+  const { items, loaded } = useAttention(finance, uid)
   const shown = items.slice(0, MAX_ROWS)
   const hasUrgent = items.some((i) => i.level === 'urgent')
 
   return (
-    <div className={`ador-glass ador-grain rounded-[24px] px-7 py-7 sm:px-9 ${items.length === 0 ? '' : hasUrgent ? 'ador-card-urgent' : 'ador-card-attention'}`}>
+    <div className={`ador-glass ador-grain rounded-[24px] px-7 py-7 sm:px-9 ${!loaded || items.length === 0 ? '' : hasUrgent ? 'ador-card-urgent' : 'ador-card-attention'}`}>
       <div className="flex items-baseline gap-3">
         <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Necesita tu atención</h3>
         {items.length > 0 && <span className="text-[12px] tabular-nums text-[#767676]">{items.length}</span>}
       </div>
 
-      {items.length === 0 ? (
+      {!loaded ? (
+        <div className="mt-4 space-y-3 py-1">
+          {[72, 58, 66].map((w) => (
+            <div key={w} className="flex items-center gap-3">
+              <span className="ador-skeleton h-2 w-2 flex-shrink-0 rounded-full" />
+              <span className="ador-skeleton h-3 rounded-full" style={{ width: `${w}%` }} />
+            </div>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <div className="flex items-center gap-4 py-7">
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-[#E8C15A]/40 text-[#E8C15A]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

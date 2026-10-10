@@ -16,7 +16,7 @@ function AsociadoAvatar({ uid, users }) {
   const initial = (person?.displayName || person?.email || '?').charAt(0).toUpperCase()
   return (
     <div
-      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#1E5FAD] text-[12px] font-medium text-[#F5F5F5]"
+      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[12px] font-medium text-[#F5F5F5]"
       title={person?.displayName || person?.email || 'Sin asignar'}
     >
       {initial}
@@ -234,7 +234,7 @@ export default function ListView({ clients, users, onOpenClient, actorName }) {
                     <td className="px-5 py-3">
                       <span
                         className="rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em]"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: type === 'SP' ? '#1E5FAD' : '#888888' }}
+                        style={{ background: 'rgba(255,255,255,0.06)', color: type === 'SP' ? '#F4EEE2' : '#888888' }}
                       >
                         {type}
                       </span>

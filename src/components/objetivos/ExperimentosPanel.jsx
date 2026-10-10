@@ -73,7 +73,7 @@ function ExperimentRow({ experimento, actorName }) {
           </button>
         ))}
         {!experimento.result && !editingResult && (
-          <button type="button" onClick={() => setEditingResult(true)} className="ml-auto text-[11px] text-[#1E5FAD] hover:underline">
+          <button type="button" onClick={() => setEditingResult(true)} className="ml-auto text-[11px] text-[#F4EEE2] hover:underline">
             + Resultado
           </button>
         )}
@@ -183,8 +183,8 @@ export default function ExperimentosPanel({ objetivos, actorName }) {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="mt-4 w-full rounded-[10px] border py-2 text-[12px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
-          style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+          className="mt-4 w-full rounded-[10px] border py-2 text-[12px] font-medium transition-colors duration-150 hover:bg-white/10"
+          style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
         >
           + Registrar experimento
         </button>

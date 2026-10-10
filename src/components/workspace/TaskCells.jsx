@@ -309,7 +309,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
                   <span
                     key={u.id}
                     className="flex items-center gap-1 rounded-full py-0.5 pl-1 pr-1.5 text-[11px]"
-                    style={{ background: 'rgba(30,95,173,0.15)', color: '#F5F5F5' }}
+                    style={{ background: 'rgba(244,238,226,0.15)', color: '#F5F5F5' }}
                   >
                     <Avatar photoURL={u.photoDataUrl} displayName={u.displayName} email={u.email} size={16} />
                     {u.displayName || u.email}
@@ -350,7 +350,7 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
                   }
                 }}
                 placeholder="Escribe un nombre..."
-                className="mx-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50"
+                className="mx-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30"
               />
             )}
 

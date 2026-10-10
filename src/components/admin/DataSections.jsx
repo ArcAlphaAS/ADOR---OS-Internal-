@@ -52,7 +52,7 @@ export function DriveFolderSection({ user }) {
           : 'Crea una carpeta “ADOR” en tu Drive, compártela con tus socios como Editor y elígela aquí. Así los archivos son de la empresa, no de una persona.'}
       </span>
       {folder && (
-        <a href={folder.url} target="_blank" rel="noopener noreferrer" className="mt-1.5 block truncate text-[12px] text-[#6FA3E0] hover:underline">
+        <a href={folder.url} target="_blank" rel="noopener noreferrer" className="mt-1.5 block truncate text-[12px] text-[#F4EEE2] hover:underline">
           📁 {folder.name}
         </a>
       )}
@@ -104,7 +104,7 @@ export function BackupSection({ user }) {
         <span className="mt-1.5 block text-[11px] text-[#777777]">
           Último: {lastAt.toLocaleDateString('es', { day: 'numeric', month: 'short' })} {lastAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} · {last.by}
           {last.link && (
-            <a href={last.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 text-[#6FA3E0] hover:underline">
+            <a href={last.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 text-[#F4EEE2] hover:underline">
               abrir
             </a>
           )}
@@ -119,12 +119,12 @@ export function BackupSection({ user }) {
         ) : state.phase === 'needsConnect' ? (
           <span className="flex flex-col gap-1.5">
             <span className="text-[12px] text-[#AAAAAA]">{state.message} Solo pide permiso para los archivos que ADOR OS crea o que tú eliges.</span>
-            <button type="button" onClick={() => connectDrive(user.uid, 'admin')} className="self-start rounded-lg bg-[#1E5FAD] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#2A6FC2]">
+            <button type="button" onClick={() => connectDrive(user.uid, 'admin')} className="self-start rounded-lg bg-[#F5F5F5] px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] hover:bg-white">
               Conectar Google Drive
             </button>
           </span>
         ) : (
-          <button type="button" onClick={run} className="rounded-lg bg-[#1E5FAD] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#2A6FC2]">
+          <button type="button" onClick={run} className="rounded-lg bg-[#F5F5F5] px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] hover:bg-white">
             Exportar todo a Drive
           </button>
         )}

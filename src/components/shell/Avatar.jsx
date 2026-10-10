@@ -16,7 +16,7 @@ export default function Avatar({ photoURL, displayName, email, size = 32 }) {
   const initial = (displayName || email || '?').charAt(0).toUpperCase()
   return (
     <div
-      className="flex flex-shrink-0 items-center justify-center rounded-full bg-[#1E5FAD] font-medium text-[#F5F5F5]"
+      className="flex flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] font-medium text-[#F5F5F5]"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
     >
       {initial}

@@ -8,7 +8,7 @@ function AsociadoAvatar({ uid, users }) {
   const initial = (person?.displayName || person?.email || '?').charAt(0).toUpperCase()
   return (
     <div
-      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#1E5FAD] text-[10px] font-medium text-[#F5F5F5]"
+      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[10px] font-medium text-[#F5F5F5]"
       title={person?.displayName || person?.email || 'Sin asignar'}
     >
       {initial}
@@ -55,14 +55,14 @@ export default function ClientCard({ client, users, onOpen, onDropStage, resolve
         if (didDragRef.current) return
         onOpen(client, e.currentTarget.getBoundingClientRect())
       }}
-      initial={justConverted ? { boxShadow: '0 0 0px rgba(30,95,173,0)' } : false}
+      initial={justConverted ? { boxShadow: '0 0 0px rgba(244,238,226,0)' } : false}
       animate={
         justConverted
           ? {
               boxShadow: [
-                '0 0 0px rgba(30,95,173,0)',
-                '0 0 32px rgba(30,95,173,0.55)',
-                '0 0 0px rgba(30,95,173,0)',
+                '0 0 0px rgba(244,238,226,0)',
+                '0 0 32px rgba(244,238,226,0.55)',
+                '0 0 0px rgba(244,238,226,0)',
               ],
             }
           : {}
@@ -79,7 +79,7 @@ export default function ClientCard({ client, users, onOpen, onDropStage, resolve
       <div className="mt-2.5 flex items-center gap-1.5">
         <span
           className="font-medium"
-          style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: type === 'SP' ? '#1E5FAD' : '#888888' }}
+          style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: type === 'SP' ? '#F4EEE2' : '#888888' }}
         >
           {type}
         </span>
@@ -101,8 +101,8 @@ export default function ClientCard({ client, users, onOpen, onDropStage, resolve
           <span
             className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
             style={{
-              background: payment === 'Pagado' ? 'rgba(30,95,173,0.18)' : 'rgba(184,134,11,0.18)',
-              color: payment === 'Pagado' ? '#1E5FAD' : '#B8860B',
+              background: payment === 'Pagado' ? 'rgba(76,175,80,0.18)' : 'rgba(184,134,11,0.18)',
+              color: payment === 'Pagado' ? '#4CAF50' : '#B8860B',
             }}
           >
             {payment}

@@ -46,7 +46,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
     error
       ? 'rgba(255,100,100,0.3)'
       : focused
-        ? 'rgba(255,255,255,0.2)'
+        ? 'rgba(244,238,226,0.45)'
         : 'rgba(255,255,255,0.08)'
 
   return (
@@ -54,7 +54,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
       className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#000000]"
       style={{
         backgroundImage:
-          'radial-gradient(ellipse at center, rgba(30,95,173,0.08) 0%, transparent 70%)',
+          'radial-gradient(ellipse at center, rgba(244,238,226,0.08) 0%, transparent 70%)',
       }}
     >
       <div
@@ -66,7 +66,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, error, notice 
           top: '38%',
           transform: 'translate(-50%, -50%) rotate(-22deg)',
           background:
-            'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 45%, rgba(30,95,173,0.10) 55%, transparent)',
+            'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 45%, rgba(244,238,226,0.10) 55%, transparent)',
           filter: 'blur(40px)',
         }}
       />

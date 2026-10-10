@@ -79,7 +79,7 @@ export default function ReminderGate({ user, onNavigate }) {
           </button>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <button type="button" onClick={open} className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+          <button type="button" onClick={open} className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-[#0A0A0A]" style={{ background: '#F5F5F5' }}>
             Ver mensaje
           </button>
           <button type="button" onClick={snooze} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]">

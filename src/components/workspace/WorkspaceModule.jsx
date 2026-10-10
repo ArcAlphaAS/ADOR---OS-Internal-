@@ -227,13 +227,13 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 type="button"
                 onClick={() => changeView(v.id)}
                 className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-                style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
+                style={{ color: view === v.id ? '#0A0A0A' : '#888888' }}
               >
                 {view === v.id && (
                   <motion.div
                     layoutId="workspace-view-indicator"
                     className="absolute inset-0 rounded-full"
-                    style={{ background: '#1E5FAD' }}
+                    style={{ background: '#F5F5F5' }}
                     transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                   />
                 )}

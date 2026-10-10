@@ -31,7 +31,7 @@ export default function CalendarioGreeting({ user, events, tasks }) {
   return (
     <div
       className="ador-glass ador-grain overflow-hidden rounded-[20px] px-5 py-4"
-      style={{ backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(30,95,173,0.12) 0%, transparent 60%)' }}
+      style={{ backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(244,238,226,0.12) 0%, transparent 60%)' }}
     >
       <p className="text-[19px] font-semibold tracking-[-0.01em] text-[#F5F5F5]">{getGreeting(hour, name)}</p>
       <p className="mt-0.5 text-[13px] text-[#888888]">

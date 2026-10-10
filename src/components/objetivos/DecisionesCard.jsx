@@ -47,7 +47,7 @@ export default function DecisionesCard({ actorName }) {
           {latest.map((d) => (
             <div key={d.id} className="flex flex-col gap-1.5 py-3 first:pt-0">
               <p className="line-clamp-2 text-[13px] text-[#F5F5F5]">{d.title}</p>
-              {d.linkedName && <span className="text-[11px] text-[#1E5FAD]">{d.linkedName}</span>}
+              {d.linkedName && <span className="text-[11px] text-[#F4EEE2]">{d.linkedName}</span>}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-[#444444]">{formatDate(d.decidedAt)}</span>
                 <span className="text-[11px] text-[#444444]">{d.registeredBy}</span>
@@ -60,8 +60,8 @@ export default function DecisionesCard({ actorName }) {
       <button
         type="button"
         onClick={() => setShowRegister(true)}
-        className="mt-4 w-full rounded-[10px] border py-2.5 text-[13px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
-        style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+        className="mt-4 w-full rounded-[10px] border py-2.5 text-[13px] font-medium transition-colors duration-150 hover:bg-white/10"
+        style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
       >
         + Registrar Decisión
       </button>

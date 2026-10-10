@@ -67,7 +67,7 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
                 style={{
-                  background: isToday ? '#1E5FAD' : isSelected ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  background: isToday ? '#F5F5F5' : isSelected ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#F5F5F5',
                   fontWeight: isToday ? 600 : 400,
                 }}
@@ -113,7 +113,7 @@ export function TodayCard({ events, onOpenDay, onOpenEvent }) {
           </div>
         </>
       )}
-      <button type="button" onClick={() => onOpenDay(today)} className="mt-2 text-[12px] font-medium text-[#1E5FAD] hover:underline">
+      <button type="button" onClick={() => onOpenDay(today)} className="mt-2 text-[12px] font-medium text-[#F4EEE2] hover:underline">
         Ver día completo →
       </button>
     </div>

@@ -59,7 +59,8 @@ export function MiniCalendar() {
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[12px]"
                 style={{
-                  background: isToday ? '#1E5FAD' : 'transparent',
+                  background: isToday ? '#F5F5F5' : 'transparent',
+                  color: isToday ? '#0A0A0A' : undefined,
                   color: isToday ? '#F5F5F5' : '#888888',
                   fontWeight: isToday ? 600 : 400,
                 }}
@@ -92,7 +93,7 @@ export function ProgressDonut({ completed, total }) {
           cy="42"
           r={radius}
           fill="none"
-          stroke="#1E5FAD"
+          stroke="#F4EEE2"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -202,13 +203,13 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
             placeholder="¿Cuál es tu enfoque esta semana?"
-            className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50"
+            className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30"
           />
           <div className="flex justify-end gap-3">
             <button type="button" onClick={() => setEditing(false)} className="text-[11px] text-[#888888] hover:text-[#F5F5F5]">
               Cancelar
             </button>
-            <button type="button" onClick={save} className="text-[11px] font-medium text-[#1E5FAD] hover:underline">
+            <button type="button" onClick={save} className="text-[11px] font-medium text-[#F4EEE2] hover:underline">
               Guardar
             </button>
           </div>
@@ -221,7 +222,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
           ) : (
             <>
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: '#1E5FAD' }} />
+                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: '#F4EEE2' }} />
               </div>
               <p className="mt-1.5 text-[11px] text-[#888888]">
                 {completedThisWeek} de {total} tareas de esta semana completadas
@@ -238,7 +239,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
               setDraft('')
               setEditing(true)
             }}
-            className="text-[12px] font-medium text-[#1E5FAD] hover:underline"
+            className="text-[12px] font-medium text-[#F4EEE2] hover:underline"
           >
             + Definir enfoque
           </button>
@@ -255,7 +256,7 @@ function QuickAction({ Icon, label, onClick }) {
       onClick={onClick}
       className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]"
     >
-      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#1E5FAD]">
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">
         <Icon size={14} />
       </span>
       <span className="text-[13px] text-[#F5F5F5]">{label}</span>

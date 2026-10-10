@@ -65,7 +65,7 @@ function DayHeader({ day, compact }) {
       </span>
       <span
         className="flex h-7 w-7 items-center justify-center rounded-full text-[13px]"
-        style={{ background: isToday ? '#1E5FAD' : 'transparent', color: isToday ? '#F5F5F5' : '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
+        style={{ background: isToday ? '#F5F5F5' : 'transparent', color: isToday ? '#0A0A0A' : '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
       >
         {day.getDate()}
       </span>
@@ -191,7 +191,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
               <div
                 key={day.toISOString()}
                 className="relative border-l border-white/[0.05]"
-                style={{ background: isToday ? 'rgba(30,95,173,0.035)' : 'transparent' }}
+                style={{ background: isToday ? 'rgba(244,238,226,0.035)' : 'transparent' }}
               >
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />

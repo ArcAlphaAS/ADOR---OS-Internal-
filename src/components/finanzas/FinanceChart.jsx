@@ -68,7 +68,7 @@ export default function FinanceChart({ series }) {
               onClick={() => setMode(t.id)}
               className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150"
               style={{
-                background: mode === t.id ? '#1E5FAD' : 'transparent',
+                background: mode === t.id ? '#F5F5F5' : 'transparent',
                 color: mode === t.id ? '#F5F5F5' : '#888888',
               }}
             >
@@ -95,7 +95,7 @@ export default function FinanceChart({ series }) {
                 whiteSpace: 'nowrap',
               }}
             >
-              <span className="text-[13px] font-semibold" style={{ color: mode === 'gastos' ? '#B8860B' : '#1E5FAD' }}>
+              <span className="text-[13px] font-semibold" style={{ color: mode === 'gastos' ? '#B8860B' : '#F4EEE2' }}>
                 {currencyPEN.format(activeValue)}
               </span>
             </div>
@@ -105,7 +105,7 @@ export default function FinanceChart({ series }) {
             <defs>
               <linearGradient id="finanzas-bar-ingresos" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3A8DE8" />
-                <stop offset="100%" stopColor="#1E5FAD" />
+                <stop offset="100%" stopColor="#F4EEE2" />
               </linearGradient>
               <linearGradient id="finanzas-bar-gastos" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#D9A62B" />
@@ -140,7 +140,7 @@ export default function FinanceChart({ series }) {
                       width={barWidth}
                       value={p.ingresos}
                       max={max}
-                      color="rgba(30,95,173,0.55)"
+                      color="rgba(244,238,226,0.55)"
                       gradientId="finanzas-bar-ingresos"
                       highlighted={isActive && mode !== 'gastos'}
                     />

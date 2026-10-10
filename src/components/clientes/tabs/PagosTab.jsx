@@ -16,7 +16,7 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
     <div className="ador-glass ador-grain rounded-2xl p-5" style={{ opacity: locked ? 0.5 : 1 }}>
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-[#F5F5F5]">{label}</span>
-        {received && <CheckCircleIcon size={18} style={{ color: '#1E5FAD' }} />}
+        {received && <CheckCircleIcon size={18} style={{ color: '#4CAF50' }} />}
       </div>
       <div className="mt-2 text-[22px] font-semibold text-[#F5F5F5]">{currencyPEN.format(amount)}</div>
 
@@ -40,7 +40,7 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
 
         {!locked &&
           (received ? (
-            <span className="text-[12px] text-[#1E5FAD]">Recibido</span>
+            <span className="text-[12px] text-[#F4EEE2]">Recibido</span>
           ) : (
             <button
               type="button"
@@ -111,10 +111,10 @@ export default function PagosTab({ client, actorName }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           className="flex items-center justify-center gap-2 rounded-xl py-3"
-          style={{ background: 'rgba(30,95,173,0.18)', border: '1px solid rgba(30,95,173,0.35)' }}
+          style={{ background: 'rgba(76,175,80,0.18)', border: '1px solid rgba(76,175,80,0.35)' }}
         >
-          <CheckCircleIcon size={16} style={{ color: '#1E5FAD' }} />
-          <span className="text-[13px] font-medium text-[#1E5FAD]">Intervención Pagada</span>
+          <CheckCircleIcon size={16} style={{ color: '#4CAF50' }} />
+          <span className="text-[13px] font-medium text-[#F4EEE2]">Intervención Pagada</span>
         </motion.div>
       )}
     </div>

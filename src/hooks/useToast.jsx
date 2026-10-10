@@ -20,7 +20,7 @@ function ToastStack({ toasts, onDismiss }) {
             className="pointer-events-auto"
           >
             <div className="ador-modal-surface ador-grain flex items-center gap-3 rounded-2xl py-3 pl-4 pr-3">
-              <CheckCircleIcon size={18} style={{ color: '#1E5FAD', flexShrink: 0 }} />
+              <CheckCircleIcon size={18} style={{ color: '#F4EEE2', flexShrink: 0 }} />
               <span className="text-[13px] text-[#F5F5F5]">{toast.message}</span>
               <button
                 type="button"

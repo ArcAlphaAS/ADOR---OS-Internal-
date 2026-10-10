@@ -126,7 +126,7 @@ export default function OnboardingTour({ onFinish }) {
         <div
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at 30% 40%, rgba(30,95,173,0.06), transparent 60%)',
+            background: 'radial-gradient(ellipse at 30% 40%, rgba(244,238,226,0.06), transparent 60%)',
             animation: 'ador-drift 8s ease-in-out infinite',
           }}
         />
@@ -181,7 +181,7 @@ export default function OnboardingTour({ onFinish }) {
           ) : (
             <div
               className="flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: 'rgba(30,95,173,0.12)', border: '1px solid rgba(30,95,173,0.25)' }}
+              style={{ backgroundColor: 'rgba(244,238,226,0.12)', border: '1px solid rgba(244,238,226,0.25)' }}
             >
               <AdorMark size={26} />
             </div>
@@ -190,8 +190,8 @@ export default function OnboardingTour({ onFinish }) {
           <div className="mt-6 flex items-center gap-2">
             {Icon && (
               <span
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#1E5FAD]"
-                style={{ backgroundColor: 'rgba(30,95,173,0.12)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#F4EEE2]"
+                style={{ backgroundColor: 'rgba(244,238,226,0.12)' }}
               >
                 <Icon size={15} />
               </span>
@@ -208,7 +208,7 @@ export default function OnboardingTour({ onFinish }) {
               className="h-1.5 rounded-full transition-all duration-300"
               style={{
                 width: i === index ? 18 : 6,
-                backgroundColor: i === index ? '#1E5FAD' : 'rgba(255,255,255,0.15)',
+                backgroundColor: i === index ? '#F4EEE2' : 'rgba(255,255,255,0.15)',
               }}
             />
           ))}

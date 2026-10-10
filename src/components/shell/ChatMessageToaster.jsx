@@ -132,7 +132,7 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
               >
                 <Avatar displayName={t.from || 'ADOR'} size={30} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-medium text-[#E8C15A]">Nuevo mensaje · abrir</span>
+                  <span className="block text-[11px] font-medium text-[#F4EEE2]">Nuevo mensaje · abrir</span>
                   <span className="mt-0.5 line-clamp-2 block text-[12.5px] leading-relaxed text-[#DDDDDD]">{t.text}</span>
                 </span>
               </button>

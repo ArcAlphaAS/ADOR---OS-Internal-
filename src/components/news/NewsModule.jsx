@@ -472,13 +472,13 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
             type="button"
             onClick={() => setTab(t.id)}
             className="relative rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150"
-            style={{ color: tab === t.id ? '#F5F5F5' : '#888888' }}
+            style={{ color: tab === t.id ? '#0A0A0A' : '#888888' }}
           >
             {tab === t.id && (
               <motion.div
                 layoutId="news-tab-indicator"
                 className="absolute inset-0 rounded-full"
-                style={{ background: '#1E5FAD' }}
+                style={{ background: '#F5F5F5' }}
                 transition={{ type: 'spring', stiffness: 500, damping: 34 }}
               />
             )}

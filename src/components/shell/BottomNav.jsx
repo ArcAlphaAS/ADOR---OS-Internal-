@@ -47,11 +47,11 @@ function Tab({ label, Icon, active, badge, onClick }) {
     <button type="button" onClick={onClick} aria-label={label} title={label} className="relative flex flex-1 items-center justify-center">
       <span
         className="relative flex h-12 w-12 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 ease-out active:scale-90"
-        style={{ background: active ? '#E8C15A' : 'transparent', color: active ? '#1C1A16' : '#8E8E93' }}
+        style={{ background: active ? '#F5F5F5' : 'transparent', color: active ? '#0A0A0A' : '#8E8E93' }}
       >
         <Icon size={21} />
         {badge > 0 && (
-          <span className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: active ? '#F5F5F5' : '#E8C15A' }}>
+          <span className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: '#F4EEE2' }}>
             {badge > 9 ? '9+' : badge}
           </span>
         )}
@@ -115,7 +115,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                         <span className="relative">
                           <m.Icon size={20} />
                           {badges[m.id] > 0 && (
-                            <span className="absolute -right-2.5 -top-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+                            <span className="absolute -right-2.5 -top-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
                               {badges[m.id] > 9 ? '9+' : badges[m.id]}
                             </span>
                           )}

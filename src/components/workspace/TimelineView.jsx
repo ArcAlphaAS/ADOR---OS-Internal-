@@ -259,7 +259,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
               type="button"
               onClick={() => setRange(id)}
               className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150"
-              style={{ background: range === id ? '#1E5FAD' : 'transparent', color: range === id ? '#F5F5F5' : '#888888' }}
+              style={{ background: range === id ? '#F5F5F5' : 'transparent', color: range === id ? '#0A0A0A' : '#888888' }}
             >
               {RANGES[id].label}
             </button>
@@ -284,14 +284,14 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
               ))}
             <span
               className="absolute rounded-full px-2 py-0.5 font-medium"
-              style={{ left: nowX, transform: 'translateX(-50%)', fontSize: 10, background: 'rgba(30,95,173,0.2)', color: '#1E5FAD' }}
+              style={{ left: nowX, transform: 'translateX(-50%)', fontSize: 10, background: 'rgba(244,238,226,0.14)', color: '#F4EEE2' }}
             >
               Hoy
             </span>
           </div>
 
           {/* Now line spans the whole board */}
-          <div className="pointer-events-none absolute bottom-0 top-8 w-px" style={{ left: nowX, background: 'rgba(30,95,173,0.5)' }} />
+          <div className="pointer-events-none absolute bottom-0 top-8 w-px" style={{ left: nowX, background: 'rgba(244,238,226,0.5)' }} />
 
           {links.length > 0 && (
             <svg className="pointer-events-none absolute inset-0 z-[5]" width="100%" height="100%" style={{ overflow: 'visible' }}>

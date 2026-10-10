@@ -44,7 +44,7 @@ export function useDrivePicker(returnTo) {
               <button type="button" onClick={() => setNeedsConnect(null)} className="rounded-xl px-4 py-2 text-[13px] text-[#888888] hover:text-[#F5F5F5]">
                 Ahora no
               </button>
-              <button type="button" onClick={() => connectDrive(uid, returnTo)} className="rounded-xl bg-[#1E5FAD] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#2A6FC2]">
+              <button type="button" onClick={() => connectDrive(uid, returnTo)} className="rounded-xl bg-[#F5F5F5] px-4 py-2 text-[13px] font-medium text-[#0A0A0A] hover:bg-white">
                 Conectar Google
               </button>
             </div>

@@ -34,7 +34,7 @@ export default function WeeklySummaryCard() {
         ) : (
           <p className={`mt-3 text-[#F5F5F5] ${summary.level === 'calm' ? 'text-[14px] font-light' : 'text-[15px] font-medium'}`}>{summary.tldr}</p>
         )}
-        <span className="mt-3 inline-block text-[12px] font-medium text-[#1E5FAD]">Ver resumen completo →</span>
+        <span className="mt-3 inline-block text-[12px] font-medium text-[#F4EEE2]">Ver resumen completo →</span>
       </button>
 
       <AnimatePresence>{open && <WeeklySummaryPanel summary={summary} onClose={() => setOpen(false)} />}</AnimatePresence>

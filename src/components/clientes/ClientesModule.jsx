@@ -228,8 +228,8 @@ function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
                     type="button"
                     onClick={() => createTaskForClient(client)}
                     disabled={creatingId === client.id}
-                    className="flex-shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10 disabled:opacity-50"
-                    style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+                    className="flex-shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition-colors duration-150 hover:bg-white/10 disabled:opacity-50"
+                    style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
                   >
                     {creatingId === client.id ? 'Creando…' : '→ Crear tarea'}
                   </button>
@@ -346,13 +346,13 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
                 type="button"
                 onClick={() => changeView(v.id)}
                 className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
-                style={{ color: view === v.id ? '#F5F5F5' : '#888888' }}
+                style={{ color: view === v.id ? '#0A0A0A' : '#888888' }}
               >
                 {view === v.id && (
                   <motion.div
                     layoutId="clientes-view-indicator"
                     className="absolute inset-0 rounded-full"
-                    style={{ background: '#1E5FAD' }}
+                    style={{ background: '#F5F5F5' }}
                     transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                   />
                 )}

@@ -267,29 +267,21 @@ input:-webkit-autofill:focus {
 .ador-card-hover:hover {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(30, 95, 173, 0.15);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(244, 238, 226, 0.06);
 }
 
-/* Flat "liquid glass" primary button — a frosted pill with a solid-leaning
-   brand-blue tint, no gradient and no drop shadow. Deliberately replaces an
-   earlier button treatment that used a strong gradient + glow shadow and
-   read as skeuomorphic/"3D" rather than the restrained glass look used
-   everywhere else in the app. More opaque than a regular .ador-glass surface
-   on purpose — a primary action should read as solid enough to stand out,
-   short of losing the frosted-glass material entirely. Use on every primary
-   call-to-action button. */
+/* Primary call-to-action: a flat white pill with dark text (the app's main
+   accent is white/ivory; gold is reserved for what is important). No blur,
+   no shadow, no gradient. */
 .ador-btn-primary {
-  background: rgba(30, 95, 173, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  color: #f5f5f5;
-  transition: background-color 150ms ease-out;
+  background: #f5f5f5;
+  border: 1px solid transparent;
+  color: #0a0a0a;
+  transition: background-color 150ms ease-out, opacity 150ms ease-out;
 }
 
 .ador-btn-primary:hover {
-  background: rgba(30, 95, 173, 0.8);
+  background: #ffffff;
 }
 
 .ador-btn-primary:disabled {
@@ -325,6 +317,15 @@ input:-webkit-autofill:focus {
   );
   background-size: 250% 100%;
   animation: ador-shimmer 2.6s ease-in-out infinite;
+}
+
+/* Skeletons appear only if loading lasts longer than a blink. */
+@keyframes ador-skeleton-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ador-skeleton-in {
+  animation: ador-skeleton-in 200ms ease-out 150ms both;
 }
 
 /* Card hierarchy (Apple-style: the one that needs you stands out, the rest

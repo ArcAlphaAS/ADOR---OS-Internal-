@@ -19,7 +19,7 @@ export default function UpdateBanner() {
         >
           <div className="flex items-center gap-3 rounded-full border border-white/[0.1] bg-[#1C1C1E]/95 py-1.5 pr-1.5 pl-4 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <span className="text-[13px] text-[#DDDDDD]">Nueva versión de ADOR OS</span>
-            <button type="button" onClick={() => window.location.reload()} className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-[#1C1A16]" style={{ background: '#E8C15A' }}>
+            <button type="button" onClick={() => window.location.reload()} className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-[#0A0A0A]" style={{ background: '#F5F5F5' }}>
               Actualizar
             </button>
           </div>

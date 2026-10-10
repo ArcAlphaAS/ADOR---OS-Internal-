@@ -61,7 +61,7 @@ export default function ObjetivoRow({ objetivo, index, owner, actorName, northSt
   const links = objetivoLinks(o)
   const pace = isCurrentQuarter && !isMilestone ? pct - elapsedPct : null
   const label = o.metric === 'custom' ? o.customLabel || (o.unit === 'S/' ? 'Monto (S/)' : o.unit) || 'Métrica' : metricLabel(o.metric)
-  const barColor = pct >= 100 ? '#E8C15A' : status.color === '#EF5350' ? '#EF5350' : '#3B82F6'
+  const barColor = pct >= 100 ? '#E8C15A' : status.color === '#EF5350' ? '#EF5350' : '#F4EEE2'
 
   const saveValue = () => {
     const value = Number(draft)

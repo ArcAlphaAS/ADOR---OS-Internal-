@@ -927,6 +927,14 @@ Pedido del usuario tras verlo en su iPhone: en el chat, blanco marfil en vez de 
 - **Sin tocar todavía (siguiente paso, app completa):** el resto del chrome del shell que sigue en dorado/azul — barra inferior móvil (pestaña activa dorada), insignias de no leídos del icono de Comunicación y de News, `ChatMessageToaster`, `IncomingCallGate`, `ReminderGate`, campana, tarjetas de Inicio, botones azules (p. ej. "Iniciar enfoque", "Ingresar"). Plan: marfil como acento principal en todo; dorado como excepción; rojo/ámbar/verde solo para estados.
 - Verificado con una conversación de ejemplo temporal en 390×844 (retirada).
 
+### 55. Accent unification and perceived speed (2026-10-09, evening)
+
+Agreed with the user after the flat-chat session (§54): **white/ivory is the app's main accent everywhere; gold only for what is important; status/category colors stay.** Applied in one mechanical pass over every module, the shell and the login.
+- **Rules to follow from now on:** primary buttons = flat white pill with dark text (`.ador-btn-primary`, no blur/shadow); selected tab/segment = white fill + dark label; links, icons, bars and dots = ivory `#F4EEE2`; "today" markers = white disc with dark number; initials/avatars on graphite `#2C2C2E`; unread badges ivory. **Never use blue as a fill.** Gold (`#E8C15A` / `#B8860B`) stays for important messages, mentions of you, pinned, birthdays/achievements, Proyecto Interno accent and warnings. Green/amber/red for states.
+- **Intentionally still blue:** `#1E5FAD` for Intervención accent (`kind === 'intervencion'`), Workspace "En progreso" (`lib/workspace.js`), Clientes history/stage colors, Directorio "Remoto", Finanzas "Salarios"; Welcome-screen sky colors; Google Calendar's own event colors. These are category/status colors, not accents.
+- **Perceived speed:** `shell/ModuleSkeleton.jsx` is the Suspense fallback (`.ador-skeleton-in` fades in after 150 ms); `useAttention` returns `{ items, loaded }` and `AttentionCard` shows shimmer rows until the four collections answered (6 s timeout), instead of a false "Todo en orden". Writes already feel instant thanks to Firestore's local cache (§41), so no extra optimistic layer. Other cards (Tu día, Resumen financiero) still show their empty state while loading — a possible next pass, using the same `loaded` pattern.
+- **Verification:** build clean; preview checked on Workspace (white segmented control and today disc), Inicio (skeleton rows in Atención; the preview user has no Firestore access so it never loads) and the login (white "Ingresar"). Not checked on a real phone, nor every module with real data.
+
 ## Next recommended steps (in priority order, as discussed with the user)
 
 Keep this list in sync with "Next steps" in `PROJECT_STATE.md`.

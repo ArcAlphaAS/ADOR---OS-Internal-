@@ -46,13 +46,13 @@ function LayerIndicator({ week, totalWeeks }) {
             title={name}
             className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-medium"
             style={{
-              background: done ? '#1E5FAD' : isActive ? 'transparent' : 'rgba(255,255,255,0.08)',
-              border: isActive ? '1px solid #1E5FAD' : 'none',
-              color: done ? '#F5F5F5' : isActive ? '#1E5FAD' : '#444444',
+              background: done ? 'rgba(244,238,226,0.9)' : isActive ? 'transparent' : 'rgba(255,255,255,0.08)',
+              border: isActive ? '1px solid #F4EEE2' : 'none',
+              color: done ? '#0A0A0A' : isActive ? '#F4EEE2' : '#444444',
             }}
           >
             {isActive ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1E5FAD]" style={{ animation: 'ador-pulse 2s ease-in-out infinite' }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#F4EEE2]" style={{ animation: 'ador-pulse 2s ease-in-out infinite' }} />
             ) : (
               layerNum
             )}
@@ -140,7 +140,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
         onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Título de la tarea — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
       />
 
       <AssigneeCell
@@ -295,7 +295,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
             {canApplyTemplate && templateHasTasks && (
               <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
                 <p className="min-w-0 flex-1 text-[12px] leading-snug text-[#888888]">Esta Intervención no tiene las tareas de la metodología.</p>
-                <button type="button" onClick={applyTemplate} disabled={applying} className="flex-shrink-0 rounded-lg border border-[#1E5FAD]/50 px-3 py-1.5 text-[12px] font-medium text-[#6FA3E0] transition-colors hover:bg-[#1E5FAD]/10 disabled:opacity-50">
+                <button type="button" onClick={applyTemplate} disabled={applying} className="flex-shrink-0 rounded-lg border border-white/30 px-3 py-1.5 text-[12px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/10 disabled:opacity-50">
                   {applying ? 'Aplicando…' : 'Aplicar plantilla'}
                 </button>
               </div>

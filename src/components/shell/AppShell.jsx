@@ -21,6 +21,7 @@ import { useScheduledSender } from '../../hooks/useScheduledSender'
 import { finishDriveConnect } from '../../lib/googleDrive'
 import { installErrorLogging, setErrorContext } from '../../lib/errorLog'
 import ModuleErrorBoundary from './ModuleErrorBoundary'
+import ModuleSkeleton from './ModuleSkeleton'
 import BottomNav from './BottomNav'
 import { useAccess } from '../../hooks/useAccess'
 import { backfillChannelVisibility } from '../../lib/firestore'
@@ -229,7 +230,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       className="flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
       style={{
         backgroundImage:
-          'radial-gradient(ellipse at 50% 30%, rgba(30,95,173,0.06) 0%, transparent 60%)',
+          'radial-gradient(ellipse at 50% 30%, rgba(244,238,226,0.06) 0%, transparent 60%)',
       }}
     >
       <TopBar
@@ -249,7 +250,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         {/* pb on small screens leaves room for the bottom tab bar. */}
         <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-[calc(92px+env(safe-area-inset-bottom))] lg:pb-0">
           <ModuleErrorBoundary resetKey={activeModule}>
-          <Suspense fallback={null}>
+          <Suspense fallback={<ModuleSkeleton />}>
           <AnimatePresence mode="wait">
             {!access.canSee(activeModule) ? (
               <NoAccess key="no-access" onHome={() => navigateTo('inicio')} />

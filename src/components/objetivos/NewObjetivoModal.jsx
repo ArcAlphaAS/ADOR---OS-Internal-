@@ -147,9 +147,9 @@ export default function NewObjetivoModal({ quarterKey, actorName, users, preset,
                     onClick={() => setType(t.id)}
                     className="flex-1 rounded-xl border px-3 py-2 text-[12px] font-medium transition-colors duration-150"
                     style={{
-                      borderColor: type === t.id ? '#1E5FAD' : 'rgba(255,255,255,0.1)',
-                      color: type === t.id ? '#1E5FAD' : '#888888',
-                      background: type === t.id ? 'rgba(30,95,173,0.1)' : 'transparent',
+                      borderColor: type === t.id ? '#F4EEE2' : 'rgba(255,255,255,0.1)',
+                      color: type === t.id ? '#F4EEE2' : '#888888',
+                      background: type === t.id ? 'rgba(244,238,226,0.1)' : 'transparent',
                     }}
                   >
                     {t.label}

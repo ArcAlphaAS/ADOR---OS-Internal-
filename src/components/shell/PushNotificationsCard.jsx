@@ -84,10 +84,10 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
     return (
       <div className="rounded-xl border border-dashed border-white/[0.12] px-3 py-2.5">
         <p className="text-[12.5px] leading-relaxed text-[#9A9A9A]">{copy}</p>
-        {message && <p className="mt-1.5 text-[12px] leading-relaxed text-[#E8C15A]">{message}</p>}
+        {message && <p className="mt-1.5 text-[12px] leading-relaxed text-[#F4EEE2]">{message}</p>}
         <div className="mt-1.5 flex items-center gap-3">
           {status === 'off' && (
-            <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline disabled:opacity-60">
+            <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline disabled:opacity-60">
               {busy ? 'Activando…' : 'Activar notificaciones'}
             </button>
           )}
@@ -106,21 +106,21 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
         <span className={`text-[11px] font-medium ${status === 'on' ? 'text-[#4CAF50]' : 'text-[#888888]'}`}>{status === 'on' ? 'Activadas' : status === 'denied' ? 'Bloqueadas' : 'Apagadas'}</span>
       </div>
       <p className="mt-1 text-[12px] leading-relaxed text-[#888888]">{copy}</p>
-      {message && <p className="mt-1.5 text-[12px] leading-relaxed text-[#E8C15A]">{message}</p>}
+      {message && <p className="mt-1.5 text-[12px] leading-relaxed text-[#F4EEE2]">{message}</p>}
       {(status === 'off' || status === 'on') && (
         <div className="mt-2 flex items-center gap-4">
           {status === 'off' && (
-            <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline disabled:opacity-60">
+            <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline disabled:opacity-60">
               {busy ? 'Activando…' : 'Activar'}
             </button>
           )}
           {installable && variant === 'settings' && (
-            <button type="button" onClick={() => installApp().then((ok) => ok && setMessage('Instalada — ábrela desde el Dock o el menú de apps; te llegarán avisos aunque no tengas el navegador delante.'))} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline">
+            <button type="button" onClick={() => installApp().then((ok) => ok && setMessage('Instalada — ábrela desde el Dock o el menú de apps; te llegarán avisos aunque no tengas el navegador delante.'))} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline">
               Instalar en esta computadora
             </button>
           )}
           {status === 'on' && (
-            <button type="button" onClick={test} disabled={busy} className="text-[12.5px] font-medium text-[#E8C15A] hover:underline disabled:opacity-60">
+            <button type="button" onClick={test} disabled={busy} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline disabled:opacity-60">
               {busy ? 'Enviando…' : 'Enviar notificación de prueba'}
             </button>
           )}

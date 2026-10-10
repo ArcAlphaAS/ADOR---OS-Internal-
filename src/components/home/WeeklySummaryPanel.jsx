@@ -40,7 +40,7 @@ export default function WeeklySummaryPanel({ summary, onClose }) {
           <div className="flex items-start justify-between px-7 pt-7">
             <div>
               <span
-                className="font-medium text-[#1E5FAD]"
+                className="font-medium text-[#F4EEE2]"
                 style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}
               >
                 Resumen Semanal

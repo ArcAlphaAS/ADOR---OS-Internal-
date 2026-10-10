@@ -94,7 +94,7 @@ export default function EventDetailModal({ event, onClose }) {
               href={event.htmlLink}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-medium text-[#1E5FAD] transition-colors hover:bg-[#1E5FAD]/10"
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/10"
             >
               Abrir en Google Calendar <ArrowRightIcon size={13} />
             </a>

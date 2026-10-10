@@ -50,8 +50,8 @@ export default function FinanzasModule({ user, onNavigate }) {
           <button
             type="button"
             onClick={() => setModal('ingreso')}
-            className="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10"
-            style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+            className="rounded-full border px-4 py-2 text-[13px] font-medium transition-colors duration-150 hover:bg-white/10"
+            style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
           >
             + Ingreso
           </button>

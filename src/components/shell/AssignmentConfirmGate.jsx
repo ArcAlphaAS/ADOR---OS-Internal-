@@ -107,7 +107,7 @@ export default function AssignmentConfirmGate({ user, actorName, onNavigate }) {
                   setChatting(true)
                   onNavigate('chat', { type: 'chat', convType: 'dm', convId: dmIdFor(user.uid, current.lastAssignedByUid), participantUids: [user.uid, current.lastAssignedByUid] })
                 }}
-                className="mt-2 text-[12px] font-medium text-[#E8C15A] hover:underline"
+                className="mt-2 text-[12px] font-medium text-[#F4EEE2] hover:underline"
               >
                 Escribirle a {assignedBy.split(' ')[0]} →
               </button>

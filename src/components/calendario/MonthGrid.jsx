@@ -42,7 +42,7 @@ export default function MonthGrid({ monthDate, events, tasks = [], onSelectDay, 
             <div key={i} role="button" tabIndex={0} onClick={() => onSelectDay(day)} className="flex min-h-[104px] cursor-pointer flex-col gap-1 border-b border-l border-white/[0.04] p-1.5 text-left transition-colors duration-150 first:border-l-0 hover:bg-white/[0.03]">
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
-                style={{ background: isToday ? '#1E5FAD' : 'transparent', color: '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
+                style={{ background: isToday ? '#F5F5F5' : 'transparent', color: isToday ? '#0A0A0A' : '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
               >
                 {day.getDate()}
               </span>

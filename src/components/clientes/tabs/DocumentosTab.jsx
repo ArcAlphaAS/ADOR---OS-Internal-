@@ -40,10 +40,10 @@ export default function DocumentosTab({ client, actorName }) {
         type="button"
         onClick={attach}
         disabled={drive.busy}
-        className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] px-6 py-8 text-center transition-colors duration-150 hover:border-[#1E5FAD]/50 disabled:opacity-60"
+        className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.12] px-6 py-8 text-center transition-colors duration-150 hover:border-white/30 disabled:opacity-60"
       >
         <UploadIcon size={20} style={{ color: '#888888' }} />
-        <p className="text-[13px] font-medium text-[#6FA3E0]">{drive.busy ? 'Abriendo Google Drive…' : 'Adjuntar desde Google Drive'}</p>
+        <p className="text-[13px] font-medium text-[#F4EEE2]">{drive.busy ? 'Abriendo Google Drive…' : 'Adjuntar desde Google Drive'}</p>
         <p className="text-[11px] text-[#666666]">Elige un archivo de Drive o súbelo desde tu computadora (PDF, Word, Excel…)</p>
       </button>
 
@@ -68,7 +68,7 @@ export default function DocumentosTab({ client, actorName }) {
                   </div>
                 </div>
                 {open && (
-                  <span className="flex items-center gap-1 text-[11px] text-[#6FA3E0] opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="flex items-center gap-1 text-[11px] text-[#F4EEE2] opacity-0 transition-opacity group-hover:opacity-100">
                     Abrir <ArrowRightIcon size={11} />
                   </span>
                 )}

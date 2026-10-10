@@ -104,8 +104,8 @@ function NoteCard({ note, actorName, onArchive, onDelete }) {
               type="button"
               onClick={convertToTask}
               disabled={converting}
-              className="whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors duration-150 hover:bg-[#1E5FAD]/10 disabled:opacity-50"
-              style={{ borderColor: '#1E5FAD', color: '#1E5FAD' }}
+              className="whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors duration-150 hover:bg-white/10 disabled:opacity-50"
+              style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
             >
               {converting ? 'Creando…' : '+ Crear tarea'}
             </button>
@@ -228,7 +228,7 @@ function FocusCard({ task, workstream, onStartFocus }) {
   return (
     <div className="ador-glass ador-grain flex items-center justify-between gap-4 rounded-2xl px-5 py-4">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1E5FAD]/20 text-[#1E5FAD]">
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[#F4EEE2]">
           <ListViewIcon size={16} />
         </span>
         <div className="min-w-0">
@@ -247,8 +247,8 @@ function FocusCard({ task, workstream, onStartFocus }) {
       <button
         type="button"
         onClick={() => onStartFocus(task)}
-        className="flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[#F5F5F5] transition-opacity duration-150 hover:opacity-90"
-        style={{ background: '#1E5FAD' }}
+        className="flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-opacity duration-150 hover:opacity-90"
+        style={{ background: '#F5F5F5' }}
       >
         <PlayIcon size={12} /> Iniciar enfoque
       </button>
@@ -321,8 +321,8 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
               onClick={complete}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[14px] font-semibold text-[#F5F5F5] transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
-              style={{ background: '#1E5FAD' }}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+              style={{ background: '#F5F5F5' }}
             >
               <CheckCircleIcon size={16} /> {completing ? 'Completando...' : 'Marcar como completada'}
             </motion.button>
@@ -491,7 +491,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-[#1E5FAD]/50 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
@@ -628,7 +628,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
         />
         <Section
           title="Para hoy"
-          color="#1E5FAD"
+          color="#F4EEE2"
           Icon={CalendarIcon}
           tasks={hoy}
           onOpenTask={onOpenTask}
