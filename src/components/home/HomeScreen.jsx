@@ -72,19 +72,14 @@ export default function HomeScreen({ user, onNavigate }) {
         <motion.div variants={itemVariants}>
           <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
         </motion.div>
-        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8 lg:[&:has(>div:first-child:empty)]:grid-cols-1">
-          <motion.div variants={itemVariants} className="h-full">
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-12 lg:gap-6">
+          <motion.div variants={itemVariants} className="h-full xl:col-span-5">
             <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
-          <motion.div variants={itemVariants} className="h-full">
+          <motion.div variants={itemVariants} className="h-full xl:col-span-4">
             <WeeklySummaryCard />
           </motion.div>
-        </div>
-      </Zone>
-
-      <Zone title="Pulso de la empresa">
-        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_1.3fr] lg:gap-8">
-          <motion.div variants={itemVariants} className="h-full">
+          <motion.div variants={itemVariants} className="h-full lg:col-span-2 xl:col-span-3">
             <FinanceBlock
               hasData={finance.movements.length > 0}
               ingresosDelMes={finance.ingresosDelMes}
@@ -93,19 +88,19 @@ export default function HomeScreen({ user, onNavigate }) {
               onOpen={() => onNavigate?.('finanzas')}
             />
           </motion.div>
-          <motion.div variants={itemVariants} className="h-full empty:hidden">
-            <InterventionsBlock interventions={interventions} />
-          </motion.div>
         </div>
       </Zone>
 
-      <Zone title="Equipo">
+      <Zone title="Empresa y equipo">
         <HomePeople>
-          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8 lg:[&:has(>div:first-child:empty)]:grid-cols-1">
-            <motion.div variants={itemVariants} className="h-full empty:hidden">
+          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-12 lg:gap-6">
+            <motion.div variants={itemVariants} className="h-full empty:hidden xl:col-span-4">
+              <InterventionsBlock interventions={interventions} />
+            </motion.div>
+            <motion.div variants={itemVariants} className="h-full empty:hidden xl:col-span-5">
               <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
             </motion.div>
-            <motion.div variants={itemVariants} className="h-full">
+            <motion.div variants={itemVariants} className="h-full lg:col-span-2 xl:col-span-3">
               <CommunityCard user={user} onNavigate={onNavigate} />
             </motion.div>
           </div>
