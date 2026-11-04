@@ -99,27 +99,40 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
     )
   }
 
+  const on = status === 'on'
+  const canToggle = status === 'off'
   return (
-    <div className="ador-glass w-full rounded-xl px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] font-medium text-[#F5F5F5]">Notificaciones en este dispositivo</span>
-        <span className={`text-[11px] font-medium ${status === 'on' ? 'text-[#4CAF50]' : 'text-[#888888]'}`}>{status === 'on' ? 'Activadas' : status === 'denied' ? 'Bloqueadas' : 'Apagadas'}</span>
+    <div className="ador-glass w-full rounded-2xl px-4 py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="block text-[13.5px] text-[#F5F5F5]">Notificaciones en este dispositivo</span>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[#7A7A7A]">{copy}</p>
+        </div>
+        {(on || canToggle) && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            aria-label="Notificaciones en este dispositivo"
+            onClick={canToggle ? turnOn : undefined}
+            disabled={busy}
+            className="relative mt-0.5 h-[26px] w-[44px] flex-shrink-0 rounded-full transition-colors duration-200 disabled:opacity-60"
+            style={{ background: on ? '#4CAF50' : 'rgba(255,255,255,0.16)', cursor: on ? 'default' : 'pointer' }}
+          >
+            <span className="absolute top-[2px] h-[22px] w-[22px] rounded-full bg-white shadow transition-all duration-200" style={{ left: on ? 20 : 2 }} />
+          </button>
+        )}
+        {status === 'denied' && <span className="flex-shrink-0 text-[11px] font-medium text-[#D98A86]">Bloqueadas</span>}
       </div>
-      <p className="mt-1 text-[12px] leading-relaxed text-[#888888]">{copy}</p>
-      {message && <p className="mt-1.5 text-[12px] leading-relaxed text-[#F4EEE2]">{message}</p>}
-      {(status === 'off' || status === 'on') && (
-        <div className="mt-2 flex items-center gap-4">
-          {status === 'off' && (
-            <button type="button" onClick={turnOn} disabled={busy} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline disabled:opacity-60">
-              {busy ? 'Activando…' : 'Activar'}
-            </button>
-          )}
-          {installable && variant === 'settings' && (
+      {message && <p className="mt-2 text-[12px] leading-relaxed text-[#F4EEE2]">{message}</p>}
+      {(installable || on) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-4 border-t border-white/[0.07] pt-2.5">
+          {installable && (
             <button type="button" onClick={() => installApp().then((ok) => ok && setMessage('Instalada — ábrela desde el Dock o el menú de apps; te llegarán avisos aunque no tengas el navegador delante.'))} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline">
               Instalar en esta computadora
             </button>
           )}
-          {status === 'on' && (
+          {on && (
             <button type="button" onClick={test} disabled={busy} className="text-[12.5px] font-medium text-[#F4EEE2] hover:underline disabled:opacity-60">
               {busy ? 'Enviando…' : 'Enviar notificación de prueba'}
             </button>
