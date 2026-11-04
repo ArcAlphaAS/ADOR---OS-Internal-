@@ -70,7 +70,7 @@ export default function HomeScreen({ user, onNavigate }) {
 
       <Zone title="Hoy">
         <motion.div variants={itemVariants}>
-          <TuDiaCard user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+          <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
         </motion.div>
         <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-8 lg:[&:has(>div:first-child:empty)]:grid-cols-1">
           <motion.div variants={itemVariants} className="h-full">

@@ -22,6 +22,14 @@ export function useDayData(uid) {
   const hoy = mine.filter((t) => isDueToday(t) && !isOverdue(t))
   const pendientes = mine.filter((t) => !isOverdue(t) && !isDueToday(t))
   const completedToday = tasks.filter(isCompletedToday).length
+  // Tareas abiertas por día de vencimiento (para los puntos de la tira de la semana).
+  const dueByDay = {}
+  for (const t of mine) {
+    const d = t.dueDate?.toDate?.()
+    if (!d) continue
+    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    dueByDay[k] = (dueByDay[k] || 0) + 1
+  }
   const focus = pickFocusTask(vencidas, hoy, pendientes)
   const upNext = [...[...vencidas].sort(byPriority), ...[...hoy].sort(byPriority)].filter((t) => t.id !== focus?.id).slice(0, 3)
 
@@ -37,6 +45,7 @@ export function useDayData(uid) {
     upNext,
     workstreamName,
     priorityMeta,
+    dueByDay,
     openCount: vencidas.length + hoy.length,
     completedToday,
     totalToday: vencidas.length + hoy.length + completedToday,
