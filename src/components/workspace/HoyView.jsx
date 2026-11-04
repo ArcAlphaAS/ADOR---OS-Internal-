@@ -427,24 +427,27 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
             groups.map((g) => (
               <div key={g.label} className="mt-1">
                 <p className="pb-1 pt-2 text-[11px] font-medium capitalize tracking-wide text-[#767676]">{g.label}</p>
-                <ul className="divide-y divide-white/[0.04]">
-                  {g.items.map((t) => {
+                {/* Línea de tiempo: hora a la izquierda, punto con check unido por un conector punteado, título tachado. */}
+                <ul>
+                  {g.items.map((t, i) => {
                     const ws = workstreamById[t.workstreamId]
                     const obj = t.objetivoId ? objetivoById[t.objetivoId] : null
                     const others = (t.assignedTo || []).filter((u) => u !== userId)
+                    const last = i === g.items.length - 1
                     return (
-                      <li key={t.id}>
-                        <button type="button" onClick={() => onOpenTask?.(t)} className="flex w-full items-center gap-3 py-2.5 text-left">
-                          <span className="text-[#4CAF50]">✓</span>
+                      <li key={t.id} className="relative">
+                        {!last && <span aria-hidden className="absolute bottom-[-4px] left-[62px] top-[30px] w-px border-l border-dashed border-white/[0.16]" />}
+                        <button type="button" onClick={() => onOpenTask?.(t)} className="flex w-full items-start gap-3 py-2 text-left">
+                          <span className="w-[42px] flex-shrink-0 pt-[1px] text-[12px] tabular-nums text-[#767676]">{t.completedAt.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[11px] font-bold leading-none text-[#0A0A0A]">✓</span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13.5px] text-[#C9C9C9]">{t.title}</span>
+                            <span className="block truncate text-[13.5px] text-[#767676] line-through decoration-white/[0.25]">{t.title}</span>
                             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#767676]">
                               {ws && <span>{ws.name}</span>}
                               {obj && <span className="text-[#F4EEE2]">↗ {obj.title}</span>}
                             </span>
                           </span>
                           {others.length > 0 && <AvatarStack userIds={others} userById={userById} size={20} />}
-                          <span className="flex-shrink-0 text-[11.5px] tabular-nums text-[#767676]">{t.completedAt.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
                         </button>
                       </li>
                     )
