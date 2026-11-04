@@ -24,7 +24,7 @@ function Row({ item }) {
 export default function TeamPulseCard() {
   const { items, loaded } = useTeamActivity()
   return (
-    <div className={`ador-glass ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
+    <div className={`ador-glass ador-quiet ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
       <CardHeader label="Hoy en el equipo" />
       {!loaded ? (
         <div className="mt-4 flex flex-col gap-3">

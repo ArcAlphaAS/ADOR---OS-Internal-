@@ -54,8 +54,8 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
   const points = series.map((p) => ({ month: p.month, amount: p.ingresos }))
 
   return (
-    <button type="button" onClick={onOpen} className={`ador-glass ador-grain ador-card-hover flex h-full w-full flex-col ${CARD_RADIUS} ${CARD_PAD} text-left`}>
-      <CardHeader label="Resumen financiero" dot="#F4EEE2" action="Abrir →" />
+    <button type="button" onClick={onOpen} className={`ador-glass ador-quiet ador-grain ador-card-hover flex h-full w-full flex-col ${CARD_RADIUS} ${CARD_PAD} text-left`}>
+      <CardHeader label="Resumen financiero" dot="#F4EEE2" action="→" />
 
       {!hasData ? (
         <div className="flex flex-col items-center gap-4 py-10">

@@ -292,7 +292,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
 
           {agenda.length > 0 && (
             <motion.div {...rise(0.6)} className="mt-9">
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[#767676]">Agenda de hoy</p>
+              <p className="mb-1 text-[13px] font-medium text-[#A8A8A8]">Agenda de hoy</p>
               <ul className="mt-3">
                 <AnimatePresence initial={false}>
                   {agenda.map((item, i) =>

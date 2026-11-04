@@ -130,7 +130,7 @@ export default function CommunityCard({ user, onNavigate }) {
   ]
 
   return (
-    <div className={`ador-glass ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
+    <div className={`ador-glass ador-quiet ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
       <CardHeader label="Comunidad" />
 
       {moments.length > 0 && (

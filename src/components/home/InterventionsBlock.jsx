@@ -29,7 +29,7 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
 
 export default function InterventionsBlock({ interventions = [] }) {
   return (
-    <div className={`ador-glass ador-grain ador-card-hover h-full ${CARD_RADIUS} ${CARD_PAD}`}>
+    <div className={`ador-glass ador-quiet ador-grain ador-card-hover h-full ${CARD_RADIUS} ${CARD_PAD}`}>
       <CardHeader label="Intervenciones activas" count={interventions.length > 0 ? interventions.length : null} />
 
       {interventions.length === 0 ? (

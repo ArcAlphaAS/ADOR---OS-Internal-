@@ -65,7 +65,7 @@ export default function HomeScreen({ user, onNavigate }) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-12 lg:px-12 lg:pt-16"
+      className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-10 px-4 pb-20 pt-6 md:px-8 lg:gap-16 lg:px-12 lg:pt-16"
     >
       <motion.div variants={itemVariants}>
         <GreetingBlock name={firstName(user)} doneToday={day.completedToday} totalToday={day.totalToday} />
@@ -75,14 +75,19 @@ export default function HomeScreen({ user, onNavigate }) {
         <motion.div variants={itemVariants}>
           <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
         </motion.div>
-        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-12 lg:gap-6">
-          <motion.div variants={itemVariants} className="h-full xl:col-span-5">
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
+          <motion.div variants={itemVariants} className="h-full lg:col-span-7">
             <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
-          <motion.div variants={itemVariants} className="h-full xl:col-span-4">
+          <motion.div variants={itemVariants} className="h-full lg:col-span-5">
             <WeeklySummaryCard />
           </motion.div>
-          <motion.div variants={itemVariants} className="h-full lg:col-span-2 xl:col-span-3">
+        </div>
+      </Zone>
+
+      <Zone title="La empresa" foldOnPhone>
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5 lg:[&:has(>div:last-child:empty)]:grid-cols-1">
+          <motion.div variants={itemVariants} className="h-full lg:col-span-5">
             <FinanceBlock
               hasData={finance.movements.length > 0}
               ingresosDelMes={finance.ingresosDelMes}
@@ -91,22 +96,22 @@ export default function HomeScreen({ user, onNavigate }) {
               onOpen={() => onNavigate?.('finanzas')}
             />
           </motion.div>
+          <motion.div variants={itemVariants} className="h-full empty:hidden lg:col-span-7">
+            <InterventionsBlock interventions={interventions} />
+          </motion.div>
         </div>
       </Zone>
 
-      <Zone title="Empresa y equipo">
+      <Zone title="El equipo" foldOnPhone>
         <HomePeople>
-          <motion.div variants={itemVariants}>
-            <TeamPulseCard />
-          </motion.div>
-          <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-12 lg:gap-6">
-            <motion.div variants={itemVariants} className="h-full empty:hidden xl:col-span-4">
-              <InterventionsBlock interventions={interventions} />
+          <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
+            <motion.div variants={itemVariants} className="h-full lg:col-span-5">
+              <TeamPulseCard />
             </motion.div>
-            <motion.div variants={itemVariants} className="h-full empty:hidden xl:col-span-5">
+            <motion.div variants={itemVariants} className="h-full empty:hidden lg:col-span-4">
               <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
             </motion.div>
-            <motion.div variants={itemVariants} className="h-full lg:col-span-2 xl:col-span-3">
+            <motion.div variants={itemVariants} className="h-full lg:col-span-3">
               <CommunityCard user={user} onNavigate={onNavigate} />
             </motion.div>
           </div>
