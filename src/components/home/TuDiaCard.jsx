@@ -69,22 +69,41 @@ function Meeting({ meeting, calendarStatus, onOpenCalendar, now }) {
   )
 }
 
-function UpNextRow({ task, workstream, onOpen, onComplete }) {
+// Línea de tiempo vertical (de las referencias de Hoy): un punto por tarea
+// unido por un conector punteado; la primera ("lo siguiente") va resaltada en
+// una tarjeta suave. Al completar se tacha un instante antes de salir.
+function UpNextRow({ task, workstream, first, last, onOpen, onComplete }) {
   const overdue = isOverdue(task)
+  const [done, setDone] = useState(false)
+  const ring = overdue ? '#D98A86' : task.priority === 'alta' ? '#E8C15A' : 'rgba(255,255,255,0.3)'
   return (
-    <motion.li layout exit={{ opacity: 0, x: 12, transition: { duration: 0.35 } }} className="flex items-center gap-3 py-2.5">
-      <button
-        type="button"
-        onClick={onComplete}
-        aria-label="Marcar como completada"
-        className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border border-white/[0.28] transition-colors hover:border-[#E8C15A]"
-      />
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-[13.5px] text-[#E4E4E4] transition-colors hover:text-white">{task.title}</span>
-        <span className="block truncate text-[12px]" style={{ color: overdue ? '#D98A86' : '#767676' }}>
-          {[workstream, dueLabel(task)].filter(Boolean).join(' · ')}
-        </span>
-      </button>
+    <motion.li layout exit={{ opacity: 0, x: 12, transition: { duration: 0.35 } }} className="relative">
+      {!last && <span aria-hidden className="absolute left-[10px] top-[34px] bottom-[-6px] w-px border-l border-dashed border-white/[0.16]" />}
+      <div className={`flex items-start gap-3 rounded-xl py-2.5 ${first ? 'bg-white/[0.045] px-2.5 -mx-2.5' : ''}`}>
+        <button
+          type="button"
+          onClick={() => {
+            setDone(true)
+            setTimeout(onComplete, 350)
+          }}
+          aria-label="Marcar como completada"
+          className="mt-[1px] flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] bg-black transition-colors hover:border-[#F4EEE2]"
+          style={{ borderColor: done ? '#F4EEE2' : ring, background: done ? '#F4EEE2' : undefined }}
+        >
+          {done && <span className="text-[11px] font-bold leading-none text-[#0A0A0A]">✓</span>}
+        </button>
+        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+          <span
+            className="block truncate text-[13.5px] transition-colors hover:text-white"
+            style={{ color: done ? '#767676' : '#E4E4E4', textDecoration: done ? 'line-through' : 'none' }}
+          >
+            {task.title}
+          </span>
+          <span className="block truncate text-[12px]" style={{ color: overdue ? '#D98A86' : '#767676' }}>
+            {[first ? 'Lo siguiente' : null, workstream, dueLabel(task)].filter(Boolean).join(' · ')}
+          </span>
+        </button>
+      </div>
     </motion.li>
   )
 }
@@ -206,12 +225,14 @@ export default function TuDiaCard({ user, nextMeeting, calendarStatus, onNavigat
           {day.upNext.length > 0 && (
             <motion.div {...rise(0.6)} className="mt-9">
               <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[#767676]">Después</p>
-              <ul className="divide-y divide-white/[0.06]">
+              <ul className="mt-3">
                 <AnimatePresence initial={false}>
-                  {day.upNext.map((task) => (
+                  {day.upNext.map((task, i) => (
                     <UpNextRow
                       key={task.id}
                       task={task}
+                      first={i === 0}
+                      last={i === day.upNext.length - 1}
                       workstream={day.workstreamName(task)}
                       onOpen={() => openTask(task)}
                       onComplete={() => complete(task)}
