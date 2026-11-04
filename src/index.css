@@ -485,3 +485,22 @@ html.light video {
   :where(td, th, .tabular-nums) { font-variant-numeric: tabular-nums; }
   ::selection { background: rgba(244, 238, 226, 0.28); }
 }
+
+/* Modo claro, afinado: el filtro invierte todo, así que aquí se escribe el
+   color "de antes de invertir". Fondo marfil cálido (no blanco puro), tarjetas
+   blancas que se despegan del fondo con una sombra suave, y los interruptores
+   conservan su verde. */
+html.light,
+html.light body,
+html.light #root { background: #0a0b10; }
+html.light .ador-glass:not(.ador-quiet) {
+  background: rgba(0, 0, 0, 0.42);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.1), 0 10px 28px -10px rgba(255, 255, 255, 0.1);
+}
+html.light .ador-quiet { background: transparent; border-color: rgba(255, 255, 255, 0.12); }
+html.light .ador-modal-surface {
+  box-shadow: 0 24px 56px -16px rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+html.light [role='switch'] { filter: invert(1) hue-rotate(180deg); }
+html.light .ador-grain::after { opacity: 0.015; }
