@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { firstName } from '../../lib/user'
 import { useHomeData } from '../../hooks/useHomeData'
 import { useFinanceData } from '../../hooks/useFinanceData'
+import { useDayData } from '../../hooks/useDayData'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import GreetingBlock from './GreetingBlock'
 import TuDiaCard from './TuDiaCard'
@@ -10,6 +11,7 @@ import WeeklySummaryCard from './WeeklySummaryCard'
 import FinanceBlock from './FinanceBlock'
 import InterventionsBlock from './InterventionsBlock'
 import LatestNewsCard from './LatestNewsCard'
+import TeamPulseCard from './TeamPulseCard'
 import CommunityCard from './CommunityCard'
 import HomePeople from './HomePeople'
 import { Zone } from './CardHeader'
@@ -54,6 +56,7 @@ export default function HomeScreen({ user, onNavigate }) {
   const { interventions } = useHomeData(user?.uid)
   // Same numbers as Finanzas (client payments + manual incomes).
   const finance = useFinanceData()
+  const day = useDayData(user?.uid)
   const calendar = useGoogleCalendar(user?.uid, { initialRange: nextTwoWeeks })
   const nextMeeting = calendar.status === 'ready' ? pickNextMeeting(calendar.events) : null
 
@@ -65,7 +68,7 @@ export default function HomeScreen({ user, onNavigate }) {
       className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-12 lg:px-12 lg:pt-16"
     >
       <motion.div variants={itemVariants}>
-        <GreetingBlock name={firstName(user)} />
+        <GreetingBlock name={firstName(user)} doneToday={day.completedToday} totalToday={day.totalToday} />
       </motion.div>
 
       <Zone title="Hoy">
@@ -93,6 +96,9 @@ export default function HomeScreen({ user, onNavigate }) {
 
       <Zone title="Empresa y equipo">
         <HomePeople>
+          <motion.div variants={itemVariants}>
+            <TeamPulseCard />
+          </motion.div>
           <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-12 lg:gap-6">
             <motion.div variants={itemVariants} className="h-full empty:hidden xl:col-span-4">
               <InterventionsBlock interventions={interventions} />

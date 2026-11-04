@@ -60,7 +60,14 @@ function getSubtext(date, seasonsOff) {
   return variants[dayOfYear(date) % variants.length]
 }
 
-export default function GreetingBlock({ name }) {
+// Un reconocimiento solo cuando es verdad: cerraste cosas hoy, o cerraste todo.
+function praise(done, total) {
+  if (!done) return null
+  if (total > 0 && done >= total) return done === 1 ? 'Cerraste lo que tenías para hoy. Buen trabajo.' : `Cerraste las ${done} tareas de hoy. Buen trabajo.`
+  return done === 1 ? 'Ya cerraste una tarea hoy. Así se empieza.' : `Ya llevas ${done} tareas cerradas hoy.`
+}
+
+export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -101,7 +108,7 @@ export default function GreetingBlock({ name }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{getSubtext(now, seasonsOff)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
     </div>
   )
 }
