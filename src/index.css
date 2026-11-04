@@ -439,3 +439,15 @@ input:-webkit-autofill:focus {
     padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 }
+
+/* Modo claro: la app es oscura de origen, así que el modo claro invierte la
+   página completa y vuelve a invertir las fotos para que se vean normales.
+   Los logos (.svg) y el canvas se dejan invertidos a propósito. */
+html.light {
+  filter: invert(1) hue-rotate(180deg);
+  color-scheme: light;
+}
+html.light img:not([src$='.svg']),
+html.light video {
+  filter: invert(1) hue-rotate(180deg);
+}

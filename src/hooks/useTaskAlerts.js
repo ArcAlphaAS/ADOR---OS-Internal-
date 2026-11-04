@@ -16,7 +16,7 @@ export function useTaskAlerts(uid, onNavigate) {
         .map((a) => ({
           key: `taskalert:${a.id}`,
           at: a.createdAt?.toMillis?.() || 0,
-          text: a.kind === 'mention' ? `@ ${a.fromName} te mencionó en “${a.taskTitle}”` : `💬 ${a.fromName} comentó en “${a.taskTitle}”`,
+          text: a.kind === 'mention' ? `@ ${a.fromName} te mencionó en “${a.taskTitle}”` : a.kind === 'date' ? `📅 ${a.fromName} movió fechas de “${a.taskTitle}” — ${a.text}` : `💬 ${a.fromName} comentó en “${a.taskTitle}”`,
           time: '',
           onClick: () => {
             markTaskAlertRead(a.id).catch(() => {})

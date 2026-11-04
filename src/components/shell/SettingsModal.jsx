@@ -4,6 +4,22 @@ import { motion } from 'framer-motion'
 import PushNotificationsCard from './PushNotificationsCard'
 import { SPRING } from '../../lib/motion'
 
+function ThemeToggle() {
+  const [light, setLight] = useState(() => document.documentElement.classList.contains('light'))
+  const toggle = () => {
+    const next = !light
+    document.documentElement.classList.toggle('light', next)
+    try { localStorage.setItem('ador_theme', next ? 'light' : 'dark') } catch { /* sin almacenamiento */ }
+    setLight(next)
+  }
+  return (
+    <button type="button" onClick={toggle} className="ador-glass w-full rounded-xl px-4 py-3 text-left transition-colors duration-150 hover:bg-white/[0.06]">
+      <span className="block text-[13px] font-medium text-[#F5F5F5]">Apariencia: {light ? 'Modo claro' : 'Modo oscuro'}</span>
+      <span className="mt-0.5 block text-[12px] text-[#888888]">Toca para cambiar a {light ? 'modo oscuro' : 'modo claro'}</span>
+    </button>
+  )
+}
+
 export default function SettingsModal({ user, onClose, onResetPassword, onShowOnboarding }) {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -45,6 +61,7 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
           <p className="mt-1 text-[13px] text-[#888888]">{user?.email}</p>
 
           <div className="mt-6 flex flex-col gap-2.5">
+            <ThemeToggle />
             <PushNotificationsCard user={user} />
 
             <button

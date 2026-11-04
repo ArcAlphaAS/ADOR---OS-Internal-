@@ -359,6 +359,40 @@ export function addTaskHistoryEvent(taskId, description) {
 // actually new — only newly-added people (never the actor themselves) go
 // into `pendingConfirmations`, existing assignees already confirmed stay
 // confirmed. See createTask's pendingConfirmations comment / CLAUDE.md §20.
+// ---- Aviso de cambio de fecha ----
+// Cuando alguien cambia el vencimiento, el inicio o el fin de una tarea, todas
+// las personas de esa tarea (menos quien lo cambió) reciben un aviso en la
+// campana (`taskAlerts`, kind 'date') y un push con el antes → después.
+const DATE_FIELDS = { dueDate: 'la fecha límite', startDate: 'el inicio', endDate: 'el fin' }
+const dayKey = (v) => {
+  if (!v) return ''
+  const d = v.toDate ? v.toDate() : v instanceof Date ? v : null
+  if (d) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return String(v).slice(0, 10)
+}
+const dayLabel = (v) => {
+  const k = dayKey(v)
+  if (!k) return 'sin fecha'
+  return new Date(`${k}T12:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '')
+}
+function taskDateChanges(task, data) {
+  return Object.keys(DATE_FIELDS)
+    .filter((f) => f in data && dayKey(data[f]) !== dayKey(task[f]))
+    .map((f) => ({ field: f, label: DATE_FIELDS[f], from: dayLabel(task[f]), to: dayLabel(data[f]) }))
+}
+function notifyDateChanges(task, data, changes, actorUserId, actorName) {
+  if (!changes.length || !db) return
+  const people = [...new Set([...(task.assignedTo || []), ...('assignedTo' in data ? data.assignedTo : [])])].filter((u) => u && u !== actorUserId)
+  if (!people.length) return
+  const summary = changes.map((c) => `${c.label}: ${c.from} → ${c.to}`).join(' · ')
+  const batch = writeBatch(db)
+  for (const uid of people) {
+    batch.set(doc(collection(db, 'taskAlerts')), { toUid: uid, taskId: task.id, taskTitle: task.title || '', fromName: actorName, kind: 'date', text: summary, read: false, createdAt: serverTimestamp() })
+  }
+  batch.commit().catch(() => {})
+  pushNotify(people, { title: `📅 ${firstWord(actorName)} cambió ${changes.length > 1 ? 'las fechas' : changes[0].label} de una tarea`, body: `${task.title}: ${summary}`.slice(0, 170), tag: `task:${task.id}`, url: `/?open=workspace&task=${task.id}` }, { uid: actorUserId, name: actorName })
+}
+
 export function applyTaskUpdate(task, data, actorUserId, actorName) {
   const patch = { ...data }
   if (data.status === 'completado' && task.status !== 'completado') haptic('success')
@@ -374,7 +408,9 @@ export function applyTaskUpdate(task, data, actorUserId, actorName) {
     }
   }
   const newlyAssigned = 'assignedTo' in data ? data.assignedTo.filter((uid) => !(task.assignedTo || []).includes(uid) && uid !== actorUserId) : []
+  const dateChanges = taskDateChanges(task, data)
   return updateTask(task.id, patch).then(() => {
+    notifyDateChanges(task, data, dateChanges, actorUserId, actorName)
     pushNotify(newlyAssigned, { title: `📋 ${firstWord(actorName)} te asignó una tarea`, body: task.title || '', tag: `task:${task.id}`, url: `/?open=workspace&task=${task.id}` }, { uid: actorUserId, name: actorName })
     const done = addTaskHistoryEvent(task.id, `${describeTaskChange(data)} — ${actorName}`)
     return data.status === 'completado' && task.status !== 'completado' ? done.then(() => spawnRecurringTask(task, actorName)) : done
