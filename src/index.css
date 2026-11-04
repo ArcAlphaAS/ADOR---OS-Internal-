@@ -451,3 +451,20 @@ html.light img:not([src$='.svg']),
 html.light video {
   filter: invert(1) hue-rotate(180deg);
 }
+
+/* Inicio: foco de luz que sigue al cursor dentro de cada tarjeta (--mx/--my los
+   pone HomeScreen). Solo un brillo suave, sin transform (el blur del vidrio
+   se rompe si se combina). */
+@media (hover: hover) {
+  .ador-home .ador-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(244, 238, 226, 0.075), transparent 65%);
+  }
+  .ador-home .ador-glass:hover::before { opacity: 1; }
+}

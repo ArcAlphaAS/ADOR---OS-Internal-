@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useWeeklySummary } from '../../hooks/useWeeklySummary'
 import WeeklySummaryPanel from './WeeklySummaryPanel'
 import { currencyPEN } from '../../lib/clientStages'
+import AnimatedNumber from '../common/AnimatedNumber'
 import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 export default function WeeklySummaryCard() {
@@ -29,10 +30,10 @@ export default function WeeklySummaryCard() {
           {[
             ['Hechas', summary.stats?.completed ?? 0, '#F4EEE2'],
             ['Vencidas', summary.stats?.overdue ?? 0, summary.stats?.overdue ? '#EF5350' : '#8A8A8A'],
-            ['Ingresos', currencyPEN.format(summary.stats?.income ?? 0), '#F4EEE2'],
-          ].map(([label, value, color]) => (
+            ['Ingresos', summary.stats?.income ?? 0, '#F4EEE2', (n) => currencyPEN.format(n)],
+          ].map(([label, value, color, format]) => (
             <div key={label} className="rounded-2xl bg-white/[0.045] px-3 py-3">
-              <p className="truncate text-[20px] font-light tabular-nums leading-none" style={{ color }}>{value}</p>
+              <p className="truncate text-[20px] font-light tabular-nums leading-none" style={{ color }}><AnimatedNumber value={value} format={format} /></p>
               <p className="mt-1.5 text-[11px] text-[#8A8A8A]">{label}</p>
             </div>
           ))}
