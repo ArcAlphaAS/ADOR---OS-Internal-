@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useWeeklySummary } from '../../hooks/useWeeklySummary'
 import WeeklySummaryPanel from './WeeklySummaryPanel'
+import { currencyPEN } from '../../lib/clientStages'
 import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 export default function WeeklySummaryCard() {
@@ -24,6 +25,18 @@ export default function WeeklySummaryCard() {
         ) : (
           <p className={`mt-3 text-[#F5F5F5] ${summary.level === 'calm' ? 'text-[14px] font-light' : 'text-[15px] font-medium'}`}>{summary.tldr}</p>
         )}
+        <div className="mt-5 grid w-full grid-cols-3 gap-2.5">
+          {[
+            ['Hechas', summary.stats?.completed ?? 0, '#F4EEE2'],
+            ['Vencidas', summary.stats?.overdue ?? 0, summary.stats?.overdue ? '#EF5350' : '#8A8A8A'],
+            ['Ingresos', currencyPEN.format(summary.stats?.income ?? 0), '#F4EEE2'],
+          ].map(([label, value, color]) => (
+            <div key={label} className="rounded-2xl bg-white/[0.045] px-3 py-3">
+              <p className="truncate text-[20px] font-light tabular-nums leading-none" style={{ color }}>{value}</p>
+              <p className="mt-1.5 text-[11px] text-[#8A8A8A]">{label}</p>
+            </div>
+          ))}
+        </div>
         <span className="mt-auto inline-block pt-4 text-[12px] font-medium text-[#F4EEE2]">Ver resumen completo →</span>
       </button>
 

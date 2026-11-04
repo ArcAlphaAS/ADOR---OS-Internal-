@@ -24,7 +24,14 @@ function Sparkline({ points }) {
   const [lastX, lastY] = coords[coords.length - 1]
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-14 w-full" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-20 w-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="fin-area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#F4EEE2" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#F4EEE2" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${path} L${width},${height} L0,${height} Z`} fill="url(#fin-area)" style={{ animation: 'ador-fade-in 0.8s ease-out 0.4s backwards' }} />
       <path
         d={path}
         pathLength="1"

@@ -107,5 +107,5 @@ export function useWeeklySummary() {
     incomeThisWeek,
   })
 
-  return { ...narrative, range, rhythm }
+  return { ...narrative, range, rhythm, stats: { completed: tasksCompletedThisWeek, overdue: tasksOverdue.length, dueThisWeek: tasksDueThisWeek, income: incomeThisWeek } }
 }

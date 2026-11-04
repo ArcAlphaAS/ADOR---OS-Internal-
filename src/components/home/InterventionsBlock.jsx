@@ -4,20 +4,24 @@ import CardHeader, { CARD_PAD, CARD_RADIUS } from './CardHeader'
 
 function InterventionRow({ client, week, totalWeeks, progress }) {
   return (
-    <div className="py-4 first:pt-0 last:pb-0">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[15px] font-medium text-[#F5F5F5]">{client}</span>
-        <span className="text-[12px] text-[#888888]">
-          Semana {week} de {totalWeeks}
-        </span>
-      </div>
-      <div className="mt-3 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.08]">
-        <motion.div
-          initial={{ width: '0%' }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="h-full rounded-full bg-[#F4EEE2]"
-        />
+    <div className="flex items-center gap-3.5 py-3.5 first:pt-1 last:pb-1">
+      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[14px] font-medium text-[#F5F5F5]">
+        {(client || '?').charAt(0).toUpperCase()}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-[14.5px] text-[#F5F5F5]">{client}</span>
+          <span className="flex-shrink-0 text-[12px] tabular-nums text-[#8A8A8A]">{progress}%</span>
+        </div>
+        <div className="mt-2 h-[5px] w-full overflow-hidden rounded-full bg-white/[0.08]">
+          <motion.div
+            initial={{ width: '0%' }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
+            className="h-full rounded-full bg-[#F4EEE2]"
+          />
+        </div>
+        <p className="mt-1.5 text-[11.5px] text-[#767676]">Semana {week} de {totalWeeks}</p>
       </div>
     </div>
   )
