@@ -19,10 +19,12 @@ const hhmm = (v) => new Date(v).toLocaleTimeString('es', { hour: '2-digit', minu
 
 function Card({ title, count, children }) {
   return (
-    <div className="ador-glass ador-grain rounded-[20px] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#7A7A7A]">{title}</span>
-        {count != null && <span className="text-[11px] text-[#767676]">{count}</span>}
+    <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-[#F5F5F5]">{title}</span>
+        {count != null && (
+          <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-white/[0.08] px-1.5 text-[11.5px] font-medium tabular-nums text-[#C9C9C9]">{count}</span>
+        )}
       </div>
       {children}
     </div>
@@ -47,7 +49,7 @@ export default function ChatContextRail({ user, onNavigate }) {
     <aside className="hidden w-[272px] flex-shrink-0 flex-col gap-4 overflow-y-auto xl:flex">
       <Card title="Reuniones de hoy" count={calendar.status === 'ready' ? events.length : null}>
         {calendar.status !== 'ready' ? (
-          <button type="button" onClick={() => onNavigate?.('calendario')} className="text-left text-[12.5px] text-[#7A7A7A] hover:text-[#C9C9C9]">
+          <button type="button" onClick={() => onNavigate?.('calendario')} className="text-left text-[12.5px] text-[#8A8A8A]">
             Conecta tu Google Calendar para verlas aquí →
           </button>
         ) : events.length === 0 ? (
@@ -58,9 +60,14 @@ export default function ChatContextRail({ user, onNavigate }) {
               const live = new Date(e.start).getTime() <= now && new Date(e.end).getTime() > now
               const past = new Date(e.end).getTime() <= now
               return (
-                <li key={e.id} className="flex gap-3" style={{ opacity: past ? 0.45 : 1 }}>
-                  <span className="w-[38px] flex-shrink-0 text-[12.5px] tabular-nums" style={{ color: live ? '#E8C15A' : '#8A8A8A' }}>{hhmm(e.start)}</span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-[#E4E4E4]">{e.title}</span>
+                <li key={e.id} className="flex items-stretch gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5" style={{ opacity: past ? 0.45 : 1 }}>
+                  <span className="w-[3px] flex-shrink-0 rounded-full" style={{ background: live ? '#E8C15A' : 'rgba(244,238,226,0.35)' }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-medium text-[#F0F0F0]">{e.title}</span>
+                    <span className="mt-0.5 block text-[12px] tabular-nums text-[#8A8A8A]">
+                      {hhmm(e.start)}{e.end ? ` – ${hhmm(e.end)}` : ''}{live ? ' · ahora' : ''}
+                    </span>
+                  </span>
                 </li>
               )
             })}
@@ -74,23 +81,23 @@ export default function ChatContextRail({ user, onNavigate }) {
         ) : (
           <ul className="flex flex-col gap-2.5">
             {tasks.map((t) => (
-              <li key={t.id} className="flex items-start gap-2.5">
+              <li key={t.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
                 <button
                   type="button"
                   aria-label="Marcar como completada"
                   onClick={() => withTimeout(toggleTaskComplete(t, actorName)).catch((err) => showToast(`No se pudo actualizar: ${err.message}`))}
-                  className="mt-[2px] h-[17px] w-[17px] flex-shrink-0 rounded-full border-[1.5px] transition-colors hover:border-[#F4EEE2]"
-                  style={{ borderColor: isOverdue(t) ? '#D98A86' : 'rgba(255,255,255,0.3)' }}
+                  className="h-[18px] w-[18px] flex-shrink-0 rounded-full border-[1.5px]"
+                  style={{ borderColor: isOverdue(t) ? '#D98A86' : 'rgba(255,255,255,0.32)' }}
                 />
                 <button type="button" onClick={() => onNavigate?.('workspace', { type: 'task', id: t.id })} className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-[13px] text-[#E4E4E4] hover:text-white">{t.title}</span>
+                  <span className="block truncate text-[13.5px] text-[#F0F0F0]">{t.title}</span>
                   {isOverdue(t) && <span className="block text-[11.5px] text-[#D98A86]">Vencida</span>}
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <button type="button" onClick={() => onNavigate?.('workspace')} className="mt-3 text-[12px] text-[#7A7A7A] transition-colors hover:text-[#F5F5F5]">
+        <button type="button" onClick={() => onNavigate?.('workspace')} className="mt-4 text-[12.5px] font-medium text-[#F4EEE2]">
           Ver mi día →
         </button>
       </Card>
