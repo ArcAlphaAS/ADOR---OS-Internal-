@@ -50,15 +50,6 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
 }
 
-// Pasa la posición del cursor a la tarjeta de vidrio bajo él (foco de luz).
-function trackSpot(e) {
-  const card = e.target.closest?.('.ador-glass')
-  if (!card) return
-  const r = card.getBoundingClientRect()
-  card.style.setProperty('--mx', `${e.clientX - r.left}px`)
-  card.style.setProperty('--my', `${e.clientY - r.top}px`)
-}
-
 export default function HomeScreen({ user, onNavigate }) {
   const { interventions } = useHomeData(user?.uid)
   // Same numbers as Finanzas (client payments + manual incomes).
@@ -71,7 +62,6 @@ export default function HomeScreen({ user, onNavigate }) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      onPointerMove={trackSpot}
       className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:gap-12 lg:px-12 lg:pt-16"
     >
       <motion.div variants={itemVariants}>
