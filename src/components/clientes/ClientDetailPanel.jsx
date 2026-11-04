@@ -12,6 +12,7 @@ import { SHEET, swipeToClose } from '../../lib/motion'
 import { contractStatus, currencyPEN, everyMeta, modalityLabel, serviceLabel, serviceModality } from '../../lib/clientStages'
 import { declineContractOption, exerciseContractOption } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
+import { useEscape } from '../../hooks/useEscape'
 
 const TABS = [
   { id: 'general', label: 'General' },
@@ -206,6 +207,7 @@ function originTransform(originRect) {
 }
 
 export default function ClientDetailPanel({ client, actorName, originRect, onClose, services = [], onComplete, onNewService, onConfigure }) {
+  useEscape(onClose)
   const [activeTab, setActiveTab] = useState('general')
 
   if (!client) return null

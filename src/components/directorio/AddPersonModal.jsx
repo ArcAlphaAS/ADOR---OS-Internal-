@@ -8,12 +8,14 @@ import { STATUSES } from '../../lib/directorio'
 import Avatar from '../shell/Avatar'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 // Create/edit form for a Directorio entry — same portal + split-transform
 // pattern as every centered modal in the app (CLAUDE.md §11), same
 // photoDataUrl-on-Firestore pattern ProfileModal already uses for avatars
 // (no Firebase Storage dependency, see lib/image.js).
 export default function AddPersonModal({ person, users = [], people = [], actorName, onClose }) {
+  useEscape(onClose)
   const showToast = useToast()
   const isEdit = Boolean(person)
   const [name, setName] = useState(person?.name || '')

@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloseIcon } from '../icons'
+import { useEscape } from '../../hooks/useEscape'
 
 const SECTIONS = [
   { key: 'finanzas', label: 'Finanzas' },
@@ -18,6 +19,7 @@ function formatRange(range) {
 // (portal, transform-animated wrapper separated from the ador-modal-surface
 // element — see NotificationCenter.jsx for why that split matters).
 export default function WeeklySummaryPanel({ summary, onClose }) {
+  useEscape(onClose)
   return createPortal(
     <AnimatePresence>
       <motion.div

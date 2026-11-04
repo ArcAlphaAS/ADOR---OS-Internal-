@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { eventColor } from '../../lib/googleCalendar'
 import { ArrowRightIcon } from '../icons'
 import { SPRING } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 // Quick-view for a Google Calendar event — clicking an event used to always
 // open a new tab to Google Calendar, which yanked you out of ADOR OS for
@@ -13,6 +14,7 @@ import { SPRING } from '../../lib/motion'
 // (CLAUDE.md §11 — never combine a transform-animated wrapper with the
 // .ador-modal-surface element itself, or the backdrop blur silently breaks).
 export default function EventDetailModal({ event, onClose }) {
+  useEscape(onClose)
   if (!event) return null
   const color = eventColor(event)
   const start = new Date(event.start)

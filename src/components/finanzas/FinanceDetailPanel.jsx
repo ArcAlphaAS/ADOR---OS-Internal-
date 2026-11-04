@@ -4,6 +4,7 @@ import { currencyPEN } from '../../lib/clientStages'
 import { EXPENSE_CATEGORIES } from '../../lib/finance'
 import { CloseIcon, ArrowRightIcon } from '../icons'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 // Slide-in drill-down for the two clickable Salud Financiera metrics — same
 // portal + transform-split pattern as every other panel in the app
@@ -15,6 +16,7 @@ import { SHEET, swipeToClose } from '../../lib/motion'
 // tab, so "Por cobrar" rows deep-link there via onNavigate instead of
 // duplicating that UI here.
 export default function FinanceDetailPanel({ mode, pendingPayments, categoryTotals, monthlyBurnRate, cashBalance, onNavigate, onClose }) {
+  useEscape(onClose)
   if (!mode) return null
 
   const title = mode === 'porCobrar' ? 'Por cobrar' : '¿Qué está consumiendo caja?'

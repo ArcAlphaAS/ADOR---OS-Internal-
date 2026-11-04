@@ -473,3 +473,15 @@ html.light video {
   box-shadow: none;
 }
 .ador-home :focus-visible { outline: 2px solid #F4EEE2; outline-offset: 3px; border-radius: 12px; }
+
+/* Toda la plataforma: foco visible al navegar con teclado (no al hacer clic),
+   números alineados en columnas y títulos que no dejan una palabra huérfana. */
+@layer base {
+  :where(button, a, [role='button'], [role='switch'], [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: 2px solid #F4EEE2;
+    outline-offset: 2px;
+  }
+  :where(h1, h2, .ador-title) { text-wrap: balance; }
+  :where(td, th, .tabular-nums) { font-variant-numeric: tabular-nums; }
+  ::selection { background: rgba(244, 238, 226, 0.28); }
+}

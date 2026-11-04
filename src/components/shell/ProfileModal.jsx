@@ -6,11 +6,13 @@ import PhotoCropper from '../common/PhotoCropper'
 import Avatar from './Avatar'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 const inputClass =
   'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
 
 export default function ProfileModal({ user, onClose, onSave }) {
+  useEscape(onClose)
   const showToast = useToast()
   const [name, setName] = useState(user?.displayName || '')
   const [birthday, setBirthday] = useState('')

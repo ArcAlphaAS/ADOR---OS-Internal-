@@ -5,6 +5,7 @@ import { createClient } from '../../lib/firestore'
 import { STAGES } from '../../lib/clientStages'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 const labelClass = 'mb-1.5 block font-medium text-[#444444]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -45,6 +46,7 @@ function Field({ form, setForm, field, label, placeholder, type = 'text', requir
 }
 
 export default function NewClientModal({ users, actorName, onClose, onCreated }) {
+  useEscape(onClose)
   const [step, setStep] = useState(1)
   const [form, setForm] = useState(INITIAL)
   const [creating, setCreating] = useState(false)

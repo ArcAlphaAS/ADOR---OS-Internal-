@@ -6,6 +6,7 @@ import { submitCheckin } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
+import { useEscape } from '../../hooks/useEscape'
 
 const labelClass = 'mb-1.5 block font-medium text-[#444444]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -16,6 +17,7 @@ const inputClass =
 // Only writes the *latest* state (see submitCheckin in lib/firestore.js),
 // no weekly history yet.
 export default function CheckinModal({ objetivo, actorName, onClose }) {
+  useEscape(onClose)
   const [confidence, setConfidence] = useState(objetivo.confidence || 'verde')
   const [blocker, setBlocker] = useState(objetivo.blocker || '')
   const [progressValue, setProgressValue] = useState(

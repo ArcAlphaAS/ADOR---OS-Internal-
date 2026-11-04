@@ -11,6 +11,16 @@ import { SPRING } from '../../lib/motion'
 const FRAME_W = 300
 
 export default function PhotoCropper({ file, aspect = 1, round = false, outWidth = 256, quality = 0.85, title = 'Encuadra tu foto', allowFull = false, onDone, onSkip, onCancel }) {
+  // Esc en fase de captura: cierra solo el recortador, no el modal que hay debajo.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return
+      e.stopImmediatePropagation()
+      onCancel?.()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [onCancel])
   const FRAME_H = Math.round(FRAME_W / aspect)
   const [img, setImg] = useState(null)
   const [zoom, setZoom] = useState(1)
