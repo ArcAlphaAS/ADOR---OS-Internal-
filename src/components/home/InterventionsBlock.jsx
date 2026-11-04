@@ -39,7 +39,7 @@ export default function InterventionsBlock({ interventions = [] }) {
           <p className="text-[12.5px] text-[#767676]">Aparecen aquí cuando un SPC pasa a Intervención.</p>
         </div>
       ) : (
-        <div className="mt-3 divide-y divide-white/[0.06]">
+        <div className="ador-stagger mt-3 divide-y divide-white/[0.06]">
           {interventions.map((item, i) => (
             <InterventionRow key={i} {...item} />
           ))}

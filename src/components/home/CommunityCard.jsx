@@ -134,7 +134,7 @@ export default function CommunityCard({ user, onNavigate }) {
       <CardHeader label="Comunidad" />
 
       {moments.length > 0 && (
-        <ul className="mt-2 divide-y divide-white/[0.06] border-b border-white/[0.06] pb-1">
+        <ul className="ador-stagger mt-2 divide-y divide-white/[0.06] border-b border-white/[0.06] pb-1">
           {moments.map((m) => (
             <MomentRow key={m.key} {...m} />
           ))}

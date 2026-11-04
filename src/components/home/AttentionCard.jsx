@@ -57,7 +57,7 @@ export default function AttentionCard({ finance, uid, onNavigate }) {
           </div>
         </div>
       ) : (
-        <ul className="mt-4 flex flex-col gap-2">
+        <ul className="ador-stagger mt-4 flex flex-col gap-2">
           {shown.map((item, i) => {
             const color = LEVEL[item.level]
             return (
