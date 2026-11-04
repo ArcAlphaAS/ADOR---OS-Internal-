@@ -58,6 +58,7 @@ import {
   notifyLevel,
 } from '../../lib/chat'
 import { deliverMessage } from '../../lib/chatSend'
+import ChatContextRail from './ChatContextRail'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { sendPush } from '../../lib/push'
@@ -692,7 +693,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
 
   return (
     <ChatPeopleContext.Provider value={{ users, directory, presence }}>
-    <div className={`ador-chat-root mx-auto flex h-full w-full max-w-[1320px] px-3 py-3 md:py-8 ${panel && !view ? 'md:gap-5 md:px-8' : 'md:gap-8 md:px-12'}`}>
+    <div className={`ador-chat-root mx-auto flex h-full w-full max-w-[1320px] px-3 py-3 md:py-8 ${!panel && !view && selected ? 'xl:max-w-[1640px] xl:gap-6' : ''} ${panel && !view ? 'md:gap-5 md:px-8' : 'md:gap-8 md:px-12'}`}>
       <div className={mobilePane === 'list' ? 'flex w-full md:w-auto' : 'hidden md:flex'}>
       <ChatSidebar
         channels={channels}
@@ -1033,6 +1034,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           onToggleMute={() => withTimeout(setChatMuted(user.uid, dmIdFor(user.uid, profileUid), !isMuted(dmIdFor(user.uid, profileUid)))).catch(fail('silenciar'))}
         />
       )}
+
+      {!panel && !view && !showInfo && !profileUser && selected && <ChatContextRail user={user} onNavigate={onNavigate} />}
 
       {readyCall && <ReadyCallSheet call={readyCall} onClose={() => setReadyCall(null)} />}
       {openCall && (
