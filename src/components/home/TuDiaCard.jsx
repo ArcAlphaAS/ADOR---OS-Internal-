@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { toggleTaskComplete } from '../../lib/firestore'
+import { toggleTaskComplete, subscribeUsers } from '../../lib/firestore'
+import ExpandableTaskCard from '../common/ExpandableTaskCard'
 import { withTimeout, isOverdue } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { useDayData } from '../../hooks/useDayData'
@@ -175,6 +176,9 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
   const day = useDayData(user?.uid)
   const showToast = useToast()
   const [now, setNow] = useState(() => Date.now())
+  const [users, setUsers] = useState([])
+  useEffect(() => subscribeUsers(setUsers), [])
+  const userById = Object.fromEntries(users.map((u) => [u.id, u]))
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30000)
     return () => clearInterval(t)
@@ -185,7 +189,6 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
     withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const openTask = (task) => onNavigate?.('workspace', { type: 'task', id: task.id })
   const { focus } = day
-  const meta = focus?.priority ? day.priorityMeta(focus.priority) : null
   const todayKey = dayKey(new Date())
   const todayEvents = events.filter((e) => !e.allDay && e.start && dayKey(new Date(e.start)) === todayKey && new Date(e.end || e.start).getTime() > now - 3600000).sort((a, b) => new Date(a.start) - new Date(b.start))
   const agenda = [
@@ -219,17 +222,12 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
               >
                 {focus.title}
               </motion.h2>
-              <motion.p {...rise(0.54)} className="mt-3 flex flex-wrap items-center gap-x-2 text-[13px] text-[#8A8A8A]">
-                {day.workstreamName(focus) && <span>{day.workstreamName(focus)}</span>}
-                {day.workstreamName(focus) && <span aria-hidden>·</span>}
-                <span style={{ color: isOverdue(focus) ? '#D98A86' : undefined }}>{dueLabel(focus)}</span>
-                {meta && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span style={{ color: meta.color }}>Prioridad {meta.label.toLowerCase()}</span>
-                  </>
-                )}
+              <motion.p {...rise(0.54)} className="mt-3 text-[13px]" style={{ color: isOverdue(focus) ? '#D98A86' : '#8A8A8A' }}>
+                {dueLabel(focus)}
               </motion.p>
+              <motion.div {...rise(0.6)} className="mt-4">
+                <ExpandableTaskCard task={focus} label={day.workstreamName(focus) || 'Tarea'} userById={userById} actorUserId={user?.uid} actorName={actorName} onOpen={() => openTask(focus)} />
+              </motion.div>
               <motion.div {...rise(0.68)} className="mt-8 flex flex-wrap items-center gap-5">
                 <button
                   type="button"
