@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   createChatChannel,
   updateChatChannel,
@@ -82,6 +82,7 @@ import { makeLabelFor, buildChatIndexes } from '../../lib/chatIndexes'
 import { createPortal } from 'react-dom'
 import usePhone from '../../hooks/usePhone'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import CallConfirmSheet from './CallConfirmSheet'
 
 // How many messages a conversation streams at first; "Cargar mensajes
 // anteriores" adds another page. Keeps opening a busy channel light.
@@ -102,6 +103,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   // person's profile (from a DM header or an author name in a channel).
   const [panel, setPanel] = useState(null) // {type:'info'} | {type:'profile', uid} | null
   const [openCall, setOpenCall] = useState(null) // {type, anchorRef} | null
+  const [confirmCall, setConfirmCall] = useState(null) // {anchorRef, uid?, fromProfile?} | null — pregunta antes de llamar
   const [searchQuery, setSearchQuery] = useState(null) // null = search bar closed
   // The sidebar's top section: Inbox / Menciones / Guardados / Archivos.
   // While one is open, no conversation is "open" — nothing streams and
@@ -649,6 +651,10 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     }
   }
 
+  // Antes de llamar, siempre se confirma (un toque sin querer no suena en el teléfono de nadie).
+  const askCall = (_type, anchorRef) => setConfirmCall({ anchorRef })
+  const askCallFromProfile = (uid, _type, anchorRef) => setConfirmCall({ anchorRef, uid, fromProfile: true })
+
   const toggleCall = (type, anchorRef) => {
     // Heads-up before calling someone who asked not to be disturbed.
     if (selected?.type === 'dm') {
@@ -795,7 +801,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onToggleInfo={() => setPanel((p) => (p?.type === 'info' ? null : { type: 'info' }))}
               onToggleProfile={() => setPanel((p) => (p?.type === 'profile' && p.uid === selected.id ? null : { type: 'profile', uid: selected.id }))}
               openCall={openCall}
-              onCall={toggleCall}
+              onCall={askCall}
               callBusy={callBusy}
               searching={searchQuery !== null}
               onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
@@ -1041,7 +1047,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           searching={profileInDm && searchQuery !== null}
           onClose={() => setPanel(null)}
           onMessage={() => setSelected({ type: 'dm', id: profileUid })}
-          onCall={(type, anchorRef) => callFromProfile(profileUid, type, anchorRef)}
+          onCall={(type, anchorRef) => askCallFromProfile(profileUid, type, anchorRef)}
           onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
           onOpenImage={setLightbox}
           onToggleMute={() => withTimeout(setChatMuted(user.uid, dmIdFor(user.uid, profileUid), !isMuted(dmIdFor(user.uid, profileUid)))).catch(fail('silenciar'))}
@@ -1051,6 +1057,32 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       {!panel && !view && !showInfo && !profileUser && selected && <ChatContextRail user={user} onNavigate={onNavigate} />}
 
       {readyCall && <ReadyCallSheet call={readyCall} onClose={() => setReadyCall(null)} />}
+      <AnimatePresence>
+        {confirmCall && (() => {
+          // A quién se llama: la persona del DM, la del perfil abierto, o el grupo.
+          const targetUid = confirmCall.uid || (selected?.type === 'dm' ? selected.id : null)
+          const their = targetUid ? presenceOf(presence[targetUid]) : null
+          const note = their?.status === 'dnd' ? `${nameOf(targetUid).split(' ')[0]} está en No molestar: no le sonará, verá la llamada perdida.` : their?.status === 'meeting' ? `${nameOf(targetUid).split(' ')[0]} está ${their.label.toLowerCase()}: le llegará sin sonido.` : null
+          const groupName = conversation ? (conversation.name || 'este grupo') : 'esta conversación'
+          return (
+            <CallConfirmSheet
+              key="call-confirm"
+              uid={targetUid}
+              name={targetUid ? nameOf(targetUid) : groupName}
+              count={conversation ? (conversation.memberUids || []).length : null}
+              subtitle={targetUid ? undefined : 'Se avisa a los miembros y se abre en Google Meet.'}
+              note={note}
+              onClose={() => setConfirmCall(null)}
+              onPick={(type) => {
+                const c = confirmCall
+                setConfirmCall(null)
+                if (c.fromProfile) callFromProfile(c.uid, type, c.anchorRef)
+                else toggleCall(type, c.anchorRef)
+              }}
+            />
+          )
+        })()}
+      </AnimatePresence>
       {openCall && (
         <MeetPopover
           key={openCall.type}
