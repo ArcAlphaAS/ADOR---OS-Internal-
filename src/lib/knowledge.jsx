@@ -164,6 +164,21 @@ function renderInline(text, keyPrefix) {
 }
 
 // ---- Block markdown: headings, lists, quotes, code fences, paragraphs ----
+// Título → ancla ("Objetivos 2026" → "objetivos-2026"), para el índice del documento.
+export const headingSlug = (text) =>
+  text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+// Los títulos (# ## ###) de un documento, para armar su índice.
+export function extractHeadings(source) {
+  if (!source) return []
+  return source
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((l) => l.match(/^(#{1,3})\s+(.*)$/))
+    .filter(Boolean)
+    .map((m) => ({ level: m[1].length, text: m[2].replace(/[*_`]/g, '').trim(), id: headingSlug(m[2]) }))
+}
+
 export function renderMarkdown(source) {
   if (!source?.trim()) return null
   const lines = source.replace(/\r\n/g, '\n').split('\n')
@@ -211,7 +226,7 @@ export function renderMarkdown(source) {
       const sizes = { 1: 'text-[22px] mt-2', 2: 'text-[18px] mt-1', 3: 'text-[15px]' }
       const Tag = `h${level}`
       blocks.push(
-        <Tag key={key++} className={`font-semibold text-[#F5F5F5] ${sizes[level]}`}>
+        <Tag key={key++} id={headingSlug(heading[2])} className={`scroll-mt-24 font-semibold text-[#F5F5F5] ${sizes[level]}`}>
           {renderInline(heading[2], `h${key}`)}
         </Tag>
       )

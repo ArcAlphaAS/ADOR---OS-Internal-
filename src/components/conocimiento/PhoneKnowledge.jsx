@@ -38,7 +38,7 @@ function DocCard({ index, doc, ago, onOpen }) {
   )
 }
 
-export default function PhoneKnowledge({ index, filter, search, onSearch, catCounts, subCounts, docs, scopedTitle, isAdminUser, onSelectAll, onSelectCategory, onSelectSubcategory, onOpen, onNew, ago }) {
+export default function PhoneKnowledge({ pinned = [], recent = [], index, filter, search, onSearch, catCounts, subCounts, docs, scopedTitle, isAdminUser, onSelectAll, onSelectCategory, onSelectSubcategory, onOpen, onNew, ago }) {
   const [searching, setSearching] = useState(false)
   const q = search.trim()
   const cat = filter.type === 'category' ? index.tree.find((c) => c.id === filter.id) : null
@@ -87,6 +87,22 @@ export default function PhoneKnowledge({ index, filter, search, onSearch, catCou
           {cat.subcategories.map((s) => (
             <Folder key={s.id} label={s.label} count={subCounts[s.id] || 0} onClick={() => onSelectSubcategory(s.id)} />
           ))}
+        </div>
+      )}
+
+      {!q && filter.type === 'all' && pinned.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          <p className="px-1 text-[13px] font-medium text-[#8E8E93]">📌 Fijados</p>
+          {pinned.map((d) => <DocCard key={d.id} index={index} doc={d} ago={ago} onOpen={onOpen} />)}
+        </div>
+      )}
+
+      {!q && filter.type === 'all' && recent.length > 0 && (
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+          <p className="mb-2 px-1 text-[13px] font-medium text-[#8E8E93]">Vistos recientemente</p>
+          <div className="flex gap-2">
+            {recent.map((d) => <button key={d.id} type="button" onClick={() => onOpen(d)} className="max-w-[220px] flex-shrink-0 truncate rounded-full bg-[#1C1C1E] px-4 py-2 text-[13.5px] text-[#D5D5D5]">{d.title}</button>)}
+          </div>
         </div>
       )}
 

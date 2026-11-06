@@ -8,8 +8,12 @@ import {
   subscribeKnowledgeSections,
   createKnowledgeSection,
   subscribeKnowledgeDocHistory,
+  setKnowledgePinned,
   subscribeUserProfile,
 } from '../../lib/firestore'
+import { extractHeadings } from '../../lib/knowledge'
+import { pushRecentDoc, readRecentDocs } from '../../lib/recentDocs'
+import { SERIF } from '../news/NewsLayout'
 import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown } from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
@@ -38,6 +42,7 @@ import {
   AlertIcon,
   UsersIcon,
   MoreIcon,
+  PinIcon,
 } from '../icons'
 
 const SUB_ICONS = {
@@ -444,54 +449,132 @@ function HistorialSection({ docId }) {
   )
 }
 
-function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete }) {
+function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePin }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [tocOpen, setTocOpen] = useState(false)
+  const headings = extractHeadings(doc.content).filter((h) => h.level <= 2)
+  const jump = (id) => {
+    setTocOpen(false)
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  const editor = doc.updatedBy || doc.createdBy
 
   return (
-    <div className="ador-glass ador-grain flex flex-col gap-5 rounded-2xl p-7">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <button type="button" onClick={onBack} className="mb-3 flex items-center gap-1.5 text-[12px] text-[#666666] hover:text-[#F5F5F5]">
+    <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_230px]">
+      <article className="mx-auto w-full max-w-[760px]">
+        <div className="flex items-start justify-between gap-4">
+          <button type="button" onClick={onBack} className="mb-5 flex items-center gap-1.5 text-[13px] text-[#8A8A8A] hover:text-[#F5F5F5]">
             <ArrowLeftIcon size={12} /> Volver
           </button>
-          <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.04em] text-[#888888]">
-            {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
-          </span>
-          <h1 className="mt-2 text-[24px] font-semibold text-[#F5F5F5]">{doc.title}</h1>
-          <p className="mt-1 text-[12px] text-[#555555]">
-            {doc.updatedBy ? `Editado por ${doc.updatedBy}` : `Creado por ${doc.createdBy}`}
-            {formatDate(doc.updatedAt || doc.createdAt) ? ` · ${formatDate(doc.updatedAt || doc.createdAt)}` : ''}
+          {isAdminUser && (
+            <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
+              <button type="button" onClick={() => onTogglePin(doc)} className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] transition-colors duration-150" style={doc.pinned ? { borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' } : { borderColor: 'rgba(255,255,255,0.1)', color: '#888888' }}>
+                <PinIcon size={12} /> {doc.pinned ? 'Fijado' : 'Fijar'}
+              </button>
+              <button type="button" onClick={onEdit} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]">
+                <EditIcon size={12} /> Editar
+              </button>
+              {confirmDelete ? (
+                <button type="button" onClick={() => onDelete(doc)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]">¿Confirmar borrado?</button>
+              ) : (
+                <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">Eliminar</button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11.5px] font-medium text-[#A8A8A8]">
+          {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
+        </span>
+        <h1 className="ador-wrap mt-4 text-[32px] leading-[1.12] tracking-[-0.01em] text-[#F5F5F5] md:text-[42px]" style={SERIF}>{doc.title}</h1>
+
+        <div className="mt-5 flex items-center gap-3 border-y border-white/[0.07] py-3.5">
+          <Avatar displayName={editor} size={34} />
+          <p className="min-w-0 text-[13.5px] leading-snug text-[#A8A8A8]">
+            <span className="font-medium text-[#F5F5F5]">{doc.updatedBy ? 'Editado por' : 'Creado por'} {editor}</span>
+            <span className="block text-[12.5px] text-[#767676]">
+              {timeAgo(doc.updatedAt || doc.createdAt)}
+              {doc.updatedBy && doc.createdBy && doc.createdBy !== doc.updatedBy ? ` · creado por ${doc.createdBy}` : ''}
+            </span>
           </p>
         </div>
-        {isAdminUser && (
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]"
-            >
-              <EditIcon size={12} /> Editar
+
+        {headings.length > 1 && (
+          <div className="mt-5 xl:hidden">
+            <button type="button" onClick={() => setTocOpen((v) => !v)} className="flex w-full items-center justify-between rounded-2xl bg-white/[0.05] px-4 py-3 text-[14px] font-medium text-[#E4E4E4]">
+              En este documento
+              <ChevronDownIcon size={14} style={{ transform: tocOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
             </button>
-            {confirmDelete ? (
-              <button type="button" onClick={() => onDelete(doc)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]">
-                ¿Confirmar borrado?
-              </button>
-            ) : (
-              <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">
-                Eliminar
-              </button>
+            {tocOpen && (
+              <ul className="mt-1 rounded-2xl bg-white/[0.035] px-2 py-2">
+                {headings.map((h) => (
+                  <li key={h.id}>
+                    <button type="button" onClick={() => jump(h.id)} className="w-full rounded-xl px-3 py-2 text-left text-[14px] text-[#C9C9C9] active:bg-white/[0.06]" style={{ paddingLeft: h.level === 2 ? 22 : 12 }}>{h.text}</button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}
-      </div>
 
-      <div className="h-px bg-white/[0.06]" />
+        <div className="ador-wrap mt-7 flex flex-col gap-4 text-[16px] leading-[1.75] md:text-[16.5px]">
+          {renderMarkdown(doc.content) || <p className="text-[14px] text-[#767676]">Este documento no tiene contenido todavía.</p>}
+        </div>
 
-      {renderMarkdown(doc.content) || <p className="text-[13px] text-[#444444]">Este documento no tiene contenido todavía.</p>}
+        <div className="mt-12 border-t border-white/[0.07] pt-6">
+          <HistorialSection docId={doc.id} />
+        </div>
+      </article>
 
-      <div className="h-px bg-white/[0.06]" />
+      {headings.length > 1 && (
+        <aside className="hidden xl:block">
+          <div className="sticky top-24">
+            <p className="mb-3 text-[12.5px] font-medium text-[#8A8A8A]">En este documento</p>
+            <ul className="flex flex-col border-l border-white/[0.08]">
+              {headings.map((h) => (
+                <li key={h.id}>
+                  <button type="button" onClick={() => jump(h.id)} className="-ml-px block w-full border-l border-transparent py-1.5 text-left text-[13px] text-[#9A9A9A] transition-colors hover:border-[#F4EEE2] hover:text-[#F5F5F5]" style={{ paddingLeft: h.level === 2 ? 26 : 14 }}>
+                    {h.text}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      )}
+    </div>
+  )
+}
 
-      <HistorialSection docId={doc.id} />
+// Fijados y vistos recientemente: lo primero que se necesita al abrir Conocimiento.
+function PinnedAndRecent({ pinned, recent, index, onOpen }) {
+  if (pinned.length === 0 && recent.length === 0) return null
+  return (
+    <div className="mb-8 flex flex-col gap-6">
+      {pinned.length > 0 && (
+        <div>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Fijados</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {pinned.map((d) => (
+              <button key={d.id} type="button" onClick={() => onOpen(d)} className="ador-glass ador-grain ador-card-hover flex flex-col items-start gap-2 rounded-[20px] p-5 text-left">
+                <span className="flex items-center gap-1.5 text-[11.5px] text-[#F4EEE2]"><PinIcon size={11} /> {subcategoryLabel(index, d.subcategory)}</span>
+                <span className="text-[17px] leading-snug text-[#F5F5F5]" style={SERIF}>{d.title}</span>
+                <span className="flex items-center gap-2 text-[12px] text-[#767676]"><Avatar displayName={d.updatedBy || d.createdBy} size={18} /> {d.updatedBy || d.createdBy} · {timeAgo(d.updatedAt || d.createdAt)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {recent.length > 0 && (
+        <div>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Vistos recientemente</p>
+          <div className="flex flex-wrap gap-2">
+            {recent.map((d) => (
+              <button key={d.id} type="button" onClick={() => onOpen(d)} className="max-w-full truncate rounded-full bg-white/[0.06] px-4 py-2 text-[13px] text-[#D5D5D5] transition-colors hover:bg-white/[0.1]">{d.title}</button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -521,6 +604,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   useEffect(() => {
     if (!focusDocId) return
     setOpenDocId(focusDocId)
+    pushRecentDoc(focusDocId)
     setEditing(false)
     onFocusHandled?.()
   }, [focusDocId, onFocusHandled])
@@ -530,7 +614,11 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   // static state (it has to reflect admin-added sections in real time).
   const index = useMemo(() => buildKnowledgeIndex(mergeSections(BASE_CATEGORY_TREE, sections)), [sections])
 
+  const [recentIds, setRecentIds] = useState(readRecentDocs)
   const openDoc = docs.find((d) => d.id === openDocId) || null
+  const pinnedDocs = docs.filter((d) => d.pinned)
+  const recentDocs = recentIds.map((id) => docs.find((d) => d.id === id)).filter(Boolean).filter((d) => !d.pinned).slice(0, 5)
+  const togglePin = (d) => withTimeout(setKnowledgePinned(d.id, !d.pinned)).catch((error) => showToast(`No se pudo fijar: ${error.message}`))
   const subCounts = subcategoryCounts(index, docs)
   const catCounts = categoryCounts(index, docs)
 
@@ -562,6 +650,8 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   }
 
   const handleOpen = (doc) => {
+    pushRecentDoc(doc.id)
+    setRecentIds(readRecentDocs())
     setOpenDocId(doc.id)
     setEditing(false)
   }
@@ -610,6 +700,8 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
     return (
       <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6">
         <PhoneKnowledge
+          pinned={pinnedDocs}
+          recent={recentDocs}
           index={index}
           filter={filter}
           search={search}
@@ -682,12 +774,13 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
         ) : openDoc ? (
           <AnimatePresence mode="wait">
             <motion.div key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
-              <DocView index={index} doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} />
+              <DocView index={index} doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} onTogglePin={togglePin} />
             </motion.div>
           </AnimatePresence>
         ) : (
           <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[1fr_300px]">
             <div className="min-w-0">
+              {filter.type === 'all' && !q && <PinnedAndRecent pinned={pinnedDocs} recent={recentDocs} index={index} onOpen={handleOpen} />}
               {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} />}
               <DocsTable
                 index={index}

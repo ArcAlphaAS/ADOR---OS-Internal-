@@ -1416,6 +1416,13 @@ export function updateKnowledgeDoc(docId, data, actorName, previous) {
   }).then(() => addKnowledgeHistoryEvent(docId, `${describeKnowledgeChange(previous, data)} — ${actorName}`))
 }
 
+// Fijar un documento arriba de Conocimiento (solo el marcador, sin tocar quién lo
+// editó por última vez ni el historial).
+export function setKnowledgePinned(docId, pinned) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.knowledgeDocs, docId), { pinned: Boolean(pinned) })
+}
+
 export function deleteKnowledgeDoc(docId) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return deleteDoc(doc(db, COLLECTIONS.knowledgeDocs, docId))
