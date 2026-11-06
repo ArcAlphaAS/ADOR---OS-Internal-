@@ -53,6 +53,8 @@ self.addEventListener('push', (event) => {
         badge: '/favicon-32.png',
         requireInteraction: data.kind === 'call',
         vibrate: data.kind === 'call' ? [300, 150, 300, 150, 300] : [120],
+        timestamp: Date.now(),
+        silent: false,
         data: { url: data.url || '/' },
       })
     })()

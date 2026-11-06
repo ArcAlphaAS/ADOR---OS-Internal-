@@ -185,6 +185,8 @@ function notifyLevel(profile, key, kind) {
 export const inDnd = (presence, now) => (presence?.dnd?.until || 0) > now
 
 const VERB = { mention: 'te mencionó', quote: 'citó tu mensaje', important: 'marcó un mensaje como importante', reply: 'respondió en un hilo' }
+// Quita el formato del chat (**negrita**, _cursiva_, ~tachado~, `código`) y los saltos de línea.
+const cleanText = (t) => String(t).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1$2').replace(/~(.+?)~/g, '$1').replace(/`(.+?)`/g, '$1').replace(/\s*\n+\s*/g, ' ').trim()
 const firstName = (s) => (s || '').split(' ')[0]
 
 export function pushConfig(_req, env) {
@@ -284,22 +286,28 @@ export async function pushSend({ method, headers, body }, env) {
 
       const uids = [...reasons.keys()].filter((u) => subs.some((s) => s.uid === u)).slice(0, 50)
       const docs = await fs.getMany(uids.flatMap((u) => [`users/${u}`, `presence/${u}`]))
-      const text = (event.text || 'Nuevo mensaje').slice(0, 180)
+      const text = cleanText(event.text || 'Nuevo mensaje').slice(0, 180)
       for (const uid of uids) {
         const reason = reasons.get(uid)
         if (inDnd(docs[`presence/${uid}`], now)) continue
         const level = notifyLevel(docs[`users/${uid}`], convId, kind)
         if (level === 'none') continue
         if (reason === 'message' && level !== 'all') continue
-        const where = kind === 'dm' ? '' : ` en ${label}`
+        const who = firstName(senderName) || 'Alguien'
+        const inThread = event.parentId ? ' · hilo' : ''
+        let title
+        let bodyText
+        if (reason === 'message') {
+          // Como WhatsApp/Slack: en chats 1 a 1 el nombre; en canales y grupos el lugar, y quién habló dentro.
+          title = kind === 'dm' ? senderName || 'Mensaje nuevo' : `${label}${inThread}`
+          bodyText = kind === 'dm' ? text : `${who}: ${text}`
+        } else {
+          title = `${who} ${VERB[reason] || 'te escribió'}`
+          bodyText = kind === 'dm' ? text : `${label}${inThread} — ${text}`
+        }
         notes.set(uid, {
-          title:
-            reason === 'message'
-              ? kind === 'dm'
-                ? senderName || 'Mensaje nuevo'
-                : `${firstName(senderName)}${where}`
-              : `${firstName(senderName)} ${VERB[reason] || 'te escribió'}${where}`,
-          body: text,
+          title: title.slice(0, 100),
+          body: bodyText.slice(0, 200),
           tag: `conv:${convId}${event.parentId ? `:${event.parentId}` : ''}`,
           url: chatUrl(event),
         })
