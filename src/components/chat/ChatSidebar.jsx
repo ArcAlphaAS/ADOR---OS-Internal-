@@ -304,7 +304,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
       </div>
 
       {phone && !searching && (
-        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+        <div className="-mx-4 flex-shrink-0 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
           <div className="flex gap-4">
             <button type="button" onClick={onNewGroup} className="flex w-[60px] flex-shrink-0 flex-col items-center gap-1.5">
               <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-dashed border-white/[0.3] text-[#F4EEE2]"><PlusIcon size={20} /></span>
@@ -408,7 +408,7 @@ function MeHeader({ presence, uid, onSetDnd, calendarConnected }) {
             <span>{open ? '▴' : '▾'}</span>
           </button>
         </div>
-        <button type="button" onClick={() => setOpen((v) => !v)} title="Cambiar mi estado" className="flex-shrink-0 rounded-full">
+        <button type="button" onClick={() => setOpen((v) => !v)} title="Cambiar mi estado" className="hidden flex-shrink-0 rounded-full md:block">
           <PersonAvatar uid={uid} size={32} showPresence />
         </button>
       </div>
