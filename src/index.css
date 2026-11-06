@@ -615,17 +615,14 @@ html.light .ador-grain::after { opacity: 0.015; }
    los mensajes se desvanecen al llegar abajo en vez de cortarse en seco. */
 @media (max-width: 767px) {
   html.ador-chat-open .ador-app-root { background-image: none !important; }
-  html.ador-chat-open [data-keep-scroll] {
-    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent);
-  }
+  /* Sin desvanecido: los mensajes llegan hasta justo encima de la caja, sin franja negra. */
 }
 
 /* Chat en el teléfono: la fila de escribir (+, mensaje, cámara, micrófono) baja
    hasta casi tocar el borde de abajo, o el teclado cuando está arriba. */
 @media (max-width: 767px) {
-  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px); }
-  html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 3px; }
+  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); }
+  html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 5px; }
   html.ador-chat-open.kb-open main { padding-bottom: 0 !important; }
 }
 

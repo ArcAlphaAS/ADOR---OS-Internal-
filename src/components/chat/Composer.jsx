@@ -347,7 +347,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
 
   return (
     <div
-      className={`relative flex flex-col gap-2 ${compact ? '' : 'md:border-t md:border-white/[0.06]'} pt-0.5 md:pt-3`}
+      className={`relative flex flex-col gap-2 ${compact ? '' : 'md:border-t md:border-white/[0.06]'} pt-0 md:pt-3`}
       onDragOver={(e) => {
         if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
           e.preventDefault()
