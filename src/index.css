@@ -620,3 +620,11 @@ html.light .ador-grain::after { opacity: 0.015; }
     mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
   }
 }
+
+/* Chat en el teléfono: la fila de escribir (+, mensaje, cámara, micrófono) baja
+   hasta casi tocar el borde de abajo, o el teclado cuando está arriba. */
+@media (max-width: 767px) {
+  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px); }
+  html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 4px; }
+  html.ador-chat-open.kb-open main { padding-bottom: 0 !important; }
+}
