@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { EMOJIS } from '../../lib/chat'
 
 const ic = (d) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 // Icono y una línea de ayuda por opción (según su nombre), como en una hoja de iOS.
@@ -25,6 +26,7 @@ const metaFor = (label) => META.find(([re]) => re.test(label)) || [null, null, n
 // Every option is passed in by MessageBubble, already bound to the message.
 export default function MessageActionSheet({ preview, reactions, onReact, options, reminderOptions, onRemind, onClose }) {
   const [view, setView] = useState('main') // 'main' | 'remind' | 'confirm-delete'
+  const [allEmojis, setAllEmojis] = useState(false)
 
   const row = (label, onClick, { danger = false, keepOpen = false, plain = false } = {}) => {
     const [icon, hint] = plain ? [null, null] : metaFor(label)
@@ -79,7 +81,14 @@ export default function MessageActionSheet({ preview, reactions, onReact, option
         style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' }}
       >
         {preview && <p className="mx-3 mb-2 line-clamp-3 rounded-2xl bg-white/[0.07] px-4 py-2.5 text-[14px] leading-snug text-[#DDDDDD]">{preview}</p>}
-        {reactions && view === 'main' && (
+        {reactions && view === 'main' && allEmojis && (
+          <div className="mb-2 grid grid-cols-8 gap-0.5 rounded-[22px] bg-[#1C1C1E] p-2">
+            {EMOJIS.map((e) => (
+              <button key={e} type="button" onClick={() => { onReact(e); onClose() }} className="flex h-10 items-center justify-center rounded-xl text-[22px] active:bg-white/[0.1]">{e}</button>
+            ))}
+          </div>
+        )}
+        {reactions && view === 'main' && !allEmojis && (
           <div className="mb-2 flex justify-between rounded-full bg-[#1C1C1E] px-3 py-2">
             {reactions.map((e) => (
               <button
@@ -94,6 +103,7 @@ export default function MessageActionSheet({ preview, reactions, onReact, option
                 {e}
               </button>
             ))}
+            <button type="button" onClick={() => setAllEmojis(true)} aria-label="Más emojis" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-[20px] text-[#C9C9C9]">＋</button>
           </div>
         )}
         <div className="max-h-[52vh] overflow-y-auto rounded-[26px] bg-[#1C1C1E] [&>button+button]:border-t [&>button+button]:border-white/[0.07]">{list}</div>

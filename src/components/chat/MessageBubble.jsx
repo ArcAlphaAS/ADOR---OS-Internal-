@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
+import { EMOJIS, findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
@@ -593,6 +593,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   const [draft, setDraft] = useState(message.text)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [grid, setGrid] = useState(false)
   // 'more' = the ⋯ menu (fijar · recordar · tarea); 'remind' = its time picker
   const [menu, setMenu] = useState(null)
   // Phones: press and hold → MessageActionSheet (no hover on a touch screen).
@@ -623,8 +624,22 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       if (s.locked) setSwipe(Math.max(0, Math.min(72, dx)))
     }
   }
+  // Doble toque en el teléfono = reaccionar con ❤️ (como en Instagram y WhatsApp).
+  const lastTap = useRef(0)
+  const [heart, setHeart] = useState(false)
   const endPress = () => {
+    const wasTap = Boolean(press.current) && !swipeRef.current?.locked
     cancelPress()
+    if (wasTap && onReact) {
+      const now = Date.now()
+      if (now - lastTap.current < 320) {
+        lastTap.current = 0
+        navigator.vibrate?.(12)
+        setHeart(true)
+        setTimeout(() => setHeart(false), 700)
+        if (!(message.reactions?.['❤️'] || []).includes(currentUid)) onReact('❤️', false)
+      } else lastTap.current = now
+    }
     const s = swipeRef.current
     swipeRef.current = null
     if (s?.locked && swipe >= 56 && onReply) {
@@ -761,6 +776,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               {e}
             </button>
           ))}
+          <button type="button" onClick={() => setGrid(true)} title="Más emojis" className="flex h-6 w-6 items-center justify-center rounded-full text-[15px] text-[#9A9A9A] hover:bg-white/[0.08]">＋</button>
         </span>
       ) : (
         <ActionIcon title="Reaccionar" onClick={() => setPicking(true)}>
@@ -942,6 +958,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {message.important && <ImportantFooter message={message} mine={mine} currentUid={currentUid} audienceUids={audienceUids} userName={userName} onAck={onAck} />}
         </div>
       </div>
+      {heart && <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-[56px]" style={{ animation: 'ador-heart-pop 0.7s ease-out forwards' }}>❤️</span>}
       <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
       {onOpenThread && <ThreadSummary message={message} userPhoto={userPhoto} userName={userName} onOpen={onOpenThread} />}
       {(groupEnd || message.editedAt || pinned) && !(phone && showBubble && !emojiOnly) && (
@@ -953,6 +970,19 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         </p>
       )}
       </div>
+      {grid && createPortal(
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 md:items-center" onClick={() => { setGrid(false); setPicking(false) }}>
+          <div className="w-full max-w-[360px] rounded-t-[26px] bg-[#1C1C1E] p-4 md:rounded-[22px]" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-2 px-1 text-[13px] font-medium text-[#8E8E93]">Reaccionar con…</p>
+            <div className="grid grid-cols-8 gap-1">
+              {EMOJIS.map((e) => (
+                <button key={e} type="button" onClick={() => { onReact(e, (message.reactions?.[e] || []).includes(currentUid)); setGrid(false); setPicking(false) }} className="flex h-9 w-9 items-center justify-center rounded-lg text-[20px] hover:bg-white/[0.08]">{e}</button>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       {ctx && (
         <MessageContextMenu
           x={ctx.x}

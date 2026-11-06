@@ -591,3 +591,6 @@ html.light .ador-grain::after { opacity: 0.015; }
 @keyframes ador-push-in { from { opacity: 0.4; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @media (max-width: 767px) { .ador-push-in { animation: ador-push-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both; } }
 @media (prefers-reduced-motion: reduce) { .ador-push-in { animation: none; } }
+
+/* Corazón que salta al reaccionar con doble toque. */
+@keyframes ador-heart-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
