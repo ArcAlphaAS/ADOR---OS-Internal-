@@ -110,6 +110,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   // Phones (below md) show one pane at a time, WhatsApp-style: the list of
   // conversations, or the open one full-screen with a back arrow.
   const [mobilePane, setMobilePane] = useState('list')
+  const edgeSwipe = useRef(null) // gesto de volver desde el borde izquierdo (teléfono)
   const [files, setFiles] = useState([])
   const [messageLimit, setMessageLimit] = useState(PAGE_SIZE)
   const [lightbox, setLightbox] = useState(null)
@@ -733,7 +734,17 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       />
       </div>
 
-      <div className={`ador-chat-bg min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'flex' : 'hidden md:flex'}`}>
+      <div
+        className={`ador-chat-bg min-w-0 flex-1 flex-col ${mobilePane === 'conv' ? 'ador-push-in flex' : 'hidden md:flex'}`}
+        onTouchStart={(e) => { edgeSwipe.current = e.touches[0].clientX < 28 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null }}
+        onTouchEnd={(e) => {
+          const st = edgeSwipe.current
+          edgeSwipe.current = null
+          if (!st) return
+          const t = e.changedTouches[0]
+          if (t.clientX - st.x > 80 && Math.abs(t.clientY - st.y) < 60) setMobilePane('list')
+        }}
+      >
         <button type="button" onClick={() => setMobilePane('list')} className={`mb-2 items-center gap-1.5 self-start rounded-full px-2 py-1 text-[13px] text-[#AAAAAA] active:bg-white/[0.06] md:hidden ${immersive ? 'hidden' : 'flex'}`}>
           ← Conversaciones
         </button>
