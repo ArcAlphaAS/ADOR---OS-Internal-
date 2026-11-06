@@ -10,6 +10,8 @@ import MonthGrid from './MonthGrid'
 import { MiniMonthCalendar, TodayCard, TasksTodayCard } from './CalendarioRightRail'
 import CalendarioGreeting from './CalendarioGreeting'
 import EventDetailModal from './EventDetailModal'
+import PhoneCalendar from './PhoneCalendar'
+import usePhone from '../../hooks/usePhone'
 
 // A read-only "reflejo" of the signed-in founder's own Google Calendar —
 // per direct user decision, not a combined team view (Google Calendar
@@ -204,6 +206,8 @@ export default function CalendarioModule({ user }) {
   const [tasks, setTasks] = useState([])
   const [openEvent, setOpenEvent] = useState(null)
   const actorName = actorNameFor(user)
+  const phone = usePhone()
+  const [phoneMonth, setPhoneMonth] = useState(false)
 
   useEffect(() => {
     if (status === 'ready' || status === 'loading') loadRange(rangeFor(view, anchor))
@@ -232,6 +236,23 @@ export default function CalendarioModule({ user }) {
     d.setDate(d.getDate() + i)
     return d
   })
+
+  if (phone && (status === 'ready' || status === 'loading')) {
+    return (
+      <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6">
+        <h1 className="ador-title mb-5">Calendario</h1>
+        {phoneMonth ? (
+          <div className="flex flex-col gap-4">
+            <button type="button" onClick={() => setPhoneMonth(false)} className="self-start rounded-full bg-[#1C1C1E] px-4 py-2 text-[13.5px] text-[#F5F5F5]">← Volver a la semana</button>
+            <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={(d) => { setAnchor(d); setView('semana'); setPhoneMonth(false) }} onOpenEvent={setOpenEvent} />
+          </div>
+        ) : (
+          <PhoneCalendar uid={user?.uid} anchor={anchor} setAnchor={setAnchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onMonth={() => { setView('mes'); setPhoneMonth(true) }} />
+        )}
+        <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
+      </div>
+    )
+  }
 
   return (
     <motion.div

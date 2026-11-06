@@ -508,3 +508,43 @@ html.light .ador-grain::after { opacity: 0.015; }
 /* La isla de la esquina: seis puntos que giran, tres que se estiran. */
 @keyframes ador-orbit { 0%, 100% { transform: scale(0.45); opacity: 0.55; } 40% { transform: scale(1); opacity: 1; } }
 @keyframes ador-morph { 0%, 100% { transform: scaleY(0.55); } 50% { transform: scaleY(1.5); } }
+
+/* Teléfono: los modales centrados (Nuevo gasto, Nuevo objetivo, Nuevo cliente,
+   Registrar decisión…) suben desde abajo como una hoja, con su barrita, a todo
+   el ancho y en gris plano. Solo toca modales a pantalla completa con el
+   contenido centrado; los paneles laterales no se ven afectados. */
+@media (max-width: 767px) {
+  .fixed.inset-0.items-center.justify-center:has(.ador-modal-surface) { align-items: flex-end; }
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92dvh;
+    overflow-y: auto;
+    border-radius: 32px 32px 0 0;
+    background: #1c1c1e;
+    border: none;
+    padding: 28px 20px calc(env(safe-area-inset-bottom) + 20px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    margin: -14px auto 16px;
+  }
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface .ador-btn-primary {
+    flex: 1;
+    border-radius: 999px;
+    padding-block: 14px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface input,
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface select,
+  .fixed.inset-0.items-center.justify-center .ador-modal-surface textarea { font-size: 16px; }
+}
