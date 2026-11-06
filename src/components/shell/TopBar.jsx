@@ -7,6 +7,7 @@ import NotificationCenter from './NotificationCenter'
 import BirthdayCenter from './BirthdayCenter'
 import ProfileMenu from './ProfileMenu'
 import PhoneProfile from './PhoneProfile'
+import { useArchivedNotifications, keyOfNotification } from '../../hooks/useArchivedNotifications'
 import usePhone from '../../hooks/usePhone'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
@@ -330,7 +331,10 @@ export default function TopBar({
     ...taskNotifications.map(tag('task')),
     ...clientNotifications.map(tag('client')),
   ]
-  const hasUnreadNotifications = notifications.length > 0
+  const { archived, archive, restore } = useArchivedNotifications(user?.uid)
+  const inbox = notifications.filter((n) => !archived[keyOfNotification(n)])
+  const archivedItems = notifications.filter((n) => archived[keyOfNotification(n)])
+  const hasUnreadNotifications = inbox.length > 0
 
   const closeProfileAll = () => {
     setProfileExpanded(false)
@@ -425,7 +429,7 @@ export default function TopBar({
             )}
           {/* Permanently mounted, visibility toggles via `open` — see
               NotificationCenter.jsx. */}
-          <NotificationCenter items={notifications} anchorRect={notifRect} open={notifOpen} onItemClick={() => setNotifOpen(false)} />
+          <NotificationCenter items={inbox} archivedItems={archivedItems} onArchive={archive} onRestore={restore} anchorRect={notifRect} open={notifOpen} onItemClick={() => setNotifOpen(false)} />
         </motion.div>
 
         </div>
