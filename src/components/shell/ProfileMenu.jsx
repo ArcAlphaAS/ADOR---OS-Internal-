@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import useDeferredReveal from '../../hooks/useDeferredReveal'
+import { subscribeMyPresence, setDoNotDisturb, subscribeUsers, dmIdFor } from '../../lib/firestore'
+import { presenceOf, userLabel } from '../../lib/chat'
+import { isAdmin as isAdminProfile } from '../../lib/permissions'
+import PersonAvatar from '../chat/PersonAvatar'
 
 const sv = (d) => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 const ICON = {
@@ -56,7 +60,53 @@ function formatLastSignIn(user) {
   return text.replace('.', '')
 }
 
-export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open, isAdmin }) {
+function StatusAndHelp({ user, onClose, onSelect, onNavigate }) {
+  const [presence, setPresence] = useState(null)
+  const [people, setPeople] = useState([])
+  const [panel, setPanel] = useState(null) // 'estado' | 'ayuda'
+  useEffect(() => subscribeMyPresence(user?.uid, setPresence), [user?.uid])
+  useEffect(() => subscribeUsers(setPeople), [])
+  const p = presenceOf(presence)
+  const me = p.status === 'dnd' || p.status === 'meeting' ? p : { label: 'Disponible', color: '#4CAF50' }
+  const t9 = new Date(); t9.setDate(t9.getDate() + 1); t9.setHours(9, 0, 0, 0)
+  const choices = [['Disponible', null], ['No molestar 30 min', new Date(Date.now() + 30 * 60000)], ['No molestar 1 h', new Date(Date.now() + 3600000)], ['No molestar hasta mañana 9:00', t9]]
+  const admins = people.filter((u) => u.id !== user?.uid && isAdminProfile(u)).slice(0, 4)
+  const row = 'flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-[13px] text-[#E8E8E8] transition-colors duration-150 hover:bg-white/[0.07]'
+  return (
+    <div className="px-1.5 pb-1">
+      <button type="button" onClick={() => setPanel(panel === 'estado' ? null : 'estado')} className={row}>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: me.color }} /></span>
+        <span className="min-w-0 flex-1"><span className="block">Estado</span><span className="block truncate text-[11.5px] text-[#767676]">{me.label}</span></span>
+      </button>
+      {panel === 'estado' && (
+        <div className="mb-1 ml-10 flex flex-col">
+          {choices.map(([label, until]) => (
+            <button key={label} type="button" onClick={() => { setDoNotDisturb(user.uid, until).catch(() => {}); setPanel(null); onClose?.() }} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">{label}</button>
+          ))}
+        </div>
+      )}
+      <button type="button" onClick={() => { onSelect?.('tour'); onClose?.() }} className={row}>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[#C9C9C9]">✦</span>Conoce ADOR OS
+      </button>
+      <button type="button" onClick={() => setPanel(panel === 'ayuda' ? null : 'ayuda')} className={row}>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[13px] text-[#C9C9C9]">?</span>Ayuda y soporte
+      </button>
+      {panel === 'ayuda' && (
+        <div className="mb-1 ml-10 flex flex-col">
+          <p className="px-2.5 pb-1 text-[11.5px] text-[#767676]">Escribe a un administrador</p>
+          {admins.map((a) => (
+            <button key={a.id} type="button" onClick={() => { onClose?.(); onNavigate?.('chat', { type: 'chat', convType: 'dm', convId: dmIdFor(user.uid, a.id), participantUids: [user.uid, a.id] }) }} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E4E4E4] hover:bg-white/[0.07]">
+              <PersonAvatar uid={a.id} name={userLabel(a)} size={22} />{userLabel(a)}
+            </button>
+          ))}
+          <button type="button" onClick={() => window.location.reload()} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">Actualizar ADOR OS</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ProfileMenu({ user, onClose, onSelect, onNavigate, anchorRect, open, isAdmin }) {
   const ready = useDeferredReveal()
   if (!anchorRect) return null
 
@@ -113,6 +163,8 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open,
           ))}
         </nav>
         <div className="mx-4 h-px bg-white/[0.07]" />
+        <StatusAndHelp user={user} onClose={onClose} onSelect={onSelect} onNavigate={onNavigate} />
+        <div className="mx-4 h-px bg-white/[0.07]" />
         <ThemeRow />
         <div className="mx-4 h-px bg-white/[0.07]" />
         <div className="px-1.5 py-1.5">
@@ -121,7 +173,8 @@ export default function ProfileMenu({ user, onClose, onSelect, anchorRect, open,
             Cerrar Sesión
           </button>
         </div>
-        {lastSignIn && <p className="px-4 pb-3 text-[11px] text-[#6E6E6E]">Última conexión: {lastSignIn}</p>}
+        {lastSignIn && <p className="px-4 text-[11px] text-[#6E6E6E]">Última conexión: {lastSignIn}</p>}
+        <p className="px-4 pb-3 pt-0.5 text-[11px] text-[#6E6E6E]">Versión: {typeof __BUILD_ID__ !== 'undefined' ? new Date(Number(__BUILD_ID__)).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : 'desarrollo'}</p>
       </div>
     </motion.div>,
     document.body

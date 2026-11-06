@@ -183,7 +183,7 @@ function SearchToggle({ onNavigate, uid, canSee }) {
 // width-leak bug described in Sidebar.jsx. Only the dropdown itself is
 // portaled, since it needs to float above everything at a viewport-anchored
 // position.
-function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMenu, onCloseAll, onSelect, isAdmin }) {
+function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMenu, onCloseAll, onSelect, onNavigate, isAdmin }) {
   const triggerRef = useRef(null)
   const [rect, setRect] = useState(null)
   const photoURL = useUserPhoto(user?.uid, user?.photoURL)
@@ -287,7 +287,7 @@ function ProfileTrigger({ user, expanded, onToggleExpanded, menuOpen, onToggleMe
                 `open` prop instead, so the backdrop-filter layer stays warm
                 across opens rather than being rebuilt from scratch (and
                 visibly popping in) every time. */}
-            <ProfileMenu user={user} anchorRect={rect} open={menuOpen} onClose={onCloseAll} onSelect={onSelect} isAdmin={isAdmin} />
+            <ProfileMenu user={user} anchorRect={rect} open={menuOpen} onClose={onCloseAll} onSelect={onSelect} onNavigate={onNavigate} isAdmin={isAdmin} />
           </>,
           document.body
         )}
@@ -380,6 +380,7 @@ export default function TopBar({
     else if (id === 'perfil') setActiveModal('profile')
     else if (id === 'config') setActiveModal('settings')
     else if (id === 'admin') onNavigate('admin')
+    else if (id === 'tour') onShowOnboarding?.()
   }
 
   return (
@@ -464,6 +465,7 @@ export default function TopBar({
           onToggleMenu={() => setProfileMenuOpen((v) => !v)}
           onCloseAll={closeProfileAll}
           onSelect={handleMenuSelect}
+          onNavigate={onNavigate}
           isAdmin={access.isAdmin}
         />
         </div>
