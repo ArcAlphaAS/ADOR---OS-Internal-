@@ -38,7 +38,7 @@ function DocCard({ index, doc, ago, onOpen }) {
   )
 }
 
-export default function PhoneKnowledge({ pinned = [], recent = [], index, filter, search, onSearch, catCounts, subCounts, docs, scopedTitle, isAdminUser, onSelectAll, onSelectCategory, onSelectSubcategory, onOpen, onNew, ago }) {
+export default function PhoneKnowledge({ pinned = [], recent = [], index, filter, search, onSearch, catCounts, subCounts, docs, scopedTitle, isAdminUser, onBack, onSelectCategory, onSelectSubcategory, onOpen, onNew, ago }) {
   const [searching, setSearching] = useState(false)
   const q = search.trim()
   const cat = filter.type === 'category' ? index.tree.find((c) => c.id === filter.id) : null
@@ -48,7 +48,7 @@ export default function PhoneKnowledge({ pinned = [], recent = [], index, filter
     <div className="flex flex-col gap-6 pb-4">
       <div className="flex items-center gap-3">
         {inFolder && (
-          <button type="button" onClick={onSelectAll} aria-label="Volver" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#1C1C1E] text-[#F5F5F5]">
+          <button type="button" onClick={onBack} aria-label="Volver" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#1C1C1E] text-[#F5F5F5]">
             <ArrowLeftIcon size={18} />
           </button>
         )}

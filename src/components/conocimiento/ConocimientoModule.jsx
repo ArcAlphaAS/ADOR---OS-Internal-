@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   subscribeKnowledgeDocs,
@@ -696,9 +696,35 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       showToast(`No se pudo crear la sección: ${error.message}`)
     )
 
+  // Un paso hacia atrás, nunca de golpe a la portada: edición → documento → carpeta
+  // (subcarpeta → su carpeta → portada). Lo usan la flecha y el gesto desde el borde.
+  const goBack = () => {
+    if (editing) return setEditing(false)
+    if (openDoc) return handleBack()
+    if (q) return setSearch('')
+    if (filter.type === 'subcategory') {
+      const cat = subcategoryMeta(index, filter.id)?.categoryId
+      return cat ? selectCategory(cat) : selectAll()
+    }
+    if (filter.type === 'category') return selectAll()
+  }
+  const edge = useRef(null)
+  const edgeProps = phone
+    ? {
+        onTouchStart: (e) => { edge.current = e.touches[0].clientX < 28 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
+        onTouchEnd: (e) => {
+          const st = edge.current
+          edge.current = null
+          if (!st) return
+          const t = e.changedTouches[0]
+          if (t.clientX - st.x > 80 && Math.abs(t.clientY - st.y) < 60) goBack()
+        },
+      }
+    : {}
+
   if (phone && !editing && !openDoc) {
     return (
-      <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6">
+      <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6" {...edgeProps}>
         <PhoneKnowledge
           pinned={pinnedDocs}
           recent={recentDocs}
@@ -711,7 +737,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           docs={filter.type === 'all' && !q ? scoped.slice(0, 8) : scoped}
           scopedTitle={tableTitle}
           isAdminUser={isAdminUser}
-          onSelectAll={selectAll}
+          onBack={goBack}
           onSelectCategory={selectCategory}
           onSelectSubcategory={selectSubcategory}
           onOpen={handleOpen}
@@ -726,6 +752,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
     <motion.div
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 pb-16 pt-6 md:px-8 lg:flex-row lg:px-12 lg:pt-10"
+      {...edgeProps}
     >
       {!phone && <KnowledgeTree
         tree={index.tree}
