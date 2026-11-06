@@ -9,6 +9,7 @@ import { isTouchLayout } from '../../lib/motion'
 import usePhone from '../../hooks/usePhone'
 import { createPortal } from 'react-dom'
 import { driveFileKind } from '../../lib/googleDrive'
+import { fetchLinkPreview, firstPreviewableUrl } from '../../lib/linkPreview'
 
 // One message in a conversation: its bubble, attachments (image, voice,
 // call card, Drive document), reactions, receipts, thread summary and the
@@ -945,6 +946,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
             </div>
           )}
           {driveUrl && <DriveCard url={driveUrl} />}
+          {!driveUrl && firstPreviewableUrl(message.text) && <LinkPreviewCard url={firstPreviewableUrl(message.text)} />}
           {message.task && (
             <button
               type="button"
@@ -1007,6 +1009,27 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         />
       )}
     </div>
+  )
+}
+
+// Tarjeta con título, descripción e imagen del primer enlace de un mensaje.
+function LinkPreviewCard({ url }) {
+  const [p, setP] = useState(null)
+  useEffect(() => {
+    let alive = true
+    fetchLinkPreview(url).then((d) => alive && setP(d))
+    return () => { alive = false }
+  }, [url])
+  if (!p || (!p.title && !p.image)) return null
+  return (
+    <a href={p.url} target="_blank" rel="noreferrer" className="mt-1.5 flex w-full max-w-[340px] overflow-hidden rounded-[18px] bg-white/[0.06] text-left">
+      {p.image && <img src={p.image} alt="" loading="lazy" className="h-[84px] w-[84px] flex-shrink-0 object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
+      <span className="min-w-0 px-3 py-2.5">
+        <span className="block text-[11.5px] text-[#8E8E93]">{p.site || p.host}</span>
+        {p.title && <span className="line-clamp-2 text-[13.5px] font-medium leading-snug text-[#F0F0F0]">{p.title}</span>}
+        {p.description && <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[#9A9A9A]">{p.description}</span>}
+      </span>
+    </a>
   )
 }
 

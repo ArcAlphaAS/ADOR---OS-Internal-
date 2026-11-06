@@ -6,6 +6,7 @@ import { cloudflare } from './cloudflare.js'
 import { googleExchange, googleRefresh, meetSpace, adorIA } from './handlers.js'
 import { pushConfig, pushSend } from './push.js'
 import { runDeadlineReminders } from './deadlines.js'
+import { linkPreview } from './linkPreview.js'
 
 const ROUTES = {
   '/api/google-calendar/exchange': cloudflare(googleExchange),
@@ -14,6 +15,7 @@ const ROUTES = {
   '/api/ador-ia': cloudflare(adorIA),
   '/api/push/config': cloudflare(pushConfig),
   '/api/push/send': cloudflare(pushSend),
+  '/api/link-preview': cloudflare(linkPreview),
 }
 
 export default {
