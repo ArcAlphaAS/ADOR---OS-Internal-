@@ -31,14 +31,14 @@ const PRIMARY = [
 ]
 
 const MORE = [
-  { id: 'objetivos', label: 'Objetivos', Icon: TargetIcon },
-  { id: 'finanzas', label: 'Finanzas', Icon: WalletIcon },
-  { id: 'calendario', label: 'Calendario', Icon: CalendarIcon },
-  { id: 'conocimiento', label: 'Conocimiento', Icon: BookIcon },
-  { id: 'news', label: 'News', Icon: GlobeIcon },
-  { id: 'directorio', label: 'Directorio', Icon: ContactsIcon },
-  { id: 'ador-ia', label: 'ADOR IA', Icon: SparkleIcon },
-  { id: 'admin', label: 'Administración', Icon: LockIcon },
+  { id: 'objetivos', label: 'Objetivos', hint: 'Metas del trimestre y cómo vamos', Icon: TargetIcon },
+  { id: 'finanzas', label: 'Finanzas', hint: 'Caja, cobros y movimientos', Icon: WalletIcon },
+  { id: 'calendario', label: 'Calendario', hint: 'Tus reuniones y tareas del día', Icon: CalendarIcon },
+  { id: 'conocimiento', label: 'Conocimiento', hint: 'Documentos, marcos y reglas', Icon: BookIcon },
+  { id: 'news', label: 'News', hint: 'Anuncios y comunidad de ADOR', Icon: GlobeIcon },
+  { id: 'directorio', label: 'Directorio', hint: 'Personas, equipos y roles', Icon: ContactsIcon },
+  { id: 'ador-ia', label: 'ADOR IA', hint: 'Pregunta o pide que haga algo', Icon: SparkleIcon },
+  { id: 'admin', label: 'Administración', hint: 'Accesos, plantillas y datos', Icon: LockIcon },
 ]
 
 // Icon-only tab, iOS-style: the active one sits in a filled gold circle.
@@ -131,28 +131,31 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
               >
                 <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="max-h-[62vh] overflow-y-auto">
                     {more.map((m, i) => (
                       <motion.button
                         key={m.id}
-                        initial={{ opacity: 0, y: 14, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ type: 'spring', stiffness: 420, damping: 26, delay: 0.04 + i * 0.03 }}
-                        whileTap={{ scale: 0.92 }}
+                        whileTap={{ scale: 0.98 }}
                         type="button"
                         onClick={() => { haptic(); go(m.id) }}
-                        className="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition-colors active:bg-white/[0.08]"
-                        style={{ background: activeModule === m.id ? 'rgba(255,255,255,0.08)' : undefined, color: activeModule === m.id ? '#F5F5F5' : '#BBBBBB' }}
+                        className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left active:bg-white/[0.06]"
                       >
-                        <span className="relative">
-                          <m.Icon size={20} />
+                        <span className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full" style={{ background: activeModule === m.id ? '#F5F5F5' : '#2C2C2E', color: activeModule === m.id ? '#0A0A0A' : '#E4DCCB' }}>
+                          <m.Icon size={21} />
                           {badges[m.id] > 0 && (
-                            <span className="absolute -right-2.5 -top-1.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16]" style={{ background: '#F4EEE2' }}>
+                            <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: '#F4EEE2' }}>
                               {badges[m.id] > 9 ? '9+' : badges[m.id]}
                             </span>
                           )}
                         </span>
-                        <span className="text-[11px]">{m.label}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[17px] font-medium text-[#F5F5F5]">{m.label}</span>
+                          <span className="block text-[13px] text-[#8E8E93]">{m.hint}</span>
+                        </span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#636366" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
                       </motion.button>
                     ))}
                   </div>

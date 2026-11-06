@@ -44,7 +44,8 @@ export default function NotificationCenter({ items = [], anchorRect, open, onIte
         position: 'fixed',
         pointerEvents: visible ? 'auto' : 'none',
         top: anchorRect.bottom + 12,
-        right: window.innerWidth - anchorRect.right,
+        // Nunca más a la izquierda del borde de la pantalla (en teléfono el panel es casi tan ancho como ella).
+        right: Math.max(12, Math.min(window.innerWidth - anchorRect.right, window.innerWidth - Math.min(390, window.innerWidth - 24) - 12)),
       }}
     >
       <div className="ador-glass ador-grain w-[min(390px,calc(100vw-24px))] overflow-hidden rounded-[22px]">
