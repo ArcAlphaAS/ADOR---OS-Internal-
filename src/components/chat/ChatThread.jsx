@@ -227,7 +227,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
           const end = al ? flags[al.to].end : flags[i].end
           const gap = i === 0 ? 0 : start || showDivider ? 14 : 3
           return (
-            <div key={m.id} id={`msg-${m.id}`} className={`flex flex-col ${isNew(m.id) ? 'ador-msg-in' : ''}`} style={{ marginTop: gap }}>
+            <div key={m.id} id={`msg-${m.id}`} className={`flex flex-col ${isNew(m.id) ? (mine ? 'ador-msg-send' : 'ador-msg-in') : ''}`} style={{ marginTop: gap }}>
               {showDivider && <DateDivider ts={m.createdAt} />}
               {i === firstNewIndex && <NewDivider />}
               <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>

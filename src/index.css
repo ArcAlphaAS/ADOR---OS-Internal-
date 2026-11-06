@@ -624,7 +624,16 @@ html.light .ador-grain::after { opacity: 0.015; }
 /* Chat en el teléfono: la fila de escribir (+, mensaje, cámara, micrófono) baja
    hasta casi tocar el borde de abajo, o el teclado cuando está arriba. */
 @media (max-width: 767px) {
-  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
-  html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 6px; }
+  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px); }
+  html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 3px; }
   html.ador-chat-open.kb-open main { padding-bottom: 0 !important; }
+}
+
+/* Tu mensaje recién enviado "sale" de la caja: sube un poco desde la esquina con un
+   pequeño rebote. El de otra persona entra con el desvanecido de siempre. */
+@keyframes ador-msg-send { 0% { opacity: 0; transform: translateY(14px) scale(0.92); } 60% { opacity: 1; transform: translateY(-2px) scale(1.02); } 100% { opacity: 1; transform: none; } }
+.ador-msg-send { animation: ador-msg-send 340ms cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: bottom right; }
+@media (prefers-reduced-motion: reduce) { .ador-msg-send { animation: none; } }
+@media (max-width: 767px) {
+  html.ador-chat-open .ador-chat-bg textarea { padding-top: 8px; padding-bottom: 8px; }
 }
