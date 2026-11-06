@@ -11,17 +11,24 @@ import PersonAvatar from '../chat/PersonAvatar'
 
 // "Dar las gracias": elegir a alguien y decirle, en una línea, por qué. Aparece
 // en "Hoy en el equipo" para todos, y a esa persona le llega un aviso.
-const IDEAS = ['por tu ayuda con…', 'por cerrar…', 'por tomarte el tiempo de…', 'por cubrirme en…']
+const IDEAS = ['Gracias por cumplir con lo acordado', 'Gracias por tu ayuda', 'Gracias por cerrarlo a tiempo', 'Gracias por estar pendiente', 'Gracias por tu apoyo hoy', 'Gracias por tomarte el tiempo']
 
-export default function ThanksModal({ me, onClose }) {
+export default function ThanksModal({ me, onClose, prefill }) {
   useEscape(onClose)
   const showToast = useToast()
   const [people, setPeople] = useState([])
   const [to, setTo] = useState(null)
-  const [text, setText] = useState('')
+  const [text, setText] = useState(prefill?.text || '')
   const [sending, setSending] = useState(false)
   useEffect(() => subscribeUsers(setPeople), [])
-  const others = people.filter((u) => u.id !== me.uid)
+  // Nunca puedes darte las gracias a ti: solo salen las demás personas. Si venimos de
+  // algo que se hizo en equipo, esas personas van primero (y la elegida de antemano).
+  const firstIds = prefill?.uids || []
+  const others = people.filter((u) => u.id !== me.uid).sort((a, b) => Number(firstIds.includes(b.id)) - Number(firstIds.includes(a.id)))
+  useEffect(() => {
+    if (!to && firstIds.length === 1) setTo(others.find((u) => u.id === firstIds[0]) || null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [people])
   const canSend = to && text.trim().length >= 3 && !sending
 
   const send = async () => {
@@ -56,11 +63,11 @@ export default function ThanksModal({ me, onClose }) {
             {others.length === 0 && <p className="text-[13px] text-[#767676]">Aparecerán cuando tus socios entren a ADOR OS.</p>}
           </div>
 
-          <p className="mb-2 mt-5 text-[13px] font-medium text-[#8E8E93]">¿Por qué?</p>
-          <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 140))} rows={3} placeholder="Gracias por…" className="w-full resize-none rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] text-[#F5F5F5] placeholder:text-[#767676] outline-none md:text-[14px]" />
+          <p className="mb-2 mt-5 text-[13px] font-medium text-[#8E8E93]">¿Por qué? <span className="font-normal text-[#636366]">— elige una o escribe la tuya</span></p>
+          <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 140))} rows={3} placeholder="Escribe tu agradecimiento…" className="w-full resize-none rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] text-[#F5F5F5] placeholder:text-[#767676] outline-none md:text-[14px]" />
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {IDEAS.map((i) => (
-              <button key={i} type="button" onClick={() => setText((t) => (t.trim() ? t : `Gracias ${i}`))} className="rounded-full bg-white/[0.06] px-3 py-1 text-[12px] text-[#9A9A9A]">{i}</button>
+            {[...(prefill?.what ? [`Gracias por cerrar «${prefill.what.slice(0, 40)}»`] : []), ...IDEAS].map((i) => (
+              <button key={i} type="button" onClick={() => setText(i)} className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[12.5px] text-[#C9C9C9] active:bg-white/[0.12]">{i}</button>
             ))}
           </div>
 

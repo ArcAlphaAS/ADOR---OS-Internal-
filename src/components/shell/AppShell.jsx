@@ -352,7 +352,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
 
   return (
     <div
-      className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
+      className="ador-app-root relative flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
       style={{
         backgroundImage:
           'radial-gradient(ellipse at 50% 30%, rgba(244,238,226,0.06) 0%, transparent 60%)',

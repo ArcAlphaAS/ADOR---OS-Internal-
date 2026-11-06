@@ -125,7 +125,7 @@ export default function HomeScreen({ user, onNavigate }) {
         </div>
       </Zone>
 
-      <Zone title="El equipo" foldOnPhone>
+      <Zone title="El equipo">
         <HomePeople>
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
             <motion.div variants={itemVariants} className="h-full lg:col-span-5">

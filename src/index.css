@@ -609,3 +609,14 @@ html.light .ador-grain::after { opacity: 0.015; }
   .ador-home .ador-grain::after { display: none; }
   .ador-home .ador-quiet { background: #161618 !important; }
 }
+
+/* Conversación abierta en el teléfono: un solo fondo negro (sin el resplandor del
+   resto de la app, que hacía ver una franja oscura sobre la caja de escribir), y
+   los mensajes se desvanecen al llegar abajo en vez de cortarse en seco. */
+@media (max-width: 767px) {
+  html.ador-chat-open .ador-app-root { background-image: none !important; }
+  html.ador-chat-open [data-keep-scroll] {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  }
+}
