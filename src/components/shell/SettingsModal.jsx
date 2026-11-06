@@ -7,35 +7,6 @@ import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 
-const sun = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></svg>
-const moon = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></svg>
-
-// Selector Oscuro / Claro con indicador que se desliza (estilo iOS).
-function ThemeToggle() {
-  const [light, setLight] = useState(() => document.documentElement.classList.contains('light'))
-  const set = (next) => {
-    document.documentElement.classList.toggle('light', next)
-    try { localStorage.setItem('ador_theme', next ? 'light' : 'dark') } catch { /* sin almacenamiento */ }
-    setLight(next)
-  }
-  return (
-    <div className="flex rounded-xl bg-white/[0.06] p-[3px]">
-      {[[false, 'Oscuro', moon], [true, 'Claro', sun]].map(([value, label, icon]) => (
-        <button
-          key={label}
-          type="button"
-          onClick={() => set(value)}
-          className="relative flex flex-1 items-center justify-center gap-2 rounded-[9px] py-2 text-[13px] font-medium transition-colors"
-          style={{ color: light === value ? '#0A0A0A' : '#9A9A9A' }}
-        >
-          {light === value && <motion.span layoutId="theme-seg" className="absolute inset-0 rounded-[9px] bg-[#F5F5F5]" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />}
-          <span className="relative flex items-center gap-2">{icon}{label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 function Section({ title, children }) {
   return (
     <section>
@@ -115,10 +86,6 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
           </div>
 
           <div className="mt-6 flex flex-col gap-5">
-            <Section title="Apariencia">
-              <ThemeToggle />
-            </Section>
-
             <Section title="Avisos">
               <PushNotificationsCard user={user} />
             </Section>

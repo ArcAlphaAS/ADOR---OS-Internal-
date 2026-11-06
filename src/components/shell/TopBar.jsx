@@ -6,6 +6,8 @@ import Logo from '../Logo'
 import NotificationCenter from './NotificationCenter'
 import BirthdayCenter from './BirthdayCenter'
 import ProfileMenu from './ProfileMenu'
+import PhoneProfile from './PhoneProfile'
+import usePhone from '../../hooks/usePhone'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
 import SearchResults from './SearchResults'
@@ -307,7 +309,8 @@ export default function TopBar({
   const [notifRect, setNotifRect] = useState(null)
   const [profileExpanded, setProfileExpanded] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings'
+  const [activeModal, setActiveModal] = useState(null) // null | 'profile' | 'settings' | 'phoneProfile'
+  const phone = usePhone()
   const bellRef = useRef(null)
   const birthdays = useTodaysBirthdays()
   const clientNotifications = useClientNotifications()
@@ -430,7 +433,7 @@ export default function TopBar({
         <ProfileTrigger
           user={user}
           expanded={profileExpanded}
-          onToggleExpanded={() => (profileExpanded ? closeProfileAll() : setProfileExpanded(true))}
+          onToggleExpanded={() => (phone ? setActiveModal('phoneProfile') : profileExpanded ? closeProfileAll() : setProfileExpanded(true))}
           menuOpen={profileMenuOpen}
           onToggleMenu={() => setProfileMenuOpen((v) => !v)}
           onCloseAll={closeProfileAll}
@@ -441,6 +444,19 @@ export default function TopBar({
       </motion.div>
 
       <AnimatePresence>
+        {activeModal === 'phoneProfile' && (
+          <PhoneProfile
+            key="phone-profile"
+            user={user}
+            isAdmin={access.isAdmin}
+            onClose={() => setActiveModal(null)}
+            onEditProfile={() => setActiveModal('profile')}
+            onResetPassword={onResetPassword}
+            onShowOnboarding={() => { setActiveModal(null); onShowOnboarding?.() }}
+            onAdmin={() => { setActiveModal(null); onNavigate('admin') }}
+            onSignOut={() => { setActiveModal(null); onSignOut?.() }}
+          />
+        )}
         {activeModal === 'profile' && (
           <ProfileModal
             key="profile-modal"
