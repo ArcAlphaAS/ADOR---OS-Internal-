@@ -66,7 +66,7 @@ export default function LiveIsland() {
 
   const content = {
     offline: { icon: <span className="h-2 w-2 rounded-full bg-[#8E8E93]" />, text: 'Sin conexión', title: 'Lo que envíes saldrá al volver la señal' },
-    update: { icon: null, text: 'Actualizar', title: 'Hay una nueva versión de ADOR OS', action: () => window.location.reload() },
+    update: { icon: <span className="h-2 w-2 rounded-full bg-[#4CAF50]" />, text: 'Nueva versión · Actualizar', light: true, title: 'Hay una nueva versión de ADOR OS', action: () => window.location.reload() },
     thinking: { icon: <Dots3 />, text: null, title: 'ADOR IA está pensando' },
     saving: { icon: <Dots6 />, text: null, title: 'Guardando…' },
     back: { icon: <span className="h-2 w-2 rounded-full bg-[#4CAF50]" />, text: 'Conectado', title: 'Enviando lo pendiente' },
@@ -74,7 +74,7 @@ export default function LiveIsland() {
   }[mode]
 
   return (
-    <div className="pointer-events-none fixed z-[80] right-4 top-[calc(env(safe-area-inset-top)+12px)] lg:right-[156px] lg:top-[22px]">
+    <div className={`pointer-events-none fixed z-[80] top-[calc(env(safe-area-inset-top)+12px)] lg:top-[22px] ${mode === 'update' ? 'inset-x-0 flex justify-center lg:inset-x-auto lg:right-[156px]' : 'right-4 lg:right-[156px]'}`}>
       <AnimatePresence mode="popLayout">
         {mode && (
           <motion.div
@@ -91,7 +91,7 @@ export default function LiveIsland() {
               title={content.title}
               onClick={content.action}
               disabled={!content.action}
-              className="pointer-events-auto flex h-[34px] min-w-[52px] items-center justify-center gap-2 rounded-full bg-black px-4 text-[12.5px] font-medium text-white shadow-[0_6px_20px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.1]"
+              className={`pointer-events-auto flex h-[34px] min-w-[52px] items-center justify-center gap-2 rounded-full px-4 text-[12.5px] font-semibold shadow-[0_6px_20px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.1] ${content.light ? 'bg-[#F5F5F5] text-[#0A0A0A]' : 'bg-black text-white'}`}
               style={{ cursor: content.action ? 'pointer' : 'default' }}
             >
               {content.icon}
