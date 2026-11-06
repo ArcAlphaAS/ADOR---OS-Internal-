@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import ContextMenu from '../common/ContextMenu'
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
+import { useContextMenu } from '../../hooks/useContextMenu'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   subscribeKnowledgeDocs,
@@ -351,6 +354,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
           {docs.map((doc) => (
             <div
               key={doc.id}
+              data-doc-id={doc.id}
               onClick={() => onOpen(doc)}
               className="grid min-w-[640px] cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
             >
@@ -450,7 +454,6 @@ function HistorialSection({ docId }) {
 }
 
 function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePin }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [tocOpen, setTocOpen] = useState(false)
   const headings = extractHeadings(doc.content).filter((h) => h.level <= 2)
   const jump = (id) => {
@@ -474,11 +477,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
               <button type="button" onClick={onEdit} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]">
                 <EditIcon size={12} /> Editar
               </button>
-              {confirmDelete ? (
-                <button type="button" onClick={() => onDelete(doc)} className="rounded-full bg-[#EF5350]/15 px-3.5 py-1.5 text-[12px] font-medium text-[#EF5350]">¿Confirmar borrado?</button>
-              ) : (
-                <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">Eliminar</button>
-              )}
+              <button type="button" onClick={() => onDelete(doc)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">Eliminar</button>
             </div>
           )}
         </div>
@@ -685,11 +684,15 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
     }
   }
 
-  const handleDelete = (doc) => {
-    withTimeout(deleteKnowledgeDoc(doc.id))
-      .then(() => setOpenDocId((id) => (id === doc.id ? null : id)))
-      .catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
+  // Eliminar pide escribir el título del documento (ConfirmDeleteModal).
+  const [deletingDoc, setDeletingDoc] = useState(null)
+  const handleDelete = (doc) => setDeletingDoc(doc)
+  const doDelete = async (doc) => {
+    await withTimeout(deleteKnowledgeDoc(doc.id))
+    setOpenDocId((id) => (id === doc.id ? null : id))
+    showToast(`Se eliminó «${doc.title}».`)
   }
+  const { menu, bind, close } = useContextMenu()
 
   const handleCreateSection = (categoryId, name) =>
     withTimeout(createKnowledgeSection({ categoryId, label: name }, actorName)).catch((error) =>
@@ -753,6 +756,11 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 pb-16 pt-6 md:px-8 lg:flex-row lg:px-12 lg:pt-10"
       {...edgeProps}
+      onContextMenu={(e) => {
+        const id = e.target.closest?.('[data-doc-id]')?.dataset.docId
+        const d = id && docs.find((x) => x.id === id)
+        if (d) bind(d).onContextMenu(e)
+      }}
     >
       {!phone && <KnowledgeTree
         tree={index.tree}
@@ -832,6 +840,31 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           </div>
         )}
       </div>
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          title={menu.payload.title}
+          subtitle={subcategoryLabel(index, menu.payload.subcategory)}
+          onClose={close}
+          items={[
+            { label: 'Abrir', onClick: () => handleOpen(menu.payload) },
+            isAdminUser && { label: menu.payload.pinned ? 'Quitar de fijados' : 'Fijar arriba', onClick: () => togglePin(menu.payload) },
+            isAdminUser && { label: 'Editar…', onClick: () => { setOpenDocId(menu.payload.id); setEditing(true) } },
+            isAdminUser && { divider: true },
+            isAdminUser && { label: 'Eliminar documento…', danger: true, onClick: () => handleDelete(menu.payload) },
+          ]}
+        />
+      )}
+      {deletingDoc && (
+        <ConfirmDeleteModal
+          title={`¿Eliminar «${deletingDoc.title}»?`}
+          description="El documento y su historial se borran para todo el equipo. Esta acción no se puede deshacer."
+          name={deletingDoc.title}
+          onClose={() => setDeletingDoc(null)}
+          onConfirm={() => doDelete(deletingDoc)}
+        />
+      )}
     </motion.div>
   )
 }

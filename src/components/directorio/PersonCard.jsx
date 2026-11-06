@@ -12,6 +12,7 @@ export default function PersonCard({ person, selected, onClick }) {
   return (
     <button
       type="button"
+      data-person-id={person.id}
       onClick={onClick}
       className="ador-glass ador-grain flex flex-col items-start gap-3 rounded-2xl p-5 text-left transition-colors duration-150 hover:bg-white/[0.04]"
       style={selected ? { boxShadow: '0 0 0 1.5px #F4EEE2' } : undefined}

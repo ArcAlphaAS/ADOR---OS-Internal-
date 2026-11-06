@@ -7,6 +7,7 @@ import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import CheckinModal from './CheckinModal'
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
 import { SERIF } from '../news/NewsLayout'
 
 // One objetivo as a wide, numbered row (from the user's reference): status
@@ -83,7 +84,7 @@ export default function ObjetivoRow({ objetivo, index, owner, actorName, northSt
   )
 
   return (
-    <article
+    <article onContextMenu={(e) => { if (e.target.closest?.('input,textarea,a')) return; e.preventDefault(); setMenu(true) }}
       className={`ador-wrap ador-glass ador-grain relative grid grid-cols-1 gap-6 rounded-[22px] p-5 md:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10 ${o.isNorthStar ? 'ador-card-attention' : ''}`}
     >
       {/* Left: what and why */}
@@ -136,7 +137,7 @@ export default function ObjetivoRow({ objetivo, index, owner, actorName, northSt
                   setDraft(String(o.currentValue || ''))
                   setEditing(true)
                 })}
-                {menuItem(confirmDelete ? '¿Seguro? Eliminar' : 'Eliminar objetivo', () => (confirmDelete ? withTimeout(deleteObjetivo(o.id)).catch(fail('eliminar')) : setConfirmDelete(true)), true)}
+                {menuItem('Eliminar objetivo…', () => { setMenu(false); setConfirmDelete(true) }, true)}
               </div>
             )}
           </div>
@@ -207,6 +208,15 @@ export default function ObjetivoRow({ objetivo, index, owner, actorName, northSt
       </div>
 
       <AnimatePresence>{checkingIn && <CheckinModal objetivo={o} actorName={actorName} onClose={() => setCheckingIn(false)} />}</AnimatePresence>
+      {confirmDelete && (
+        <ConfirmDeleteModal
+          title={`¿Eliminar «${o.title}»?`}
+          description="El objetivo, su check-in y su progreso se borran para todo el equipo. Esta acción no se puede deshacer."
+          name={o.title}
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={() => withTimeout(deleteObjetivo(o.id))}
+        />
+      )}
     </article>
   )
 }

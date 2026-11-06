@@ -169,6 +169,8 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
     >
       {view !== 'hoy' && (
         <WorkspaceSidebar
+          taskCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.length]))}
+          actorName={actorName}
           workstreams={workstreams}
           selectedId={selectedWorkstreamId}
           onSelect={selectWorkstream}

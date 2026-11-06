@@ -1,4 +1,11 @@
+import { useState } from 'react'
 import { UsersIcon, BriefcaseIcon } from '../icons'
+import ContextMenu from '../common/ContextMenu'
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
+import PromptModal from '../common/PromptModal'
+import { useContextMenu } from '../../hooks/useContextMenu'
+import { renameProyectoInterno, deleteProyectoInterno } from '../../lib/firestore'
+import { useToast } from '../../hooks/useToast'
 
 // Reminders-style small circular icon badge — reserved for the "smart
 // list" entries (Personal, Todo) the same way Apple Reminders only badges
@@ -30,13 +37,14 @@ function ListIcon({ Icon, color }) {
 // vocabulary (§8), so that label would have been inaccurate, not just
 // imprecise. Falls back to a neutral white tint since it has no color of
 // its own to borrow.
-function NavItem({ label, sublabel, active, accentColor, Icon, iconColor, onClick, disabled }) {
+function NavItem({ label, sublabel, active, accentColor, Icon, iconColor, onClick, disabled, ...rest }) {
   const tint = accentColor || '#F5F5F5'
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      {...rest}
       title={disabled ? 'Se crea automáticamente cuando un SPC pasa a Intervención Activa' : undefined}
       className="flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left transition-colors duration-150"
       style={{
@@ -135,7 +143,7 @@ function FilterToggle({ label, active, count, color, Icon, onClick }) {
 // WorkspaceModule.jsx), so this sidebar now only scopes the team views
 // (Lista/Kanban/Timeline) — Personal (everything assigned to me, any
 // workstream) vs. Equipo (a specific Intervención/Proyecto, or all of them).
-export default function WorkspaceSidebar({
+export default function WorkspaceSidebar({ taskCounts = {}, actorName = 'Usuario',
   workstreams,
   selectedId,
   onSelect,
@@ -145,6 +153,10 @@ export default function WorkspaceSidebar({
   myTaskCount,
   workload = [],
 }) {
+  const { menu, bind, close } = useContextMenu()
+  const [renaming, setRenaming] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  const showToast = useToast()
   const intervenciones = workstreams.filter((w) => w.kind === 'intervencion')
   const proyectos = workstreams.filter((w) => w.kind === 'proyecto_interno')
 
@@ -185,7 +197,7 @@ export default function WorkspaceSidebar({
         <div className="flex flex-col gap-0.5">
           <span className="px-3 pb-1 text-[11px] text-[#444444]">Proyectos Internos</span>
           {proyectos.map((w) => (
-            <NavItem key={w.id} label={w.name} accentColor="#B8860B" active={selectedId === w.id} onClick={() => onSelect(w.id)} />
+            <NavItem key={w.id} label={w.name} accentColor="#B8860B" active={selectedId === w.id} onClick={() => onSelect(w.id)} {...bind(w)} />
           ))}
           <button
             type="button"
@@ -206,6 +218,45 @@ export default function WorkspaceSidebar({
       </div>
 
       <WorkloadPanel workload={workload} />
+
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          title={menu.payload.name}
+          subtitle={`Proyecto Interno · ${taskCounts[menu.payload.id] || 0} tareas`}
+          onClose={close}
+          items={[
+            { label: 'Abrir', onClick: () => onSelect(menu.payload.id) },
+            { label: 'Renombrar…', onClick: () => setRenaming(menu.payload) },
+            { divider: true },
+            { label: 'Eliminar proyecto…', danger: true, disabled: menu.payload.name.trim().toLowerCase() === 'general', hint: menu.payload.name.trim().toLowerCase() === 'general' ? 'no se puede' : undefined, onClick: () => setDeleting(menu.payload) },
+          ]}
+        />
+      )}
+      {renaming && (
+        <PromptModal
+          title="Renombrar proyecto"
+          label="Nombre"
+          initial={renaming.name}
+          onClose={() => setRenaming(null)}
+          onSubmit={(name) => renameProyectoInterno(renaming.proyectoId, name).then(() => showToast('Proyecto renombrado.')).catch((e) => { showToast(`No se pudo renombrar: ${e.message}`); throw e })}
+        />
+      )}
+      {deleting && (
+        <ConfirmDeleteModal
+          title={`¿Eliminar «${deleting.name}»?`}
+          description="El proyecto desaparece para todo el equipo. Sus tareas no se pierden: pasan al proyecto «General»."
+          name={deleting.name}
+          warnings={taskCounts[deleting.id] ? [`${taskCounts[deleting.id]} ${taskCounts[deleting.id] === 1 ? 'tarea pasará' : 'tareas pasarán'} a «General».`] : []}
+          onClose={() => setDeleting(null)}
+          onConfirm={async () => {
+            if (selectedId === deleting.id) onSelect(null)
+            await deleteProyectoInterno(deleting.proyectoId, deleting.name, actorName)
+            showToast(`Se eliminó «${deleting.name}».`)
+          }}
+        />
+      )}
     </div>
   )
 }

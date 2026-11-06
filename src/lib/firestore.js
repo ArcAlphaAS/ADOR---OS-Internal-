@@ -450,6 +450,28 @@ export function createProyectoInterno(data, actorName) {
   })
 }
 
+export function renameProyectoInterno(id, name) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(db, COLLECTIONS.proyectosInternos, id), { name: String(name).trim() })
+}
+
+// Eliminar un Proyecto Interno: sus tareas no se pierden, pasan al proyecto
+// «General». El propio «General» no se puede eliminar.
+export async function deleteProyectoInterno(id, name, actorName) {
+  if (!db) throw new Error('Firestore no configurado')
+  if ((name || '').trim().toLowerCase() === 'general') throw new Error('«General» no se puede eliminar.')
+  const generalId = await findOrCreateGeneralProyecto(actorName)
+  if (generalId === id) throw new Error('«General» no se puede eliminar.')
+  const snap = await getDocs(query(collection(db, COLLECTIONS.tasks), where('workstreamId', '==', `proyecto:${id}`)))
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const batch = writeBatch(db)
+    snap.docs.slice(i, i + 400).forEach((d) => batch.update(d.ref, { workstreamId: `proyecto:${generalId}` }))
+    await batch.commit()
+  }
+  await deleteDoc(doc(db, COLLECTIONS.proyectosInternos, id))
+  return snap.size
+}
+
 export function createDecision(data, actorName) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
   return addDoc(collection(db, COLLECTIONS.decisions), {

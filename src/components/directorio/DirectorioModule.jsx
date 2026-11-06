@@ -20,6 +20,9 @@ import Avatar from '../shell/Avatar'
 import { SearchIcon, PlusIcon, UsersIcon, LayersIcon, BriefcaseIcon, MoreIcon, GridIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import usePhone from '../../hooks/usePhone'
+import ContextMenu from '../common/ContextMenu'
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
+import { useContextMenu } from '../../hooks/useContextMenu'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -54,6 +57,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
 
   return (
     <div
+      data-person-id={person.id}
       onClick={() => onOpen(person)}
       className="grid min-w-[720px] cursor-pointer grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035]"
     >
@@ -482,10 +486,9 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     onFocusHandled?.()
   }, [focus])
 
-  const handleDeletePerson = (person) => {
-    withTimeout(deleteDirectoryPerson(person.id)).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
-    if (selectedPersonId === person.id) setSelectedPersonId(null)
-  }
+  const [deletingPerson, setDeletingPerson] = useState(null)
+  const { menu, bind, close } = useContextMenu()
+  const handleDeletePerson = (person) => setDeletingPerson(person) // pide escribir el nombre antes de borrar
 
   const handleCreateTeam = (data) => withTimeout(createDirectoryTeam(data, actorName)).catch((error) => showToast(`No se pudo crear el equipo: ${error.message}`))
   const handleDeleteTeam = (team) => withTimeout(deleteDirectoryTeam(team.id)).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
@@ -494,6 +497,11 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     <motion.div
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
+      onContextMenu={(e) => {
+        const id = e.target.closest?.('[data-person-id]')?.dataset.personId
+        const person = id && people.find((p) => p.id === id)
+        if (person) bind(person).onContextMenu(e)
+      }}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -603,6 +611,34 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
         </div>
       </div>
 
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          title={menu.payload.name}
+          subtitle={menu.payload.role || 'Directorio'}
+          onClose={close}
+          items={[
+            { label: 'Abrir ficha', onClick: () => setSelectedPersonId(menu.payload.id) },
+            isAdmin && { label: 'Editar…', onClick: () => setModalPerson(menu.payload) },
+            isAdmin && { divider: true },
+            isAdmin && { label: 'Eliminar persona…', danger: true, onClick: () => handleDeletePerson(menu.payload) },
+          ]}
+        />
+      )}
+      {deletingPerson && (
+        <ConfirmDeleteModal
+          title={`¿Eliminar a ${deletingPerson.name}?`}
+          description="Se borra su ficha del Directorio para todo el equipo. Su cuenta de ADOR OS, si la tiene, no se toca."
+          name={deletingPerson.name}
+          onClose={() => setDeletingPerson(null)}
+          onConfirm={async () => {
+            await withTimeout(deleteDirectoryPerson(deletingPerson.id))
+            if (selectedPersonId === deletingPerson.id) setSelectedPersonId(null)
+            showToast(`Se eliminó a ${deletingPerson.name}.`)
+          }}
+        />
+      )}
       {modalPerson !== undefined && (
         <AddPersonModal person={modalPerson} users={users} people={people} actorName={actorName} onClose={() => setModalPerson(undefined)} />
       )}

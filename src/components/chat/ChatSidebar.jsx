@@ -8,6 +8,8 @@ import usePhone from '../../hooks/usePhone'
 import { isTouchLayout } from '../../lib/motion'
 import { motion } from 'framer-motion'
 import PushNotificationsCard from '../shell/PushNotificationsCard'
+import ContextMenu from '../common/ContextMenu'
+import { useContextMenu } from '../../hooks/useContextMenu'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
 // Archivos views, DMs, groups and channels. Split out of ChatModule.jsx.
@@ -73,7 +75,7 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
 // DM / group row with the last message under the name and its time on the
 // right (WhatsApp/Slack style), the unread count, a draft mark, and a pin
 // that appears on hover. Pinned rows can be dragged to reorder.
-function PreviewRow({ big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
+function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
   const touch = big && isTouchLayout()
   const dragged = useRef(false)
   const Wrap = touch ? motion.div : 'div'
@@ -93,7 +95,7 @@ function PreviewRow({ big, active, unreadCount, unread, draftText, preview, time
   return (
     <div className="relative overflow-hidden rounded-xl">
     {touch && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
-    <Wrap className={`group/row relative ${touch ? "bg-black" : ""}`} {...dragProps} {...swipe}>
+    <Wrap className={`group/row relative ${touch ? "bg-black" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
       <button
         type="button"
         onClick={() => { if (!dragged.current) onClick() }}
@@ -198,6 +200,9 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const [search, setSearch] = useState('')
   const phone = usePhone()
   const drafts = useChatDrafts()
+  const { menu, bind, close } = useContextMenu()
+  // Clic derecho en una conversación: abrir, fijar, y lo que corresponda.
+  const ctxFor = (payload) => ({ onContextMenu: bind(payload).onContextMenu })
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
 
@@ -251,6 +256,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         preview={previewFor(key, true)}
         time={shortTime(activity[key]?.lastAt)}
         onClick={() => onSelect({ type: 'dm', id: u.id })}
+        ctx={ctxFor({ label: userLabel(u), subtitle: 'Mensaje directo', key, open: () => onSelect({ type: 'dm', id: u.id }) })}
         big={phone}
         avatar={<PersonAvatar uid={u.id} name={userLabel(u)} size={phone ? 54 : 32} showPresence />}
         label={userLabel(u)}
@@ -272,6 +278,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         preview={previewFor(g.id, false)}
         time={shortTime(activity[g.id]?.lastAt)}
         onClick={() => onSelect({ type: 'conv', id: g.id })}
+        ctx={ctxFor({ label: groupLabel(g, users, currentUid), subtitle: 'Grupo', key: g.id, open: () => onSelect({ type: 'conv', id: g.id }) })}
         big={phone}
         avatar={<UsersBadge count={(g.memberUids || []).length} large size={phone ? 54 : 32} />}
         label={groupLabel(g, users, currentUid)}
@@ -284,7 +291,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const channelRow = (c, locked) => {
     const active = isActive('conv', c.id)
     return (
-      <div key={`c-${c.id}`} className="group/row relative" {...dragProps(c.id)}>
+      <div key={`c-${c.id}`} className="group/row relative" {...dragProps(c.id)} onContextMenu={ctxFor({ label: `#${c.name}`, subtitle: locked ? 'Canal privado' : 'Canal', key: c.id, open: () => onSelect({ type: 'conv', id: c.id }) }).onContextMenu}>
         <ConversationButton active={active} unread={!active && unreadMap[c.id]} draft={Boolean(drafts[c.id])} onClick={() => onSelect({ type: 'conv', id: c.id })}>
           {locked ? <LockIcon size={11} className="w-3 flex-shrink-0 text-[#858585]" /> : <span className="w-3 text-center text-[#858585]">#</span>}
           <span className="truncate">{c.name}</span>
@@ -390,6 +397,20 @@ export default function ChatSidebar({ channels, groups, users, presence, current
       </div>
 
       <PushNotificationsCard variant="prompt" user={{ uid: currentUid }} />
+
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          title={menu.payload.label}
+          subtitle={menu.payload.subtitle}
+          onClose={close}
+          items={[
+            { label: 'Abrir', onClick: menu.payload.open },
+            { label: isPinned(menu.payload.key) ? 'Quitar de fijados' : 'Fijar arriba', onClick: () => togglePin(menu.payload.key) },
+          ]}
+        />
+      )}
     </div>
   )
 }
