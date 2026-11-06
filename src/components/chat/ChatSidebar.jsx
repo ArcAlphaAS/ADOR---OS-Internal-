@@ -17,7 +17,7 @@ function UnreadDot() {
 function SectionHeader({ label, onAdd, addTitle }) {
   return (
     <div className="mb-1 flex items-center justify-between px-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">{label}</p>
+      <p className="text-[13px] font-medium text-[#8E8E93] md:text-[11px] md:uppercase md:tracking-[0.08em] md:text-[#767676]">{label}</p>
       {onAdd && (
         <button
           type="button"
@@ -50,7 +50,7 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[13.5px] transition-colors duration-150 hover:bg-white/[0.04]"
+      className="flex items-center justify-between gap-2 truncate rounded-lg px-2.5 py-1.5 text-left text-[16px] transition-colors duration-150 hover:bg-white/[0.04] md:text-[13.5px]"
       style={{
         background: active ? 'rgba(244,238,226,0.1)' : undefined,
         color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#CCCCCC',
@@ -71,31 +71,31 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
 // DM / group row with the last message under the name and its time on the
 // right (WhatsApp/Slack style), the unread count, a draft mark, and a pin
 // that appears on hover. Pinned rows can be dragged to reorder.
-function PreviewRow({ active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
+function PreviewRow({ big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
   return (
     <div className="group/row relative" {...dragProps}>
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors duration-150 hover:bg-white/[0.04]"
+        className={`flex w-full items-center rounded-xl text-left transition-colors duration-150 hover:bg-white/[0.04] ${big ? 'gap-4 px-1 py-2.5' : 'gap-2.5 px-2 py-1.5'}`}
         style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
         <span className="flex-shrink-0">{avatar}</span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-[13.5px]" style={{ color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
+            <span className={`truncate ${big ? 'text-[17px]' : 'text-[13.5px]'}`} style={{ color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
               {label}
             </span>
-            <span className="flex-shrink-0 text-[10.5px]" style={{ color: unread ? '#F4EEE2' : '#6E6E6E' }}>
+            <span className={`flex-shrink-0 ${big ? 'text-[13px]' : 'text-[10.5px]'}`} style={{ color: unread ? '#F4EEE2' : '#6E6E6E' }}>
               {time}
             </span>
           </span>
           <span className="flex items-center justify-between gap-2">
-            <span className="truncate text-[12px]" style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#BBBBBB' : '#7E7E7E' }}>
+            <span className={`truncate ${big ? 'text-[14.5px]' : 'text-[12px]'}`} style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#BBBBBB' : '#7E7E7E' }}>
               {draftText && !active ? `Borrador: ${draftText}` : preview || 'Sin mensajes todavía'}
             </span>
             {unread && !active && (
-              <span className="flex h-[16px] min-w-[16px] flex-shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: '#F4EEE2', color: '#1C1A16' }}>
+              <span className={`flex flex-shrink-0 items-center justify-center rounded-full font-semibold ${big ? 'h-[22px] min-w-[22px] px-1.5 text-[12px]' : 'h-[16px] min-w-[16px] px-1 text-[10px]'}`} style={{ background: '#F4EEE2', color: '#1C1A16' }}>
                 {unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : ''}
               </span>
             )}
@@ -230,7 +230,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         preview={previewFor(key, true)}
         time={shortTime(activity[key]?.lastAt)}
         onClick={() => onSelect({ type: 'dm', id: u.id })}
-        avatar={<PersonAvatar uid={u.id} name={userLabel(u)} size={32} showPresence />}
+        big={phone}
+        avatar={<PersonAvatar uid={u.id} name={userLabel(u)} size={phone ? 54 : 32} showPresence />}
         label={userLabel(u)}
         pinned={isPinned(key)}
         onTogglePin={() => togglePin(key)}
@@ -250,7 +251,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         preview={previewFor(g.id, false)}
         time={shortTime(activity[g.id]?.lastAt)}
         onClick={() => onSelect({ type: 'conv', id: g.id })}
-        avatar={<UsersBadge count={(g.memberUids || []).length} large />}
+        big={phone}
+        avatar={<UsersBadge count={(g.memberUids || []).length} large size={phone ? 54 : 32} />}
         label={groupLabel(g, users, currentUid)}
         pinned={isPinned(g.id)}
         onTogglePin={() => togglePin(g.id)}
@@ -276,7 +278,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
-    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto pb-4 md:w-[230px]">
+    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 [overscroll-behavior-x:none] md:w-[230px]">
       <div>
         <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
         <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">
@@ -311,8 +313,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
               <span className="w-full truncate text-center text-[12px] text-[#9A9A9A]">Nuevo</span>
             </button>
             {[...allOthers].sort((a, b) => ms(dmKey(b)) - ms(dmKey(a)) || userLabel(a).localeCompare(userLabel(b), 'es')).map((u) => (
-              <button key={u.id} type="button" onClick={() => onSelect({ type: 'dm', id: u.id })} className="flex w-[60px] flex-shrink-0 flex-col items-center gap-1.5">
-                <PersonAvatar uid={u.id} name={userLabel(u)} size={60} showPresence />
+              <button key={u.id} type="button" onClick={() => onSelect({ type: 'dm', id: u.id })} className="flex w-[64px] flex-shrink-0 flex-col items-center gap-1.5">
+                <span className="rounded-full p-[3px]" style={{ boxShadow: unreadMap[dmKey(u)] ? '0 0 0 2px #F4EEE2' : '0 0 0 2px transparent' }}><PersonAvatar uid={u.id} name={userLabel(u)} size={58} showPresence /></span>
                 <span className="w-full truncate text-center text-[12px] text-[#D5D5D5]">{userLabel(u).split(' ')[0]}</span>
               </button>
             ))}
@@ -435,9 +437,9 @@ function MeHeader({ presence, uid, onSetDnd, calendarConnected }) {
   )
 }
 
-function UsersBadge({ count, large = false }) {
+function UsersBadge({ count, large = false, size = 32 }) {
   return (
-    <span className={`flex flex-shrink-0 items-center justify-center bg-white/[0.06] font-semibold text-[#888888] ${large ? 'h-8 w-8 rounded-full text-[12px]' : 'h-5 w-5 rounded-md text-[10px]'}`}>
+    <span className={`flex flex-shrink-0 items-center justify-center bg-white/[0.06] font-semibold text-[#888888] ${large ? 'rounded-full text-[14px]' : 'h-5 w-5 rounded-md text-[10px]'}`} style={large ? { width: size, height: size } : undefined}>
       {count}
     </span>
   )
