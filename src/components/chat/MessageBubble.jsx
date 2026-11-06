@@ -275,17 +275,17 @@ function VoicePlayer({ attachment, mine }) {
     setState('playing')
   }
 
+  const showSpeed = state === 'playing' || state === 'paused' || speed !== 1
   return (
-    <div className="flex w-[260px] max-w-full items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
-      <button type="button" onClick={toggle} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.15] text-white">
-        {state === 'playing' ? <PauseIcon size={14} /> : state === 'loading' ? <span className="h-3 w-3 animate-spin rounded-full border border-white/60 border-t-transparent" /> : <PlayIcon size={12} />}
+    <div className={`flex w-[280px] max-w-full items-center gap-3 overflow-hidden rounded-[22px] px-3 py-2.5 ${mine ? 'max-md:!border-0 max-md:!bg-[#2C2C2E]' : 'max-md:!bg-[#1C1C1E]'}`} style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
+      <button type="button" onClick={toggle} aria-label={state === 'playing' ? 'Pausar' : 'Escuchar'} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-150" style={{ background: state === 'playing' ? '#F5F5F5' : 'rgba(255,255,255,0.14)', color: state === 'playing' ? '#0A0A0A' : '#FFFFFF' }}>
+        {state === 'playing' ? <PauseIcon size={15} /> : state === 'loading' ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" /> : <PlayIcon size={14} />}
       </button>
       {attachment.peaks?.length ? (
-        // The real shape of the recording (measured when it was made), played
-        // bars go white.
-        <div className="flex h-7 flex-1 items-center gap-[2px]">
+        // La forma real de la grabación; lo ya reproducido se pinta de blanco.
+        <div className="flex h-8 min-w-0 flex-1 items-center gap-[2px]">
           {attachment.peaks.map((p, i) => (
-            <span key={i} className="w-[2px] flex-1 rounded-full transition-colors duration-150" style={{ height: `${Math.max(12, p)}%`, background: i / attachment.peaks.length < progress ? '#FFFFFF' : 'rgba(255,255,255,0.3)' }} />
+            <span key={i} className="flex-1 rounded-full transition-colors duration-150" style={{ height: `${Math.max(14, p)}%`, minWidth: 1.5, background: i / attachment.peaks.length < progress ? '#FFFFFF' : 'rgba(255,255,255,0.32)' }} />
           ))}
         </div>
       ) : (
@@ -293,8 +293,10 @@ function VoicePlayer({ attachment, mine }) {
           <div className="h-full rounded-full bg-white transition-[width] duration-200" style={{ width: `${Math.min(100, progress * 100)}%` }} />
         </div>
       )}
-      <span className="flex-shrink-0 text-[11px] text-white/80">{formatDuration(attachment.duration)}</span>
-      <button type="button" onClick={cycleSpeed} aria-label="Velocidad" className="flex-shrink-0 rounded-full bg-white/[0.15] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">{speed === 1 ? '1×' : speed === 1.5 ? '1,5×' : '2×'}</button>
+      <span className="flex-shrink-0 text-[12.5px] tabular-nums text-white/80">{formatDuration(attachment.duration)}</span>
+      {showSpeed && (
+        <button type="button" onClick={cycleSpeed} aria-label="Velocidad" className="flex-shrink-0 rounded-full bg-white/[0.16] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">{speed === 1 ? '1×' : speed === 1.5 ? '1,5×' : '2×'}</button>
+      )}
     </div>
   )
 }
