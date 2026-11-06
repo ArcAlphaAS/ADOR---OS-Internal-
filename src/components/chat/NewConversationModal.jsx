@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import { SUGGESTED_CHANNELS, normalizeChannelName, userLabel } from '../../lib/chat'
 import { LockIcon, GlobeIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
-import { SPRING } from '../../lib/motion'
+import { SPRING, SHEET, swipeToClose } from '../../lib/motion'
+import usePhone from '../../hooks/usePhone'
 
 const labelClass = 'mb-1.5 block font-medium text-[#767676]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -63,6 +64,14 @@ export function VisibilityToggle({ value, onChange }) {
   )
 }
 
+function Switch({ on, onChange, label }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className="relative h-[28px] w-[48px] flex-shrink-0 rounded-full" style={{ background: on ? '#34C759' : 'rgba(255,255,255,0.18)' }}>
+      <span className="absolute top-[2px] h-[24px] w-[24px] rounded-full bg-white shadow transition-all duration-200" style={{ left: on ? 22 : 2 }} />
+    </button>
+  )
+}
+
 export default function NewConversationModal({ kind, users, currentUid, existingNames, onClose, onCreate }) {
   const isGroup = kind === 'group'
   const [name, setName] = useState('')
@@ -70,6 +79,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
   const [visibility, setVisibility] = useState('public')
   const [members, setMembers] = useState([])
   const [saving, setSaving] = useState(false)
+  const phone = usePhone()
 
   const normalized = normalizeChannelName(name)
   const duplicate = !isGroup && existingNames.includes(normalized)
@@ -97,6 +107,104 @@ export default function NewConversationModal({ kind, users, currentUid, existing
     } finally {
       setSaving(false)
     }
+  }
+
+  if (phone) {
+    const needMembers = isGroup || visibility === 'private'
+    return createPortal(
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50 flex items-end bg-black/55 backdrop-blur-[6px]" onClick={onClose}>
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          transition={SHEET}
+          onClick={(e) => e.stopPropagation()}
+          {...swipeToClose('y', onClose)}
+          className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-3"
+        >
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
+          <div className="flex items-center justify-between gap-3">
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2C2C2E] text-[#F5F5F5]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+            <div className="text-center">
+              <h2 className="text-[18px] font-semibold text-[#F5F5F5]">{isGroup ? 'Nuevo grupo' : 'Nuevo canal'}</h2>
+              <p className="text-[12.5px] text-[#8E8E93]">{isGroup ? 'Privado, entre algunas personas' : 'Un espacio permanente'}</p>
+            </div>
+            <span className="h-11 w-11" />
+          </div>
+
+          <div className="mt-5 overflow-hidden rounded-[22px] bg-[#2C2C2E]">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={isGroup ? 'Nombre (opcional)' : 'Nombre del canal'}
+              className="w-full bg-transparent px-5 py-4 text-[16px] text-[#F5F5F5] placeholder:text-[#8E8E93] outline-none"
+            />
+            {!isGroup && (
+              <>
+                <div className="mx-5 h-px bg-white/[0.08]" />
+                <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añadir descripción" className="w-full bg-transparent px-5 py-4 text-[16px] text-[#F5F5F5] placeholder:text-[#8E8E93] outline-none" />
+              </>
+            )}
+          </div>
+          {!isGroup && name && normalized !== name.trim() && !duplicate && <p className="mt-2 px-2 text-[12.5px] text-[#8E8E93]">Se creará como #{normalized}</p>}
+          {duplicate && <p className="mt-2 px-2 text-[12.5px] text-[#EF5350]">Ya existe #{normalized}.</p>}
+
+          {!isGroup && suggestions.length > 0 && (
+            <div className="-mx-5 mt-4 overflow-x-auto px-5 [scrollbar-width:none]">
+              <div className="flex gap-2">
+                {suggestions.map((s) => (
+                  <button key={s.name} type="button" onClick={() => applySuggestion(s)} className="flex flex-shrink-0 items-center gap-1 rounded-full bg-[#2C2C2E] px-3.5 py-2 text-[13.5px] text-[#D5D5D5]" style={normalized === s.name ? { background: '#F4EEE2', color: '#1C1A16' } : undefined}>
+                    {s.visibility === 'private' ? <LockIcon size={11} /> : '#'} {s.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {needMembers && (
+            <div className="mt-6">
+              <p className="mb-3 px-1 text-[14px] font-medium text-[#8E8E93]">Miembros {isGroup && <span className="text-[#F4EEE2]">*</span>}</p>
+              <div className="-mx-5 overflow-x-auto px-5 [scrollbar-width:none]">
+                <div className="flex gap-4">
+                  {users.map((u) => {
+                    const me = u.id === currentUid
+                    const on = me || members.includes(u.id)
+                    return (
+                      <button key={u.id} type="button" disabled={me} onClick={() => toggle(u.id)} className="flex w-[64px] flex-shrink-0 flex-col items-center gap-1.5">
+                        <span className="relative rounded-full p-[3px]" style={{ boxShadow: on ? '0 0 0 2px #F4EEE2' : '0 0 0 2px transparent', opacity: on ? 1 : 0.55 }}>
+                          <PersonAvatar uid={u.id} name={userLabel(u)} size={56} />
+                        </span>
+                        <span className="w-full truncate text-center text-[12.5px] text-[#D5D5D5]">{me ? 'Tú' : userLabel(u).split(' ')[0]}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isGroup && (
+            <div className="mt-6">
+              <p className="mb-3 px-1 text-[14px] font-medium text-[#8E8E93]">Ajustes</p>
+              <div className="flex items-center gap-4 rounded-[22px] bg-[#2C2C2E] px-5 py-4">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[16px] font-medium text-[#F5F5F5]">Privado</span>
+                  <span className="mt-0.5 block text-[13px] leading-snug text-[#8E8E93]">{visibility === 'private' ? 'Solo lo ven sus miembros. Se entra por invitación.' : 'Toda la empresa lo ve y entra automáticamente.'}</span>
+                </span>
+                <Switch on={visibility === 'private'} onChange={(v) => setVisibility(v ? 'private' : 'public')} label="Canal privado" />
+              </div>
+            </div>
+          )}
+
+          <button type="button" disabled={!canSave || saving} onClick={save} className="ador-btn-primary mt-7 w-full rounded-full py-4 text-[16px] font-semibold disabled:opacity-40">
+            {saving ? 'Creando…' : isGroup ? 'Crear grupo' : 'Crear canal'}
+          </button>
+        </motion.div>
+      </motion.div>,
+      document.body
+    )
   }
 
   return createPortal(

@@ -4,6 +4,7 @@ import { isPrivate, userLabel, groupLabel, presenceOf, shortTime } from '../../l
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon, PinIcon } from '../icons'
 import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
+import usePhone from '../../hooks/usePhone'
 import PushNotificationsCard from '../shell/PushNotificationsCard'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
@@ -174,6 +175,7 @@ function ViewNav({ view, counts, onSelectView }) {
 
 export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, activity = {}, pinned = [], onSetPinned, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages }) {
   const [search, setSearch] = useState('')
+  const phone = usePhone()
   const drafts = useChatDrafts()
   const q = search.trim().toLowerCase()
   const match = (label) => !q || label.toLowerCase().includes(q)
@@ -301,6 +303,23 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         )}
       </div>
 
+      {phone && !searching && (
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+          <div className="flex gap-4">
+            <button type="button" onClick={onNewGroup} className="flex w-[60px] flex-shrink-0 flex-col items-center gap-1.5">
+              <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-dashed border-white/[0.3] text-[#F4EEE2]"><PlusIcon size={20} /></span>
+              <span className="w-full truncate text-center text-[12px] text-[#9A9A9A]">Nuevo</span>
+            </button>
+            {[...allOthers].sort((a, b) => ms(dmKey(b)) - ms(dmKey(a)) || userLabel(a).localeCompare(userLabel(b), 'es')).map((u) => (
+              <button key={u.id} type="button" onClick={() => onSelect({ type: 'dm', id: u.id })} className="flex w-[60px] flex-shrink-0 flex-col items-center gap-1.5">
+                <PersonAvatar uid={u.id} name={userLabel(u)} size={60} showPresence />
+                <span className="w-full truncate text-center text-[12px] text-[#D5D5D5]">{userLabel(u).split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
 
       {pinnedItems.length > 0 && (
@@ -382,7 +401,7 @@ function MeHeader({ presence, uid, onSetDnd, calendarConnected }) {
     <div>
       <div className="flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-[#F5F5F5]">Comunicación</p>
+          <p className="text-[28px] font-semibold tracking-[-0.02em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">Comunicación</p>
           <button type="button" onClick={() => setOpen((v) => !v)} className="flex max-w-full items-center gap-1.5 text-[11px] text-[#9A9A9A] hover:text-[#F5F5F5]">
             <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: current.color }} />
             <span className="truncate">{current.label}</span>
