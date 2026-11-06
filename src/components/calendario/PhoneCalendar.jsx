@@ -48,9 +48,10 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d })
 
-  const mine = tasks.filter((t) => t.dueDate && !isPendingFor(t, uid))
+  const mine = tasks.filter((t) => t.dueDate?.toDate && !isPendingFor(t, uid))
   const eventsOn = (d) => events.filter((e) => e.start && sameDay(new Date(e.start), d))
-  const tasksOn = (d) => mine.filter((t) => t.dueDate.slice(0, 10) === key(d))
+  const dueOf = (t) => t.dueDate?.toDate?.() || null
+  const tasksOn = (d) => mine.filter((t) => { const due = dueOf(t); return due && key(due) === key(d) })
 
   const dayEvents = eventsOn(anchor).sort((a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || new Date(a.start) - new Date(b.start))
   const dayTasks = tasksOn(anchor)
