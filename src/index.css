@@ -594,3 +594,18 @@ html.light .ador-grain::after { opacity: 0.015; }
 
 /* Corazón que salta al reaccionar con doble toque. */
 @keyframes ador-heart-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
+
+/* Inicio en el teléfono: las tarjetas de vidrio pasan a gris plano (el mismo
+   lenguaje que el resto de las pantallas del teléfono) y las zonas respiran más. */
+@media (max-width: 767px) {
+  .ador-home .ador-glass:not(.ador-card-attention):not(.ador-card-urgent) {
+    background: #1c1c1e;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 26px;
+  }
+  .ador-home .ador-grain::after { display: none; }
+  .ador-home .ador-quiet { background: #161618 !important; }
+}

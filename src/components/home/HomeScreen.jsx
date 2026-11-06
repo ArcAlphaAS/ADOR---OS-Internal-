@@ -6,6 +6,8 @@ import { useDayData } from '../../hooks/useDayData'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import GreetingBlock from './GreetingBlock'
 import TuDiaCard from './TuDiaCard'
+import PhoneTuDia from './PhoneTuDia'
+import usePhone from '../../hooks/usePhone'
 import AttentionCard from './AttentionCard'
 import WeeklySummaryCard from './WeeklySummaryCard'
 import FinanceBlock from './FinanceBlock'
@@ -46,7 +48,7 @@ function pickNextMeeting(events) {
     .sort((a, b) => new Date(a.start) - new Date(b.start))
   const e = timed.find((x) => x.isMeeting) || timed[0]
   if (!e) return null
-  return { title: e.title, start: new Date(e.start), inProgress: new Date(e.start).getTime() <= now, isMeeting: e.isMeeting, link: e.htmlLink }
+  return { title: e.title, start: new Date(e.start), inProgress: new Date(e.start).getTime() <= now, isMeeting: e.isMeeting, link: e.htmlLink, meet: e.meetLink || null }
 }
 
 const itemVariants = {
@@ -55,6 +57,7 @@ const itemVariants = {
 }
 
 export default function HomeScreen({ user, onNavigate }) {
+  const phone = usePhone()
   const { interventions } = useHomeData(user?.uid)
   // Same numbers as Finanzas (client payments + manual incomes).
   const finance = useFinanceData()
@@ -75,7 +78,11 @@ export default function HomeScreen({ user, onNavigate }) {
 
       <Zone title="Hoy">
         <motion.div variants={itemVariants}>
-          <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+          {phone ? (
+            <PhoneTuDia user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+          ) : (
+            <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+          )}
         </motion.div>
         <motion.div variants={itemVariants} className="empty:hidden">
           <CierraTuDiaCard user={user} />
