@@ -35,7 +35,19 @@ export async function deliverMessage({ convType, convId, dmParticipants, partici
     ...(parentId ? { threadParentId: parentId } : {}),
   }
   const attachment = payload.attachment
-  const snippet = (payload.text || (attachment?.kind === 'entity' ? `🔗 ${attachment.title}` : attachment ? '📎 Archivo' : '')).slice(0, 200)
+  const fmtDur = (d) => `${Math.floor(d / 60)}:${String(Math.round(d % 60)).padStart(2, '0')}`
+  const attachmentSnippet = !attachment
+    ? ''
+    : attachment.kind === 'entity'
+      ? `🔗 ${attachment.title}`
+      : attachment.kind === 'voice'
+        ? `🎤 Mensaje de voz${attachment.duration ? ` (${fmtDur(attachment.duration)})` : ''}`
+        : attachment.kind === 'image'
+          ? '📷 Imagen'
+          : attachment.kind === 'gif'
+            ? '🖼️ GIF'
+            : '📎 Archivo'
+  const snippet = (payload.text || attachmentSnippet).slice(0, 200)
 
   const snippetText = snippet || (payload.poll ? `📊 ${payload.poll.question}` : '')
   const notified = new Set([authorUid])

@@ -1885,7 +1885,7 @@ function previewOf(payload, authorUid, authorName) {
   let text = (p.text || '').slice(0, 140)
   if (!text && p.call) text = p.call.type === 'video' ? '📞 Videollamada' : '📞 Llamada'
   if (!text && p.attachment?.kind === 'image') text = '📷 Imagen'
-  if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
+  if (!text && p.attachment?.kind === 'voice') text = `🎤 Mensaje de voz${p.attachment.duration ? ` (${Math.floor(p.attachment.duration / 60)}:${String(Math.round(p.attachment.duration % 60)).padStart(2, '0')})` : ''}`
   if (!text && p.attachment?.kind === 'drive') text = `📎 ${p.attachment.name}`
   if (!text && p.attachment?.kind === 'entity') text = `🔗 ${p.attachment.title}`
   if (!text && p.attachment?.kind === 'gif') text = '🖼️ GIF'

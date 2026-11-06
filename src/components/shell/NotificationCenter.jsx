@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { BellIcon, MessageIcon, CheckCircleIcon, GlobeIcon, UsersIcon, ClockIcon } from '../icons'
 import useDeferredReveal from '../../hooks/useDeferredReveal'
 import usePhone from '../../hooks/usePhone'
+import PreviewText from '../chat/PreviewText'
 import { SHEET, isTouchLayout } from '../../lib/motion'
 import { keyOfNotification } from '../../hooks/useArchivedNotifications'
 
@@ -45,7 +46,7 @@ function Row({ item, archivedView, onArchive, onRestore, onItemClick }) {
             <K.Icon size={16} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="line-clamp-3 text-[13.5px] leading-snug text-[#E4E4E4]">{item.text}</span>
+            <span className="line-clamp-3 text-[13.5px] leading-snug text-[#E4E4E4]"><PreviewText text={item.text} /></span>
             <span className="mt-0.5 block text-[12px] text-[#767676]">{K.label}{item.time ? ` · ${item.time}` : ''}</span>
           </span>
         </button>

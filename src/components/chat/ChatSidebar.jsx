@@ -4,6 +4,7 @@ import { isPrivate, userLabel, groupLabel, presenceOf, shortTime } from '../../l
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon, PinIcon } from '../icons'
 import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
+import PreviewText from './PreviewText'
 import usePhone from '../../hooks/usePhone'
 import { isTouchLayout } from '../../lib/motion'
 import { motion } from 'framer-motion'
@@ -114,7 +115,7 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
           </span>
           <span className="flex items-center justify-between gap-2">
             <span className={`truncate ${big ? 'text-[14.5px]' : 'text-[12px]'}`} style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#BBBBBB' : '#7E7E7E' }}>
-              {draftText && !active ? `Borrador: ${draftText}` : preview || 'Sin mensajes todavía'}
+              {draftText && !active ? `Borrador: ${draftText}` : preview ? <PreviewText text={preview} /> : 'Sin mensajes todavía'}
             </span>
             {unread && !active && (
               <span className={`flex flex-shrink-0 items-center justify-center rounded-full font-semibold ${big ? 'h-[22px] min-w-[22px] px-1.5 text-[12px]' : 'h-[16px] min-w-[16px] px-1 text-[10px]'}`} style={{ background: '#F4EEE2', color: '#1C1A16' }}>

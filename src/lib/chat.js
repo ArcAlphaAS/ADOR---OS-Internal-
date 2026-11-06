@@ -406,7 +406,7 @@ export function messageSnippet(m, max = 160) {
   if (!m) return ''
   if (m.text) return m.text.slice(0, max)
   if (m.attachment?.kind === 'image') return '📷 Imagen'
-  if (m.attachment?.kind === 'voice') return '🎤 Nota de voz'
+  if (m.attachment?.kind === 'voice') return `🎤 Mensaje de voz${m.attachment.duration ? ` (${Math.floor(m.attachment.duration / 60)}:${String(Math.round(m.attachment.duration % 60)).padStart(2, '0')})` : ''}`
   if (m.attachment?.kind === 'drive') return `📎 ${m.attachment.name}`
   if (m.attachment?.kind === 'entity') return `🔗 ${m.attachment.title}`
   if (m.call) return '📞 Llamada'

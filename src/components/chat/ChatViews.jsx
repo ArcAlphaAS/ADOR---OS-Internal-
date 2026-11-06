@@ -3,6 +3,7 @@ import { useMessageSearch, normalize } from '../../hooks/useMessageSearch'
 import { dayBucket, formatReminderTime, mentionVerb } from '../../lib/chat'
 import { InboxIcon, AtIcon, BookmarkIcon, FolderIcon, FileIcon, MicIcon, LockIcon, SearchIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
+import PreviewText from './PreviewText'
 import { useChatDrafts } from '../../lib/chatDrafts'
 
 function timeAgo(ts) {
@@ -53,7 +54,7 @@ function Row({ unread, onClick, leading, title, meta, preview }) {
           <span className="ml-auto flex-shrink-0 text-[11px] text-[#7A7A7A]">{meta}</span>
           {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#F4EEE2' }} />}
         </span>
-        <span className="mt-0.5 block truncate text-[12.5px] text-[#777777]">{preview}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] text-[#777777]">{typeof preview === 'string' ? <PreviewText text={preview} /> : preview}</span>
       </span>
     </button>
   )
