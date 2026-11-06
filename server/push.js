@@ -92,7 +92,7 @@ export async function encryptPayload(subscription, plaintext) {
   return concat(salt, rs, new Uint8Array([asPublic.length]), asPublic, cipher)
 }
 
-async function sendPush(subscription, payload, env, { ttl = 86400, urgency = 'high' } = {}) {
+export async function sendPush(subscription, payload, env, { ttl = 86400, urgency = 'high' } = {}) {
   const body = await encryptPayload(subscription, enc.encode(JSON.stringify(payload)))
   const res = await fetch(subscription.endpoint, {
     method: 'POST',
@@ -125,7 +125,7 @@ function decodeFields(fields = {}) {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, decodeValue(v)]))
 }
 
-function firestore(env, idToken) {
+export function firestore(env, idToken) {
   const project = env.FIREBASE_PROJECT_ID
   const root = `projects/${project}/databases/(default)/documents`
   const base = `https://firestore.googleapis.com/v1/${root}`
@@ -149,6 +149,26 @@ function firestore(env, idToken) {
       if (!res.ok) throw Object.assign(new Error(`Firestore ${res.status}`), { status: res.status })
       return (await res.json()).filter((r) => r.document).map((r) => ({ id: r.document.name.split('/').pop(), ...decodeFields(r.document.fields) }))
     },
+    // Documentos de una colección con un rango de fechas en un campo (Timestamp).
+    async queryRange(collectionId, field, fromIso, toIso) {
+      const where = {
+        compositeFilter: {
+          op: 'AND',
+          filters: [
+            { fieldFilter: { field: { fieldPath: field }, op: 'GREATER_THAN_OR_EQUAL', value: { timestampValue: fromIso } } },
+            { fieldFilter: { field: { fieldPath: field }, op: 'LESS_THAN_OR_EQUAL', value: { timestampValue: toIso } } },
+          ],
+        },
+      }
+      const res = await fetch(`${base}:runQuery`, { method: 'POST', headers, body: JSON.stringify({ structuredQuery: { from: [{ collectionId }], where, limit: 500 } }) })
+      if (!res.ok) throw Object.assign(new Error(`Firestore ${res.status}`), { status: res.status })
+      return (await res.json()).filter((r) => r.document).map((r) => ({ id: r.document.name.split('/').pop(), ...decodeFields(r.document.fields) }))
+    },
+    // Marca un campo anidado de un mapa (p. ej. deadlineSent.d1 = true) sin tocar el resto.
+    markFlag(path, mapField, key) {
+      const url = `${base}/${path}?updateMask.fieldPaths=${encodeURIComponent(`${mapField}.${key}`)}`
+      return fetch(url, { method: 'PATCH', headers, body: JSON.stringify({ fields: { [mapField]: { mapValue: { fields: { [key]: { booleanValue: true } } } } } }) }).catch(() => {})
+    },
     remove(path) {
       return fetch(`${base}/${path}`, { method: 'DELETE', headers }).catch(() => {})
     },
@@ -162,7 +182,7 @@ function notifyLevel(profile, key, kind) {
   if (profile?.chatMuted?.[key]) return 'none'
   return kind === 'channel' ? 'mentions' : 'all'
 }
-const inDnd = (presence, now) => (presence?.dnd?.until || 0) > now
+export const inDnd = (presence, now) => (presence?.dnd?.until || 0) > now
 
 const VERB = { mention: 'te mencionó', quote: 'citó tu mensaje', important: 'marcó un mensaje como importante', reply: 'respondió en un hilo' }
 const firstName = (s) => (s || '').split(' ')[0]

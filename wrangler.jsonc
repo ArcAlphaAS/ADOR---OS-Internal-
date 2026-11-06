@@ -28,5 +28,7 @@
     "VAPID_PUBLIC_KEY": "BHYH4vo4RAKIcQQtYvfIvgUq3Yl1IXKEl9vKnT6c-ZMGYjkWKVERgAxQcSNTDgQ7w6YE8ezAjNJdMN1iJm3dKYo",
     "VAPID_SUBJECT": "https://ador-os.adorfirm.workers.dev"
   },
+  // Cada 30 minutos revisa las fechas límite (server/deadlines.js).
+  "triggers": { "crons": ["*/30 * * * *"] },
   "observability": { "enabled": true }
 }

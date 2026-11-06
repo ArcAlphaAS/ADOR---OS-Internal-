@@ -5,6 +5,7 @@
 import { cloudflare } from './cloudflare.js'
 import { googleExchange, googleRefresh, meetSpace, adorIA } from './handlers.js'
 import { pushConfig, pushSend } from './push.js'
+import { runDeadlineReminders } from './deadlines.js'
 
 const ROUTES = {
   '/api/google-calendar/exchange': cloudflare(googleExchange),
@@ -22,5 +23,9 @@ export default {
     if (route) return route({ request, env })
     if (pathname.startsWith('/api/')) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404, headers: { 'Content-Type': 'application/json' } })
     return env.ASSETS.fetch(request)
+  },
+  // Cron (cada 30 min, wrangler.jsonc): avisos de fechas límite con la app cerrada.
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(runDeadlineReminders(env).catch((e) => console.error('deadlines', e.message)))
   },
 }
