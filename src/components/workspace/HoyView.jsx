@@ -25,6 +25,7 @@ import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } fro
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
 import { SPRING } from '../../lib/motion'
+import usePhone from '../../hooks/usePhone'
 
 // The landing screen for Workspace — added 2026-09-16 after direct feedback
 // that opening on "Todo" (every Intervención/Proyecto) made the module read
@@ -483,9 +484,9 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
       </button>
       {open && (
         <div className="overflow-x-auto px-3 pb-3">
-          <div style={{ minWidth: 760 }}>
+          <div className="md:min-w-[760px]">
             {tasks.length > 0 && (
-              <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-1" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
+              <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-1 md:grid" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
                 {COLUMN_HEADERS.map((h, i) => (
                   <span key={h || i} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     {h}
@@ -524,6 +525,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
 // `onOpenChange`) so the right rail's "Nueva tarea" Quick Action can open it
 // from anywhere on the page, not just its own "+" button.
 function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [], adding, onOpenChange }) {
+  const phone = usePhone()
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -590,8 +592,8 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
   }
 
   return (
-    <div className="grid items-center gap-3 rounded-lg px-2 py-2" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
-      <span />
+    <div className={phone ? 'flex flex-wrap items-center gap-2 rounded-[22px] bg-[#1C1C1E] p-3' : 'grid items-center gap-3 rounded-lg px-2 py-2'} style={phone ? undefined : { gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
+      {!phone && <span />}
       <input
         autoFocus
         type="text"
@@ -600,7 +602,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] max-md:w-full max-md:text-[16px] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />

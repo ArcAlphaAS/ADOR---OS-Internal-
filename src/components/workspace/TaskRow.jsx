@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import usePhone from '../../hooks/usePhone'
+import PhoneTaskCard from './PhoneTaskCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toggleTaskComplete, applyTaskUpdate } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, TASK_ROW_GRID, withTimeout } from '../../lib/workspace'
@@ -10,6 +12,7 @@ import { CheckCircleIcon } from '../icons'
 
 export default function TaskRow({ task, userById, users, workstreams = [], onOpen, actorUserId, actorName, selectMode = false, selected = false, onSelect }) {
   const completed = task.status === 'completado'
+  const phone = usePhone()
   const showToast = useToast()
   const [expanded, setExpanded] = useState(false)
   const [menu, setMenu] = useState(null) // right-click position
@@ -25,6 +28,8 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
   const applyUpdate = (data) => {
     withTimeout(applyTaskUpdate(task, data, actorUserId, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
   }
+
+  if (phone) return <PhoneTaskCard task={task} workstream={workstreams.find((w) => w.id === task.workstreamId)} userById={userById} actorName={actorName} onOpen={onOpen} />
 
   return (
     <div>

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import usePhone from '../../hooks/usePhone'
+import PhoneTaskCard from './PhoneTaskCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toggleTaskComplete, applyTaskUpdate, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { PRIORITIES, STATUSES, priorityMeta, statusMeta, isOverdue, isDueToday, PROJECT_TASK_ROW_GRID, withTimeout, workstreamId as buildWorkstreamId } from '../../lib/workspace'
@@ -18,6 +20,7 @@ import { CheckCircleIcon, PlayIcon } from '../icons'
 // Personal/Grupo all read as the same kind of table.
 export default function ProjectTaskRow({ task, workstream, workstreams = [], userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus }) {
   const completed = task.status === 'completado'
+  const phone = usePhone()
   const showToast = useToast()
   const [expanded, setExpanded] = useState(false)
   const [menu, setMenu] = useState(null) // right-click position
@@ -36,6 +39,8 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
       showToast(`No se pudo mover la tarea: ${error.message}`)
     }
   }
+
+  if (phone) return <PhoneTaskCard task={task} workstream={workstream} userById={userById} actorName={actorName} onOpen={onOpen} onReschedule={onReschedule} />
 
   return (
     <div>

@@ -309,8 +309,8 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
             )}
 
             <div className="overflow-x-auto px-3 pb-3">
-              <div style={{ minWidth: 780 }}>
-                <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
+              <div className="md:min-w-[780px]">
+                <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3 md:grid" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                   {COLUMN_HEADERS.map((h, i) => (
                     <span
                       key={h || i}

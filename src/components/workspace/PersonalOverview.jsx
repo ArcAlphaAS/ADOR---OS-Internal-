@@ -19,6 +19,7 @@ import { eventColor } from '../../lib/googleCalendar'
 import { LayersIcon, CheckCircleIcon, ListViewIcon, PlayIcon, FlagIcon, BriefcaseIcon, PlusIcon, NoteIcon } from '../icons'
 import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import ProjectTaskRow from './ProjectTaskRow'
+import usePhone from '../../hooks/usePhone'
 
 // A richer "Personal" landing page, built from a reference image the user
 // shared — replaces the plain filtered Lista table with a real dashboard:
@@ -106,6 +107,7 @@ function ProjectCard({ workstream, total, pending, pct }) {
 const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Vencimiento', 'Timeline', 'Estado']
 
 function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forceOpen, onOpenChange }) {
+  const phone = usePhone()
   const [adding, setAdding] = useState(false)
   const open = forceOpen || adding
   const [title, setTitle] = useState('')
@@ -157,8 +159,8 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
   }
 
   return (
-    <div className="grid items-center gap-3 rounded-lg px-2 py-2" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
-      <span />
+    <div className={phone ? 'flex flex-wrap items-center gap-2 rounded-[22px] bg-[#1C1C1E] p-3' : 'grid items-center gap-3 rounded-lg px-2 py-2'} style={phone ? undefined : { gridTemplateColumns: PROJECT_TASK_ROW_GRID }} onKeyDown={(e) => e.key === 'Escape' && reset()}>
+      {!phone && <span />}
       <input
         autoFocus
         type="text"
@@ -167,7 +169,7 @@ function AddTaskRow({ workstreams, actorUserId, actorName, userById, users, forc
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Título — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] max-md:w-full max-md:text-[16px] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
@@ -263,8 +265,8 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
             ))}
           </div>
           <div className="overflow-x-auto px-3 pb-3">
-            <div style={{ minWidth: 760 }}>
-              <div className="grid gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
+            <div className="md:min-w-[760px]">
+              <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3 md:grid" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
                 {COLUMN_HEADERS.map((h, i) => (
                   <span key={h || i} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     {h}
