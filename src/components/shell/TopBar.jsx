@@ -7,7 +7,7 @@ import NotificationCenter from './NotificationCenter'
 import BirthdayCenter from './BirthdayCenter'
 import ProfileMenu from './ProfileMenu'
 import PhoneProfile from './PhoneProfile'
-import { useArchivedNotifications, keyOfNotification } from '../../hooks/useArchivedNotifications'
+import { useArchivedNotifications } from '../../hooks/useArchivedNotifications'
 import usePhone from '../../hooks/usePhone'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
@@ -331,9 +331,9 @@ export default function TopBar({
     ...taskNotifications.map(tag('task')),
     ...clientNotifications.map(tag('client')),
   ]
-  const { archived, archive, restore } = useArchivedNotifications(user?.uid)
-  const inbox = notifications.filter((n) => !archived[keyOfNotification(n)])
-  const archivedItems = notifications.filter((n) => archived[keyOfNotification(n)])
+  const { isArchived, archive, restore } = useArchivedNotifications(user?.uid)
+  const inbox = notifications.filter((n) => !isArchived(n))
+  const archivedItems = notifications.filter((n) => isArchived(n))
   const hasUnreadNotifications = inbox.length > 0
   // El número sobre el icono de la app (pantalla de inicio / Dock), como en
   // Instagram: solo lo que te lleva a algo (chat, tareas, anuncios, comunidad),

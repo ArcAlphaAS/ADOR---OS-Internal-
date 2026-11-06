@@ -4,8 +4,8 @@ import useSeasonsOff from '../../hooks/useSeasons'
 import SeasonIcon from '../common/SeasonIcon'
 
 function getGreeting(hour, name) {
-  if (hour >= 6 && hour < 13) return `Buenos días, ${name}.`
-  if (hour >= 13 && hour < 19) return `Buenas tardes, ${name}.`
+  if (hour >= 6 && hour < 12) return `Buenos días, ${name}.`
+  if (hour >= 12 && hour < 19) return `Buenas tardes, ${name}.`
   return `Buenas noches, ${name}.`
 }
 
@@ -40,8 +40,8 @@ const WEEKDAY_VARIANTS = {
 }
 
 function getBucket(hour) {
-  if (hour >= 6 && hour < 13) return 'morning'
-  if (hour >= 13 && hour < 19) return 'afternoon'
+  if (hour >= 6 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 19) return 'afternoon'
   return 'evening'
 }
 

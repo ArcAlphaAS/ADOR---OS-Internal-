@@ -22,25 +22,25 @@ const SKY = {
 }
 
 function skyBucket(hour) {
-  if (hour >= 6 && hour < 13) return 'morning'
-  if (hour >= 13 && hour < 19) return 'afternoon'
+  if (hour >= 6 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 19) return 'afternoon'
   return 'evening'
 }
 
 function getMessages(hour, isReturning, name) {
-  if (hour >= 6 && hour < 13) {
+  if (hour >= 6 && hour < 12) {
     return {
       greeting: `Buenos días, ${name}.`,
       subtext: 'Hoy es un buen día para construir.',
     }
   }
-  if (hour >= 13 && hour < 15 && isReturning) {
+  if (hour >= 12 && hour < 15 && isReturning) {
     return {
       greeting: `Bienvenido de vuelta, ${name}.`,
       subtext: 'Vamos con fuerza al cierre del día.',
     }
   }
-  if (hour >= 13 && hour < 19) {
+  if (hour >= 12 && hour < 19) {
     return {
       greeting: `Buenas tardes, ${name}.`,
       subtext: 'Último tramo. Que valga.',

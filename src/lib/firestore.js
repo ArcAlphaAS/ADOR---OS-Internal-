@@ -585,6 +585,13 @@ export function saveUserProfile(userId, data) {
   return setDoc(doc(db, COLLECTIONS.users, userId), data, { merge: true })
 }
 
+// Reemplaza un campo completo del perfil (updateDoc). saveUserProfile mezcla los
+// mapas y no permitiría quitar una clave (p. ej. restaurar un aviso archivado).
+export function replaceUserField(userId, field, value) {
+  if (!db || !userId) return Promise.resolve()
+  return updateDoc(doc(db, COLLECTIONS.users, userId), { [field]: value })
+}
+
 // Gates the "Conoce ADOR OS" first-login walkthrough — stored on the same
 // profile doc (not localStorage) so it's per-account, not per-device: once
 // seen on one machine, a new session on another doesn't show it again.

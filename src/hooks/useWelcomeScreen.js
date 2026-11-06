@@ -8,8 +8,8 @@ const STORAGE_WELCOME_SHOWN = 'ador_welcome_shown'
 // welcome screen never repeats twice within the same block/day.
 function getBlock(date) {
   const hour = date.getHours()
-  if (hour >= 6 && hour < 13) return 'morning'
-  if (hour >= 13 && hour < 15) return 'lunch'
+  if (hour >= 6 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 15) return 'lunch'
   if (hour >= 15 && hour < 19) return 'afternoon'
   return 'evening'
 }
@@ -34,8 +34,8 @@ export function useWelcomeScreen(userId) {
     const isReturningFromLunch =
       !!lastLogin &&
       lastLogin.toDateString() === today &&
-      lastLogin.getHours() < 13 &&
-      now.getHours() >= 13
+      lastLogin.getHours() < 12 &&
+      now.getHours() >= 12
 
     let shownRecord = null
     try {
