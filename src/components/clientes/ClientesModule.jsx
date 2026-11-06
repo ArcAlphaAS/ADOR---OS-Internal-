@@ -17,6 +17,8 @@ import DeleteClientModal from './DeleteClientModal'
 import { useAccess } from '../../hooks/useAccess'
 import ClientDetailPanel from './ClientDetailPanel'
 import NewClientModal from './NewClientModal'
+import PhoneClientes from './PhoneClientes'
+import usePhone from '../../hooks/usePhone'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -251,6 +253,7 @@ function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
 }
 
 export default function ClientesModule({ user, focusClientId, onFocusHandled }) {
+  const phone = usePhone()
   const [clients, setClients] = useState([])
   const [users, setUsers] = useState([])
   const [view, setView] = useState('kanban')
@@ -335,11 +338,30 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
     return d && d.getFullYear() === new Date().getFullYear()
   }).length
 
+  const phoneMain = phone && (view === 'kanban' || view === 'list')
+
   return (
     <motion.div
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
+      {phoneMain && (
+        <PhoneClientes
+          clients={activeClients}
+          users={users}
+          completedCount={completedClients.length}
+          lostCount={lostClients.length}
+          onOpenClient={(c) => {
+            setSelectedClientId(c.id)
+            setOriginRect(null)
+          }}
+          onNew={() => setShowNewModal(true)}
+          onShowCompleted={() => setView('completados')}
+          onShowLost={() => setView('perdidos')}
+        />
+      )}
+
+      {!phoneMain && (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="ador-title">Clientes</h1>
@@ -421,7 +443,9 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         </div>
       </div>
 
-      {view === 'kanban' && (
+      )}
+
+      {!phoneMain && view === 'kanban' && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard value={spcInPipeline.length} label="Oportunidades" />
           <StatCard value={currencyPEN.format(potencial)} label="Potencial" />
@@ -430,7 +454,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         </div>
       )}
 
-      {view === 'kanban' ? (
+      {phoneMain ? null : view === 'kanban' ? (
         <div className="flex flex-col gap-5">
           <KanbanBoard
             clients={activeClients}
