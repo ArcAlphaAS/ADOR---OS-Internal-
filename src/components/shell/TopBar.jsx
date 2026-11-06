@@ -318,7 +318,15 @@ export default function TopBar({
   const news = useNewsAttention(user?.uid, onNavigate)
   const communityNotifications = useCommunityNotifications(user?.uid, onNavigate)
   const taskAlerts = useTaskAlerts(user?.uid, onNavigate)
-  const notifications = [...chatNotifications, ...taskAlerts, ...news.items, ...communityNotifications, ...taskNotifications, ...clientNotifications]
+  const tag = (kind) => (i) => ({ ...i, kind })
+  const notifications = [
+    ...chatNotifications.map(tag('chat')),
+    ...taskAlerts.map(tag('task')),
+    ...news.items.map(tag('news')),
+    ...communityNotifications.map(tag('community')),
+    ...taskNotifications.map(tag('task')),
+    ...clientNotifications.map(tag('client')),
+  ]
   const hasUnreadNotifications = notifications.length > 0
 
   const closeProfileAll = () => {
