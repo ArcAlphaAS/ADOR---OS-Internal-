@@ -300,7 +300,7 @@ function PeopleTab({ user }) {
             return (
               <div key={row.email} className="flex flex-wrap items-center gap-3 py-3">
                 <Avatar photoURL={row.account?.photoDataUrl} displayName={row.name} email={row.email} size={38} />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-[180px]">
                   <p className="truncate text-[13.5px] font-medium text-[#F5F5F5]">
                     {row.name}
                     {row.email === me && <span className="ml-1.5 text-[11px] font-normal text-[#777777]">(tú)</span>}
@@ -309,6 +309,7 @@ function PeopleTab({ user }) {
                     {row.email} · {row.invited ? <span className="text-[#E8C15A]">Invitado, aún no entra</span> : p?.label || 'Sin actividad reciente'}
                   </p>
                 </div>
+                <div className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-1 pl-[50px] md:contents">
                 <button
                   type="button"
                   onClick={() => setEditing({ email: row.email, name: row.account?.displayName || row.allowed?.name || '', newEmail: row.email })}
@@ -369,6 +370,7 @@ function PeopleTab({ user }) {
                     {confirmRevoke === row.email ? 'Clic otra vez para quitar' : 'Quitar acceso'}
                   </button>
                 )}
+                </div>
               </div>
             )
           })}

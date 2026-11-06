@@ -45,7 +45,7 @@ async function signIn(env) {
   return (await res.json()).idToken
 }
 
-export async function runDeadlineReminders(env) {
+export async function runDeadlineReminders(env, { test = false } = {}) {
   if (!env.FIREBASE_API_KEY || !env.BOT_EMAIL || !env.BOT_PASSWORD || !env.VAPID_PRIVATE_KEY) return { skipped: true }
   const now = Date.now()
   const fs = firestore(env, await signIn(env))
@@ -56,7 +56,7 @@ export async function runDeadlineReminders(env) {
   for (const t of tasks) {
     if (t.status === 'completado' || !t.dueDate) continue
     const stage = stageFor(t.dueDate, now)
-    if (!stage || t.deadlineSent?.[stage]) continue
+    if (!stage || (!test && t.deadlineSent?.[stage])) continue
     const people = (t.assignedTo || []).filter((u) => !(t.pendingConfirmations || []).includes(u))
     if (people.length) todo.push({ t, stage, people })
   }
@@ -85,7 +85,7 @@ export async function runDeadlineReminders(env) {
       }
     }
     // Se marca aunque nadie tenga el aviso activado: si no, saldría de golpe cuando lo active.
-    if (delivered || !subs.some((s) => people.includes(s.uid))) await fs.markFlag(`tasks/${t.id}`, 'deadlineSent', stage)
+    if (!test && (delivered || !subs.some((s) => people.includes(s.uid)))) await fs.markFlag(`tasks/${t.id}`, 'deadlineSent', stage)
   }
   return { sent }
 }
@@ -105,7 +105,7 @@ export async function deadlinesRun({ method, headers }, env) {
   const missing = ['FIREBASE_API_KEY', 'BOT_EMAIL', 'BOT_PASSWORD', 'VAPID_PRIVATE_KEY'].filter((k) => !env[k])
   if (missing.length) return { status: 200, json: { ok: false, missing } }
   try {
-    const result = await runDeadlineReminders(env)
+    const result = await runDeadlineReminders(env, { test: true })
     return { status: 200, json: { ok: true, ...result } }
   } catch (e) {
     return { status: 200, json: { ok: false, error: e.message } }
