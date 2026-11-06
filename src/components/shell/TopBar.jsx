@@ -455,6 +455,7 @@ export default function TopBar({
             onShowOnboarding={() => { setActiveModal(null); onShowOnboarding?.() }}
             onAdmin={() => { setActiveModal(null); onNavigate('admin') }}
             onSignOut={() => { setActiveModal(null); onSignOut?.() }}
+            onNavigate={onNavigate}
           />
         )}
         {activeModal === 'profile' && (

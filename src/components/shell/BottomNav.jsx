@@ -127,37 +127,40 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 transition={SHEET}
                 {...swipeToClose('y', () => setMoreOpen(false))}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute inset-x-0 bottom-0"
+                className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[680px]"
               >
                 <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-                  <div className="max-h-[62vh] overflow-y-auto">
-                    {more.map((m, i) => (
-                      <motion.button
-                        key={m.id}
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ type: 'spring', stiffness: 420, damping: 26, delay: 0.04 + i * 0.03 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="button"
-                        onClick={() => { haptic(); go(m.id) }}
-                        className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left active:bg-white/[0.06]"
-                      >
-                        <span className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full" style={{ background: activeModule === m.id ? '#F5F5F5' : '#2C2C2E', color: activeModule === m.id ? '#0A0A0A' : '#E4DCCB' }}>
-                          <m.Icon size={21} />
-                          {badges[m.id] > 0 && (
-                            <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: '#F4EEE2' }}>
-                              {badges[m.id] > 9 ? '9+' : badges[m.id]}
-                            </span>
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[17px] font-medium text-[#F5F5F5]">{m.label}</span>
-                          <span className="block text-[13px] text-[#8E8E93]">{m.hint}</span>
-                        </span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#636366" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
-                      </motion.button>
-                    ))}
+                  <div className="grid max-h-[64vh] grid-cols-4 gap-2 overflow-y-auto sm:gap-2.5">
+                    {more.map((m, i) => {
+                      const on = activeModule === m.id
+                      return (
+                        <motion.button
+                          key={m.id}
+                          initial={{ opacity: 0, y: 16, scale: 0.94 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 420, damping: 26, delay: 0.04 + i * 0.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          onClick={() => { haptic(); go(m.id) }}
+                          className="flex flex-col items-center gap-2 rounded-[22px] px-1 py-3 text-center sm:items-start sm:gap-3 sm:rounded-[24px] sm:p-4 sm:text-left"
+                          style={{ background: on ? '#F5F5F5' : '#232325' }}
+                        >
+                          <span className="relative flex h-[46px] w-[46px] items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: on ? '#0A0A0A' : '#323235', color: on ? '#F5F5F5' : '#E4DCCB' }}>
+                            <m.Icon size={22} />
+                            {badges[m.id] > 0 && (
+                              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-[#1C1A16] ring-2 ring-[#232325]" style={{ background: '#F4EEE2' }}>
+                                {badges[m.id] > 9 ? '9+' : badges[m.id]}
+                              </span>
+                            )}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block max-w-full truncate text-[11px] font-semibold leading-tight sm:text-[16px]" style={{ color: on ? '#0A0A0A' : '#F5F5F5' }}>{m.label}</span>
+                            <span className="mt-1 hidden text-[12.5px] leading-snug sm:block" style={{ color: on ? '#555' : '#8E8E93' }}>{m.hint}</span>
+                          </span>
+                        </motion.button>
+                      )
+                    })}
                   </div>
                 </div>
               </motion.div>
