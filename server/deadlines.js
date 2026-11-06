@@ -29,10 +29,10 @@ export function stageFor(dueMs, nowMs) {
 }
 
 const COPY = {
-  d1: (t) => ({ title: 'Mañana vence una tarea', body: `«${t}» — todavía estás a tiempo. ¿La adelantas hoy? 💪` }),
-  d0: (t) => ({ title: `Hoy vence «${t}»`, body: 'Un último empujón y la cierras ✅' }),
-  over1: (t) => ({ title: `«${t}» venció ayer`, body: '¿La cerramos o movemos la fecha? Tú decides.' }),
-  over3: (t) => ({ title: `«${t}» lleva 3 días vencida`, body: 'Si ya no aplica, ciérrala o cámbiale la fecha.' }),
+  d1: (t) => ({ title: 'Mañana · ' + t, body: 'Vence mañana. Aún hay tiempo de adelantarla hoy.' }),
+  d0: (t) => ({ title: 'Hoy · ' + t, body: 'Vence hoy. Un último empujón y queda lista.' }),
+  over1: (t) => ({ title: 'Venció ayer · ' + t, body: 'Ciérrala o muévele la fecha cuando puedas.' }),
+  over3: (t) => ({ title: 'Pendiente hace 3 días · ' + t, body: 'Si ya no aplica, ciérrala o cámbiale la fecha.' }),
 }
 
 async function signIn(env) {

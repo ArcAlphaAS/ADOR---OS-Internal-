@@ -600,19 +600,20 @@ export default function AdminModule({ user }) {
         <p className="mt-1 text-[13.5px] text-[#888888]">Quién entra a ADOR OS, qué puede ver cada rol, errores y datos de la empresa.</p>
       </div>
 
-      <div className="flex gap-1 self-start rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
+      <div className="-mx-4 max-w-[100vw] overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:max-w-full md:px-0 [&::-webkit-scrollbar]:hidden"><div className="flex w-max gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className="relative rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors"
+            className="relative flex-shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors"
             style={{ color: tab === t.id ? '#F5F5F5' : '#888888' }}
           >
             {tab === t.id && <motion.span layoutId="admin-tab" className="absolute inset-0 rounded-full bg-white/[0.08]" transition={{ duration: 0.25 }} />}
             <span className="relative">{t.label}</span>
           </button>
         ))}
+      </div>
       </div>
 
       {tab === 'personas' && <PeopleTab user={user} />}
