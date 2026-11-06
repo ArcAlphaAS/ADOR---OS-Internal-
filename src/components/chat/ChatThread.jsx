@@ -180,6 +180,8 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
     catchUp = { count: missed.length, who, bits, last }
   }
 
+  let lastDay = null
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
     <div ref={scrollRef} onScroll={onScroll} data-keep-scroll className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 py-4">
