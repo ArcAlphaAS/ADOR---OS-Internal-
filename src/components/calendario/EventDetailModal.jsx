@@ -1,105 +1,158 @@
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { eventColor } from '../../lib/googleCalendar'
-import { ArrowRightIcon } from '../icons'
+import { VideoIcon } from '../icons'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
+import { useGoogleMeet } from '../../hooks/useGoogleMeet'
+import { useToast } from '../../hooks/useToast'
+import Avatar from '../shell/Avatar'
 
-// Quick-view for a Google Calendar event — clicking an event used to always
-// open a new tab to Google Calendar, which yanked you out of ADOR OS for
-// even a one-line glance. Shows everything the API already gives us
-// (description, location, attendees), with "Abrir en Google Calendar" as
-// an explicit secondary action instead of the default one. Same portal +
-// transform-split modal pattern as every other centered modal in this app
-// (CLAUDE.md §11 — never combine a transform-animated wrapper with the
-// .ador-modal-surface element itself, or the backdrop blur silently breaks).
-export default function EventDetailModal({ event, onClose }) {
+// Detalle de un evento de tu Google Calendar, pensado como la hoja de una app
+// de calendario: título y hora, tres acciones rápidas, la información, los
+// participantes con su respuesta y, abajo, un botón grande. Si la reunión ya
+// trae su enlace de Google Meet, "Unirse a Meet" lo abre; si no, puedes
+// crear una sala de Meet al momento (la misma conexión que usa Comunicación).
+// Mismo patrón de portal + envoltorio con transform separado del vidrio de
+// siempre (CLAUDE.md §11). En teléfono el CSS global lo vuelve hoja inferior.
+const RESPONSE = {
+  accepted: { label: 'Aceptó', color: '#4CAF50' },
+  declined: { label: 'Rechazó', color: '#EF5350' },
+  tentative: { label: 'Tal vez', color: '#E8C15A' },
+  needsAction: { label: 'Sin responder', color: '#8E8E93' },
+}
+
+const sv = (d) => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+
+function Tile({ icon, label, sub, tint, onClick, href }) {
+  const C = href ? 'a' : 'button'
+  return (
+    <C {...(href ? { href, target: '_blank', rel: 'noreferrer' } : { type: 'button', onClick })} className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[18px] bg-white/[0.06] px-2 py-3.5 text-center" style={tint ? { background: `${tint}1f`, color: tint } : undefined}>
+      <span className="flex h-6 items-center">{icon}</span>
+      <span className="text-[12.5px] font-medium" style={{ color: tint || '#F5F5F5' }}>{label}</span>
+      {sub && <span className="-mt-1 text-[11px] text-[#8E8E93]">{sub}</span>}
+    </C>
+  )
+}
+
+export default function EventDetailModal({ event, uid, onClose }) {
   useEscape(onClose)
+  const showToast = useToast()
+  const meet = useGoogleMeet(uid)
+  const [room, setRoom] = useState(null)
+  const [creating, setCreating] = useState(false)
   if (!event) return null
+
   const color = eventColor(event)
   const start = new Date(event.start)
   const end = new Date(event.end)
-  const fmtTime = (d) => d.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })
+  const fmtTime = (d) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
   const fmtDate = (d) => {
     const label = d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
     return label.charAt(0).toUpperCase() + label.slice(1)
   }
-  const guests = (event.attendees || []).filter((a) => !a.self)
+  const everyone = event.attendees || []
+  const me = everyone.find((a) => a.self)
+  const mine = RESPONSE[me?.status] || null
+  const link = event.meetLink || room
+  const startsIn = start.getTime() - Date.now()
+  const soon = !event.allDay && startsIn > 0 && startsIn < 6 * 3600000 ? (startsIn < 3600000 ? `en ${Math.max(1, Math.round(startsIn / 60000))} min` : `en ${Math.floor(startsIn / 3600000)} h ${Math.round((startsIn % 3600000) / 60000)} min`) : null
+  const live = !event.allDay && start.getTime() <= Date.now() && end.getTime() > Date.now()
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link || event.htmlLink)
+      showToast(link ? 'Enlace de Meet copiado' : 'Enlace del evento copiado')
+    } catch {
+      showToast('No se pudo copiar')
+    }
+  }
+  const create = async () => {
+    setCreating(true)
+    try {
+      setRoom(await meet.createRoom())
+    } catch (error) {
+      showToast(error.message || 'No se pudo crear la sala')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   return createPortal(
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[10px]"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={SPRING}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="ador-modal-surface ador-grain w-[420px] max-w-[90vw] rounded-[28px] p-7">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[10px]" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} transition={SPRING} onClick={(e) => e.stopPropagation()}>
+        <div className="ador-modal-surface ador-grain w-[440px] max-w-[92vw] rounded-[28px] p-7">
           <div className="flex items-start gap-3">
-            <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: color }} />
+            <span className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: color }} />
             <div className="min-w-0">
-              <h2 className="text-[16px] font-semibold leading-snug text-[#F5F5F5]">{event.title}</h2>
-              <p className="mt-1 text-[13px] text-[#888888]">
-                {fmtDate(start)}
-                {!event.allDay && (
-                  <>
-                    {' · '}
-                    {fmtTime(start)} – {fmtTime(end)}
-                  </>
-                )}
-                {event.allDay && ' · Todo el día'}
+              <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-[#F5F5F5]">{event.title}</h2>
+              <p className="mt-1 text-[14px] text-[#8E8E93]">
+                {fmtDate(start)}{event.allDay ? ' · Todo el día' : ` · ${fmtTime(start)} – ${fmtTime(end)}`}
               </p>
+              {(live || soon) && <p className="mt-1 text-[13px] font-medium" style={{ color: live ? '#E8C15A' : '#F4EEE2' }}>{live ? 'En curso ahora' : `Empieza ${soon}`}</p>}
             </div>
           </div>
 
-          {event.location && (
-            <p className="mt-4 text-[13px] text-[#CCCCCC]">
-              <span className="text-[#666666]">Ubicación — </span>
-              {event.location}
-            </p>
-          )}
+          <div className="mt-5 flex gap-2.5">
+            {mine ? (
+              <Tile icon={sv(<path d="m5 12.5 4.5 4.5L19 7.5" />)} label={me.status === 'accepted' ? 'Aceptaste' : mine.label} sub="tu respuesta" tint={mine.color} onClick={() => {}} />
+            ) : (
+              <Tile icon={sv(<><circle cx="12" cy="12" r="8.5" /><path d="M12 8v4l2.5 1.5" /></>)} label={event.allDay ? 'Todo el día' : `${Math.max(1, Math.round((end - start) / 60000))} min`} sub="duración" onClick={() => {}} />
+            )}
+            <Tile icon={sv(<><rect x="8" y="8" width="12" height="12" rx="2.5" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>)} label="Copiar enlace" sub={link ? 'de Meet' : 'del evento'} onClick={copy} />
+            <Tile icon={sv(<><path d="M14 4h6v6M20 4l-9 9" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></>)} label="Calendar" sub="abrir en Google" href={event.htmlLink} />
+          </div>
 
-          {event.description && (
-            <p className="mt-4 whitespace-pre-wrap [overflow-wrap:anywhere] text-[13px] leading-relaxed text-[#CCCCCC]">{event.description}</p>
-          )}
-
-          {guests.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[#666666]">
-                Invitados ({guests.length})
-              </p>
-              <div className="flex flex-col gap-1">
-                {guests.slice(0, 6).map((g) => (
-                  <p key={g.email} className="truncate text-[12.5px] text-[#CCCCCC]">
-                    {g.name}
-                    {g.organizer && <span className="ml-1.5 text-[10px] text-[#666666]">organiza</span>}
-                  </p>
-                ))}
-                {guests.length > 6 && <p className="text-[12px] text-[#666666]">+{guests.length - 6} más</p>}
-              </div>
+          {(event.location || event.description) && (
+            <div className="mt-4 rounded-[20px] bg-white/[0.045] px-4 py-3.5">
+              {event.location && (
+                <p className="flex items-start gap-3 text-[14px] text-[#E4E4E4]">
+                  <span className="mt-0.5 text-[#8E8E93]">{sv(<><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></>)}</span>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{event.location}</span>
+                </p>
+              )}
+              {event.description && <p className={`whitespace-pre-wrap [overflow-wrap:anywhere] text-[13.5px] leading-relaxed text-[#B8B8B8] ${event.location ? 'mt-3 border-t border-white/[0.07] pt-3' : ''}`}>{event.description}</p>}
             </div>
           )}
 
-          <div className="mt-6 flex items-center justify-between">
-            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13px] text-[#888888] transition-colors hover:text-[#F5F5F5]">
-              Cerrar
-            </button>
-            <a
-              href={event.htmlLink}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/10"
-            >
-              Abrir en Google Calendar <ArrowRightIcon size={13} />
-            </a>
+          {everyone.length > 0 && (
+            <div className="mt-4 rounded-[20px] bg-white/[0.045] px-4 py-3.5">
+              <p className="mb-2 text-[12.5px] font-medium text-[#8E8E93]">Participantes · {everyone.length}</p>
+              <ul className="flex flex-col gap-2.5">
+                {everyone.slice(0, 8).map((g) => {
+                  const r = RESPONSE[g.status] || RESPONSE.needsAction
+                  return (
+                    <li key={g.email} className="flex items-center gap-3">
+                      <Avatar displayName={g.name} email={g.email} size={32} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] text-[#F0F0F0]">{g.self ? 'Tú' : g.name}</span>
+                        {g.organizer && <span className="block text-[11.5px] text-[#8E8E93]">Organizador</span>}
+                      </span>
+                      <span className="flex-shrink-0 text-[12px] font-medium" style={{ color: r.color }}>{r.label}</span>
+                    </li>
+                  )
+                })}
+                {everyone.length > 8 && <li className="text-[12.5px] text-[#8E8E93]">+{everyone.length - 8} más</li>}
+              </ul>
+            </div>
+          )}
+
+          <div className="sticky bottom-0 -mb-1 mt-6 flex items-center gap-2.5 bg-[#1C1C1E] pb-1 pt-2 md:bg-transparent">
+            <button type="button" onClick={onClose} className="rounded-full px-4 py-3.5 text-[14px] text-[#8E8E93]">Cerrar</button>
+            {link ? (
+              <a href={link} target="_blank" rel="noreferrer" className="ador-btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-semibold">
+                <VideoIcon size={18} /> Unirse a Meet
+              </a>
+            ) : meet.status === 'ready' && !event.allDay ? (
+              <button type="button" onClick={create} disabled={creating} className="ador-btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-semibold disabled:opacity-60">
+                <VideoIcon size={18} /> {creating ? 'Creando sala…' : 'Crear sala de Meet'}
+              </button>
+            ) : meet.status === 'needsConnect' && !event.allDay ? (
+              <button type="button" onClick={meet.connect} className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white/[0.08] py-3.5 text-[14px] font-medium text-[#F4EEE2]">
+                Conectar Google para usar Meet
+              </button>
+            ) : null}
           </div>
         </div>
       </motion.div>

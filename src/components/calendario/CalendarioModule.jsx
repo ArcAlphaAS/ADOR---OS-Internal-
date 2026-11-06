@@ -249,7 +249,7 @@ export default function CalendarioModule({ user }) {
         ) : (
           <PhoneCalendar uid={user?.uid} anchor={anchor} setAnchor={setAnchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onMonth={() => { setView('mes'); setPhoneMonth(true) }} />
         )}
-        <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
+        <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
       </div>
     )
   }
@@ -368,7 +368,7 @@ export default function CalendarioModule({ user }) {
         </div>
       )}
 
-      <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
+      <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
     </motion.div>
   )
 }

@@ -209,7 +209,9 @@ export async function fetchEvents(accessToken, { timeMin, timeMax }) {
     colorId: e.colorId || null,
     htmlLink: e.htmlLink,
     description: e.description || null,
-    attendees: (e.attendees || []).map((a) => ({ name: a.displayName || a.email, email: a.email, self: Boolean(a.self), organizer: Boolean(a.organizer) })),
+    attendees: (e.attendees || []).map((a) => ({ name: a.displayName || a.email, email: a.email, self: Boolean(a.self), organizer: Boolean(a.organizer), status: a.responseStatus || 'needsAction' })),
+    // Enlace de Google Meet de la reunión, si Google le puso uno.
+    meetLink: e.hangoutLink || (e.conferenceData?.entryPoints || []).find((p) => p.entryPointType === 'video')?.uri || null,
     // "Meeting" = has other guests invited, per Google's own attendees list
     // (excluding yourself as organizer) — used by the greeting card's
     // "eventos" vs. "reuniones" split, a real distinction, not a guess.
