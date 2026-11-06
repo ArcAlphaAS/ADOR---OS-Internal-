@@ -1,3 +1,4 @@
+import { beginWrite, endWrite } from './liveStatus'
 // Workspace vocabulary. Two kinds of work live side by side:
 //   Intervención      — one per SP in "Intervención Activa", never stored as
 //                        its own record. Derived live from clients/{id} (see
@@ -224,6 +225,8 @@ export function workstreamId(kind, id) {
 // "this failed, try again" instead of silently doing nothing forever, which
 // looks indistinguishable from a broken button.
 export function withTimeout(promise, ms = 8000) {
+  beginWrite()
+  promise.then(endWrite, endWrite)
   // Offline, a write isn't failing — Firestore keeps it and sends it the
   // moment the connection is back. So with no connection the clock simply
   // waits for 'online' and starts again; only a write that stalls *while

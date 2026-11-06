@@ -28,8 +28,7 @@ import { useAccess } from '../../hooks/useAccess'
 import { backfillChannelVisibility } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
 import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
-import UpdateBanner from './UpdateBanner'
-import OfflineBanner from './OfflineBanner'
+import LiveIsland from './LiveIsland'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
 import AchievementMoment from './AchievementMoment'
@@ -399,8 +398,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         </main>
       </div>
 
-      <UpdateBanner />
-      <OfflineBanner />
+      <LiveIsland />
       <AchievementMoment />
       <BottomNav activeModule={activeModule} onNavigate={navigateTo} canSee={access.canSee} badges={{ chat: chatUnread, news: newsAttention.count }} />
 

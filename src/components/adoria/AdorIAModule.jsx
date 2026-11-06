@@ -8,6 +8,7 @@ import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/worksp
 import { SparkleIcon, WalletIcon, TargetIcon, UsersIcon, PlusIcon } from '../icons'
 import { SERIF } from '../news/NewsLayout'
 import { firstName } from '../../lib/user'
+import { setThinking } from '../../lib/liveStatus'
 
 // The four starting points on the empty screen: a short title and the full
 // question each one sends.
@@ -106,11 +107,12 @@ export default function AdorIAModule({ user }) {
     })
     setInput('')
     setSending(true)
+    setThinking(true)
 
     // Answered locally from live data — no Gemini call, no API key needed.
     // See PROJECT_STATE.md: GEMINI_API_KEY setup deferred by user choice.
     // Small artificial delay so the reply doesn't feel instant/robotic.
-    await new Promise((resolve) => setTimeout(resolve, 350))
+    await new Promise((resolve) => setTimeout(resolve, 800))
     // Commands ("crea una tarea…", "completa la tarea…", "registra la
     // decisión…") never run straight from a sentence: they come back as a
     // card showing what was understood, with Confirmar / Cancelar.
@@ -130,6 +132,7 @@ export default function AdorIAModule({ user }) {
       return next
     })
     setSending(false)
+    setThinking(false)
   }
 
   const setStatus = (index, status) => setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, status } : m)))

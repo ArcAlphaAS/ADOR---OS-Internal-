@@ -504,3 +504,7 @@ html.light .ador-modal-surface {
 }
 html.light [role='switch'] { filter: invert(1) hue-rotate(180deg); }
 html.light .ador-grain::after { opacity: 0.015; }
+
+/* La isla de la esquina: seis puntos que giran, tres que se estiran. */
+@keyframes ador-orbit { 0%, 100% { transform: scale(0.45); opacity: 0.55; } 40% { transform: scale(1); opacity: 1; } }
+@keyframes ador-morph { 0%, 100% { transform: scaleY(0.55); } 50% { transform: scaleY(1.5); } }
