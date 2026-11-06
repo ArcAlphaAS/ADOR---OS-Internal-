@@ -75,13 +75,13 @@ function SummaryStrip({ items }) {
   return (
     <div className="ador-glass ador-grain grid grid-cols-2 overflow-hidden rounded-[22px] sm:grid-cols-3 xl:grid-cols-6">
       {items.map((it, i) => (
-        <div key={it.label} className={`flex items-center gap-3.5 px-5 py-5 ${i > 0 ? 'xl:border-l' : ''} border-white/[0.06] ${i % 2 ? 'border-l sm:border-l-0' : ''} ${i >= 2 ? 'border-t sm:border-t-0' : ''} ${i >= 3 ? 'sm:border-t xl:border-t-0' : ''} ${i % 3 ? 'sm:border-l' : ''}`}>
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[17px]" style={{ background: `${it.color}1F`, color: it.color }}>
+        <div key={it.label} className={`flex items-center gap-3 px-4 py-4 sm:gap-3.5 sm:px-5 sm:py-5 ${i > 0 ? 'xl:border-l' : ''} border-white/[0.06] ${i % 2 ? 'border-l sm:border-l-0' : ''} ${i >= 2 ? 'border-t sm:border-t-0' : ''} ${i >= 3 ? 'sm:border-t xl:border-t-0' : ''} ${i % 3 ? 'sm:border-l' : ''}`}>
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[16px] sm:h-10 sm:w-10 sm:text-[17px]" style={{ background: `${it.color}1F`, color: it.color }}>
             {it.icon}
           </span>
           <div className="min-w-0">
             <p className="text-[22px] font-semibold leading-none tabular-nums text-[#F5F5F5]">{it.value}</p>
-            <p className="mt-1 truncate text-[12.5px] text-[#8A8A8A]">{it.label}</p>
+            <p className="mt-1 text-[12.5px] leading-tight text-[#8A8A8A]">{it.label}</p>
           </div>
         </div>
       ))}
@@ -234,8 +234,8 @@ export default function ObjetivosModule({ user, onNavigate }) {
           <h1 className="ador-title mt-1">Objetivos</h1>
           <p className="mt-2 text-[13.5px] text-[#9A9A9A]">Metas de ADOR conectadas a Finanzas, Clientes y Workspace.</p>
         </div>
-        <div className="flex flex-col items-start gap-1.5 lg:items-center">
-          <div className="ador-glass flex items-center gap-1 rounded-2xl p-1">
+        <div className="flex w-full flex-col items-start gap-1.5 lg:w-auto lg:items-center">
+          <div className="ador-glass flex w-full items-center justify-between gap-1 rounded-2xl p-1 lg:w-auto lg:justify-start">
             <button type="button" onClick={() => setViewQuarter(shiftQuarter(viewQuarter, -1))} aria-label="Trimestre anterior" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#AAAAAA] hover:bg-white/[0.06]">
               <ArrowLeftIcon size={13} />
             </button>
@@ -244,7 +244,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
                 key={q}
                 type="button"
                 onClick={() => setViewQuarter(q)}
-                className="rounded-xl px-4 py-2 text-[13px] font-medium transition-colors"
+                className="flex-1 rounded-xl px-3 py-2 text-[13px] font-medium transition-colors lg:flex-none lg:px-4"
                 style={{ background: q === viewQuarter ? '#F5F5F5' : 'transparent', color: q === viewQuarter ? '#0A0A0A' : '#8A8A8A' }}
               >
                 {quarterLabel(q)}
@@ -263,7 +263,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
             )}
           </p>
         </div>
-        <button type="button" onClick={() => openModal()} className="ador-btn-primary flex-shrink-0 self-start whitespace-nowrap rounded-full px-5 py-2.5 text-[13.5px] font-medium">
+        <button type="button" onClick={() => openModal()} className="ador-btn-primary w-full flex-shrink-0 self-start whitespace-nowrap rounded-full px-5 py-3 text-[14.5px] font-semibold sm:w-auto sm:py-2.5 sm:text-[13.5px] sm:font-medium">
           + Nuevo objetivo
         </button>
       </div>

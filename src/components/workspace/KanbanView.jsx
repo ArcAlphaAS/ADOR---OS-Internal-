@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
+import usePhone from '../../hooks/usePhone'
+import PhoneTaskCard from './PhoneTaskCard'
 import { motion } from 'framer-motion'
 import { applyTaskUpdate } from '../../lib/firestore'
 import { STATUSES, priorityMeta } from '../../lib/workspace'
@@ -118,6 +120,8 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
 }
 
 export default function KanbanView({ tasks, workstreamById, userById, onOpenTask, actorUserId, actorName }) {
+  const phone = usePhone()
+  const [phoneStatus, setPhoneStatus] = useState('en_progreso')
   const columnRefs = useRef({})
 
   const registerRef = useCallback((statusId, el) => {
@@ -138,6 +142,35 @@ export default function KanbanView({ tasks, workstreamById, userById, onOpenTask
     status,
     items: tasks.filter((t) => t.status === status.id),
   }))
+
+  // Teléfono: un tablero de columnas que se deslizan de lado no es de app. Aquí,
+  // un filtro por estado y la lista de tarjetas de esa columna.
+  if (phone) {
+    const current = byStatus.find((b) => b.status.id === phoneStatus) || byStatus[0]
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+          <div className="flex gap-2">
+            {byStatus.map(({ status, items }) => (
+              <button key={status.id} type="button" onClick={() => setPhoneStatus(status.id)} className="flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-medium" style={{ background: current.status.id === status.id ? '#F5F5F5' : '#1C1C1E', color: current.status.id === status.id ? '#0A0A0A' : '#9A9A9A' }}>
+                <span className="h-2 w-2 rounded-full" style={{ background: status.color }} />
+                {status.label} {items.length}
+              </button>
+            ))}
+          </div>
+        </div>
+        {current.items.length === 0 ? (
+          <p className="rounded-[22px] bg-[#1C1C1E] px-5 py-8 text-center text-[14px] text-[#8E8E93]">Nada en «{current.status.label}».</p>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {current.items.map((t) => (
+              <PhoneTaskCard key={t.id} task={t} workstream={workstreamById[t.workstreamId]} userById={userById} actorName={actorName} onOpen={onOpenTask} />
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
