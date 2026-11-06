@@ -7,6 +7,7 @@ import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import GreetingBlock from './GreetingBlock'
 import TuDiaCard from './TuDiaCard'
 import PhoneTuDia from './PhoneTuDia'
+import PhoneSocial from './PhoneSocial'
 import usePhone from '../../hooks/usePhone'
 import AttentionCard from './AttentionCard'
 import WeeklySummaryCard from './WeeklySummaryCard'
@@ -92,6 +93,11 @@ export default function HomeScreen({ user, onNavigate }) {
             <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
         </HomePeople>
+        {phone && (
+          <motion.div variants={itemVariants} className="empty:hidden">
+            <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
+          </motion.div>
+        )}
         <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
           <motion.div variants={itemVariants} className="h-full lg:col-span-7">
             <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
