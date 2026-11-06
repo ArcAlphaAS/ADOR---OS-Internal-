@@ -4,6 +4,7 @@ import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { isAdmin } from '../../lib/permissions'
 import { exportAllData, backupFileName } from '../../lib/backup'
 import { uploadBackupToDrive, connectDrive, DriveNeedsConnectError } from '../../lib/googleDrive'
+import { auth } from '../../firebase'
 
 // Administración → Datos: the company's Drive folder and "Exportar todo".
 // (Moved here from Configuración — both are admin-only.)
@@ -147,6 +148,41 @@ export function BackupSection({ user }) {
 
 // "Ambiente de temporada": company-wide on/off for the festive touches
 // (lib/seasons.js). Only admins reach this screen.
+// "Probar avisos de fecha": ejecuta ahora el mismo proceso que corre solo cada 30 min
+// y dice si la cuenta de servicio y las variables de Cloudflare están bien puestas.
+export function DeadlineTestSection({ user }) {
+  const [profile, setProfile] = useState(null)
+  const [state, setState] = useState(null)
+  useEffect(() => (user?.uid && user.uid !== 'preview' ? subscribeUserProfile(user.uid, setProfile) : undefined), [user?.uid])
+  if (!profile || !isAdmin(profile)) return null
+  const run = async () => {
+    setState({ busy: true })
+    try {
+      const token = await auth.currentUser.getIdToken()
+      const res = await fetch('/api/deadlines/run', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      setState({ result: await res.json() })
+    } catch (e) {
+      setState({ result: { ok: false, error: e.message } })
+    }
+  }
+  const r = state?.result
+  return (
+    <div className="ador-glass w-full rounded-xl px-4 py-3">
+      <span className="block text-[13px] font-medium text-[#F5F5F5]">Avisos de fecha límite</span>
+      <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">Cada 30 minutos el servidor avisa de las tareas que vencen mañana, hoy o ya vencieron, aunque la app esté cerrada. Aquí puedes probarlo ahora.</span>
+      <button type="button" onClick={run} disabled={state?.busy} className="mt-2.5 rounded-lg bg-[#F5F5F5] px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] disabled:opacity-60">{state?.busy ? 'Probando…' : 'Probar avisos de fecha'}</button>
+      {r && (
+        <p className="mt-2 text-[12px] leading-relaxed" style={{ color: r.ok ? '#8FD19A' : '#EF8A88' }}>
+          {r.ok && r.skipped && 'Faltan variables en Cloudflare: no hizo nada.'}
+          {r.ok && !r.skipped && `Funciona ✓ — se enviaron ${r.sent || 0} avisos ahora.`}
+          {!r.ok && r.missing && `Faltan en Cloudflare: ${r.missing.join(', ')}.`}
+          {!r.ok && !r.missing && `No funcionó: ${r.error || 'error desconocido'}.`}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function SeasonSection() {
   const [settings, setSettings] = useState(null)
   const [error, setError] = useState('')

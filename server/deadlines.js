@@ -89,3 +89,25 @@ export async function runDeadlineReminders(env) {
   }
   return { sent }
 }
+
+// Ejecución manual (Administración → Datos → "Probar avisos de fecha"): comprueba
+// que la cuenta de servicio y las variables están bien y envía lo que toque ahora.
+// Solo para quien tiene sesión en ADOR OS (el token se prueba con una lectura).
+export async function deadlinesRun({ method, headers }, env) {
+  if (method !== 'POST') return { status: 405, json: { error: 'Method not allowed' } }
+  const auth = headers.authorization || ''
+  if (!auth.startsWith('Bearer ') || !env.FIREBASE_PROJECT_ID) return { status: 401, json: { error: 'Falta la sesión.' } }
+  try {
+    await firestore(env, auth.slice(7)).getMany(['settings/seasons'])
+  } catch {
+    return { status: 401, json: { error: 'Sesión no válida.' } }
+  }
+  const missing = ['FIREBASE_API_KEY', 'BOT_EMAIL', 'BOT_PASSWORD', 'VAPID_PRIVATE_KEY'].filter((k) => !env[k])
+  if (missing.length) return { status: 200, json: { ok: false, missing } }
+  try {
+    const result = await runDeadlineReminders(env)
+    return { status: 200, json: { ok: true, ...result } }
+  } catch (e) {
+    return { status: 200, json: { ok: false, error: e.message } }
+  }
+}
