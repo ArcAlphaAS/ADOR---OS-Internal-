@@ -242,8 +242,15 @@ function VoicePlayer({ attachment, mine }) {
   const audioRef = useRef(null)
   const [state, setState] = useState('idle') // idle | loading | playing | paused
   const [progress, setProgress] = useState(0)
+  const [speed, setSpeed] = useState(1)
 
   useEffect(() => () => audioRef.current?.pause(), [])
+  // 1× → 1,5× → 2×, como en WhatsApp: escuchar una nota larga sin perder tiempo.
+  const cycleSpeed = () => {
+    const next = speed === 1 ? 1.5 : speed === 1.5 ? 2 : 1
+    setSpeed(next)
+    if (audioRef.current) audioRef.current.playbackRate = next
+  }
 
   const toggle = async () => {
     if (state === 'playing') {
@@ -261,6 +268,7 @@ function VoicePlayer({ attachment, mine }) {
         setState('idle')
         setProgress(0)
       }
+      audio.playbackRate = speed
       audioRef.current = audio
     }
     await audioRef.current.play().catch(() => {})
@@ -286,6 +294,7 @@ function VoicePlayer({ attachment, mine }) {
         </div>
       )}
       <span className="flex-shrink-0 text-[11px] text-white/80">{formatDuration(attachment.duration)}</span>
+      <button type="button" onClick={cycleSpeed} aria-label="Velocidad" className="flex-shrink-0 rounded-full bg-white/[0.15] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">{speed === 1 ? '1×' : speed === 1.5 ? '1,5×' : '2×'}</button>
     </div>
   )
 }
@@ -894,6 +903,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {album?.length > 1 ? <ImageAlbum attachments={album.map((m) => m.attachment)} onOpen={onOpenImage} /> : message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
           {message.attachment?.kind === 'drive' && <DriveFileCard attachment={message.attachment} />}
+          {message.attachment?.kind === 'gif' && <img src={message.attachment.url} alt={message.attachment.title || 'GIF'} loading="lazy" className="max-h-[240px] max-w-[260px] rounded-2xl" />}
           {message.attachment?.kind === 'entity' && <EntityCard attachment={message.attachment} onOpen={onOpenEntity} />}
           {showBubble && emojiOnly && (
             <div className="select-text px-1 py-0.5 text-[46px] leading-none" title={message.important ? 'Mensaje importante' : undefined}>

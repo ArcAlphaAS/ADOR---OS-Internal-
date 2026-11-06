@@ -7,6 +7,7 @@ import { resizeImageToDataUrl } from '../../lib/image'
 import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
+import GifPicker, { gifsEnabled } from './GifPicker'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
 // in their own chatBlobs doc, so each can use most of that on its own.
@@ -381,6 +382,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
         </div>
       )}
 
+      {panel === 'gif' && <GifPicker onClose={() => setPanel(null)} onPick={(g) => { onSend({ gif: { url: g.url, title: g.title } }); setPanel(null) }} />}
       {panel === 'more' && (
         <div className={`grid gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1.5 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {[
@@ -396,6 +398,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
                 for (const f of files) onSend({ driveFile: f })
               },
             },
+            gifsEnabled && { id: 'gif', icon: <span className="text-[11px] font-bold">GIF</span>, label: 'GIF', hint: 'Busca uno y responde con humor', onPick: () => setPanel('gif') },
             { id: 'item', icon: <span className="text-[13px]">🔗</span>, label: 'Tarea, cliente u objetivo', hint: 'Compártelo como tarjeta que se abre con un clic', onPick: () => setPanel('item') },
             canPoll && { id: 'poll', icon: <PollIcon size={14} />, label: 'Encuesta', hint: 'Pregunta rápida, todos votan con un clic', onPick: () => setPanel('poll') },
             canMarkImportant && {

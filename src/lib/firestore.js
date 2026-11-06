@@ -1866,6 +1866,7 @@ function previewOf(payload, authorUid, authorName) {
   if (!text && p.attachment?.kind === 'voice') text = '🎤 Nota de voz'
   if (!text && p.attachment?.kind === 'drive') text = `📎 ${p.attachment.name}`
   if (!text && p.attachment?.kind === 'entity') text = `🔗 ${p.attachment.title}`
+  if (!text && p.attachment?.kind === 'gif') text = '🖼️ GIF'
   if (!text && p.poll) text = `📊 Encuesta: ${p.poll.question}`.slice(0, 140)
   if (p.important) text = `❗ ${text}`
   return { text, authorUid, authorName }

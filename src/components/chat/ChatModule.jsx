@@ -354,6 +354,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
       } else if (draft.entity) {
         const e = draft.entity
         attachment = { kind: 'entity', entityType: e.type, id: e.id, title: e.title, subtitle: e.subtitle || '' }
+      } else if (draft.gif) {
+        attachment = { kind: 'gif', url: draft.gif.url, title: draft.gif.title || '' }
       } else if (draft.driveFile) {
         const f = draft.driveFile
         attachment = { kind: 'drive', name: f.name, url: f.url, fileId: f.fileId, mimeType: f.mimeType || '', iconUrl: f.iconUrl || null }
