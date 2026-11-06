@@ -8,6 +8,7 @@ import { useAuth } from './hooks/useAuth'
 import { useWelcomeScreen } from './hooks/useWelcomeScreen'
 import { firstName } from './lib/user'
 import { saveUserProfile, getUserProfile, getAllowedEmail } from './lib/firestore'
+import LoadingMark from './components/common/LoadingMark'
 
 const PREVIEW_MOCK_USER = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview')
   ? {
@@ -104,7 +105,7 @@ function App() {
   // The welcome screen is only for people who arrive without a session;
   // anyone already signed in goes straight in.
   if (loading) {
-    content = null
+    content = <div key="boot" className="fixed inset-0 bg-black"><LoadingMark full label="" /></div>
   } else if (!user && !splashDone) {
     content = <SplashScreen key="splash" onFinish={handleSplashFinish} />
   } else if (!user) {

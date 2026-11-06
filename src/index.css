@@ -570,3 +570,11 @@ html.light .ador-grain::after { opacity: 0.015; }
   *::-webkit-scrollbar { display: none; width: 0; height: 0; }
   .h-screen { height: var(--app-h, 100dvh); }
 }
+
+/* Nada se arrastra de lado en el teléfono: ningún contenedor con scroll vertical
+   se desplaza horizontalmente (solo los que lo piden con overflow-x-auto:
+   fila de caras, chips, tablas a propósito). */
+@media (hover: none) and (pointer: coarse) {
+  .overflow-y-auto:not(.overflow-x-auto), .overflow-auto:not(.overflow-x-auto) { overflow-x: hidden; overscroll-behavior-x: none; }
+  .overflow-x-auto { overscroll-behavior-x: contain; }
+}
