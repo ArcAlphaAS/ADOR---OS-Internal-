@@ -143,7 +143,7 @@ function FilterToggle({ label, active, count, color, Icon, onClick }) {
 // WorkspaceModule.jsx), so this sidebar now only scopes the team views
 // (Lista/Kanban/Timeline) — Personal (everything assigned to me, any
 // workstream) vs. Equipo (a specific Intervención/Proyecto, or all of them).
-export default function WorkspaceSidebar({ taskCounts = {}, actorName = 'Usuario',
+export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, actorName = 'Usuario',
   workstreams,
   selectedId,
   onSelect,
@@ -228,9 +228,10 @@ export default function WorkspaceSidebar({ taskCounts = {}, actorName = 'Usuario
           onClose={close}
           items={[
             { label: 'Abrir', onClick: () => onSelect(menu.payload.id) },
-            { label: 'Renombrar…', onClick: () => setRenaming(menu.payload) },
-            { divider: true },
-            { label: 'Eliminar proyecto…', danger: true, disabled: menu.payload.name.trim().toLowerCase() === 'general', hint: menu.payload.name.trim().toLowerCase() === 'general' ? 'no se puede' : undefined, onClick: () => setDeleting(menu.payload) },
+            // Renombrar y eliminar proyectos: solo administradores.
+            canManage && { label: 'Renombrar…', onClick: () => setRenaming(menu.payload) },
+            canManage && { divider: true },
+            canManage && { label: 'Eliminar proyecto…', danger: true, disabled: menu.payload.name.trim().toLowerCase() === 'general', hint: menu.payload.name.trim().toLowerCase() === 'general' ? 'no se puede' : undefined, onClick: () => setDeleting(menu.payload) },
           ]}
         />
       )}

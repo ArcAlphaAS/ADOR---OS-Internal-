@@ -401,12 +401,13 @@ export default function TopBar({
         aria-label="ADOR OS"
       >
         <div className="flex items-center max-lg:h-[40px] max-lg:rounded-full max-lg:bg-black/55 max-lg:px-4 max-lg:backdrop-blur-xl">
-          {/* El logo mide 13 px de alto (la altura exacta de sus mayúsculas) y "OS" se
-              escribe a 18 px: la mayúscula de esta letra mide 13 px, y ambos se apoyan
-              en la misma línea base, así que quedan del mismo tamaño y alineados. */}
+          {/* Las letras de "ADOR" ocupan solo 21 de las 27,45 unidades de alto de su
+              imagen (el resto es aire): a 13 px de alto sus mayúsculas miden ~9,9 px.
+              "OS" a 13,7 px tiene mayúsculas de ~9,9 px, y ambos se apoyan en la misma
+              línea base: mismo tamaño y alineados. */}
           <span className="flex items-baseline gap-[6px]">
             <Logo size={13} />
-            <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 18, letterSpacing: '0.02em' }}>
+            <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 13.7, letterSpacing: '0.04em' }}>
               OS
             </span>
           </span>

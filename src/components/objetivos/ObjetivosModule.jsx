@@ -6,6 +6,7 @@ import { quarterKey as currentQuarterKey } from '../../lib/finance'
 import { quarterElapsedPct } from '../../lib/weeklySummary'
 import { objetivoPct, objetivoStatus, shiftQuarter, OBJETIVO_METRICS } from '../../lib/objetivos'
 import { currencyPEN } from '../../lib/clientStages'
+import { useAccess } from '../../hooks/useAccess'
 import ObjetivoRow from './ObjetivoRow'
 import NewObjetivoModal from './NewObjetivoModal'
 import ExperimentosPanel from './ExperimentosPanel'
@@ -194,6 +195,7 @@ function MetricasCard({ liveValues, objetivos, isCurrentQuarter }) {
 }
 
 export default function ObjetivosModule({ user, onNavigate }) {
+  const access = useAccess()
   const [viewQuarter, setViewQuarter] = useState(currentQuarterKey())
   const { objetivos, quarterKey, isCurrentQuarter, northStar, users, openLinkedTasks, liveValueByMetric, activeExperiments, quarterDecisions } = useObjetivosData(viewQuarter)
   const [showNew, setShowNew] = useState(false)
@@ -276,6 +278,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
         <div className="flex flex-col gap-4">
           {ordered.map((o, i) => (
             <ObjetivoRow
+              canManage={access.isAdmin}
               key={o.id}
               objetivo={o}
               index={i}

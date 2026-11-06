@@ -5,6 +5,7 @@ import { subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/fires
 import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon, GridIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
+import { useAccess } from '../../hooks/useAccess'
 import HoyView from './HoyView'
 import ListaView from './ListaView'
 import PersonalOverview from './PersonalOverview'
@@ -67,6 +68,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   const actorName = actorNameFor(user)
+  const access = useAccess()
 
   useEffect(() => subscribeNotes(setNotes), [])
 
@@ -169,6 +171,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
     >
       {view !== 'hoy' && (
         <WorkspaceSidebar
+          canManage={access.isAdmin}
           taskCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.length]))}
           actorName={actorName}
           workstreams={workstreams}

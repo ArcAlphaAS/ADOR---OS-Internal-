@@ -46,7 +46,7 @@ const CalendarSmall = () => (
   </svg>
 )
 
-export default function ObjetivoRow({ objetivo, index, owner, actorName, northStarId, elapsedPct, daysLeft, isCurrentQuarter, onNavigate }) {
+export default function ObjetivoRow({ canManage = false, objetivo, index, owner, actorName, northStarId, elapsedPct, daysLeft, isCurrentQuarter, onNavigate }) {
   const [menu, setMenu] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
@@ -132,12 +132,12 @@ export default function ObjetivoRow({ objetivo, index, owner, actorName, northSt
             {menu && (
               <div className="absolute right-0 top-10 z-20 w-56 overflow-hidden rounded-xl border border-white/[0.1] bg-[#1C1C1E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
                 {menuItem('Check-in semanal', () => setCheckingIn(true))}
-                {!isMilestone && menuItem(o.isNorthStar ? 'Quitar Métrica Norte' : '★ Marcar como Métrica Norte', () => withTimeout(setNorthStar(o.id, northStarId)).catch(fail('actualizar')))}
+                {canManage && !isMilestone && menuItem(o.isNorthStar ? 'Quitar Métrica Norte' : '★ Marcar como Métrica Norte', () => withTimeout(setNorthStar(o.id, northStarId)).catch(fail('actualizar')))}
                 {!isMilestone && o.metric === 'custom' && menuItem('Actualizar valor', () => {
                   setDraft(String(o.currentValue || ''))
                   setEditing(true)
                 })}
-                {menuItem('Eliminar objetivo…', () => { setMenu(false); setConfirmDelete(true) }, true)}
+                {canManage && menuItem('Eliminar objetivo…', () => { setMenu(false); setConfirmDelete(true) }, true)}
               </div>
             )}
           </div>
