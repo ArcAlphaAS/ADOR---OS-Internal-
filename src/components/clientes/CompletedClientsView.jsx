@@ -1,4 +1,5 @@
 import { allPayments, clientType, currencyPEN, serviceLabel } from '../../lib/clientStages'
+import EmptyState from '../common/EmptyState'
 
 function formatDate(value) {
   const date = value?.toDate?.()
@@ -11,10 +12,7 @@ function formatDate(value) {
 export default function CompletedClientsView({ clients, services, onOpenClient, onContextClient, onNewService }) {
   if (clients.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-24">
-        <div className="ador-skeleton h-[2px] w-1/4 rounded-full" />
-        <p className="text-[14px] font-light text-[#767676]">Todavía no hay clientes completados.</p>
-      </div>
+      <EmptyState className="py-20" title="Aún no hay clientes completados" hint="Cuando un servicio termine, el cliente pasa aquí y puede volver con uno nuevo." />
     )
   }
 
@@ -24,7 +22,7 @@ export default function CompletedClientsView({ clients, services, onOpenClient, 
         <thead>
           <tr className="border-b border-white/[0.06]">
             {['Organización', 'Servicio', 'Completado', 'Cobrado', 'Ciclos', ''].map((label) => (
-              <th key={label} className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#767676]">{label}</th>
+              <th key={label} className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">{label}</th>
             ))}
           </tr>
         </thead>

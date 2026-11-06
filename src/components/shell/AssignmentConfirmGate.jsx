@@ -80,7 +80,7 @@ export default function AssignmentConfirmGate({ user, actorName, onNavigate }) {
     >
       <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING}>
         <div className="ador-modal-surface ador-grain w-[420px] rounded-[28px] p-8">
-          <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Nueva asignación
           </span>
           <p className="mt-2 text-[13px] text-[#888888]">
@@ -133,7 +133,7 @@ export default function AssignmentConfirmGate({ user, actorName, onNavigate }) {
               Aceptar
             </button>
           </div>
-          {pending.length > 1 && <p className="mt-4 text-center text-[11px] text-[#444444]">+{pending.length - 1} asignación(es) más esperando</p>}
+          {pending.length > 1 && <p className="mt-4 text-center text-[11px] text-[#8A8A8A]">+{pending.length - 1} asignación(es) más esperando</p>}
         </div>
       </motion.div>
     </motion.div>,

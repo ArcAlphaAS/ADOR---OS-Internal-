@@ -28,7 +28,7 @@ function Fact({ icon, value, label, color }) {
         <p className="truncate text-[15px] font-medium" style={{ color: color || '#F5F5F5' }}>
           {value}
         </p>
-        <p className="truncate text-[11.5px] text-[#7A7A7A]">{label}</p>
+        <p className="truncate text-[11.5px] text-[#8A8A8A]">{label}</p>
       </div>
     </div>
   )
@@ -97,7 +97,7 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
               {status.label}
             </span>
             {o.isNorthStar && <span className="rounded-full bg-[#E8C15A]/15 px-2.5 py-1 text-[12px] font-medium text-[#E8C15A]">★ Métrica Norte</span>}
-            {o.foco && o.foco !== 'General' && <span className="text-[12px] text-[#7A7A7A]">{o.foco}</span>}
+            {o.foco && o.foco !== 'General' && <span className="text-[12px] text-[#8A8A8A]">{o.foco}</span>}
           </div>
           <h2 className="mt-3 text-[24px] leading-[1.15] text-[#F5F5F5] md:text-[28px]" style={SERIF}>
             {o.title}
@@ -181,7 +181,7 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
           <>
             <p className="text-[26px] font-semibold tabular-nums text-[#F5F5F5] md:text-[30px]">
               {isCurrentQuarter || o.metric === 'custom' ? formatValue(o.currentValue, o.unit) : '—'}
-              <span className="text-[16px] font-normal text-[#7A7A7A]"> / {formatValue(o.targetValue, o.unit)}</span>
+              <span className="text-[16px] font-normal text-[#8A8A8A]"> / {formatValue(o.targetValue, o.unit)}</span>
             </p>
             <div className="flex items-center gap-4">
               <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">

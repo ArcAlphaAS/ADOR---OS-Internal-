@@ -23,6 +23,7 @@ import { SERIF } from './NewsLayout'
 import { EventFields, HonoreePicker, ResourceFields, EventBlock, AchievementBlock, ResourceCard, IdeaBar, PostText, MentionMenu, mentionCandidates, applyMention, resolveMentions } from './CommunityParts'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { UsersIcon, CalendarIcon, FileIcon, ImageIcon, BookmarkIcon, MessageIcon, CloseIcon } from '../icons'
+import { notifyFail } from '../../lib/notifyFail'
 
 // Comunidad — the informal side of News (from the user's reference image):
 // a type filter row, a composer that picks a type and can carry photos,
@@ -184,7 +185,7 @@ function Composer({ user, actorName, canOrganize }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Título (opcional)"
-              className="mb-2 w-full bg-transparent px-1 text-[19px] text-[#F5F5F5] placeholder:text-[#5A5A5A] outline-none"
+              className="mb-2 w-full bg-transparent px-1 text-[19px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
               style={SERIF}
             />
           )}
@@ -210,7 +211,7 @@ function Composer({ user, actorName, canOrganize }) {
             }}
             placeholder={open ? PLACEHOLDER[type] : '¿Qué quieres compartir con el equipo?'}
             rows={open ? 3 : 1}
-            className="w-full resize-none rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
+            className="w-full resize-none rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
           />
           </div>
           {open && type === 'evento' && (
@@ -328,13 +329,13 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
           <div className={`min-w-0 flex-1 rounded-2xl px-3.5 py-2 ${c.id === post.acceptedCommentId ? 'border border-[#4CAF50]/40 bg-[#4CAF50]/[0.07]' : 'bg-white/[0.04]'}`}>
             {c.id === post.acceptedCommentId && <p className="mb-0.5 text-[11px] font-semibold text-[#8FD19A]">✓ Mejor respuesta</p>}
             <p className="text-[12.5px] font-semibold text-[#E5E5E5]">
-              {c.authorName} <span className="font-normal text-[#7A7A7A]">· {timeAgo(c.createdAt)}</span>
+              {c.authorName} <span className="font-normal text-[#8A8A8A]">· {timeAgo(c.createdAt)}</span>
             </p>
             <PostText text={c.text} mentions={c.mentions} className="mt-0.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[#DDDDDD]" />
             {canAccept && c.authorUid !== user?.uid && (
               <button
                 type="button"
-                onClick={() => updateCommunityPost(post.id, { acceptedCommentId: c.id === post.acceptedCommentId ? null : c.id }).catch(() => {})}
+                onClick={() => updateCommunityPost(post.id, { acceptedCommentId: c.id === post.acceptedCommentId ? null : c.id }).catch(notifyFail)}
                 className="mt-1 text-[11.5px] font-medium text-[#8A8A8A] hover:text-[#8FD19A]"
               >
                 {c.id === post.acceptedCommentId ? 'Quitar como mejor respuesta' : '✓ Marcar como mejor respuesta'}
@@ -342,7 +343,7 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
             )}
           </div>
           {(canModerate || c.authorUid === user?.uid) && (
-            <button type="button" onClick={() => withTimeout(deleteCommunityComment(post.id, c.id)).catch(() => {})} className="mt-2 text-[#5A5A5A] opacity-0 hover:text-[#EF5350] group-hover:opacity-100" aria-label="Eliminar comentario">
+            <button type="button" onClick={() => withTimeout(deleteCommunityComment(post.id, c.id)).catch(notifyFail)} className="mt-2 text-[#8A8A8A] opacity-0 hover:text-[#EF5350] group-hover:opacity-100" aria-label="Eliminar comentario">
               <CloseIcon size={10} />
             </button>
           )}
@@ -368,7 +369,7 @@ function Comments({ post, user, actorName, canModerate, canAccept }) {
             onSelect={(e) => setCaret(e.target.selectionStart)}
             onKeyDown={(e) => e.key === 'Enter' && mentionCandidates(users, user?.uid, text, caret).length === 0 && send()}
             placeholder="Escribe un comentario… (@ para mencionar)"
-            className="w-full rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
+            className="w-full rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
           />
         </div>
         {text.trim() && (
@@ -405,7 +406,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
           <span className="text-[14.5px] font-semibold text-[#F5F5F5]">{post.authorName}</span>
           {area && <span className="rounded-full bg-white/[0.07] px-2.5 py-0.5 text-[12px] text-[#CCCCCC]">{area}</span>}
-          <span className="text-[12.5px] text-[#7A7A7A]">{timeAgo(post.createdAt)}</span>
+          <span className="text-[12.5px] text-[#8A8A8A]">{timeAgo(post.createdAt)}</span>
           {post.pinned && <span className="rounded-full bg-[#E8C15A]/15 px-2 py-0.5 text-[11px] font-medium text-[#E8C15A]">📌 Fijado</span>}
           {post.type === 'pregunta' && post.acceptedCommentId && <span className="rounded-full bg-[#4CAF50]/15 px-2 py-0.5 text-[11px] font-medium text-[#8FD19A]">✓ Resuelta</span>}
         </div>
@@ -420,7 +421,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
                   <button
                     type="button"
                     onClick={() => {
-                      updateCommunityPost(post.id, { pinned: !post.pinned }).catch(() => {})
+                      updateCommunityPost(post.id, { pinned: !post.pinned }).catch(notifyFail)
                       setMenu(false)
                     }}
                     className="w-full px-4 py-2.5 text-left text-[13px] text-[#DDDDDD] hover:bg-white/[0.05]"
@@ -433,7 +434,7 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
                   onClick={() => (confirm ? onDelete(post) : setConfirm(true))}
                   className="w-full px-4 py-2.5 text-left text-[13px] text-[#FF6B63] hover:bg-white/[0.05]"
                 >
-                  {confirm ? '¿Seguro? Eliminar' : 'Eliminar publicación'}
+                  {confirm ? 'Pulsa otra vez para confirmar' : 'Eliminar publicación'}
                 </button>}
               </div>
             )}
@@ -569,9 +570,9 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
 
         {visible.length === 0 ? (
           <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-[22px] px-6 py-14 text-center">
-            <UsersIcon size={20} className="text-[#5A5A5A]" />
+            <UsersIcon size={20} className="text-[#8A8A8A]" />
             <p className="text-[14px] font-medium text-[#AAAAAA]">{posts.length ? 'Nada por aquí con este filtro' : 'Todavía no hay nada por aquí'}</p>
-            <p className="text-[13px] text-[#7A7A7A]">{posts.length ? 'Prueba con otra categoría o búsqueda.' : 'Sé el primero en compartir algo con el equipo.'}</p>
+            <p className="text-[13px] text-[#8A8A8A]">{posts.length ? 'Prueba con otra categoría o búsqueda.' : 'Sé el primero en compartir algo con el equipo.'}</p>
           </div>
         ) : (
           visible.map((post) => (

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircleIcon, CloseIcon } from '../components/icons'
@@ -19,11 +19,19 @@ function ToastStack({ toasts, onDismiss }) {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="pointer-events-auto"
           >
-            <div className="ador-modal-surface ador-grain flex items-center gap-3 rounded-2xl py-3 pl-4 pr-3">
-              <CheckCircleIcon size={18} style={{ color: '#F4EEE2', flexShrink: 0 }} />
+            <div className="ador-modal-surface ador-grain flex items-center gap-3 rounded-2xl py-3 pl-4 pr-3" role={toast.tone === 'error' ? 'alert' : 'status'}>
+              {toast.tone === 'error' ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF8A88" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7.5v5M12 16h.01" />
+                </svg>
+              ) : (
+                <CheckCircleIcon size={18} style={{ color: '#F4EEE2', flexShrink: 0 }} />
+              )}
               <span className="text-[13px] text-[#F5F5F5]">{toast.message}</span>
               <button
                 type="button"
+                aria-label="Cerrar aviso"
                 onClick={() => onDismiss(toast.id)}
                 className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
               >
@@ -47,13 +55,21 @@ export function ToastProvider({ children }) {
   }, [])
 
   const showToast = useCallback(
-    (message) => {
+    (message, opts) => {
       const id = ++idRef.current
-      setToasts((prev) => [...prev, { id, message }])
-      setTimeout(() => dismiss(id), 3000)
+      const tone = opts?.tone || (/^(No se pudo|No tienes permiso|Error|Falló|Tardó)/i.test(String(message)) ? 'error' : 'ok')
+      setToasts((prev) => [...prev, { id, message, tone }])
+      setTimeout(() => dismiss(id), tone === 'error' ? 5000 : 3000)
     },
     [dismiss]
   )
+
+  // Fallos de acciones que antes eran silenciosas (lib/notifyFail.js).
+  useEffect(() => {
+    const onFail = (e) => showToast(e.detail?.message || 'No se pudo completar.', { tone: 'error' })
+    window.addEventListener('ador:fail', onFail)
+    return () => window.removeEventListener('ador:fail', onFail)
+  }, [showToast])
 
   return (
     <ToastContext.Provider value={showToast}>

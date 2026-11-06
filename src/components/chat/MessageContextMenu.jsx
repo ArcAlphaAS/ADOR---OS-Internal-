@@ -80,7 +80,7 @@ export default function MessageContextMenu({ x, y, reactions = [], onReact, opti
               {options.map((o) =>
                 o.delete
                   ? confirmDelete
-                    ? row(o.label, 'Clic otra vez para eliminar', () => {
+                    ? row(o.label, 'Pulsa otra vez para confirmar', () => {
                         o.onClick()
                         onClose()
                       }, true)

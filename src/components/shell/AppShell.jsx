@@ -31,6 +31,7 @@ import { parseOpenLink, refreshPushSubscription } from '../../lib/push'
 import LiveIsland from './LiveIsland'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
+import { useA11yPolish } from '../../hooks/useA11yPolish'
 import AchievementMoment from './AchievementMoment'
 
 // Every module except Home is its own code-split chunk, downloaded the
@@ -95,6 +96,7 @@ const MODULE_LABELS = {
 }
 
 export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
+  useA11yPolish()
   // Coming back from Google's consent screen: reopen the module that
   // started the connection (OAuth `state`), so its hook finishes it.
   // Opened from a tapped notification (/?open=chat&…, lib/push.js): start

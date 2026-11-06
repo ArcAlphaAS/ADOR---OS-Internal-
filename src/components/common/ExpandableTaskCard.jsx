@@ -39,7 +39,7 @@ export default function ExpandableTaskCard({ task, label, userById, actorUserId,
             <span className="text-[12px] tabular-nums text-[#9A9A9A]">{pct}%</span>
           </span>
         )}
-        <ChevronDownIcon size={14} className="flex-shrink-0 text-[#767676] transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
+        <ChevronDownIcon size={14} className="flex-shrink-0 text-[#8A8A8A] transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
       </motion.button>
 
       {!open && (

@@ -167,7 +167,7 @@ function AgendaView({ events, onOpenEvent }) {
       {days.map(({ date, items }) => (
         <div key={date.toISOString()} className="ador-glass ador-grain overflow-hidden rounded-2xl">
           <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3">
-            <ArrowRightIcon size={11} className="text-[#444444]" />
+            <ArrowRightIcon size={11} className="text-[#8A8A8A]" />
             <span className="text-[13px] font-semibold text-[#F5F5F5]">{formatDayLabel(date)}</span>
           </div>
           <div className="flex flex-col divide-y divide-white/[0.04] px-3 py-2">
@@ -181,7 +181,7 @@ function AgendaView({ events, onOpenEvent }) {
                 <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(event) }} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-medium text-[#F5F5F5]">{event.title}</p>
-                  {event.location && <p className="mt-0.5 truncate text-[11px] text-[#666666]">{event.location}</p>}
+                  {event.location && <p className="mt-0.5 truncate text-[11px] text-[#8A8A8A]">{event.location}</p>}
                 </div>
                 <span className="flex-shrink-0 text-[12px] text-[#888888]">
                   {event.allDay ? 'Todo el día' : `${new Date(event.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })} – ${new Date(event.end).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}`}
@@ -261,16 +261,16 @@ export default function CalendarioModule({ user }) {
     >
       <div className="flex items-start justify-between gap-6">
         <div>
-          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">Calendario</span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Calendario</span>
           <h1 className="ador-title">Calendario</h1>
           <p className="mt-0.5 text-[13px] text-[#888888]">
             {connectedEmail ? `Reflejo de tu Google Calendar — conectado como ${connectedEmail}` : 'Tu tiempo también es una decisión.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <p className="hidden max-w-[220px] text-right text-[12px] italic leading-relaxed text-[#666666] lg:block">
+          <p className="hidden max-w-[220px] text-right text-[12px] italic leading-relaxed text-[#8A8A8A] lg:block">
             "{dailyQuote()}"
-            <span className="mt-1 block text-[11px] not-italic text-[#444444]">— ADOR OS</span>
+            <span className="mt-1 block text-[11px] not-italic text-[#8A8A8A]">— ADOR OS</span>
           </p>
           <button
             type="button"

@@ -35,7 +35,7 @@ export default function ContextMenu({ x, y, title, subtitle, items, onClose }) {
             <>
               <div className="px-2.5 pb-1 pt-1.5">
                 <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{title}</p>
-                {subtitle && <p className="truncate text-[11px] text-[#767676]">{subtitle}</p>}
+                {subtitle && <p className="truncate text-[11px] text-[#8A8A8A]">{subtitle}</p>}
               </div>
               <div className="my-1 h-px bg-white/[0.08]" />
             </>

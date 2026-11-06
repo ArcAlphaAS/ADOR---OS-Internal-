@@ -102,7 +102,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error,
             <span className="text-[13px] font-medium text-[#9A9A9A]">OS</span>
           </div>
         </div>
-        <span className="hidden text-[13px] text-[#767676] sm:block">Acceso por invitación</span>
+        <span className="hidden text-[13px] text-[#8A8A8A] sm:block">Acceso por invitación</span>
       </div>
 
       <div className="flex flex-1 items-center justify-center">
@@ -203,7 +203,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error,
               ¿Olvidaste tu contraseña?
             </button>
           </motion.div>
-          <p className="mt-6 text-center text-[12.5px] text-[#767676] sm:hidden">Acceso por invitación únicamente</p>
+          <p className="mt-6 text-center text-[12.5px] text-[#8A8A8A] sm:hidden">Acceso por invitación únicamente</p>
         </div>
       </div>
     </motion.div>

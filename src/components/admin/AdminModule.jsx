@@ -45,7 +45,7 @@ const TABS = [
 ]
 
 const card = 'ador-glass ador-grain rounded-2xl p-6'
-const inputClass = 'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#666666] outline-none focus:border-white/[0.2]'
+const inputClass = 'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/[0.2]'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Administrador'
@@ -285,7 +285,7 @@ function PeopleTab({ user }) {
                       onChange={(e) => setEditing((v) => ({ ...v, newEmail: e.target.value }))}
                     />
                   </div>
-                  <p className="text-[11.5px] text-[#777777]">
+                  <p className="text-[11.5px] text-[#8A8A8A]">
                     {row.invited
                       ? 'Si cambias el correo, se invita al nuevo (mismo rol), se le envía el correo para entrar y se quita el acceso del anterior.'
                       : 'Esta persona ya entró: su correo está ligado a su cuenta y no se puede cambiar desde aquí. El nombre sí.'}
@@ -303,9 +303,9 @@ function PeopleTab({ user }) {
                 <div className="min-w-0 flex-1 basis-[180px]">
                   <p className="truncate text-[13.5px] font-medium text-[#F5F5F5]">
                     {row.name}
-                    {row.email === me && <span className="ml-1.5 text-[11px] font-normal text-[#777777]">(tú)</span>}
+                    {row.email === me && <span className="ml-1.5 text-[11px] font-normal text-[#8A8A8A]">(tú)</span>}
                   </p>
-                  <p className="truncate text-[12px] text-[#777777]">
+                  <p className="truncate text-[12px] text-[#8A8A8A]">
                     {row.email} · {row.invited ? <span className="text-[#E8C15A]">Invitado, aún no entra</span> : p?.label || 'Sin actividad reciente'}
                   </p>
                 </div>
@@ -327,7 +327,7 @@ function PeopleTab({ user }) {
                       {row.account.photoDataUrl ? 'Cambiar foto' : 'Poner foto'}
                     </button>
                     {row.account.photoDataUrl && (
-                      <button type="button" onClick={() => savePhoto(row, null)} className="rounded-lg px-2 py-1.5 text-[12px] text-[#777777] hover:text-[#EF8A88]">
+                      <button type="button" onClick={() => savePhoto(row, null)} className="rounded-lg px-2 py-1.5 text-[12px] text-[#8A8A8A] hover:text-[#EF8A88]">
                         Quitar foto
                       </button>
                     )}
@@ -367,7 +367,7 @@ function PeopleTab({ user }) {
                     className="rounded-lg px-2.5 py-1.5 text-[12px] transition-colors"
                     style={{ color: confirmRevoke === row.email ? '#EF5350' : '#888888' }}
                   >
-                    {confirmRevoke === row.email ? 'Clic otra vez para quitar' : 'Quitar acceso'}
+                    {confirmRevoke === row.email ? 'Pulsa otra vez para confirmar' : 'Quitar acceso'}
                   </button>
                 )}
                 </div>
@@ -375,7 +375,7 @@ function PeopleTab({ user }) {
             )
           })}
         </div>
-        <p className="mt-3 text-[11.5px] leading-relaxed text-[#666666]">
+        <p className="mt-3 text-[11.5px] leading-relaxed text-[#8A8A8A]">
           "Organiza encuentros" deja a un miembro crear eventos en Comunidad (los administradores siempre pueden). Quitar el acceso le impide ver cualquier dato de inmediato. Su cuenta de inicio de sesión sigue existiendo en Firebase; si quieres borrarla del todo: Firebase → Authentication → Users.
         </p>
       </div>
@@ -411,7 +411,7 @@ function TemplateTab({ user }) {
     setLayers((cur) => cur ?? (t?.layers || {}))
   }), [])
 
-  if (!layers) return <div className={card}><p className="text-[13px] text-[#777777]">Cargando…</p></div>
+  if (!layers) return <div className={card}><p className="text-[13px] text-[#8A8A8A]">Cargando…</p></div>
   const dirty = JSON.stringify(layers) !== saved
   const list = (i) => layers[String(i + 1)] || []
   const setList = (i, next) => setLayers((l) => ({ ...l, [String(i + 1)]: next }))
@@ -451,7 +451,7 @@ function TemplateTab({ user }) {
             <div className="flex flex-wrap items-baseline gap-x-3">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2C2C2E] text-[11px] font-semibold text-[#F5F5F5]">{i + 1}</span>
               <h4 className="text-[14px] font-semibold text-[#F5F5F5]">{name}</h4>
-              {span && <span className="text-[11.5px] text-[#777777]">{span.startWeek === span.endWeek ? `Semana ${span.startWeek}` : `Semanas ${span.startWeek}–${span.endWeek}`} de 8</span>}
+              {span && <span className="text-[11.5px] text-[#8A8A8A]">{span.startWeek === span.endWeek ? `Semana ${span.startWeek}` : `Semanas ${span.startWeek}–${span.endWeek}`} de 8</span>}
             </div>
             <div className="mt-3 flex flex-col gap-1.5">
               {list(i).map((t, j) => (
@@ -469,7 +469,7 @@ function TemplateTab({ user }) {
                   >
                     {PRIORITIES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
                   </select>
-                  <button type="button" onClick={() => setList(i, list(i).filter((_, k) => k !== j))} className="flex-shrink-0 px-2 text-[16px] text-[#777777] hover:text-[#EF5350]" title="Quitar tarea">×</button>
+                  <button type="button" onClick={() => setList(i, list(i).filter((_, k) => k !== j))} className="flex-shrink-0 px-2 text-[16px] text-[#8A8A8A] hover:text-[#EF5350]" title="Quitar tarea">×</button>
                 </div>
               ))}
               <button
@@ -523,12 +523,12 @@ function AccessTab() {
               <input type="checkbox" checked={on} disabled={m.always} onChange={() => toggle(m.id)} className="accent-[#F4EEE2]" />
               <span className="text-[13px] text-[#DDDDDD]">{m.label}</span>
               {m.sensitive && <span className="ml-auto text-[11px] text-[#E8C15A]">datos sensibles</span>}
-              {m.always && <span className="ml-auto text-[11px] text-[#777777]">siempre</span>}
+              {m.always && <span className="ml-auto text-[11px] text-[#8A8A8A]">siempre</span>}
             </label>
           )
         })}
       </div>
-      <p className="mt-3 text-[11.5px] text-[#666666]">Administración nunca está disponible para Miembros.</p>
+      <p className="mt-3 text-[11.5px] text-[#8A8A8A]">Administración nunca está disponible para Miembros.</p>
     </div>
   )
 }
@@ -572,7 +572,7 @@ function ErrorsTab() {
               <div className="flex items-start gap-3">
                 <button type="button" onClick={() => setOpen(open === l.id ? null : l.id)} className="min-w-0 flex-1 text-left">
                   <p className="truncate text-[13px] text-[#F5F5F5]">{l.message}</p>
-                  <p className="mt-0.5 text-[11.5px] text-[#777777]">
+                  <p className="mt-0.5 text-[11.5px] text-[#8A8A8A]">
                     {formatWhen(l.createdAt)} · {l.userName || 'alguien'} · {l.module || l.path || '—'} · {l.source}
                   </p>
                 </button>
@@ -597,7 +597,7 @@ export default function AdminModule({ user }) {
       className="mx-auto flex w-full max-w-[900px] flex-col gap-6 px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
       <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Solo administradores</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Solo administradores</p>
         <h1 className="ador-title mt-1">Administración</h1>
         <p className="mt-1 text-[13.5px] text-[#888888]">Quién entra a ADOR OS, qué puede ver cada rol, errores y datos de la empresa.</p>
       </div>

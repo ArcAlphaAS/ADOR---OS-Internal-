@@ -51,12 +51,12 @@ function dueLabel(task) {
 function Meeting({ meeting, calendarStatus, onOpenCalendar, now }) {
   if (calendarStatus !== 'ready') {
     return (
-      <button type="button" onClick={onOpenCalendar} className="text-left text-[13px] text-[#7A7A7A] transition-colors hover:text-[#C9C9C9]">
+      <button type="button" onClick={onOpenCalendar} className="text-left text-[13px] text-[#8A8A8A] transition-colors hover:text-[#C9C9C9]">
         Conecta tu Google Calendar para ver tu próxima reunión →
       </button>
     )
   }
-  if (!meeting) return <p className="text-[13px] text-[#7A7A7A]">Sin reuniones próximas — el día es tuyo.</p>
+  if (!meeting) return <p className="text-[13px] text-[#8A8A8A]">Sin reuniones próximas — el día es tuyo.</p>
   return (
     <button type="button" onClick={onOpenCalendar} className="group block w-full text-left">
       <span className="block font-extralight leading-none tabular-nums text-[#F5F5F5]" style={{ fontSize: 44, letterSpacing: '-0.03em' }}>
@@ -131,7 +131,7 @@ function WeekStrip({ events, dueByDay, onOpen }) {
         const label = d.toLocaleDateString('es', { weekday: 'short' }).replace('.', '')
         return (
           <button key={k} type="button" onClick={onOpen} className="flex flex-col items-center gap-1.5 rounded-xl py-1.5 transition-colors hover:bg-white/[0.04]">
-            <span className="text-[11px] capitalize text-[#767676]">{label}</span>
+            <span className="text-[11px] capitalize text-[#8A8A8A]">{label}</span>
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full text-[14px] font-medium tabular-nums"
               style={{ background: isToday ? '#F5F5F5' : 'transparent', color: isToday ? '#0A0A0A' : '#E4E4E4' }}
@@ -213,7 +213,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
 
           {focus ? (
             <>
-              <motion.p {...rise(0.3)} className="mt-6 text-[13px] text-[#7A7A7A]">
+              <motion.p {...rise(0.3)} className="mt-6 text-[13px] text-[#8A8A8A]">
                 Lo más importante ahora
               </motion.p>
               <motion.h2
@@ -280,7 +280,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
               </svg>
               <span>
                 <span className="block text-[15px] font-medium text-[#F5F5F5]">{pct >= 100 ? 'Día despejado' : `${pct}% del día`}</span>
-                <span className="block text-[12.5px] text-[#767676]">{day.completedToday} de {day.totalToday} {day.totalToday === 1 ? 'hecha' : 'hechas'} hoy</span>
+                <span className="block text-[12.5px] text-[#8A8A8A]">{day.completedToday} de {day.totalToday} {day.totalToday === 1 ? 'hecha' : 'hechas'} hoy</span>
               </span>
             </motion.div>
           )}
@@ -289,7 +289,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
         {/* Next meeting + what follows */}
         <div className="border-t border-white/[0.07] px-7 py-9 sm:px-10 lg:border-l lg:border-t-0 lg:px-12 lg:py-12">
           <motion.div {...rise(0.4)}>
-            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-[#767676]">Próxima reunión</p>
+            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próxima reunión</p>
             <Meeting meeting={nextMeeting} calendarStatus={calendarStatus} onOpenCalendar={() => onNavigate?.('calendario')} now={now} />
           </motion.div>
 

@@ -90,7 +90,7 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
           <button
             type="button"
             onClick={openEdit}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-[#767676] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
           >
             <EditIcon size={13} />
           </button>
@@ -101,7 +101,7 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div className="flex flex-1 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-[#1A1A1A] px-2.5 py-1.5 focus-within:border-white/[0.2]">
-              <span className="text-[14px] text-[#666666]">S/</span>
+              <span className="text-[14px] text-[#8A8A8A]">S/</span>
               <input
                 type="number"
                 min="0"
@@ -131,13 +131,13 @@ export default function RunwayCard({ cashBalance, monthlyBurnRate, projectedIn30
             </button>
           </div>
           {error && <p className="text-[11.5px] text-[#EF5350]">{error}</p>}
-          <p className="text-[11px] text-[#767676]">Esc para cerrar sin guardar.</p>
+          <p className="text-[11px] text-[#8A8A8A]">Esc para cerrar sin guardar.</p>
         </div>
       ) : !cashBalance ? (
         <button
           type="button"
           onClick={openEdit}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.14] py-3 text-[13px] text-[#666666] transition-colors duration-150 hover:border-white/[0.24] hover:text-[#888888]"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.14] py-3 text-[13px] text-[#8A8A8A] transition-colors duration-150 hover:border-white/[0.24] hover:text-[#888888]"
         >
           <PlusIcon size={13} /> Registrar caja disponible
         </button>

@@ -40,24 +40,24 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
             Su cuenta ya no tiene acceso a ADOR OS. Si esta persona salió del equipo, puedes eliminar su ficha desde el menú de la tabla.
           </p>
         )}
-        {person.quote && <p className="mt-2 text-[12px] italic text-[#666666]">"{person.quote}"</p>}
+        {person.quote && <p className="mt-2 text-[12px] italic text-[#8A8A8A]">"{person.quote}"</p>}
       </div>
 
       {(person.email || person.location || person.timezone) && (
         <div className="mt-4 flex flex-col gap-1.5 border-t border-white/[0.06] pt-4">
           {person.email && (
             <div className="flex items-center gap-2 text-[12px] text-[#888888]">
-              <MailIcon size={13} className="text-[#444444]" /> {person.email}
+              <MailIcon size={13} className="text-[#8A8A8A]" /> {person.email}
             </div>
           )}
           {person.location && (
             <div className="flex items-center gap-2 text-[12px] text-[#888888]">
-              <PinIcon size={13} className="text-[#444444]" /> {person.location}
+              <PinIcon size={13} className="text-[#8A8A8A]" /> {person.location}
             </div>
           )}
           {person.timezone && (
             <div className="flex items-center gap-2 text-[12px] text-[#888888]">
-              <ClockIcon size={13} className="text-[#444444]" /> {person.timezone}
+              <ClockIcon size={13} className="text-[#8A8A8A]" /> {person.timezone}
             </div>
           )}
         </div>
@@ -65,7 +65,7 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
 
       {person.about && (
         <div className="mt-4 border-t border-white/[0.06] pt-4">
-          <p className="mb-1.5 font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <p className="mb-1.5 font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Sobre mí
           </p>
           <p className="text-[13px] leading-relaxed text-[#888888]">{person.about}</p>
@@ -74,7 +74,7 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
 
       {person.tags?.length > 0 && (
         <div className="mt-4 border-t border-white/[0.06] pt-4">
-          <p className="mb-2 font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <p className="mb-2 font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Áreas de responsabilidad
           </p>
           <div className="flex flex-wrap gap-1.5">

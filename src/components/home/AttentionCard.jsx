@@ -53,7 +53,7 @@ export default function AttentionCard({ finance, uid, onNavigate }) {
           </span>
           <div>
             <p className="text-[16px] font-light text-[#F5F5F5]">Todo en orden</p>
-            <p className="mt-0.5 text-[13px] text-[#7A7A7A]">Nada requiere tu atención ahora mismo.</p>
+            <p className="mt-0.5 text-[13px] text-[#8A8A8A]">Nada requiere tu atención ahora mismo.</p>
           </div>
         </div>
       ) : (
@@ -80,14 +80,14 @@ export default function AttentionCard({ finance, uid, onNavigate }) {
                     <span className="block truncate text-[14px] text-[#F0F0F0]">{item.title}</span>
                     <span className="mt-0.5 block truncate text-[12.5px] text-[#8A8A8A]">{item.detail}</span>
                   </span>
-                  <span className="text-[#5A5A5A] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#C9C9C9]" aria-hidden>→</span>
+                  <span className="text-[#8A8A8A] transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-[#C9C9C9]" aria-hidden>→</span>
                 </button>
               </motion.li>
             )
           })}
         </ul>
       )}
-      {items.length > MAX_ROWS && <p className="mt-3 text-[12px] text-[#767676]">y {items.length - MAX_ROWS} más</p>}
+      {items.length > MAX_ROWS && <p className="mt-3 text-[12px] text-[#8A8A8A]">y {items.length - MAX_ROWS} más</p>}
     </div>
   )
 }

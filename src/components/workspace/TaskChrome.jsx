@@ -145,7 +145,7 @@ export function SubtasksBlock({ task, embedded = false, focusKey = 0 }) {
             type="button"
             onClick={() => save(subtasks.filter((x) => x.id !== s.id))}
             title="Quitar subtarea"
-            className="flex-shrink-0 text-[#666666] opacity-0 transition-opacity hover:text-[#EF5350] group-hover/sub:opacity-100"
+            className="flex-shrink-0 text-[#8A8A8A] opacity-0 transition-opacity hover:text-[#EF5350] group-hover/sub:opacity-100"
           >
             <CloseIcon size={11} />
           </button>
@@ -168,7 +168,7 @@ export function SubtasksBlock({ task, embedded = false, focusKey = 0 }) {
         </div>
       ))}
       <div className="flex items-center gap-2 px-1 py-1">
-        <span className="flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center text-[#666666]">
+        <span className="flex h-[15px] w-[15px] flex-shrink-0 items-center justify-center text-[#8A8A8A]">
           <PlusIcon size={11} />
         </span>
         <input
@@ -177,7 +177,7 @@ export function SubtasksBlock({ task, embedded = false, focusKey = 0 }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
           placeholder="Agregar subtarea — Enter"
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#666666]"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A]"
         />
       </div>
     </div>

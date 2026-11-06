@@ -24,7 +24,7 @@ function Row({ item, me, onThank }) {
       {onThank && others.length > 0 && item.verb !== 'dio las gracias a' && (
         <button type="button" onClick={() => onThank(item, others)} title="Dar las gracias" aria-label="Dar las gracias" className="flex-shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1.5 text-[14px]">🙌</button>
       )}
-      <span className="flex-shrink-0 text-[12px] text-[#767676]">{ago(Date.now() - item.at)}</span>
+      <span className="flex-shrink-0 text-[12px] text-[#8A8A8A]">{ago(Date.now() - item.at)}</span>
     </li>
   )
 }

@@ -93,7 +93,7 @@ export default function ThreadPanel({
 
         <div ref={scrollRef} data-keep-scroll className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-3">
           {parent === null ? (
-            <p className="py-10 text-center text-[12.5px] text-[#7A7A7A]">Este mensaje ya no existe.</p>
+            <p className="py-10 text-center text-[12.5px] text-[#8A8A8A]">Este mensaje ya no existe.</p>
           ) : parent ? (
             <>
               <div className="flex">
@@ -108,7 +108,7 @@ export default function ThreadPanel({
                 />
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[11px] text-[#7A7A7A]">
+                <span className="text-[11px] text-[#8A8A8A]">
                   {replies.length} {replies.length === 1 ? 'respuesta' : 'respuestas'}
                 </span>
                 <div className="h-px flex-1 bg-white/[0.06]" />
@@ -127,7 +127,7 @@ export default function ThreadPanel({
           ) : null}
         </div>
 
-        <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
+        <p className="h-4 px-1 text-[11px] italic text-[#8A8A8A]">{typingLabel(typers)}</p>
         {parent !== null && (
           <Composer compact key={parentId} draftKey={`thread_${parentId}`} onSend={(draft) => onSend(draft, parent)} onTyping={onTyping} mentionCandidates={mentionCandidates} placeholder="Responder en el hilo..." onError={onError} />
         )}

@@ -32,7 +32,7 @@ export default function CategoryBreakdownCard({ categoryTotals }) {
       <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Gastos por categoría · este mes</h3>
 
       {total === 0 ? (
-        <p className="mt-5 text-center text-[13px] font-light text-[#767676]">Sin gastos registrados</p>
+        <p className="mt-5 text-center text-[13px] font-light text-[#8A8A8A]">Sin gastos registrados</p>
       ) : (
         <div className="mt-5 flex items-center gap-6">
           <div className="relative h-[132px] w-[132px] flex-shrink-0">
@@ -55,7 +55,7 @@ export default function CategoryBreakdownCard({ categoryTotals }) {
               ))}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[10.5px] text-[#767676]">Total</span>
+              <span className="text-[10.5px] text-[#8A8A8A]">Total</span>
               <span className="text-[15px] font-semibold tabular-nums tracking-tight text-[#F5F5F5]">{currencyPEN.format(total)}</span>
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function CategoryBreakdownCard({ categoryTotals }) {
                 <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: CATEGORY_COLORS[s.category] }} />
                 <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#E8E8E8]">{s.category}</span>
                 <span className="flex-shrink-0 text-[12px] tabular-nums text-[#B5B5B5]">{currencyPEN.format(categoryTotals.get(s.category))}</span>
-                <span className="w-8 flex-shrink-0 text-right text-[11px] tabular-nums text-[#767676]">{Math.round(s.frac * 100)}%</span>
+                <span className="w-8 flex-shrink-0 text-right text-[11px] tabular-nums text-[#8A8A8A]">{Math.round(s.frac * 100)}%</span>
               </li>
             ))}
           </ul>

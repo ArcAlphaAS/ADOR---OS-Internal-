@@ -64,8 +64,8 @@ export default function TeEsperanCard({ uid, onNavigate }) {
                   <span className="line-clamp-2">{r.text}</span>
                 )}
               </span>
-              {r.time && <span className="flex-shrink-0 text-[12px] text-[#767676]">{r.time}</span>}
-              {!r.time && r.at ? <span className="flex-shrink-0 text-[12px] text-[#767676]">{ago(Date.now() - r.at)}</span> : null}
+              {r.time && <span className="flex-shrink-0 text-[12px] text-[#8A8A8A]">{r.time}</span>}
+              {!r.time && r.at ? <span className="flex-shrink-0 text-[12px] text-[#8A8A8A]">{ago(Date.now() - r.at)}</span> : null}
             </button>
           </li>
         ))}

@@ -48,12 +48,12 @@ function Card({ person, directoryEntry, isSelf, onGreet }) {
       <div className="mt-5 flex items-center gap-6 border-y border-white/[0.07] py-3.5">
         <div>
           <p className="text-[15px] font-semibold text-[#F5F5F5]">Hoy</p>
-          <p className="mt-0.5 text-[12px] text-[#767676]">Cumpleaños</p>
+          <p className="mt-0.5 text-[12px] text-[#8A8A8A]">Cumpleaños</p>
         </div>
         {longDate(person.birthday) && (
           <div>
             <p className="text-[15px] font-semibold text-[#F5F5F5]">{longDate(person.birthday)}</p>
-            <p className="mt-0.5 text-[12px] text-[#767676]">Fecha</p>
+            <p className="mt-0.5 text-[12px] text-[#8A8A8A]">Fecha</p>
           </div>
         )}
       </div>

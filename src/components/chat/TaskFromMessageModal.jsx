@@ -7,10 +7,10 @@ import { userLabel } from '../../lib/chat'
 import PersonAvatar from './PersonAvatar'
 import { SPRING } from '../../lib/motion'
 
-const labelClass = 'mb-1.5 block font-medium text-[#767676]'
+const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 const PRIORITIES = [
   { id: 'alta', label: 'Alta', color: '#EF5350' },

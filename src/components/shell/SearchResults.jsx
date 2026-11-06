@@ -34,12 +34,12 @@ export default function SearchResults({ results, anchorRect, activeIndex, onSele
     >
       <div className="ador-glass ador-grain max-h-[460px] overflow-y-auto rounded-2xl py-2">
         {!results.hasResults ? (
-          <p className="px-4 py-6 text-center text-[13px] font-light text-[#666666]">{results.loadingMessages ? 'Buscando también en los mensajes…' : 'Sin resultados'}</p>
+          <p className="px-4 py-6 text-center text-[13px] font-light text-[#8A8A8A]">{results.loadingMessages ? 'Buscando también en los mensajes…' : 'Sin resultados'}</p>
         ) : (
           <>
             {results.groups.map((group) => (
               <div key={group.key}>
-                <span className="block px-4 pb-1 pt-3 font-medium text-[#666666]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span className="block px-4 pb-1 pt-3 font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   {group.label}
                 </span>
                 {group.items.map((item) => {
@@ -55,13 +55,13 @@ export default function SearchResults({ results, anchorRect, activeIndex, onSele
                       style={active ? { background: 'rgba(255,255,255,0.08)' } : undefined}
                     >
                       <span className="min-w-0 flex-1 truncate text-[13px] text-[#F5F5F5]">{item.title}</span>
-                      <span className="max-w-[45%] flex-shrink-0 truncate text-[11px] text-[#777777]">{item.meta}</span>
+                      <span className="max-w-[45%] flex-shrink-0 truncate text-[11px] text-[#8A8A8A]">{item.meta}</span>
                     </button>
                   )
                 })}
               </div>
             ))}
-            {results.loadingMessages && <p className="px-4 pt-2 pb-1 text-[11px] text-[#666666]">Buscando también en los mensajes…</p>}
+            {results.loadingMessages && <p className="px-4 pt-2 pb-1 text-[11px] text-[#8A8A8A]">Buscando también en los mensajes…</p>}
           </>
         )}
       </div>

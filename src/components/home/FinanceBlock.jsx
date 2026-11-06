@@ -60,11 +60,11 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
       {!hasData ? (
         <div className="flex flex-col items-center gap-4 py-10">
           <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[14px] font-light text-[#767676]">Sin datos financieros aún</p>
+          <p className="text-[14px] font-light text-[#8A8A8A]">Sin datos financieros aún</p>
         </div>
       ) : (
         <>
-          <p className="mt-4 text-[12px] text-[#767676]">Ingresos del mes</p>
+          <p className="mt-4 text-[12px] text-[#8A8A8A]">Ingresos del mes</p>
           <div className="mt-1 flex items-baseline gap-3">
             <span className="text-[32px] font-semibold text-[#F5F5F5]"><AnimatedNumber value={ingresosDelMes} format={(n) => currencyPEN.format(n)} /></span>
             {ingresosDeltaPct !== null && (

@@ -53,7 +53,7 @@ export default function ChatContextRail({ user, onNavigate }) {
             Conecta tu Google Calendar para verlas aquí →
           </button>
         ) : events.length === 0 ? (
-          <p className="text-[12.5px] text-[#7A7A7A]">Sin reuniones hoy.</p>
+          <p className="text-[12.5px] text-[#8A8A8A]">Sin reuniones hoy.</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {events.slice(0, 5).map((e) => {
@@ -77,7 +77,7 @@ export default function ChatContextRail({ user, onNavigate }) {
 
       <Card title="Tus tareas de hoy" count={tasks.length || null}>
         {tasks.length === 0 ? (
-          <p className="text-[12.5px] text-[#7A7A7A]">Nada urgente por ahora.</p>
+          <p className="text-[12.5px] text-[#8A8A8A]">Nada urgente por ahora.</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {tasks.map((t) => (

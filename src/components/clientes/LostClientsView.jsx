@@ -12,7 +12,7 @@ export default function LostClientsView({ clients, onOpenClient, onContextClient
     return (
       <div className="flex flex-col items-center gap-3 py-24">
         <div className="ador-skeleton h-[2px] w-1/4 rounded-full" />
-        <p className="text-[14px] font-light text-[#444444]">Sin SPC/SP perdidos.</p>
+        <p className="text-[14px] font-light text-[#8A8A8A]">Sin SPC/SP perdidos.</p>
       </div>
     )
   }
@@ -23,7 +23,7 @@ export default function LostClientsView({ clients, onOpenClient, onContextClient
         <thead>
           <tr className="border-b border-white/[0.06]">
             {['Organización', 'Etapa al perder', 'Razón', 'Fecha', ''].map((label) => (
-              <th key={label} className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">
+              <th key={label} className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
                 {label}
               </th>
             ))}

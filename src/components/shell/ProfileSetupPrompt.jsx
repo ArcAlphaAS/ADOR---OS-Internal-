@@ -31,7 +31,7 @@ export default function ProfileSetupPrompt({ user, onUpdateDisplayName, onDone }
     >
       <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING}>
         <div className="ador-modal-surface ador-grain w-full max-w-[400px] rounded-[28px] p-8">
-          <span className="font-medium text-[#777777]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Bienvenido a ADOR OS
           </span>
           <h2 className="mt-2 text-[19px] font-semibold leading-snug text-[#F5F5F5]">{first ? `${first}, completa tu perfil` : 'Completa tu perfil'}</h2>

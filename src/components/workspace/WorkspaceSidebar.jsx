@@ -63,7 +63,7 @@ function NavItem({ label, sublabel, active, accentColor, Icon, iconColor, onClic
           {label}
         </span>
       </div>
-      {sublabel && <span className="pl-3.5 text-[11px] text-[#444444]">{sublabel}</span>}
+      {sublabel && <span className="pl-3.5 text-[11px] text-[#8A8A8A]">{sublabel}</span>}
     </button>
   )
 }
@@ -99,7 +99,7 @@ function WorkloadPanel({ workload }) {
   const maxCount = Math.max(...workload.map((r) => r.openCount))
   return (
     <div className="flex flex-col gap-1.5 border-t border-white/[0.06] pt-4">
-      <span className="px-3 pb-1 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      <span className="px-3 pb-1 font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         Carga del equipo
       </span>
       {workload.map((row) => (
@@ -163,7 +163,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, a
   return (
     <div className="hidden h-full w-[200px] flex-shrink-0 flex-col gap-5 border-r border-white/[0.06] px-3 pb-6 pt-[88px] md:flex">
       <div className="flex flex-col gap-2">
-        <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <span className="px-3 font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Mi trabajo
         </span>
         <FilterToggle label="Personal" active={onlyMine} count={myTaskCount} color="#F4EEE2" Icon={UsersIcon} onClick={onToggleOnlyMine} />
@@ -172,7 +172,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, a
       <div className="h-px bg-white/[0.06]" />
 
       <div className="flex flex-col gap-3">
-        <span className="px-3 font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <span className="px-3 font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Equipo
         </span>
 
@@ -180,7 +180,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, a
 
         {intervenciones.length > 0 && (
           <div className="flex flex-col gap-0.5">
-            <span className="px-3 pb-1 text-[11px] text-[#444444]">Intervenciones</span>
+            <span className="px-3 pb-1 text-[11px] text-[#8A8A8A]">Intervenciones</span>
             {intervenciones.map((w) => (
               <NavItem
                 key={w.id}
@@ -195,14 +195,14 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, a
         )}
 
         <div className="flex flex-col gap-0.5">
-          <span className="px-3 pb-1 text-[11px] text-[#444444]">Proyectos Internos</span>
+          <span className="px-3 pb-1 text-[11px] text-[#8A8A8A]">Proyectos Internos</span>
           {proyectos.map((w) => (
             <NavItem key={w.id} label={w.name} accentColor="#B8860B" active={selectedId === w.id} onClick={() => onSelect(w.id)} {...bind(w)} />
           ))}
           <button
             type="button"
             onClick={onNewProyecto}
-            className="mt-1 rounded-xl px-3 py-2 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:text-[#F5F5F5]"
+            className="mt-1 rounded-xl px-3 py-2 text-left text-[13px] text-[#8A8A8A] transition-colors duration-150 hover:text-[#F5F5F5]"
           >
             + Nuevo Proyecto Interno
           </button>
@@ -210,7 +210,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, a
 
         {intervenciones.length === 0 && (
           <div className="mx-3 mt-1 rounded-xl border border-dashed border-white/[0.08] px-2.5 py-2">
-            <p className="text-[11px] leading-relaxed text-[#666666]">
+            <p className="text-[11px] leading-relaxed text-[#8A8A8A]">
               Las Intervenciones aparecen aquí solas cuando un SPC pasa a Intervención Activa en Clientes.
             </p>
           </div>

@@ -123,7 +123,7 @@ function NewSectionRow({ onCreate }) {
           e.stopPropagation()
           setOpen(true)
         }}
-        className="flex items-center gap-1.5 rounded-lg py-1.5 pl-4 pr-2 text-left text-[11.5px] text-[#555555] transition-colors duration-150 hover:text-[#888888]"
+        className="flex items-center gap-1.5 rounded-lg py-1.5 pl-4 pr-2 text-left text-[11.5px] text-[#8A8A8A] transition-colors duration-150 hover:text-[#888888]"
       >
         <PlusIcon size={10} /> Nueva sección
       </button>
@@ -143,7 +143,7 @@ function NewSectionRow({ onCreate }) {
         }}
         onBlur={() => !name.trim() && setOpen(false)}
         placeholder="Nombre..."
-        className="min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#141414] px-2 py-1 text-[11.5px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        className="min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#141414] px-2 py-1 text-[11.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
       />
     </div>
   )
@@ -166,13 +166,13 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
   return (
     <div className="flex w-full flex-shrink-0 flex-col gap-4 lg:w-[240px]">
       <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
-        <SearchIcon size={13} className="text-[#666666]" />
+        <SearchIcon size={13} className="text-[#8A8A8A]" />
         <input
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Buscar..."
-          className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+          className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
         />
       </div>
 
@@ -187,7 +187,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
             <BookIcon size={14} />
             Todos
           </span>
-          <span className="text-[11px] text-[#555555]">{total}</span>
+          <span className="text-[11px] text-[#8A8A8A]">{total}</span>
         </button>
 
         {tree.map((cat) => {
@@ -199,13 +199,13 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                 <button
                   type="button"
                   onClick={() => toggleCollapsed(cat.id)}
-                  className="flex h-7 w-6 flex-shrink-0 items-center justify-center text-[#666666] hover:text-[#F5F5F5]"
+                  className="flex h-7 w-6 flex-shrink-0 items-center justify-center text-[#8A8A8A] hover:text-[#F5F5F5]"
                 >
                   <ChevronDownIcon size={11} style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }} />
                 </button>
                 <button type="button" onClick={() => onSelectCategory(cat.id)} className="flex flex-1 items-center justify-between py-2 pr-2.5 text-left text-[13px] font-medium">
                   <span className="truncate">{cat.label}</span>
-                  <span className="text-[11px] text-[#555555]">{counts[cat.id] || 0}</span>
+                  <span className="text-[11px] text-[#8A8A8A]">{counts[cat.id] || 0}</span>
                 </button>
               </div>
               {!isCollapsed && (
@@ -226,7 +226,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                           <Icon size={12} className="flex-shrink-0" />
                           <span className="truncate">{sub.label}</span>
                         </span>
-                        <span className="flex-shrink-0 text-[10.5px] text-[#555555]">{subCounts[sub.id] || 0}</span>
+                        <span className="flex-shrink-0 text-[10.5px] text-[#8A8A8A]">{subCounts[sub.id] || 0}</span>
                       </button>
                     )
                   })}
@@ -252,7 +252,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 function TypeCards({ tree, counts, onSelect }) {
   return (
     <div>
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Tipos de conocimiento</p>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Tipos de conocimiento</p>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tree.map((cat) => (
           <button
@@ -264,7 +264,7 @@ function TypeCards({ tree, counts, onSelect }) {
             <FolderIllustration id={cat.id} size={68} />
             <span>
               <span className="block text-[13.5px] font-medium text-[#F5F5F5]">{cat.label}</span>
-              <span className="block text-[11px] text-[#666666]">{counts[cat.id] || 0} documentos</span>
+              <span className="block text-[11px] text-[#8A8A8A]">{counts[cat.id] || 0} documentos</span>
             </span>
           </button>
         ))}
@@ -283,7 +283,7 @@ function DocRowMenu({ doc, onEdit, onDelete }) {
           e.stopPropagation()
           setOpen((v) => !v)
         }}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
       >
         <MoreIcon size={14} />
       </button>
@@ -332,7 +332,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
       <div className="ador-glass ador-grain mt-6 flex flex-col items-center gap-2 rounded-2xl px-6 py-14 text-center">
         <BookIcon size={20} className="text-[#333333]" />
         <p className="text-[14px] font-medium text-[#888888]">Nada por aquí todavía</p>
-        <p className="text-[13px] text-[#444444]">
+        <p className="text-[13px] text-[#8A8A8A]">
           {isAdminUser ? 'Usa "+ Nuevo documento" para empezar a construir el conocimiento de ADOR.' : 'Un administrador todavía no ha añadido documentos.'}
         </p>
       </div>
@@ -341,11 +341,11 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
 
   return (
     <div className="mt-8">
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">{title}</p>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{title}</p>
       <div className="ador-glass ador-grain overflow-x-auto rounded-2xl">
         <div className="grid min-w-[640px] grid-cols-[1.6fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-5 py-2.5">
           {['Nombre', 'Categoría', 'Última edición', 'Autor', ''].map((h) => (
-            <span key={h} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <span key={h} className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {h}
             </span>
           ))}
@@ -360,7 +360,7 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
             >
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
-                {docPreview(doc) && <p className="truncate text-[11.5px] text-[#666666]">{docPreview(doc)}</p>}
+                {docPreview(doc) && <p className="truncate text-[11.5px] text-[#8A8A8A]">{docPreview(doc)}</p>}
               </div>
               <span className="truncate text-[12px] text-[#F4EEE2]">
                 {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
@@ -393,9 +393,9 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
 function IntroCard() {
   return (
     <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #000000 100%)' }}>
-      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Internal intelligence</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Internal intelligence</p>
       <p className="mt-3 text-[19px] font-semibold leading-tight text-[#F5F5F5]">El conocimiento convierte la intención en capacidad.</p>
-      <p className="mt-3 text-[12px] text-[#666666]">Estrategia. Marketing. Operaciones. Compañía.</p>
+      <p className="mt-3 text-[12px] text-[#8A8A8A]">Estrategia. Marketing. Operaciones. Compañía.</p>
     </div>
   )
 }
@@ -435,16 +435,16 @@ function HistorialSection({ docId }) {
 
   return (
     <div>
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Historial</p>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Historial</p>
       {events.length === 0 ? (
-        <p className="text-[12.5px] text-[#444444]">Sin actividad registrada todavía.</p>
+        <p className="text-[12.5px] text-[#8A8A8A]">Sin actividad registrada todavía.</p>
       ) : (
         <div className="flex flex-col gap-2.5">
           {events.map((ev) => (
             <div key={ev.id} className="flex items-baseline gap-2.5">
               <span className="h-1 w-1 flex-shrink-0 rounded-full bg-white/[0.2]" />
               <p className="text-[12.5px] text-[#888888]">{ev.description}</p>
-              <span className="ml-auto flex-shrink-0 text-[11px] text-[#444444]">{timeAgo(ev.createdAt)}</span>
+              <span className="ml-auto flex-shrink-0 text-[11px] text-[#8A8A8A]">{timeAgo(ev.createdAt)}</span>
             </div>
           ))}
         </div>
@@ -477,7 +477,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
               <button type="button" onClick={onEdit} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] px-3.5 py-1.5 text-[12px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]">
                 <EditIcon size={12} /> Editar
               </button>
-              <button type="button" onClick={() => onDelete(doc)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#666666] hover:text-[#EF5350]">Eliminar</button>
+              <button type="button" onClick={() => onDelete(doc)} className="rounded-full px-3.5 py-1.5 text-[12px] text-[#8A8A8A] hover:text-[#EF5350]">Eliminar</button>
             </div>
           )}
         </div>
@@ -491,7 +491,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
           <Avatar displayName={editor} size={34} />
           <p className="min-w-0 text-[13.5px] leading-snug text-[#A8A8A8]">
             <span className="font-medium text-[#F5F5F5]">{doc.updatedBy ? 'Editado por' : 'Creado por'} {editor}</span>
-            <span className="block text-[12.5px] text-[#767676]">
+            <span className="block text-[12.5px] text-[#8A8A8A]">
               {timeAgo(doc.updatedAt || doc.createdAt)}
               {doc.updatedBy && doc.createdBy && doc.createdBy !== doc.updatedBy ? ` · creado por ${doc.createdBy}` : ''}
             </span>
@@ -517,7 +517,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
         )}
 
         <div className="ador-wrap mt-7 flex flex-col gap-4 text-[16px] leading-[1.75] md:text-[16.5px]">
-          {renderMarkdown(doc.content) || <p className="text-[14px] text-[#767676]">Este documento no tiene contenido todavía.</p>}
+          {renderMarkdown(doc.content) || <p className="text-[14px] text-[#8A8A8A]">Este documento no tiene contenido todavía.</p>}
         </div>
 
         <div className="mt-12 border-t border-white/[0.07] pt-6">
@@ -552,13 +552,13 @@ function PinnedAndRecent({ pinned, recent, index, onOpen }) {
     <div className="mb-8 flex flex-col gap-6">
       {pinned.length > 0 && (
         <div>
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Fijados</p>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Fijados</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {pinned.map((d) => (
               <button key={d.id} type="button" onClick={() => onOpen(d)} className="ador-glass ador-grain ador-card-hover flex flex-col items-start gap-2 rounded-[20px] p-5 text-left">
                 <span className="flex items-center gap-1.5 text-[11.5px] text-[#F4EEE2]"><PinIcon size={11} /> {subcategoryLabel(index, d.subcategory)}</span>
                 <span className="text-[17px] leading-snug text-[#F5F5F5]" style={SERIF}>{d.title}</span>
-                <span className="flex items-center gap-2 text-[12px] text-[#767676]"><Avatar displayName={d.updatedBy || d.createdBy} size={18} /> {d.updatedBy || d.createdBy} · {timeAgo(d.updatedAt || d.createdAt)}</span>
+                <span className="flex items-center gap-2 text-[12px] text-[#8A8A8A]"><Avatar displayName={d.updatedBy || d.createdBy} size={18} /> {d.updatedBy || d.createdBy} · {timeAgo(d.updatedAt || d.createdAt)}</span>
               </button>
             ))}
           </div>
@@ -566,7 +566,7 @@ function PinnedAndRecent({ pinned, recent, index, onOpen }) {
       )}
       {recent.length > 0 && (
         <div>
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Vistos recientemente</p>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Vistos recientemente</p>
           <div className="flex flex-wrap gap-2">
             {recent.map((d) => (
               <button key={d.id} type="button" onClick={() => onOpen(d)} className="max-w-full truncate rounded-full bg-white/[0.06] px-4 py-2 text-[13px] text-[#D5D5D5] transition-colors hover:bg-white/[0.1]">{d.title}</button>
@@ -780,7 +780,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       <div className="min-w-0 flex-1">
         <div className="mb-8 flex items-start justify-between">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Base de conocimiento</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Base de conocimiento</p>
             <h1 className="ador-title mt-1">Conocimiento</h1>
             <p className="mt-1 text-[13px] text-[#888888]">Documentación, marcos, investigación y reglas. Todo en un mismo lugar.</p>
           </div>

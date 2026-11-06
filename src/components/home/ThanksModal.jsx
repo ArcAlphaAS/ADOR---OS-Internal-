@@ -60,11 +60,11 @@ export default function ThanksModal({ me, onClose, prefill }) {
                 <span className="w-full truncate text-center text-[12.5px] text-[#D5D5D5]">{userLabel(u).split(' ')[0]}</span>
               </button>
             ))}
-            {others.length === 0 && <p className="text-[13px] text-[#767676]">Aparecerán cuando tus socios entren a ADOR OS.</p>}
+            {others.length === 0 && <p className="text-[13px] text-[#8A8A8A]">Aparecerán cuando tus socios entren a ADOR OS.</p>}
           </div>
 
           <p className="mb-2 mt-5 text-[13px] font-medium text-[#8E8E93]">¿Por qué? <span className="font-normal text-[#636366]">— elige una o escribe la tuya</span></p>
-          <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 140))} rows={3} placeholder="Escribe tu agradecimiento…" className="w-full resize-none rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] text-[#F5F5F5] placeholder:text-[#767676] outline-none md:text-[14px]" />
+          <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 140))} rows={3} placeholder="Escribe tu agradecimiento…" className="w-full resize-none rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none md:text-[14px]" />
           <div className="mt-2 flex flex-wrap gap-1.5">
             {[...(prefill?.what ? [`Gracias por cerrar «${prefill.what.slice(0, 40)}»`] : []), ...IDEAS].map((i) => (
               <button key={i} type="button" onClick={() => setText(i)} className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[12.5px] text-[#C9C9C9] active:bg-white/[0.12]">{i}</button>

@@ -43,7 +43,7 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
 
           {mode === 'porCobrar' ? (
             pendingPayments.length === 0 ? (
-              <p className="mt-6 text-[13px] text-[#444444]">Nada pendiente de cobro.</p>
+              <p className="mt-6 text-[13px] text-[#8A8A8A]">Nada pendiente de cobro.</p>
             ) : (
               <div className="mt-5 flex flex-col divide-y divide-white/[0.06]">
                 {pendingPayments.map((p) => (
@@ -62,7 +62,7 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
                     </div>
                     <div className="flex flex-shrink-0 items-center gap-1.5">
                       <span className="text-[13.5px] font-semibold text-[#B8860B]">{currencyPEN.format(p.amount)}</span>
-                      <ArrowRightIcon size={13} className="text-[#444444]" />
+                      <ArrowRightIcon size={13} className="text-[#8A8A8A]" />
                     </div>
                   </button>
                 ))}
@@ -73,15 +73,15 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
               <div className="ador-glass rounded-2xl px-4 py-3.5">
                 <p className="text-[12px] text-[#888888]">Quema promedio mensual</p>
                 <p className="mt-0.5 text-[20px] font-semibold text-[#F5F5F5]">{currencyPEN.format(monthlyBurnRate)}</p>
-                <p className="mt-0.5 text-[11px] text-[#666666]">promedio de los últimos 3 meses completos</p>
+                <p className="mt-0.5 text-[11px] text-[#8A8A8A]">promedio de los últimos 3 meses completos</p>
               </div>
 
               <div>
-                <p className="mb-2 font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <p className="mb-2 font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Gastos recurrentes — este mes
                 </p>
                 {sortedCategories.length === 0 ? (
-                  <p className="text-[12.5px] text-[#444444]">Sin gastos registrados este mes.</p>
+                  <p className="text-[12.5px] text-[#8A8A8A]">Sin gastos registrados este mes.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {sortedCategories.map((c) => (
@@ -95,11 +95,11 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
               </div>
 
               <div>
-                <p className="mb-2 font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <p className="mb-2 font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Próximos compromisos e ingresos
                 </p>
                 {pendingPayments.length === 0 ? (
-                  <p className="text-[12.5px] text-[#444444]">Sin cobros pendientes programados.</p>
+                  <p className="text-[12.5px] text-[#8A8A8A]">Sin cobros pendientes programados.</p>
                 ) : (
                   <div className="flex flex-col divide-y divide-white/[0.06]">
                     {pendingPayments.slice(0, 5).map((p) => (
@@ -114,7 +114,7 @@ export default function FinanceDetailPanel({ mode, pendingPayments, categoryTota
                 )}
               </div>
 
-              <p className="text-[11px] text-[#444444]">Caja actual: {currencyPEN.format(cashBalance)}. Ajustable en la tarjeta de Proyección.</p>
+              <p className="text-[11px] text-[#8A8A8A]">Caja actual: {currencyPEN.format(cashBalance)}. Ajustable en la tarjeta de Proyección.</p>
             </div>
           )}
         </div>

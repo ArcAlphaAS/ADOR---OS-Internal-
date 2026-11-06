@@ -6,10 +6,10 @@ import { useToast } from '../../hooks/useToast'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 
-const labelClass = 'mb-1.5 block font-medium text-[#444444]'
+const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 export default function RegisterDecisionModal({ workstreams, actorName, onClose }) {
   useEscape(onClose)

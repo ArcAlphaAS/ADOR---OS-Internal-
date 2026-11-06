@@ -76,7 +76,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   }
                 }}
                 placeholder={kind === 'group' ? '¿Para qué es este grupo?' : '¿De qué se habla en este canal?'}
-                className="w-full resize-none rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none"
+                className="w-full resize-none rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -181,7 +181,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                     <PersonAvatar uid={uid} name={userLabel(u)} size={22} showPresence />
                     <span className="truncate text-[12.5px] text-[#DDDDDD]">{userLabel(u)}</span>
                     {uid === currentUid ? (
-                      <span className="ml-auto text-[11px] text-[#7A7A7A]">tú</span>
+                      <span className="ml-auto text-[11px] text-[#8A8A8A]">tú</span>
                     ) : (
                       <button
                         type="button"
@@ -201,7 +201,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   {candidates.length ? (
                     <MemberPicker users={candidates} currentUid={null} selected={toAdd} onToggle={(uid) => setToAdd((m) => (m.includes(uid) ? m.filter((x) => x !== uid) : [...m, uid]))} />
                   ) : (
-                    <p className="text-[12.5px] text-[#7A7A7A]">Todos los usuarios de ADOR OS ya están aquí.</p>
+                    <p className="text-[12.5px] text-[#8A8A8A]">Todos los usuarios de ADOR OS ya están aquí.</p>
                   )}
                   <div className="flex justify-end gap-2">
                     <button type="button" onClick={() => setAdding(false)} className="text-[12.5px] text-[#858585] hover:text-[#F5F5F5]">
@@ -235,7 +235,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Nombre del canal"
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
                 />
                 {nameTaken && <p className="text-[11px] text-[#EF5350]">Ya existe #{normalized}.</p>}
                 <VisibilityToggle value={newVisibility} onChange={setNewVisibility} />
@@ -273,7 +273,7 @@ export default function ConversationInfoPanel({ conversation, users, currentUid,
               className="text-[12.5px] transition-colors"
               style={{ color: confirmLeave ? '#EF5350' : '#858585' }}
             >
-              {confirmLeave ? 'Clic otra vez para salir' : kind === 'group' ? 'Salir del grupo' : 'Salir del canal'}
+              {confirmLeave ? 'Pulsa otra vez para confirmar' : kind === 'group' ? 'Salir del grupo' : 'Salir del canal'}
             </button>
           </div>
         )}

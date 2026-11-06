@@ -4,6 +4,7 @@ import { updateClient, registerPayment, markCobroReceived } from '../../../lib/f
 import { PAGO1_PERCENT, PAGO2_PERCENT, currencyPEN, everyMeta, modalityLabel, todayISO } from '../../../lib/clientStages'
 import { CheckCircleIcon } from '../../icons'
 import { useToast } from '../../../hooks/useToast'
+import EmptyState from '../../common/EmptyState'
 
 function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
   const showToast = useToast()
@@ -23,7 +24,7 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
       <div className="mt-4 flex items-center justify-between gap-3">
         <div>
           <label
-            className="mb-1 block font-medium text-[#444444]"
+            className="mb-1 block font-medium text-[#8A8A8A]"
             style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
           >
             Fecha
@@ -53,7 +54,7 @@ function PaymentBlock({ client, actorName, paymentKey, percent, locked }) {
               Marcar recibido
             </button>
           ))}
-        {locked && <span className="text-[12px] text-[#444444]">Bloqueado</span>}
+        {locked && <span className="text-[12px] text-[#8A8A8A]">Bloqueado</span>}
       </div>
     </div>
   )
@@ -79,14 +80,14 @@ function CobrosPanel({ client, actorName }) {
         </p>
       </div>
       {cobros.length === 0 ? (
-        <p className="py-6 text-center text-[13px] text-[#767676]">Todavía no hay cobros: se generan solos cuando llega su fecha.</p>
+        <EmptyState title="Aún no hay cobros" hint="Se generan solos cuando llega la fecha de cada uno." />
       ) : (
         <div className="divide-y divide-white/[0.06] rounded-2xl border border-white/[0.08]">
           {cobros.map((c) => (
             <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
                 <p className="truncate text-[13px] text-[#F5F5F5]">{c.label}</p>
-                <p className="text-[11.5px] text-[#767676]">
+                <p className="text-[11.5px] text-[#8A8A8A]">
                   {c.status === 'Recibido' ? `Recibido el ${fmtDate(c.receivedAt || c.date)}` : `Vence ${fmtDate(c.date)}`}
                 </p>
               </div>
@@ -144,7 +145,7 @@ function FixedPagos({ client, actorName }) {
     <div className="flex flex-col gap-5">
       <div>
         <label
-          className="mb-1.5 block font-medium text-[#444444]"
+          className="mb-1.5 block font-medium text-[#8A8A8A]"
           style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
         >
           Monto acordado (soles)

@@ -64,7 +64,7 @@ export default function PhoneSocial({ uid, onNavigate }) {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5 text-[13px]">
                         <span className="font-semibold text-[#F5F5F5]">{(p.authorName || 'Alguien').split(' ')[0]}</span>
-                        <span className="text-[#767676]">· {TYPE[p.type] || 'Publicación'} · {ago(Date.now() - (p.createdAt?.toMillis?.() || 0))}</span>
+                        <span className="text-[#8A8A8A]">· {TYPE[p.type] || 'Publicación'} · {ago(Date.now() - (p.createdAt?.toMillis?.() || 0))}</span>
                       </span>
                       <span className="mt-0.5 line-clamp-2 block text-[14.5px] leading-snug text-[#D8D8D8]">{p.title || p.text}</span>
                       <span className="mt-1 flex items-center gap-3 text-[12.5px] text-[#8E8E93]">

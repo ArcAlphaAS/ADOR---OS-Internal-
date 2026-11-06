@@ -54,7 +54,7 @@ function NextStepCell({ client }) {
       }}
       className="text-left text-[12px] text-[#888888] hover:text-[#F5F5F5]"
     >
-      {client.nextStep || <span className="text-[#444444]">Añadir siguiente paso</span>}
+      {client.nextStep || <span className="text-[#8A8A8A]">Añadir siguiente paso</span>}
     </button>
   )
 }
@@ -115,7 +115,7 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar SPC/SP..."
-            className="w-48 bg-transparent text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+            className="w-48 bg-transparent text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
           />
         </div>
 
@@ -187,7 +187,7 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
                 <th
                   key={key}
                   onClick={() => ['name', 'stage', 'revenue', 'contact'].includes(key) && toggleSort(key)}
-                  className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]"
+                  className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]"
                   style={{ cursor: ['name', 'stage', 'revenue', 'contact'].includes(key) ? 'pointer' : 'default' }}
                 >
                   {label}
@@ -200,7 +200,7 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-5 py-10 text-center text-[13px] font-light text-[#444444]">
+                <td colSpan={10} className="px-5 py-10 text-center text-[13px] font-light text-[#8A8A8A]">
                   Sin SPC/SP que coincidan con los filtros
                 </td>
               </tr>
@@ -221,7 +221,7 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
                     className="group cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.03]"
                   >
                     <td className="px-5 py-3">
-                      <span className="font-mono text-[11px] tracking-[0.03em] text-[#666666]">
+                      <span className="font-mono text-[11px] tracking-[0.03em] text-[#8A8A8A]">
                         {client.code || '—'}
                       </span>
                     </td>

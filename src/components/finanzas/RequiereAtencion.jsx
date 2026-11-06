@@ -18,7 +18,7 @@ function AlertRow({ color, title, sub, onClick }) {
         <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{title}</p>
         <p className="truncate text-[11.5px] text-[#888888]">{sub}</p>
       </div>
-      {onClick && <ChevronRightIcon size={14} className="flex-shrink-0 text-[#767676]" />}
+      {onClick && <ChevronRightIcon size={14} className="flex-shrink-0 text-[#8A8A8A]" />}
     </button>
   )
 }

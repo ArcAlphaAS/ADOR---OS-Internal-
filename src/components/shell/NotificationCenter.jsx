@@ -47,7 +47,7 @@ function Row({ item, archivedView, onArchive, onRestore, onItemClick }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="line-clamp-3 text-[13.5px] leading-snug text-[#E4E4E4]"><PreviewText text={item.text} /></span>
-            <span className="mt-0.5 block text-[12px] text-[#767676]">{K.label}{item.time ? ` · ${item.time}` : ''}</span>
+            <span className="mt-0.5 block text-[12px] text-[#8A8A8A]">{K.label}{item.time ? ` · ${item.time}` : ''}</span>
           </span>
         </button>
         {!touch && (
@@ -101,9 +101,9 @@ function Panel({ items, archivedItems, onArchive, onRestore, onItemClick }) {
 
       {shown.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06]"><BellIcon size={18} className="text-[#767676]" /></span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.06]"><BellIcon size={18} className="text-[#8A8A8A]" /></span>
           <p className="text-[14px] font-medium text-[#C9C9C9]">{view === 'inbox' ? 'Todo al día' : 'Nada archivado'}</p>
-          <p className="text-[12.5px] text-[#767676]">{view === 'inbox' ? 'Cuando pase algo que te toque, lo verás aquí.' : 'Lo que archives queda aquí, por si lo necesitas.'}</p>
+          <p className="text-[12.5px] text-[#8A8A8A]">{view === 'inbox' ? 'Cuando pase algo que te toque, lo verás aquí.' : 'Lo que archives queda aquí, por si lo necesitas.'}</p>
         </div>
       ) : (
         <ul className="mt-1 max-h-[440px] overflow-y-auto border-t border-white/[0.06] max-md:max-h-[60dvh]">

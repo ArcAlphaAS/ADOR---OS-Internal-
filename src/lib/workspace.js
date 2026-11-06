@@ -12,7 +12,7 @@ import { beginWrite, endWrite } from './liveStatus'
 // Tasks reference whichever id via `workstreamId`.
 
 export const STATUSES = [
-  { id: 'por_hacer', label: 'Por Hacer', color: '#444444' },
+  { id: 'por_hacer', label: 'Por Hacer', color: '#8A8A8A' },
   { id: 'en_progreso', label: 'En Progreso', color: '#1E5FAD' },
   { id: 'completado', label: 'Completado', color: '#4CAF50' },
   { id: 'bloqueado', label: 'Bloqueado', color: '#EF5350' },

@@ -90,7 +90,7 @@ export default function ClientContextMenu({ client, x, y, canDelete, actorName, 
         <div className="ador-glass ador-grain rounded-xl p-1.5">
           <div className="px-2.5 pb-1 pt-1.5">
             <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
-            <p className="text-[11px] text-[#767676]">
+            <p className="text-[11px] text-[#8A8A8A]">
               {client.code ? `${client.code} · ` : ''}
               {clientType(client.stage)}
             </p>

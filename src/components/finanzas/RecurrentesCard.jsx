@@ -34,7 +34,7 @@ export default function RecurrentesCard({ templates }) {
             <span className="text-[13px]" style={{ color: t.kind === 'gasto' ? '#EF8A88' : '#8FD19A' }}>{t.kind === 'gasto' ? '−' : '+'}</span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] text-[#F0F0F0]">{t.description}</p>
-              <p className="text-[11px] text-[#777777]">
+              <p className="text-[11px] text-[#8A8A8A]">
                 {currencyPEN.format(t.amount)} · {frequencyLabel(t.frequency).toLowerCase()} · {t.active ? `próximo ${t.nextDate ? shortDate(t.nextDate) : '—'}` : 'en pausa'}
               </p>
             </div>
@@ -48,7 +48,7 @@ export default function RecurrentesCard({ templates }) {
               className="text-[11.5px]"
               style={{ color: confirmDelete === t.id ? '#EF5350' : '#777777' }}
             >
-              {confirmDelete === t.id ? '¿Seguro?' : 'Borrar'}
+              {confirmDelete === t.id ? 'Pulsa otra vez' : 'Borrar'}
             </button>
           </div>
         ))}

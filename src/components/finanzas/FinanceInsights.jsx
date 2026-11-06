@@ -1,5 +1,6 @@
 import { currencyPEN, contractStatus, clientType } from '../../lib/clientStages'
 import CardHeader, { CARD_PAD, CARD_RADIUS } from '../home/CardHeader'
+import EmptyState from '../common/EmptyState'
 
 const card = `ador-glass ador-grain ${CARD_RADIUS} ${CARD_PAD}`
 const money = (n) => currencyPEN.format(Math.round(n))
@@ -26,7 +27,7 @@ export function IngresoRecurrenteCard({ clients, onNavigate }) {
       <CardHeader label="Ingreso recurrente" count={recurring.length || null} />
       {recurring.length === 0 ? (
         <div className="mt-4">
-          <p className="text-[13.5px] text-[#7A7A7A]">Todavía no hay contratos ni suscripciones activos.</p>
+          <EmptyState compact title="Sin ingreso recurrente" hint="Aparecerá cuando un cliente tenga un contrato o una suscripción activa." />
           <button type="button" onClick={() => onNavigate?.('clientes')} className="mt-2 text-[13px] font-medium text-[#F4EEE2] transition-opacity hover:opacity-80">
             Configurar un servicio en Clientes →
           </button>
@@ -35,11 +36,11 @@ export function IngresoRecurrenteCard({ clients, onNavigate }) {
         <>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
-              <p className="text-[11px] text-[#767676]">Por mes (MRR)</p>
+              <p className="text-[11px] text-[#8A8A8A]">Por mes (MRR)</p>
               <p className="mt-1 text-[20px] font-semibold tabular-nums tracking-tight text-[#F5F5F5]">{money(mrr)}</p>
             </div>
             <div className="rounded-2xl bg-white/[0.04] px-4 py-3.5">
-              <p className="text-[11px] text-[#767676]">Por año (ARR)</p>
+              <p className="text-[11px] text-[#8A8A8A]">Por año (ARR)</p>
               <p className="mt-1 text-[20px] font-semibold tabular-nums tracking-tight text-[#F5F5F5]">{money(mrr * 12)}</p>
             </div>
           </div>
@@ -47,7 +48,7 @@ export function IngresoRecurrenteCard({ clients, onNavigate }) {
             {recurring.slice(0, 4).map((r) => (
               <li key={r.client.id} className="flex items-center gap-3 py-2.5">
                 <span className="min-w-0 flex-1 truncate text-[13.5px] text-[#E8E8E8]">{r.client.name}</span>
-                <span className="flex-shrink-0 text-[11.5px] text-[#767676]">{r.client.billing.modality === 'contrato' ? 'Contrato' : 'Suscripción'}</span>
+                <span className="flex-shrink-0 text-[11.5px] text-[#8A8A8A]">{r.client.billing.modality === 'contrato' ? 'Contrato' : 'Suscripción'}</span>
                 <span className="w-24 flex-shrink-0 text-right text-[13px] tabular-nums text-[#F5F5F5]">{money(r.monthly)}/mes</span>
               </li>
             ))}
@@ -91,7 +92,7 @@ export function AntiguedadCobrosCard({ pendingPayments, onOpen }) {
     <div className={card}>
       <CardHeader label="Cuentas por cobrar · antigüedad" action={total > 0 ? <button type="button" onClick={onOpen}>Detalle</button> : null} />
       {total === 0 ? (
-        <p className="mt-4 text-[13.5px] text-[#7A7A7A]">No hay nada pendiente de cobro.</p>
+        <EmptyState compact title="Nada pendiente de cobro" hint="Todo lo facturado está al día." />
       ) : (
         <>
           <p className="mt-4 text-[26px] font-semibold tabular-nums tracking-tight text-[#F5F5F5]">{money(total)}</p>
@@ -109,7 +110,7 @@ export function AntiguedadCobrosCard({ pendingPayments, onOpen }) {
                 <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: b.color }} />
                 <span className="min-w-0 flex-1 text-[12.5px] text-[#E8E8E8]">{b.label}</span>
                 <span className="text-[12px] tabular-nums text-[#B5B5B5]">{money(b.amount)}</span>
-                <span className="w-6 text-right text-[11px] tabular-nums text-[#767676]">{b.count || ''}</span>
+                <span className="w-6 text-right text-[11px] tabular-nums text-[#8A8A8A]">{b.count || ''}</span>
               </li>
             ))}
           </ul>
@@ -138,7 +139,7 @@ export function IngresosPorClienteCard({ movements }) {
     <div className={card}>
       <CardHeader label={`Ingresos por cliente · ${year}`} />
       {rows.length === 0 ? (
-        <p className="mt-4 text-[13.5px] text-[#7A7A7A]">Cuando registres ingresos, verás de quién viene cada sol.</p>
+        <p className="mt-4 text-[13.5px] text-[#8A8A8A]">Cuando registres ingresos, verás de quién viene cada sol.</p>
       ) : (
         <>
           <ul className="mt-4 space-y-3.5">
@@ -147,7 +148,7 @@ export function IngresosPorClienteCard({ movements }) {
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-[13px] text-[#E8E8E8]">{name}</span>
                   <span className="flex-shrink-0 text-[12.5px] tabular-nums text-[#B5B5B5]">
-                    {money(amount)} <span className="text-[#767676]">· {Math.round((amount / total) * 100)}%</span>
+                    {money(amount)} <span className="text-[#8A8A8A]">· {Math.round((amount / total) * 100)}%</span>
                   </span>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
@@ -209,7 +210,7 @@ export function PanoramaDireccionCard({ clients, monthlyBurnRate, quarterlyTarge
           <span className="text-[15px] font-semibold tabular-nums" style={{ color: coverageColor }}>{coverage === null ? '—' : `${Math.round(coverage)}%`}</span>
         </div>
         <Gauge pct={coverage || 0} color={coverageColor} />
-        <p className="mt-1.5 text-[11.5px] text-[#767676]">
+        <p className="mt-1.5 text-[11.5px] text-[#8A8A8A]">
           {coverage === null ? 'Aparece cuando haya gasto registrado en los últimos meses.' : coverage >= 100 ? 'El recurrente ya paga la operación completa.' : `Faltan ${money(Math.max(0, monthlyBurnRate - mrr))} al mes de ingreso recurrente para cubrir todo el gasto.`}
         </p>
       </div>
@@ -221,12 +222,12 @@ export function PanoramaDireccionCard({ clients, monthlyBurnRate, quarterlyTarge
         </div>
         <Gauge pct={goalPct} color="#F4EEE2" />
         {quarterlyTarget ? (
-          <p className="mt-1.5 text-[11.5px] text-[#767676]">
+          <p className="mt-1.5 text-[11.5px] text-[#8A8A8A]">
             {money(recaudadoTrimestre)} cobrado + {money(totalPorCobrar)} por cobrar.{' '}
             {gap > 0 ? `Faltan ${money(gap)} por cerrar${pipeline > 0 ? `; en el pipeline hay ${money(pipeline)}.` : '.'}` : 'La meta ya está cubierta.'}
           </p>
         ) : (
-          <p className="mt-1.5 text-[11.5px] text-[#767676]">Define la meta del trimestre en "Metas" para ver cuánto falta cerrar.</p>
+          <p className="mt-1.5 text-[11.5px] text-[#8A8A8A]">Define la meta del trimestre en "Metas" para ver cuánto falta cerrar.</p>
         )}
       </div>
 
@@ -238,7 +239,7 @@ export function PanoramaDireccionCard({ clients, monthlyBurnRate, quarterlyTarge
             {money(Math.abs(inflowIn90))}
           </span>
         </div>
-        <p className="mt-1.5 text-[11.5px] text-[#767676]">Lo que entra por cobros con fecha menos el gasto promedio de 3 meses.</p>
+        <p className="mt-1.5 text-[11.5px] text-[#8A8A8A]">Lo que entra por cobros con fecha menos el gasto promedio de 3 meses.</p>
       </div>
     </div>
   )

@@ -18,7 +18,7 @@ export default function ProximosCobrosCard({ pendingPayments, onOpen }) {
     <div className={`ador-glass ador-grain ${CARD_RADIUS} ${CARD_PAD}`}>
       <CardHeader label="Próximos cobros" count={pendingPayments.length || null} action={pendingPayments.length > 0 ? <button type="button" onClick={onOpen}>Ver todos</button> : null} />
       {shown.length === 0 ? (
-        <p className="mt-4 text-[13.5px] text-[#7A7A7A]">Nada pendiente de cobro. Todo al día.</p>
+        <p className="mt-4 text-[13.5px] text-[#8A8A8A]">Nada pendiente de cobro. Todo al día.</p>
       ) : (
         <ul className="mt-3 divide-y divide-white/[0.06]">
           {shown.map((p, i) => {
@@ -29,7 +29,7 @@ export default function ProximosCobrosCard({ pendingPayments, onOpen }) {
                   <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#2C2C2E] text-[13px] font-medium text-[#D9CFBF]">{(p.clientName || '?').charAt(0).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] text-[#F0F0F0]">{p.clientName}</span>
-                    <span className="block truncate text-[12px] text-[#767676]">{p.label}</span>
+                    <span className="block truncate text-[12px] text-[#8A8A8A]">{p.label}</span>
                   </span>
                   <span className="flex-shrink-0 text-right">
                     <span className="block text-[14px] font-medium tabular-nums text-[#F5F5F5]">{currencyPEN.format(p.amount)}</span>

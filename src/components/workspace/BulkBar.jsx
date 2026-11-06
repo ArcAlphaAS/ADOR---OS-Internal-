@@ -112,7 +112,7 @@ export default function BulkBar({ tasks, users, workstreams, actorUserId, actorN
           onBlur={() => setConfirmDelete(false)}
           className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-[#EF5350] transition-colors hover:bg-[#EF5350]/10 disabled:opacity-50"
         >
-          {confirmDelete ? '¿Seguro? Clic otra vez' : 'Eliminar'}
+          {confirmDelete ? 'Pulsa otra vez para confirmar' : 'Eliminar'}
         </button>
         <span className="mx-1 h-5 w-px bg-white/[0.1]" />
         <button type="button" onClick={onClear} className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">Cancelar</button>

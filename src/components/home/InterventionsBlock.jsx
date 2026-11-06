@@ -21,7 +21,7 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
             className="h-full rounded-full bg-[#F4EEE2]"
           />
         </div>
-        <p className="mt-1.5 text-[11.5px] text-[#767676]">Semana {week} de {totalWeeks}</p>
+        <p className="mt-1.5 text-[11.5px] text-[#8A8A8A]">Semana {week} de {totalWeeks}</p>
       </div>
     </div>
   )
@@ -36,7 +36,7 @@ export default function InterventionsBlock({ interventions = [] }) {
         <div className="flex flex-col items-center gap-1.5 py-6">
           <ParticleLogo size={96} />
           <p className="mt-2 text-[14px] text-[#D4D4D4]">Aún no hay intervenciones activas</p>
-          <p className="text-[12.5px] text-[#767676]">Aparecen aquí cuando un SPC pasa a Intervención.</p>
+          <p className="text-[12.5px] text-[#8A8A8A]">Aparecen aquí cuando un SPC pasa a Intervención.</p>
         </div>
       ) : (
         <div className="ador-stagger mt-3 divide-y divide-white/[0.06]">

@@ -37,7 +37,7 @@ function Trigger({ label, active, badge, children, width = 260 }) {
   )
 }
 
-const sectionLabel = 'px-1 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-[#666666]'
+const sectionLabel = 'px-1 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]'
 
 function Chip({ active, color = '#E8C15A', onClick, children }) {
   return (
@@ -82,7 +82,7 @@ export default function ViewToolbar({
         value={filters.q}
         onChange={(e) => onFilters({ ...filters, q: e.target.value })}
         placeholder="Buscar tarea…"
-        className="w-[170px] rounded-lg border border-white/[0.1] bg-transparent px-3 py-1.5 text-[12px] text-[#F5F5F5] outline-none placeholder:text-[#666666] focus:border-white/[0.25]"
+        className="w-[170px] rounded-lg border border-white/[0.1] bg-transparent px-3 py-1.5 text-[12px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A] focus:border-white/[0.25]"
       />
 
       <Trigger label="Filtrar" active={count - (filters.q ? 1 : 0) > 0} badge={count - (filters.q ? 1 : 0) || null}>
@@ -149,7 +149,7 @@ export default function ViewToolbar({
                   {sort.by === s.id && s.id !== 'manual' && <span className="text-[11px]">{sort.dir === 'asc' ? '↑ ascendente' : '↓ descendente'}</span>}
                 </button>
               ))}
-              <p className="px-2.5 pb-1 pt-2 text-[10.5px] leading-snug text-[#666666]">Toca otra vez para invertir el orden. Las tareas sin fecha quedan al final.</p>
+              <p className="px-2.5 pb-1 pt-2 text-[10.5px] leading-snug text-[#8A8A8A]">Toca otra vez para invertir el orden. Las tareas sin fecha quedan al final.</p>
             </div>
           )}
         </Trigger>
@@ -181,7 +181,7 @@ export default function ViewToolbar({
       <Trigger label={savedViews.length ? `Vistas · ${savedViews.length}` : 'Vistas'} width={250}>
         {(close) => (
           <div className="flex flex-col p-1">
-            {savedViews.length === 0 && <p className="px-2 py-2 text-[12px] leading-snug text-[#777777]">Aún no guardas ninguna. Arma filtros, orden y agrupación y guárdalos con un nombre para volver a ellos con un clic.</p>}
+            {savedViews.length === 0 && <p className="px-2 py-2 text-[12px] leading-snug text-[#8A8A8A]">Aún no guardas ninguna. Arma filtros, orden y agrupación y guárdalos con un nombre para volver a ellos con un clic.</p>}
             {savedViews.map((v) => (
               <div key={v.id} className="group/v flex items-center rounded-lg hover:bg-white/[0.06]">
                 <button
@@ -194,7 +194,7 @@ export default function ViewToolbar({
                 >
                   {v.name}
                 </button>
-                <button type="button" title="Borrar vista" onClick={() => onDeleteView(v.id)} className="mr-1.5 flex-shrink-0 text-[#666666] opacity-0 transition-opacity hover:text-[#EF5350] group-hover/v:opacity-100">
+                <button type="button" title="Borrar vista" onClick={() => onDeleteView(v.id)} className="mr-1.5 flex-shrink-0 text-[#8A8A8A] opacity-0 transition-opacity hover:text-[#EF5350] group-hover/v:opacity-100">
                   <CloseIcon size={11} />
                 </button>
               </div>
@@ -212,7 +212,7 @@ export default function ViewToolbar({
                 }}
                 placeholder={dirty ? 'Guardar la vista actual como… (Enter)' : 'Primero aplica filtros u orden'}
                 disabled={!dirty}
-                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] outline-none placeholder:text-[#666666] disabled:opacity-50"
+                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A] disabled:opacity-50"
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function ViewToolbar({
           Limpiar
         </button>
       )}
-      {resultCount !== undefined && dirty && <span className="ml-auto text-[11.5px] text-[#777777]">{resultCount} {resultCount === 1 ? 'tarea' : 'tareas'}</span>}
+      {resultCount !== undefined && dirty && <span className="ml-auto text-[11.5px] text-[#8A8A8A]">{resultCount} {resultCount === 1 ? 'tarea' : 'tareas'}</span>}
     </div>
   )
 }

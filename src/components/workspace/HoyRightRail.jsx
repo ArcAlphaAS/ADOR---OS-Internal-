@@ -55,7 +55,7 @@ export function MiniCalendar() {
           const isToday = d.toDateString() === today.toDateString()
           return (
             <div key={i} className="flex flex-col items-center gap-1.5">
-              <span className="text-[10px] font-medium text-[#444444]">{WEEKDAYS[i]}</span>
+              <span className="text-[10px] font-medium text-[#8A8A8A]">{WEEKDAYS[i]}</span>
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[12px]"
                 style={{
@@ -105,7 +105,7 @@ export function ProgressDonut({ completed, total }) {
         <p className="text-[13px] font-semibold text-[#F5F5F5]">Progreso del día</p>
         <p className="mt-1.5 text-[20px] font-semibold text-[#F5F5F5]">
           {completed}
-          <span className="text-[13px] font-normal text-[#444444]">/{total}</span>
+          <span className="text-[13px] font-normal text-[#8A8A8A]">/{total}</span>
         </p>
         <p className="text-[11px] text-[#888888]">completadas</p>
       </div>
@@ -187,7 +187,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
               setDraft(currentTitle)
               setEditing(true)
             }}
-            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]"
           >
             <EditIcon size={12} />
           </button>
@@ -203,7 +203,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
             placeholder="¿Cuál es tu enfoque esta semana?"
-            className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30"
+            className="w-full rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/30"
           />
           <div className="flex justify-end gap-3">
             <button type="button" onClick={() => setEditing(false)} className="text-[11px] text-[#888888] hover:text-[#F5F5F5]">
@@ -218,7 +218,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
         <>
           <p className="text-[13px] leading-relaxed text-[#F5F5F5]">{currentTitle}</p>
           {pct === null ? (
-            <p className="mt-2 text-[11px] text-[#666666]">Sin tareas con fecha esta semana todavía.</p>
+            <p className="mt-2 text-[11px] text-[#8A8A8A]">Sin tareas con fecha esta semana todavía.</p>
           ) : (
             <>
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
@@ -232,7 +232,7 @@ export function ObjetivoSemanaCard({ userId, tasks = [] }) {
         </>
       ) : (
         <div className="flex flex-col items-start gap-2">
-          <p className="text-[12px] leading-relaxed text-[#666666]">Define tu enfoque personal de esta semana.</p>
+          <p className="text-[12px] leading-relaxed text-[#8A8A8A]">Define tu enfoque personal de esta semana.</p>
           <button
             type="button"
             onClick={() => {
@@ -270,7 +270,7 @@ function QuickAction({ Icon, label, onClick }) {
 export function QuickActionsCard({ onNewTask, onNewNote, onNavigate }) {
   return (
     <div className="ador-glass ador-grain rounded-2xl p-3">
-      <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#444444]">Quick Actions</span>
+      <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Quick Actions</span>
       <div className="flex flex-col gap-0.5 pt-1">
         <QuickAction Icon={PlusIcon} label="Nueva tarea" onClick={onNewTask} />
         <QuickAction Icon={NoteIcon} label="Nueva nota" onClick={onNewNote} />

@@ -178,7 +178,7 @@ export default function NewServiceModal({ client, services, actorName, mode = 'r
                         <input value={o.label || ''} onChange={(e) => setOption(o.id, { label: e.target.value })} placeholder={`Opción ${i + 1}`} className="rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-3 py-2 text-[13px] text-[#F5F5F5] outline-none focus:border-[#F5F5F5]/60" />
                         <input type="number" min="1" value={o.months ?? 12} onChange={(e) => setOption(o.id, { months: e.target.value })} aria-label="Meses" title="Meses que añade" className="rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-2.5 py-2 text-[13px] text-[#F5F5F5] outline-none focus:border-[#F5F5F5]/60" />
                         <input type="number" min="0" value={o.amount ?? ''} onChange={(e) => setOption(o.id, { amount: e.target.value })} placeholder="Monto" aria-label="Monto por cobro" className="rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-2.5 py-2 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#4A4A4A] focus:border-[#F5F5F5]/60" />
-                        <button type="button" onClick={() => setOptions((list) => list.filter((x) => x.id !== o.id))} className="px-1 text-[12px] text-[#767676] hover:text-[#EF5350]">Quitar</button>
+                        <button type="button" onClick={() => setOptions((list) => list.filter((x) => x.id !== o.id))} className="px-1 text-[12px] text-[#8A8A8A] hover:text-[#EF5350]">Quitar</button>
                       </div>
                     ))}
                   </div>

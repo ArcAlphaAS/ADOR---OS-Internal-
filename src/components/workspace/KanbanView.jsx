@@ -41,7 +41,7 @@ function TaskCard({ task, workstream, workstreams = [], userById, onOpen, resolv
       className="ador-glass ador-grain relative cursor-pointer rounded-xl border-l-[3px] p-3.5"
       style={{ borderLeftColor: accent }}
     >
-      <span className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         {workstream?.name || 'Sin grupo'}
       </span>
       <div className="mt-1 text-[14px] font-medium text-[#F5F5F5]">{task.title}</div>
@@ -53,8 +53,8 @@ function TaskCard({ task, workstream, workstreams = [], userById, onOpen, resolv
           >
             {priority.label}
           </span>
-          {dueLabel && <span className="text-[11px] text-[#666666]">{dueLabel}</span>}
-          {subs.length > 0 && <span className="text-[11px] text-[#777777]" title="Subtareas completadas">☑ {subs.filter((s) => s.done).length}/{subs.length}</span>}
+          {dueLabel && <span className="text-[11px] text-[#8A8A8A]">{dueLabel}</span>}
+          {subs.length > 0 && <span className="text-[11px] text-[#8A8A8A]" title="Subtareas completadas">☑ {subs.filter((s) => s.done).length}/{subs.length}</span>}
           {task.commentCount > 0 && <span className="text-[11px] text-[#E8C15A]" title="Actualizaciones">💬 {task.commentCount}</span>}
         </div>
         <AvatarStack userIds={task.assignedTo || []} userById={userById} pendingIds={task.pendingConfirmations || []} size={20} />
@@ -92,12 +92,12 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
         <span className="text-[13px] font-medium" style={{ color: status.color }}>
           {status.label}
         </span>
-        <span className="text-[11px] text-[#444444]">{tasks.length}</span>
+        <span className="text-[11px] text-[#8A8A8A]">{tasks.length}</span>
       </div>
       <div className="flex flex-col gap-3">
         {tasks.length === 0 ? (
           <div className="flex items-center justify-center rounded-xl border border-dashed border-white/[0.06] py-8">
-            <span className="text-[12px] text-[#444444]">Sin tareas</span>
+            <span className="text-[12px] text-[#8A8A8A]">Sin tareas</span>
           </div>
         ) : (
           tasks.map((task) => (

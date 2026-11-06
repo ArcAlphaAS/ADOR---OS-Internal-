@@ -33,15 +33,15 @@ export default function DecisionesCard({ actorName }) {
     <div className="ador-glass ador-grain rounded-2xl px-5 py-5">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <span className="font-medium text-[#444444]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Decisiones de Dirección
           </span>
-          <p className="mt-1 text-[11px] text-[#444444]">Registro compartido — visible para todo el equipo.</p>
+          <p className="mt-1 text-[11px] text-[#8A8A8A]">Registro compartido — visible para todo el equipo.</p>
         </div>
       </div>
 
       {latest.length === 0 ? (
-        <p className="mt-4 text-[13px] font-light text-[#444444]">Sin decisiones registradas</p>
+        <p className="mt-4 text-[13px] font-light text-[#8A8A8A]">Sin decisiones registradas</p>
       ) : (
         <div className="mt-3 flex flex-col divide-y divide-white/[0.06]">
           {latest.map((d) => (
@@ -49,8 +49,8 @@ export default function DecisionesCard({ actorName }) {
               <p className="line-clamp-2 text-[13px] text-[#F5F5F5]">{d.title}</p>
               {d.linkedName && <span className="text-[11px] text-[#F4EEE2]">{d.linkedName}</span>}
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#444444]">{formatDate(d.decidedAt)}</span>
-                <span className="text-[11px] text-[#444444]">{d.registeredBy}</span>
+                <span className="text-[11px] text-[#8A8A8A]">{formatDate(d.decidedAt)}</span>
+                <span className="text-[11px] text-[#8A8A8A]">{d.registeredBy}</span>
               </div>
             </div>
           ))}

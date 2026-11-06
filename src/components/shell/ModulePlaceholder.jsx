@@ -11,7 +11,7 @@ export default function ModulePlaceholder({ name }) {
       className="mx-auto flex h-full w-full max-w-[1680px] flex-col items-center justify-center px-4 lg:px-12"
     >
       <span className="text-[24px] font-semibold text-[#F5F5F5]">{name}</span>
-      <span className="mt-2 text-[14px] font-light text-[#444444]">En construcción</span>
+      <span className="mt-2 text-[14px] font-light text-[#8A8A8A]">En construcción</span>
     </motion.div>
   )
 }

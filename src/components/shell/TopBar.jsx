@@ -147,7 +147,7 @@ function SearchToggle({ onNavigate, uid, canSee }) {
                 choose(flat[Math.min(activeIndex, flat.length - 1)])
               }
             }}
-            className="ador-glass mr-2 rounded-full px-4 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+            className="ador-glass mr-2 rounded-full px-4 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
           />
         )}
       </AnimatePresence>

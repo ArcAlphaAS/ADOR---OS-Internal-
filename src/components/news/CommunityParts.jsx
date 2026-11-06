@@ -4,6 +4,7 @@ import PersonAvatar from '../chat/PersonAvatar'
 import { mentionQueryAt } from '../../lib/chat'
 import { SERIF } from './NewsLayout'
 import { CalendarIcon, FileIcon } from '../icons'
+import { notifyFail } from '../../lib/notifyFail'
 
 // What each Comunidad post type adds on top of text + photos, borrowed from
 // the social networks that do it best:
@@ -209,7 +210,7 @@ export function EventBlock({ post, uid, name }) {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setCommunityRsvp(post.id, uid, r.id, name, post).catch(() => {})}
+                onClick={() => setCommunityRsvp(post.id, uid, r.id, name, post).catch(notifyFail)}
                 className="rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors"
                 style={{ background: mine === r.id ? '#E8C15A' : 'transparent', color: mine === r.id ? '#1C1A16' : '#BBBBBB' }}
               >
@@ -283,7 +284,7 @@ export function IdeaBar({ post, uid, isAdminUser }) {
     <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
-        onClick={() => toggleCommunityVote(post.id, uid, !voted).catch(() => {})}
+        onClick={() => toggleCommunityVote(post.id, uid, !voted).catch(notifyFail)}
         className="flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors"
         style={{ borderColor: voted ? '#E8C15A' : 'rgba(255,255,255,0.14)', color: voted ? '#E8C15A' : '#DDDDDD', background: voted ? 'rgba(232,193,90,0.1)' : 'transparent' }}
       >
@@ -292,7 +293,7 @@ export function IdeaBar({ post, uid, isAdminUser }) {
       {isAdminUser ? (
         <select
           value={post.ideaStatus || 'nueva'}
-          onChange={(e) => updateCommunityPost(post.id, { ideaStatus: e.target.value }).catch(() => {})}
+          onChange={(e) => updateCommunityPost(post.id, { ideaStatus: e.target.value }).catch(notifyFail)}
           className="rounded-full border border-white/[0.1] bg-[#141414] px-3 py-1.5 text-[12.5px] outline-none"
           style={{ color: status.color }}
         >

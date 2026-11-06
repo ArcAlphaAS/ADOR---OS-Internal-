@@ -276,7 +276,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
               .map((tick) => (
                 <span
                   key={tick.getTime()}
-                  className="absolute whitespace-nowrap text-[11px] text-[#444444]"
+                  className="absolute whitespace-nowrap text-[11px] text-[#8A8A8A]"
                   style={{ left: dateToX(tick), transform: 'translateX(-50%)' }}
                 >
                   {config.format(tick)}
@@ -322,7 +322,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
           {!hasDatedTasks && (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="ador-skeleton h-[2px] w-1/3 rounded-full" />
-              <p className="text-[14px] font-light text-[#444444]">
+              <p className="text-[14px] font-light text-[#8A8A8A]">
                 Sin tareas con fecha límite todavía — ponle fecha a una tarea desde su panel de detalle para que aparezca aquí.
               </p>
             </div>
@@ -452,7 +452,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                                 <span style={{ color: priority.color }}>· Prioridad {priority.label}</span>
                               </div>
                               <div className="text-[11px] text-[#888888]">{isMilestone ? `Fecha ${shortDate(due)}` : `${shortDate(start)} → ${shortDate(due)}`}</div>
-                              {canDrag && !dragging && <div className="text-[10.5px] text-[#555555]">Arrastra para mover · estira los bordes para cambiar la duración</div>}
+                              {canDrag && !dragging && <div className="text-[10.5px] text-[#8A8A8A]">Arrastra para mover · estira los bordes para cambiar la duración</div>}
                             </div>
                           )}
                         </div>

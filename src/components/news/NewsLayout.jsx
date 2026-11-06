@@ -121,7 +121,7 @@ export function LatestList({ posts, onOpen }) {
       </p>
       <div className="mt-3 flex flex-1 flex-col divide-y divide-white/[0.06]">
         {posts.length === 0 ? (
-          <p className="px-1 py-6 text-[13px] text-[#7A7A7A]">Los siguientes anuncios aparecerán aquí.</p>
+          <p className="px-1 py-6 text-[13px] text-[#8A8A8A]">Los siguientes anuncios aparecerán aquí.</p>
         ) : (
           posts.map((post) => (
             <button key={post.id} type="button" onClick={() => onOpen(post.id)} className="group flex items-center gap-3.5 py-3 text-left">
@@ -129,7 +129,7 @@ export function LatestList({ posts, onOpen }) {
                 <Cover post={post} zoom />
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[10.5px] font-medium tracking-[0.06em] text-[#7A7A7A]">{formatNewsDate(post.createdAt, true)}</span>
+                <span className="text-[10.5px] font-medium tracking-[0.06em] text-[#8A8A8A]">{formatNewsDate(post.createdAt, true)}</span>
                 <span className="line-clamp-2 text-[14px] font-medium leading-snug text-[#EDEDED]">{post.title}</span>
                 {post.category && (
                   <span>
@@ -193,7 +193,7 @@ export function EditorialRow({ posts, onOpen }) {
               </span>
               {post.subtitle && <span className="line-clamp-2 text-[13px] leading-relaxed text-[#9A9A9A]">{post.subtitle}</span>}
               <span className="mt-auto flex items-end justify-between gap-3 pt-2">
-                <span className="text-[12px] text-[#7A7A7A]">
+                <span className="text-[12px] text-[#8A8A8A]">
                   {formatNewsDate(post.createdAt)}
                   {post.createdBy ? ` · Por ${post.createdBy}` : ''}
                 </span>

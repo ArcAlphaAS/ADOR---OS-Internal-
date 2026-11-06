@@ -108,7 +108,7 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#666666]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#8A8A8A]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
     </div>
   )
 }

@@ -42,7 +42,7 @@ function ListSection({ title, items, render, empty }) {
           </button>
         )}
       </div>
-      {items.length === 0 ? <p className="text-[12.5px] leading-relaxed text-[#7A7A7A]">{empty}</p> : <div className="flex flex-col gap-1">{shown.map(render)}</div>}
+      {items.length === 0 ? <p className="text-[12.5px] leading-relaxed text-[#8A8A8A]">{empty}</p> : <div className="flex flex-col gap-1">{shown.map(render)}</div>}
     </div>
   )
 }
@@ -81,7 +81,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
           )}
           {subtitle && <p className="mt-0.5 text-[12.5px] text-[#888888]">{subtitle}</p>}
           {directoryEntry?.about && <p className="mt-2 text-[12.5px] leading-relaxed text-[#858585]">{directoryEntry.about}</p>}
-          {person?.email && <p className="mt-2 text-[11px] text-[#7A7A7A]">{person.email}</p>}
+          {person?.email && <p className="mt-2 text-[11px] text-[#8A8A8A]">{person.email}</p>}
         </div>
 
         <div className="flex justify-center gap-1">
@@ -101,7 +101,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                   <img src={f.src} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-[#DDDDDD]">{f.name}</span>
-                    <span className="block text-[11px] text-[#7A7A7A]">Archivo de conversación · {shortDate(f.createdAt)}</span>
+                    <span className="block text-[11px] text-[#8A8A8A]">Archivo de conversación · {shortDate(f.createdAt)}</span>
                   </span>
                 </button>
               )}
@@ -132,7 +132,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
             <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
               <div>
                 <p className="text-[12.5px] font-semibold text-[#DDDDDD]">Silenciar</p>
-                <p className="text-[11px] text-[#7A7A7A]">Sin punto de no leído en la barra</p>
+                <p className="text-[11px] text-[#8A8A8A]">Sin punto de no leído en la barra</p>
               </div>
               <button
                 type="button"

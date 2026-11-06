@@ -58,11 +58,11 @@ export default function ItemPicker({ onPick, onClose }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={`Buscar ${TYPES.find((t) => t.id === type).label.toLowerCase()}…`}
-        className="mt-2 w-full rounded-lg border border-white/[0.08] bg-[#1A1A1A] px-3 py-2 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#666666] focus:border-white/[0.2]"
+        className="mt-2 w-full rounded-lg border border-white/[0.08] bg-[#1A1A1A] px-3 py-2 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A] focus:border-white/[0.2]"
       />
       <div className="mt-1.5 flex max-h-[200px] flex-col overflow-y-auto">
         {items.length === 0 ? (
-          <p className="px-2 py-3 text-[12px] text-[#777777]">Nada encontrado.</p>
+          <p className="px-2 py-3 text-[12px] text-[#8A8A8A]">Nada encontrado.</p>
         ) : (
           items.map((i) => (
             <button

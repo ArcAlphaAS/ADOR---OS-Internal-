@@ -55,7 +55,7 @@ function EmptyBoardCTA({ quarterKey, onCreate, onPreset }) {
       </button>
 
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-[11px] text-[#444444]">o arranca de una:</span>
+        <span className="text-[11px] text-[#8A8A8A]">o arranca de una:</span>
         {QUICK_START_PRESETS.map((q) => (
           <button
             key={q.label}
@@ -122,7 +122,7 @@ function IniciativasCard({ tasks, onNavigate }) {
         }
       />
       {tasks.length === 0 ? (
-        <p className="py-4 text-[13px] leading-relaxed text-[#7A7A7A]">Sin tareas vinculadas. En Workspace, abre una tarea y elige “Objetivo vinculado”.</p>
+        <p className="py-4 text-[13px] leading-relaxed text-[#8A8A8A]">Sin tareas vinculadas. En Workspace, abre una tarea y elige “Objetivo vinculado”.</p>
       ) : (
         <div className="flex flex-col divide-y divide-white/[0.06]">
           {tasks.slice(0, 6).map((t) => {
@@ -133,7 +133,7 @@ function IniciativasCard({ tasks, onNavigate }) {
                 <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#F4EEE2]" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] text-[#EDEDED]">{t.title}</p>
-                  <p className="truncate text-[12px] text-[#7A7A7A]">
+                  <p className="truncate text-[12px] text-[#8A8A8A]">
                     {t.objetivoTitle}
                     {due ? ` · vence ${due.toLocaleDateString('es', { day: 'numeric', month: 'short' })}` : ''}
                   </p>
@@ -169,7 +169,7 @@ function MetricasCard({ liveValues, objetivos, isCurrentQuarter }) {
   })
   return (
     <div className="ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-5">
-      <PanelHeader icon="▮▮" title="Métricas clave" action={<span className="text-[11.5px] text-[#7A7A7A]">{isCurrentQuarter ? 'En vivo' : 'Trimestre actual'}</span>} />
+      <PanelHeader icon="▮▮" title="Métricas clave" action={<span className="text-[11.5px] text-[#8A8A8A]">{isCurrentQuarter ? 'En vivo' : 'Trimestre actual'}</span>} />
       <div className="flex flex-col divide-y divide-white/[0.06]">
         {rows.map((r) => (
           <div key={r.id} className="flex flex-col gap-2 py-3">
@@ -256,7 +256,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
               <ArrowRightIcon size={13} />
             </button>
           </div>
-          <p className="text-[12px] text-[#7A7A7A]">
+          <p className="text-[12px] text-[#8A8A8A]">
             {isCurrentQuarter ? `${daysLeft} días restantes en el trimestre` : viewQuarter < currentQuarterKey() ? 'Trimestre cerrado' : 'Trimestre por venir'}
             {!isCurrentQuarter && (
               <button type="button" onClick={() => setViewQuarter(currentQuarterKey())} className="ml-2 text-[#F4EEE2] hover:underline">

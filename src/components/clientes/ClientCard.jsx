@@ -77,9 +77,9 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
     >
       <div className="flex items-center justify-between">
         <span className="text-[14px] font-semibold text-[#F5F5F5]">{client.name}</span>
-        {client.code && <span className="font-mono text-[10px] text-[#444444]">{client.code}</span>}
+        {client.code && <span className="font-mono text-[10px] text-[#8A8A8A]">{client.code}</span>}
       </div>
-      {client.industria && <div className="mt-0.5 truncate text-[11.5px] text-[#666666]">{client.industria}</div>}
+      {client.industria && <div className="mt-0.5 truncate text-[11.5px] text-[#8A8A8A]">{client.industria}</div>}
 
       <div className="mt-2.5 flex items-center gap-1.5">
         <span
@@ -117,7 +117,7 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
 
       {client.nextStep && (
         <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/[0.06] pt-2.5 text-[12px] text-[#888888]">
-          <ArrowRightIcon size={11} className="flex-shrink-0 text-[#666666]" />
+          <ArrowRightIcon size={11} className="flex-shrink-0 text-[#8A8A8A]" />
           <span className="truncate">{client.nextStep}</span>
         </div>
       )}

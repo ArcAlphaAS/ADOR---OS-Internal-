@@ -10,7 +10,7 @@ import { useEscape } from '../../hooks/useEscape'
 function Section({ title, children }) {
   return (
     <section>
-      <h3 className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-[#767676]">{title}</h3>
+      <h3 className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-[#8A8A8A]">{title}</h3>
       {children}
     </section>
   )
@@ -31,7 +31,7 @@ function Row({ title, hint, onClick, disabled }) {
     >
       <span className="min-w-0 flex-1">
         <span className="block text-[13.5px] text-[#F5F5F5]">{title}</span>
-        <span className="mt-0.5 block text-[12px] text-[#7A7A7A]">{hint}</span>
+        <span className="mt-0.5 block text-[12px] text-[#8A8A8A]">{hint}</span>
       </span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
     </button>
@@ -81,7 +81,7 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
             <Avatar photoURL={photo} displayName={user?.displayName} email={user?.email} size={46} />
             <div className="min-w-0">
               <h2 className="truncate text-[17px] font-semibold text-[#F5F5F5]">{user?.displayName || 'Configuración'}</h2>
-              <p className="truncate text-[12.5px] text-[#7A7A7A]">{user?.email}</p>
+              <p className="truncate text-[12.5px] text-[#8A8A8A]">{user?.email}</p>
             </div>
           </div>
 

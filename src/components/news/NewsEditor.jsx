@@ -131,14 +131,14 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Titular del anuncio"
-        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[15px] font-medium text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[15px] font-medium text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
       />
       <input
         type="text"
         value={subtitle}
         onChange={(e) => setSubtitle(e.target.value)}
         placeholder="Subtítulo corto (se muestra en la tarjeta)"
-        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
       />
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[12px] text-[#8A8A8A]">Categoría</span>
@@ -172,7 +172,7 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
               value={coverImageUrl}
               onChange={(e) => setCoverImageUrl(e.target.value)}
               placeholder="…o pega el enlace de una imagen"
-              className="min-w-[200px] flex-1 rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+              className="min-w-[200px] flex-1 rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
             />
           )}
         </div>
@@ -264,11 +264,11 @@ export default function NewsEditor({ initial, onSave, onCancel, saving }) {
           onChange={(e) => setBody(e.target.value)}
           placeholder="Escribe el anuncio. Usa los botones de arriba para títulos, negrita, listas, enlaces e imágenes."
           rows={14}
-          className={`${tab === 'editar' ? 'block' : 'hidden'} w-full resize-y rounded-xl border border-white/[0.1] bg-[#0E0E0E] px-4 py-3 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#555555] outline-none lg:block`}
+          className={`${tab === 'editar' ? 'block' : 'hidden'} w-full resize-y rounded-xl border border-white/[0.1] bg-[#0E0E0E] px-4 py-3 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none lg:block`}
         />
         <div className={`${tab === 'editar' ? 'hidden' : 'block'} ador-wrap max-h-[480px] min-h-[200px] overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-4 lg:block`}>
-          <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-[#666666]">Vista previa</p>
-          {body.trim() ? renderMarkdown(body) : <p className="text-[13px] text-[#555555]">Así se verá el texto del anuncio.</p>}
+          <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">Vista previa</p>
+          {body.trim() ? renderMarkdown(body) : <p className="text-[13px] text-[#8A8A8A]">Así se verá el texto del anuncio.</p>}
         </div>
       </div>
 

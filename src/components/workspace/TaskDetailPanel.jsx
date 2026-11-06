@@ -75,7 +75,7 @@ function Chips({ options, value, onChange }) {
 function Prop({ icon: Icon, label, hint, children }) {
   return (
     <div className="grid grid-cols-[104px_1fr] items-start gap-2 py-1.5" title={hint}>
-      <span className="flex items-center gap-2 pt-1.5 text-[12px] text-[#777777]">
+      <span className="flex items-center gap-2 pt-1.5 text-[12px] text-[#8A8A8A]">
         <Icon size={13} />
         {label}
       </span>
@@ -291,7 +291,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             <span className="flex min-w-0 items-center gap-2 text-[12px] text-[#9A9A9A]">
               <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: accent }} />
               <span className="truncate">{workstream?.name || 'Sin proyecto'}</span>
-              <span className="hidden flex-shrink-0 text-[#555555] sm:inline">· {workstream?.kind === 'intervencion' ? 'Intervención' : 'Proyecto'}</span>
+              <span className="hidden flex-shrink-0 text-[#8A8A8A] sm:inline">· {workstream?.kind === 'intervencion' ? 'Intervención' : 'Proyecto'}</span>
             </span>
             <div className="relative flex flex-shrink-0 items-center gap-1">
               {othersViewing.length > 0 && (
@@ -306,7 +306,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                 </span>
               )}
               {siblings.length > 1 && index !== -1 && (
-                <span className="mr-1 flex items-center gap-0.5 text-[11px] text-[#777777]">
+                <span className="mr-1 flex items-center gap-0.5 text-[11px] text-[#8A8A8A]">
                   <button type="button" onClick={() => go(-1)} disabled={index === 0} title="Tarea anterior (←)" className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/[0.08] hover:text-[#F5F5F5] disabled:opacity-30">
                     <span className="rotate-90"><ChevronDownIcon size={13} /></span>
                   </button>
@@ -327,9 +327,9 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                       Copiar enlace
                     </button>
                     <button type="button" onClick={handleDelete} className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] hover:bg-white/[0.07]" style={{ color: '#EF5350' }}>
-                      {confirmingDelete ? 'Clic otra vez para eliminar' : 'Eliminar tarea'}
+                      {confirmingDelete ? 'Pulsa otra vez para confirmar' : 'Eliminar tarea'}
                     </button>
-                    <p className="px-2.5 pb-1 pt-2 text-[10.5px] leading-snug text-[#666666]">Atajos: Esc cierra · ⌘↵ guarda y cierra · ← → cambian de tarea</p>
+                    <p className="px-2.5 pb-1 pt-2 text-[10.5px] leading-snug text-[#8A8A8A]">Atajos: Esc cierra · ⌘↵ guarda y cierra · ← → cambian de tarea</p>
                   </div>
                 </>
               )}
@@ -352,7 +352,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
               >
                 {completed ? <CheckCircleIcon size={22} /> : <span className="block h-[19px] w-[19px] rounded-full border-2 border-current" style={task.status === 'en_progreso' ? { background: `${statusColor}55` } : undefined} />}
               </button>
-              <button type="button" onClick={() => setStatusOpen((v) => !v)} title={`Estado: ${status.label}`} className="mt-[9px] flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#666666] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+              <button type="button" onClick={() => setStatusOpen((v) => !v)} title={`Estado: ${status.label}`} className="mt-[9px] flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#8A8A8A] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]">
                 <ChevronDownIcon size={12} />
               </button>
               {statusOpen && (
@@ -444,7 +444,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                         </button>
                       ))}
                       {dueDate && (
-                        <button type="button" onClick={() => setDue(null)} className="px-1.5 text-[11px] text-[#777777] hover:text-[#EF5350]">
+                        <button type="button" onClick={() => setDue(null)} className="px-1.5 text-[11px] text-[#8A8A8A] hover:text-[#EF5350]">
                           Quitar
                         </button>
                       )}
@@ -454,12 +454,12 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                 <Prop icon={TimelineIcon} label="Timeline" hint="Es el tramo de trabajo: se dibuja como barra en la vista Timeline.">
                   <div className="flex items-center gap-1">
                     <input type="date" value={startValue} onChange={(e) => applyUpdate({ startDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={dateClass} />
-                    <span className="text-[#555555]">→</span>
+                    <span className="text-[#8A8A8A]">→</span>
                     <input type="date" value={endValue} onChange={(e) => applyUpdate({ endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={dateClass} />
                   </div>
                 </Prop>
                 <Prop icon={TargetIcon} label="Objetivo" hint="Conecta esta tarea al Objetivo del trimestre que está empujando.">
-                  <select value={task.objetivoId || ''} onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })} className={`${fieldClass} max-w-full`} style={task.objetivoId ? undefined : { color: '#777777' }}>
+                  <select value={task.objetivoId || ''} onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })} className={`${fieldClass} max-w-full`} style={task.objetivoId ? undefined : { color: '#8A8A8A' }}>
                     <option value="">Ninguno</option>
                     {currentQuarterObjetivos.map((o) => (
                       <option key={o.id} value={o.id}>
@@ -469,7 +469,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                   </select>
                 </Prop>
                 <Prop icon={ClockIcon} label="Repetir" hint="Al completarla, se crea sola la siguiente con la fecha límite corrida.">
-                  <select value={task.recurrence || ''} onChange={(e) => applyUpdate({ recurrence: e.target.value || null })} className={fieldClass} style={task.recurrence ? undefined : { color: '#777777' }}>
+                  <select value={task.recurrence || ''} onChange={(e) => applyUpdate({ recurrence: e.target.value || null })} className={fieldClass} style={task.recurrence ? undefined : { color: '#8A8A8A' }}>
                     <option value="">No se repite</option>
                     {RECURRENCES.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -492,7 +492,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                         ))}
                       </div>
                     )}
-                    <select value="" onChange={(e) => e.target.value && applyUpdate({ blockedBy: [...(task.blockedBy || []), e.target.value] })} className={`${fieldClass} max-w-full`} style={{ color: '#777777' }}>
+                    <select value="" onChange={(e) => e.target.value && applyUpdate({ blockedBy: [...(task.blockedBy || []), e.target.value] })} className={`${fieldClass} max-w-full`} style={{ color: '#8A8A8A' }}>
                       <option value="">{blockerOptions.length ? '+ Agregar tarea previa' : 'No hay otras tareas en el proyecto'}</option>
                       {blockerOptions.map((o) => (
                         <option key={o.id} value={o.id}>
@@ -516,7 +516,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                   }}
                   rows={3}
                   placeholder="Añade una descripción…"
-                  className="w-full resize-none rounded-xl border border-transparent bg-transparent px-2 py-2 text-[14px] leading-relaxed text-[#E5E5E5] outline-none transition-colors placeholder:text-[#555555] hover:bg-white/[0.03] focus:border-white/[0.14] focus:bg-white/[0.03]"
+                  className="w-full resize-none rounded-xl border border-transparent bg-transparent px-2 py-2 text-[14px] leading-relaxed text-[#E5E5E5] outline-none transition-colors placeholder:text-[#8A8A8A] hover:bg-white/[0.03] focus:border-white/[0.14] focus:bg-white/[0.03]"
                 />
               </div>
 
@@ -548,13 +548,13 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
             {/* Actividad */}
             <div className={`pt-4 ${tab === 'activity' ? 'block' : 'hidden'}`}>
               {history.length === 0 ? (
-                <p className="text-[13px] font-light text-[#555555]">Sin actividad registrada</p>
+                <p className="text-[13px] font-light text-[#8A8A8A]">Sin actividad registrada</p>
               ) : (
                 <div className="flex flex-col divide-y divide-white/[0.05]">
                   {history.map((event) => (
                     <div key={event.id} className="flex flex-col gap-0.5 py-2.5 first:pt-0">
                       <span className="text-[13px] text-[#E5E5E5]">{event.description}</span>
-                      <span className="text-[11px] text-[#666666]">{formatHistoryDate(event.createdAt)}</span>
+                      <span className="text-[11px] text-[#8A8A8A]">{formatHistoryDate(event.createdAt)}</span>
                     </div>
                   ))}
                 </div>

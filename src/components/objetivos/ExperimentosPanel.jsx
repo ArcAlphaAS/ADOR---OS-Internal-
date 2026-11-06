@@ -34,7 +34,7 @@ function ExperimentRow({ experimento, actorName }) {
         <button
           type="button"
           onClick={remove}
-          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[#444444] hover:bg-white/[0.08] hover:text-[#F5F5F5]"
+          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[#8A8A8A] hover:bg-white/[0.08] hover:text-[#F5F5F5]"
         >
           <CloseIcon size={10} />
         </button>
@@ -159,7 +159,7 @@ export default function ExperimentosPanel({ objetivos, actorName }) {
     <div className="ador-glass ador-grain rounded-2xl px-5 py-5">
       <div className="flex items-center justify-between">
         <span
-          className="font-medium text-[#444444]"
+          className="font-medium text-[#8A8A8A]"
           style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
         >
           Experimentos
@@ -170,7 +170,7 @@ export default function ExperimentosPanel({ objetivos, actorName }) {
       {adding && <div className="mt-3"><NewExperimentRow objetivos={objetivos} actorName={actorName} onDone={() => setAdding(false)} /></div>}
 
       {sorted.length === 0 && !adding ? (
-        <p className="mt-4 text-[13px] font-light text-[#444444]">Sin experimentos registrados — prueba, mide, aprende.</p>
+        <p className="mt-4 text-[13px] font-light text-[#8A8A8A]">Sin experimentos registrados — prueba, mide, aprende.</p>
       ) : (
         <div className="mt-1 flex flex-col divide-y divide-white/[0.06]">
           {sorted.map((e) => (

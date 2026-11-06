@@ -97,8 +97,8 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
   }
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]'
-  const labelClass = 'mb-1.5 block font-medium text-[#444444]'
+    'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
   const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 
   return (
@@ -160,7 +160,7 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
                     <option key={u.id} value={u.id}>{u.displayName || u.email}</option>
                   ))}
                 </select>
-                <p className="mt-1.5 text-[11px] text-[#444444]">Si ya tiene cuenta en ADOR OS, elígela aquí y se rellenan nombre y correo solos.</p>
+                <p className="mt-1.5 text-[11px] text-[#8A8A8A]">Si ya tiene cuenta en ADOR OS, elígela aquí y se rellenan nombre y correo solos.</p>
               </div>
             )}
 

@@ -7,10 +7,10 @@ import PersonAvatar from './PersonAvatar'
 import { SPRING, SHEET, swipeToClose } from '../../lib/motion'
 import usePhone from '../../hooks/usePhone'
 
-const labelClass = 'mb-1.5 block font-medium text-[#767676]'
+const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids = [] }) {
   return (
@@ -26,7 +26,7 @@ export function MemberPicker({ users, currentUid, selected, onToggle, lockedUids
             <input type="checkbox" checked={checked} disabled={locked} onChange={() => onToggle(u.id)} className="accent-[#F4EEE2]" />
             <PersonAvatar uid={u.id} name={userLabel(u)} size={20} />
             <span className="truncate">{userLabel(u)}</span>
-            {u.id === currentUid && <span className="ml-auto text-[11px] text-[#7A7A7A]">tú</span>}
+            {u.id === currentUid && <span className="ml-auto text-[11px] text-[#8A8A8A]">tú</span>}
           </label>
         )
       })}

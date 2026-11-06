@@ -106,7 +106,7 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="block text-[13.5px] text-[#F5F5F5]">Notificaciones en este dispositivo</span>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-[#7A7A7A]">{copy}</p>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[#8A8A8A]">{copy}</p>
         </div>
         {(on || canToggle) && (
           <button

@@ -49,7 +49,7 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
       </div>
       <div className="grid grid-cols-7 gap-y-1 text-center">
         {WEEKDAYS.map((w, i) => (
-          <span key={i} className="text-[10px] font-medium text-[#444444]">
+          <span key={i} className="text-[10px] font-medium text-[#8A8A8A]">
             {w}
           </span>
         ))}
@@ -96,7 +96,7 @@ export function TodayCard({ events, onOpenDay, onOpenEvent }) {
         </span>
       </div>
       {todays.length === 0 ? (
-        <p className="text-[12px] text-[#666666]">Sin eventos hoy.</p>
+        <p className="text-[12px] text-[#8A8A8A]">Sin eventos hoy.</p>
       ) : (
         <>
           <p className="mb-2 text-[11px] text-[#888888]">{todays.length} evento{todays.length === 1 ? '' : 's'}</p>
@@ -145,7 +145,7 @@ export function TasksTodayCard({ tasks, actorName }) {
               type="button"
               whileTap={{ scale: 0.82 }}
               onClick={() => toggle(task)}
-              className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[#444444]"
+              className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[#8A8A8A]"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span key="empty" initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.12 }} className="h-[13px] w-[13px] rounded-full border" style={{ borderColor: '#444444' }} />

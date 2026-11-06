@@ -15,6 +15,7 @@ import { FeaturedStory, LatestList, EditorialRow, SERIF, Cover } from './NewsLay
 import CommunityFeed from './CommunityFeed'
 import Avatar from '../shell/Avatar'
 import { GlobeIcon, PlusIcon, EditIcon, ArrowLeftIcon, SearchIcon } from '../icons'
+import { notifyFail } from '../../lib/notifyFail'
 
 // One module, two tabs — direct user request to merge News and Comunidad:
 // the only real difference between them was ever tone (formal press-
@@ -119,7 +120,7 @@ function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminU
                 {stats.map((st) => (
                   <div key={st.label}>
                     <p className="text-[16px] font-semibold text-[#F5F5F5]">{st.value}</p>
-                    <p className="text-[11.5px] text-[#7A7A7A]">{st.label}</p>
+                    <p className="text-[11.5px] text-[#8A8A8A]">{st.label}</p>
                   </div>
                 ))}
               </div>
@@ -127,7 +128,7 @@ function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminU
             <div className="hidden w-[130px] flex-shrink-0 flex-col items-center justify-center gap-2 rounded-[22px] bg-white/[0.05] px-3 py-5 sm:flex">
               <Avatar displayName={post.createdBy} size={46} />
               <p className="max-w-full truncate text-center text-[12.5px] font-medium text-[#DDDDDD]">{post.createdBy || 'ADOR'}</p>
-              <p className="text-[11px] text-[#7A7A7A]">Autor</p>
+              <p className="text-[11px] text-[#8A8A8A]">Autor</p>
             </div>
           </div>
 
@@ -238,7 +239,7 @@ function ReadReceipts({ post, user, users }) {
       {needMyAck && (
         <button
           type="button"
-          onClick={() => ackNewsPost(post.id, uid).catch(() => {})}
+          onClick={() => ackNewsPost(post.id, uid).catch(notifyFail)}
           className="self-start rounded-full bg-[#E8C15A] px-5 py-2 text-[13.5px] font-semibold text-[#1C1A16]"
         >
           Confirmar que lo leí
@@ -371,9 +372,9 @@ function AnunciosTab({ user, isAdminUser, focusPostId, posts, query, composeRequ
           )}
       {sorted.length === 0 ? (
         <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
-          <GlobeIcon size={20} className="text-[#5A5A5A]" />
+          <GlobeIcon size={20} className="text-[#8A8A8A]" />
           <p className="text-[14px] font-medium text-[#AAAAAA]">{query || category ? 'Nada coincide' : 'Sin anuncios todavía'}</p>
-          <p className="text-[13px] text-[#7A7A7A]">
+          <p className="text-[13px] text-[#8A8A8A]">
             {query || category ? 'Prueba con otras palabras o categoría.' : isAdminUser ? 'Usa "Nueva publicación" para publicar el primero.' : 'El equipo todavía no ha publicado ningún anuncio.'}
           </p>
         </div>
@@ -447,7 +448,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={tab === 'anuncios' ? 'Buscar noticias…' : 'Buscar en la comunidad…'}
-                className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[#F5F5F5] placeholder:text-[#777777] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
               />
             </label>
             {isAdminUser && tab === 'anuncios' && (

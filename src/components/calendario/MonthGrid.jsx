@@ -27,7 +27,7 @@ export default function MonthGrid({ monthDate, events, tasks = [], onSelectDay, 
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <div className="grid grid-cols-7 border-b border-white/[0.06]">
         {WEEKDAYS.map((w, i) => (
-          <div key={i} className="py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.06em] text-[#666666]">
+          <div key={i} className="py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
             {w}
           </div>
         ))}
@@ -65,7 +65,7 @@ export default function MonthGrid({ monthDate, events, tasks = [], onSelectDay, 
                     </button>
                   )
                 })}
-                {dayEvents.length > MAX_VISIBLE && <span className="px-1 text-[9.5px] text-[#666666]">+{dayEvents.length - MAX_VISIBLE} más</span>}
+                {dayEvents.length > MAX_VISIBLE && <span className="px-1 text-[9.5px] text-[#8A8A8A]">+{dayEvents.length - MAX_VISIBLE} más</span>}
                 {dayTasks.length > 0 && (
                   <span className="truncate rounded border border-dashed border-white/[0.18] px-1 py-[1px] text-[9.5px] text-[#888888]">
                     {dayTasks.length} tarea{dayTasks.length === 1 ? '' : 's'}

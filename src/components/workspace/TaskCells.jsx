@@ -35,7 +35,7 @@ export function PillCell({ options, value, meta, onChange, emptyLabel }) {
         type="button"
         onClick={openMenu}
         className="w-fit rounded-full px-2.5 py-1 text-[11px] font-medium transition-opacity duration-150 hover:opacity-80"
-        style={meta ? { background: `${meta.color}22`, color: meta.color } : { color: '#444444', border: '1px dashed rgba(255,255,255,0.14)' }}
+        style={meta ? { background: `${meta.color}22`, color: meta.color } : { color: '#8A8A8A', border: '1px dashed rgba(255,255,255,0.14)' }}
       >
         {meta ? meta.label : emptyLabel}
       </button>
@@ -149,7 +149,7 @@ export function WorkstreamCell({ workstreams = [], value, onChange, variant = 'b
 function DateField({ label, value, onChange }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#444444]">{label}</span>
+      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">{label}</span>
       <input
         type="date"
         defaultValue={value ? value.toISOString().slice(0, 10) : ''}
@@ -245,7 +245,7 @@ export function DescriptionCell({ description, onChange }) {
               onChange={(e) => setDraft(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               placeholder="Agregar descripción..."
-              className="w-full resize-none rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-2 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+              className="w-full resize-none rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-2 text-[12px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
             />
           </div>
         </CellPopover>
@@ -350,14 +350,14 @@ export function AssigneeCell({ assignedTo = [], userById, users = [], pendingIds
                   }
                 }}
                 placeholder="Escribe un nombre..."
-                className="mx-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30"
+                className="mx-1 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[12px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/30"
               />
             )}
 
             {users.length === 0 ? (
-              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">Sin asociados</p>
+              <p className="px-2.5 py-1.5 text-[12px] text-[#8A8A8A]">Sin asociados</p>
             ) : filtered.length === 0 ? (
-              <p className="px-2.5 py-1.5 text-[12px] text-[#444444]">{available.length === 0 ? 'Todos ya están asignados' : 'Sin resultados'}</p>
+              <p className="px-2.5 py-1.5 text-[12px] text-[#8A8A8A]">{available.length === 0 ? 'Todos ya están asignados' : 'Sin resultados'}</p>
             ) : (
               <div className="max-h-[180px] overflow-y-auto">
                 {filtered.map((u, i) => (

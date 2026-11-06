@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { subscribeMyReminders, updateChatReminder } from '../../lib/firestore'
 import { Timestamp } from 'firebase/firestore'
 import { ClockIcon, CloseIcon } from '../icons'
+import { notifyFail } from '../../lib/notifyFail'
 
 // "Recuérdamelo" delivery, app-wide (mounted in AppShell.jsx). When a
 // reminder's time comes while ADOR OS is open, a card appears top-right
@@ -45,8 +46,8 @@ export default function ReminderGate({ user, onNavigate }) {
 
   if (!current) return null
 
-  const done = () => updateChatReminder(current.id, { done: true }).catch(() => {})
-  const snooze = () => updateChatReminder(current.id, { remindAt: Timestamp.fromMillis(Date.now() + 60 * 60000) }).catch(() => {})
+  const done = () => updateChatReminder(current.id, { done: true }).catch(notifyFail)
+  const snooze = () => updateChatReminder(current.id, { remindAt: Timestamp.fromMillis(Date.now() + 60 * 60000) }).catch(notifyFail)
   const open = () => {
     done()
     onNavigate('chat', {
@@ -68,7 +69,7 @@ export default function ReminderGate({ user, onNavigate }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[12.5px] font-semibold text-[#F2EBDD]">Recordatorio</p>
-            <p className="text-[11px] text-[#777777]">{current.conversationLabel}</p>
+            <p className="text-[11px] text-[#8A8A8A]">{current.conversationLabel}</p>
             <p className="mt-1.5 line-clamp-3 text-[12.5px] leading-relaxed text-[#CCCCCC]">
               {current.authorName ? <span className="text-[#999999]">{current.authorName.split(' ')[0]}: </span> : null}
               {current.text || 'Mensaje'}
@@ -85,7 +86,7 @@ export default function ReminderGate({ user, onNavigate }) {
           <button type="button" onClick={snooze} className="rounded-full border border-white/[0.12] px-3 py-1.5 text-[12.5px] text-[#CCCCCC] hover:text-[#F5F5F5]">
             Posponer 1 h
           </button>
-          {due.length > 1 && <span className="ml-auto text-[11px] text-[#777777]">+{due.length - 1}</span>}
+          {due.length > 1 && <span className="ml-auto text-[11px] text-[#8A8A8A]">+{due.length - 1}</span>}
         </div>
       </div>
     </motion.div>,

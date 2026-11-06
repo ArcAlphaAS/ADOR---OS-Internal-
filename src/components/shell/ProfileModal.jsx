@@ -9,7 +9,7 @@ import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 
 const inputClass =
-  'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150'
+  'w-full rounded-xl border bg-[#1A1A1A] px-4 py-[12px] text-[14px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150'
 
 export default function ProfileModal({ user, onClose, onSave }) {
   useEscape(onClose)
@@ -125,7 +125,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <div>
             <label
-              className="mb-1.5 block font-medium text-[#444444]"
+              className="mb-1.5 block font-medium text-[#8A8A8A]"
               style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
             >
               Nombre
@@ -145,7 +145,7 @@ export default function ProfileModal({ user, onClose, onSave }) {
 
           <div>
             <label
-              className="mb-1.5 block font-medium text-[#444444]"
+              className="mb-1.5 block font-medium text-[#8A8A8A]"
               style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
             >
               Cumpleaños

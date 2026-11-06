@@ -83,7 +83,7 @@ export default function SplashScreen({ onFinish }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 1.4 }}
-          className="mt-4 text-[12.5px] text-[#767676]"
+          className="mt-4 text-[12.5px] text-[#8A8A8A]"
         >
           Acceso por invitación únicamente
         </motion.p>

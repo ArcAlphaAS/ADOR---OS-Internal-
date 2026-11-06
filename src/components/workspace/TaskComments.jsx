@@ -107,11 +107,11 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
 
   return (
     <div id="task-comments">
-      <span className="mb-2 block font-medium text-[#444444]" style={labelStyle}>
+      <span className="mb-2 block font-medium text-[#8A8A8A]" style={labelStyle}>
         Actualizaciones{comments.length ? ` · ${comments.length}` : ''}
       </span>
       {comments.length === 0 ? (
-        <p className="text-[13px] font-light text-[#444444]">Aún no hay actualizaciones. Comparte avances o usa @ para avisarle a alguien.</p>
+        <p className="text-[13px] font-light text-[#8A8A8A]">Aún no hay actualizaciones. Comparte avances o usa @ para avisarle a alguien.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {comments.map((c) => {
@@ -126,7 +126,7 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
                       <button
                         type="button"
                         onClick={() => deleteTaskComment(task.id, c.id).catch((e) => showToast(e.message))}
-                        className="ml-2 text-[11px] text-[#666666] opacity-0 transition-opacity hover:text-[#EF5350] group-hover:opacity-100"
+                        className="ml-2 text-[11px] text-[#8A8A8A] opacity-0 transition-opacity hover:text-[#EF5350] group-hover:opacity-100"
                       >
                         Eliminar
                       </button>
@@ -184,7 +184,7 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
             }
           }}
           placeholder="Escribe una actualización y menciona a otros con @"
-          className="block w-full resize-none rounded-t-2xl bg-transparent px-4 pt-3 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#666666]"
+          className="block w-full resize-none rounded-t-2xl bg-transparent px-4 pt-3 text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A]"
         />
 
         {files.length > 0 && (

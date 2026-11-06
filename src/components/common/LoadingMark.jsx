@@ -23,7 +23,7 @@ export default function LoadingMark({ label = 'Cargando', size = 60, full = fals
           <img src="/logo.svg" alt="" width={size * 0.46} height={size * 0.46} draggable={false} />
         </span>
       </div>
-      {label && <span className="text-[13px] tracking-[0.04em] text-[#767676]">{label}</span>}
+      {label && <span className="text-[13px] tracking-[0.04em] text-[#8A8A8A]">{label}</span>}
     </div>
   )
 }

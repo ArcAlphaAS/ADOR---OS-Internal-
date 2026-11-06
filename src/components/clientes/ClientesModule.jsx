@@ -33,7 +33,7 @@ function StatCard({ value, label }) {
   return (
     <div className="ador-glass rounded-2xl px-4 py-3.5">
       <p className="text-[18px] font-semibold text-[#F5F5F5]">{value}</p>
-      <p className="text-[11px] text-[#666666]">{label}</p>
+      <p className="text-[11px] text-[#8A8A8A]">{label}</p>
     </div>
   )
 }
@@ -55,7 +55,7 @@ function RequiereAtencion({ clients, onOpenClient }) {
         <p className="text-[13px] font-semibold text-[#F5F5F5]">Requiere atención</p>
       </div>
       {rows.length === 0 ? (
-        <p className="mt-3 text-[12.5px] text-[#444444]">Nada estancado — todo con contacto reciente.</p>
+        <p className="mt-3 text-[12.5px] text-[#8A8A8A]">Nada estancado — todo con contacto reciente.</p>
       ) : (
         <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
           {rows.map(({ client, days }) => (
@@ -97,7 +97,7 @@ function PorCobrar({ clients, onOpenClient }) {
         {total > 0 && <span className="text-[12.5px] font-semibold text-[#B8860B]">{currencyPEN.format(total)}</span>}
       </div>
       {rows.length === 0 ? (
-        <p className="mt-3 text-[12.5px] text-[#444444]">Sin pagos pendientes.</p>
+        <p className="mt-3 text-[12.5px] text-[#8A8A8A]">Sin pagos pendientes.</p>
       ) : (
         <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
           {rows.map(({ client, amount, days }) => (
@@ -133,21 +133,21 @@ function SaludPipeline({ clients }) {
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div>
           <p className="text-[18px] font-semibold text-[#F5F5F5]">{conversionRate !== null ? `${conversionRate}%` : '—'}</p>
-          <p className="text-[11px] text-[#666666]">Conversión SPC → SP</p>
+          <p className="text-[11px] text-[#8A8A8A]">Conversión SPC → SP</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-[#F5F5F5]">{avgDaysInStage !== null ? `${avgDaysInStage}d` : '—'}</p>
-          <p className="text-[11px] text-[#666666]">Promedio en etapa actual</p>
+          <p className="text-[11px] text-[#8A8A8A]">Promedio en etapa actual</p>
         </div>
       </div>
       {lostTotal > 0 && (
         <div className="mt-4 border-t border-white/[0.06] pt-3">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.05em] text-[#444444]">Por qué se pierden ({lostTotal})</p>
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.05em] text-[#8A8A8A]">Por qué se pierden ({lostTotal})</p>
           <div className="flex flex-col gap-1.5">
             {lostBreakdown.map(({ reason, count }) => (
               <div key={reason} className="flex items-center justify-between text-[12px]">
                 <span className="text-[#888888]">{reason}</span>
-                <span className="text-[#666666]">{count}</span>
+                <span className="text-[#8A8A8A]">{count}</span>
               </div>
             ))}
           </div>
@@ -209,7 +209,7 @@ function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
     <div className="ador-glass ador-grain rounded-2xl p-5">
       <p className="text-[13px] font-semibold text-[#F5F5F5]">Próximas acciones</p>
       {rows.length === 0 ? (
-        <p className="mt-3 text-[12.5px] text-[#444444]">Sin siguientes pasos pendientes.</p>
+        <p className="mt-3 text-[12.5px] text-[#8A8A8A]">Sin siguientes pasos pendientes.</p>
       ) : (
         <div className="mt-3 flex flex-col divide-y divide-white/[0.05]">
           {rows.map(({ client, days }) => {
@@ -217,7 +217,7 @@ function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
             return (
               <div key={client.id} className="flex items-center gap-2.5 py-2.5">
                 <button type="button" onClick={() => onOpenClient(client)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition-opacity duration-150 hover:opacity-80">
-                  <ArrowRightIcon size={12} className="flex-shrink-0 text-[#666666]" />
+                  <ArrowRightIcon size={12} className="flex-shrink-0 text-[#8A8A8A]" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12.5px] font-medium text-[#F5F5F5]">{client.name}</p>
                     <p className="truncate text-[11.5px] text-[#888888]">{client.nextStep}</p>

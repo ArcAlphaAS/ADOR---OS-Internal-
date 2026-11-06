@@ -23,6 +23,7 @@ import usePhone from '../../hooks/usePhone'
 import ContextMenu from '../common/ContextMenu'
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
 import { useContextMenu } from '../../hooks/useContextMenu'
+import EmptyState from '../common/EmptyState'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -43,7 +44,7 @@ function StatCard({ Icon, value, label }) {
       </span>
       <div>
         <p className="text-[17px] font-semibold text-[#F5F5F5]">{value}</p>
-        <p className="text-[11px] text-[#666666]">{label}</p>
+        <p className="text-[11px] text-[#8A8A8A]">{label}</p>
       </div>
     </div>
   )
@@ -82,7 +83,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
             setRect(triggerRef.current.getBoundingClientRect())
             setMenuOpen(true)
           }}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-[#666666] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]"
         >
           <MoreIcon size={14} />
         </button>
@@ -131,7 +132,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
       <div className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-2xl px-6 py-16 text-center">
         <UsersIcon size={20} className="text-[#333333]" />
         <p className="text-[14px] font-medium text-[#888888]">Aún no hay personas en el directorio</p>
-        <p className="text-[13px] text-[#444444]">
+        <p className="text-[13px] text-[#8A8A8A]">
           {isAdmin ? 'Usa "+ Añadir persona" para registrar al equipo de ADOR.' : 'Un administrador todavía no ha registrado al equipo.'}
         </p>
       </div>
@@ -147,7 +148,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
               <h2 className="text-[18px] font-semibold text-[#F5F5F5]">Dirección</h2>
               <p className="text-[13px] text-[#888888]">Liderazgo y visión de ADOR.</p>
             </div>
-            <span className="text-[12px] text-[#444444]">{directivos.length} miembros</span>
+            <span className="text-[12px] text-[#8A8A8A]">{directivos.length} miembros</span>
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {directivos.map((p) => (
@@ -164,7 +165,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
               <h2 className="text-[18px] font-semibold text-[#F5F5F5]">Equipo</h2>
               <p className="text-[13px] text-[#888888]">Talento, ejecución y desarrollo.</p>
             </div>
-            <span className="text-[12px] text-[#444444]">{equipo.length} miembros</span>
+            <span className="text-[12px] text-[#8A8A8A]">{equipo.length} miembros</span>
           </div>
           {phone ? (
             <div className="mt-4 flex flex-col gap-2.5">
@@ -189,7 +190,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
           <div className="ador-glass ador-grain mt-4 overflow-x-auto rounded-2xl px-3 py-2">
             <div className="grid min-w-[720px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-2 pb-2 pt-1">
               {['Nombre', 'Rol', 'Área', 'Estado', 'Ubicación', ''].map((h) => (
-                <span key={h} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span key={h} className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   {h}
                 </span>
               ))}
@@ -212,7 +213,7 @@ function OrganigramaTab({ people }) {
   const areas = groupByArea(people.filter((p) => !p.isDirectivo))
 
   if (people.length === 0) {
-    return <p className="px-2 py-16 text-center text-[13px] text-[#444444]">Añade personas para ver el organigrama.</p>
+    return <p className="px-2 py-16 text-center text-[13px] text-[#8A8A8A]">Añade personas para ver el organigrama.</p>
   }
 
   return (
@@ -243,7 +244,7 @@ function OrganigramaTab({ people }) {
                       <Avatar photoURL={p.photoDataUrl} displayName={p.name} size={26} />
                       <div>
                         <p className="text-[12px] font-medium leading-tight text-[#F5F5F5]">{p.name}</p>
-                        <p className="text-[10.5px] leading-tight text-[#666666]">{p.role}</p>
+                        <p className="text-[10.5px] leading-tight text-[#8A8A8A]">{p.role}</p>
                       </div>
                     </div>
                   ))}
@@ -283,7 +284,7 @@ function NewTeamCard({ people, onCreate }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.14] text-[13px] text-[#666666] transition-colors duration-150 hover:border-white/[0.24] hover:text-[#888888]"
+        className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/[0.14] text-[13px] text-[#8A8A8A] transition-colors duration-150 hover:border-white/[0.24] hover:text-[#888888]"
       >
         <PlusIcon size={18} />
         Nuevo equipo
@@ -299,7 +300,7 @@ function NewTeamCard({ people, onCreate }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Nombre del equipo"
-        className="w-full rounded-xl border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        className="w-full rounded-xl border border-white/[0.14] bg-[#141414] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
       />
       <div className="max-h-[140px] overflow-y-auto">
         {people.map((p) => (
@@ -325,7 +326,7 @@ function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam, isAdmin }) {
   const peopleById = Object.fromEntries(people.map((p) => [p.id, p]))
 
   if (teams.length === 0 && !isAdmin) {
-    return <p className="px-2 py-16 text-center text-[13px] text-[#444444]">Un administrador todavía no ha creado equipos.</p>
+    return <p className="px-2 py-16 text-center text-[13px] text-[#8A8A8A]">Un administrador todavía no ha creado equipos.</p>
   }
 
   return (
@@ -337,7 +338,7 @@ function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam, isAdmin }) {
             <div className="flex items-start justify-between">
               <p className="text-[15px] font-semibold text-[#F5F5F5]">{team.name}</p>
               {isAdmin && (
-                <button type="button" onClick={() => onDeleteTeam(team)} className="text-[11px] text-[#666666] hover:text-[#EF5350]">
+                <button type="button" onClick={() => onDeleteTeam(team)} className="text-[11px] text-[#8A8A8A] hover:text-[#EF5350]">
                   Eliminar
                 </button>
               )}
@@ -349,7 +350,7 @@ function EquiposTab({ people, teams, onCreateTeam, onDeleteTeam, isAdmin }) {
                 </div>
               ))}
             </div>
-            <p className="text-[12px] text-[#666666]">{members.length} miembro{members.length === 1 ? '' : 's'}</p>
+            <p className="text-[12px] text-[#8A8A8A]">{members.length} miembro{members.length === 1 ? '' : 's'}</p>
           </div>
         )
       })}
@@ -368,7 +369,7 @@ function RolesTab({ people }) {
   const roles = Array.from(byRole.entries()).sort((a, b) => b[1].length - a[1].length)
 
   if (people.length === 0) {
-    return <p className="px-2 py-16 text-center text-[13px] text-[#444444]">Añade personas para ver sus roles.</p>
+    return <p className="px-2 py-16 text-center text-[13px] text-[#8A8A8A]">Añade personas para ver sus roles.</p>
   }
 
   return (
@@ -384,7 +385,7 @@ function RolesTab({ people }) {
                 </div>
               ))}
             </div>
-            <span className="text-[12px] text-[#666666]">{members.length}</span>
+            <span className="text-[12px] text-[#8A8A8A]">{members.length}</span>
           </div>
         </div>
       ))}
@@ -397,23 +398,23 @@ function DefaultSidebar({ people, teams }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #000000 100%)' }}>
-        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Nuestra gente</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Nuestra gente</p>
         <p className="mt-3 text-[21px] font-semibold leading-tight text-[#F5F5F5]">Personas que construyen lo extraordinario.</p>
-        <p className="mt-3 text-[12px] text-[#666666]">Talento. Carácter. Propósito.</p>
+        <p className="mt-3 text-[12px] text-[#8A8A8A]">Talento. Carácter. Propósito.</p>
       </div>
 
       <div className="ador-glass rounded-2xl p-4">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[13px] font-semibold text-[#F5F5F5]">Áreas</span>
-          <span className="text-[11px] text-[#444444]">{counts.length} áreas</span>
+          <span className="text-[11px] text-[#8A8A8A]">{counts.length} áreas</span>
         </div>
         {counts.length === 0 ? (
-          <p className="py-2 text-[12px] text-[#444444]">Sin datos todavía</p>
+          <EmptyState compact title="Sin datos todavía" hint="Se llena al añadir personas al directorio." />
         ) : (
           counts.map(({ area, count }) => (
             <div key={area} className="flex items-center justify-between border-t border-white/[0.05] py-2 first:border-0">
               <span className="text-[12.5px] text-[#888888]">{area}</span>
-              <span className="text-[11px] text-[#444444]">{count} miembros</span>
+              <span className="text-[11px] text-[#8A8A8A]">{count} miembros</span>
             </div>
           ))
         )}
@@ -422,15 +423,15 @@ function DefaultSidebar({ people, teams }) {
       <div className="ador-glass rounded-2xl p-4">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[13px] font-semibold text-[#F5F5F5]">Equipos</span>
-          <span className="text-[11px] text-[#444444]">{teams.length} equipos</span>
+          <span className="text-[11px] text-[#8A8A8A]">{teams.length} equipos</span>
         </div>
         {teams.length === 0 ? (
-          <p className="py-2 text-[12px] text-[#444444]">Aún no hay equipos creados</p>
+          <p className="py-2 text-[12px] text-[#8A8A8A]">Aún no hay equipos creados</p>
         ) : (
           teams.map((t) => (
             <div key={t.id} className="flex items-center justify-between border-t border-white/[0.05] py-2 first:border-0">
               <span className="text-[12.5px] text-[#888888]">{t.name}</span>
-              <span className="text-[11px] text-[#444444]">{(t.memberIds || []).length} miembros</span>
+              <span className="text-[11px] text-[#8A8A8A]">{(t.memberIds || []).length} miembros</span>
             </div>
           ))
         )}
@@ -438,8 +439,8 @@ function DefaultSidebar({ people, teams }) {
 
       <div className="ador-glass rounded-2xl p-4">
         <p className="mb-2 text-[13px] font-semibold text-[#F5F5F5]">Cultura</p>
-        <p className="text-[12.5px] italic leading-relaxed text-[#666666]">"Personas excepcionales. Trabajo significativo. Un mismo estándar."</p>
-        <p className="mt-1 text-[11px] text-[#444444]">— ADOR</p>
+        <p className="text-[12.5px] italic leading-relaxed text-[#8A8A8A]">"Personas excepcionales. Trabajo significativo. Un mismo estándar."</p>
+        <p className="mt-1 text-[11px] text-[#8A8A8A]">— ADOR</p>
       </div>
     </div>
   )
@@ -505,14 +506,14 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Organización</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Organización</p>
           <h1 className="ador-title mt-1">Directorio</h1>
           <p className="mt-1 text-[13px] text-[#888888]">Personas, estructura y equipos que hacen posible ADOR.</p>
         </div>
         <div className="flex flex-col items-end gap-3">
-          <p className="max-w-[260px] text-right text-[12px] italic text-[#666666]">
+          <p className="max-w-[260px] text-right text-[12px] italic text-[#8A8A8A]">
             "Las grandes organizaciones son la suma de grandes personas."
-            <span className="mt-0.5 block not-italic text-[#444444]">— ADOR</span>
+            <span className="mt-0.5 block not-italic text-[#8A8A8A]">— ADOR</span>
           </p>
           {isAdmin && (
             <motion.button
@@ -553,13 +554,13 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
 
         {tab === 'personas' && (
           <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
-            <SearchIcon size={14} className="text-[#666666]" />
+            <SearchIcon size={14} className="text-[#8A8A8A]" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar persona..."
-              className="w-[200px] bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#666666] outline-none"
+              className="w-[200px] bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
             />
           </div>
         )}

@@ -142,7 +142,7 @@ export default function OnboardingTour({ onFinish }) {
       <button
         type="button"
         onClick={onFinish}
-        className="absolute right-8 top-8 flex items-center gap-1.5 text-[12px] text-[#666666] transition-colors duration-150 hover:text-[#F5F5F5]"
+        className="absolute right-8 top-8 flex items-center gap-1.5 text-[12px] text-[#8A8A8A] transition-colors duration-150 hover:text-[#F5F5F5]"
       >
         Omitir
         <CloseIcon size={13} />

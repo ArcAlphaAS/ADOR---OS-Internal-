@@ -99,7 +99,7 @@ export default function ServicesTab({ user }) {
               onClick={() => remove(i)}
               disabled={rows.length === 1}
               aria-label={`Quitar ${s.label || 'servicio'}`}
-              className="rounded-full px-3 py-1.5 text-[12px] text-[#767676] transition-colors hover:text-[#EF5350] disabled:opacity-30"
+              className="rounded-full px-3 py-1.5 text-[12px] text-[#8A8A8A] transition-colors hover:text-[#EF5350] disabled:opacity-30"
             >
               Quitar
             </button>

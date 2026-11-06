@@ -102,7 +102,7 @@ export function BackupSection({ user }) {
         Guarda una copia completa de ADOR OS en Google Drive (en la carpeta de ADOR si está elegida; si no, en “ADOR OS — Respaldos” de tu Drive).
       </span>
       {lastAt && (
-        <span className="mt-1.5 block text-[11px] text-[#777777]">
+        <span className="mt-1.5 block text-[11px] text-[#8A8A8A]">
           Último: {lastAt.toLocaleDateString('es', { day: 'numeric', month: 'short' })} {lastAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} · {last.by}
           {last.link && (
             <a href={last.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 text-[#F4EEE2] hover:underline">

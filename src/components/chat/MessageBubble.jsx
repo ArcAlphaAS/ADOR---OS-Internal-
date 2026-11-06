@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { EMOJIS, findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
 import { EditIcon, CloseIcon, FileIcon, FolderIcon, PhoneIcon, VideoIcon, SmileIcon, BookmarkIcon, PlayIcon, PauseIcon, MicIcon, ImageIcon, ReplyIcon, ForwardIcon, PollIcon, AlertIcon } from '../icons'
@@ -46,18 +46,36 @@ export function loadBlob(blobId) {
 }
 
 // ---- Rich text: links → mentions → formatting, all as React nodes ----
+export const HighlightContext = createContext('')
+// Marca las coincidencias de la búsqueda dentro de la conversación.
+function Mark({ value }) {
+  const q = useContext(HighlightContext)
+  if (!q || !value) return value
+  const low = value.toLowerCase()
+  const out = []
+  let from = 0
+  let at
+  while ((at = low.indexOf(q, from)) !== -1) {
+    if (at > from) out.push(value.slice(from, at))
+    out.push(<mark key={at} className="rounded-[3px] bg-[#F4EEE2] px-px text-[#0A0A0A]">{value.slice(at, at + q.length)}</mark>)
+    from = at + q.length
+  }
+  out.push(value.slice(from))
+  return out
+}
+
 function Formatted({ text }) {
   return splitFormatting(text).map((part, i) => {
-    if (part.type === 'bold') return <strong key={i} className="font-semibold">{part.value}</strong>
-    if (part.type === 'italic') return <em key={i}>{part.value}</em>
-    if (part.type === 'strike') return <s key={i} className="opacity-70">{part.value}</s>
+    if (part.type === 'bold') return <strong key={i} className="font-semibold"><Mark value={part.value} /></strong>
+    if (part.type === 'italic') return <em key={i}><Mark value={part.value} /></em>
+    if (part.type === 'strike') return <s key={i} className="opacity-70"><Mark value={part.value} /></s>
     if (part.type === 'code')
       return (
         <code key={i} className="rounded bg-black/30 px-1 py-px font-mono text-[12.5px]">
           {part.value}
         </code>
       )
-    return <span key={i}>{part.value}</span>
+    return <span key={i}><Mark value={part.value} /></span>
   })
 }
 
@@ -178,7 +196,7 @@ function ImageAttachment({ attachment, onOpen }) {
   return (
     <button type="button" onClick={() => onOpen(attachment)} className="block text-left">
       <img src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[240px] max-w-[300px] rounded-xl border border-white/[0.08] object-cover" />
-      <span className="mt-1 block px-1 text-[11px] text-[#7A7A7A]">Archivo de conversación · {attachment.name}</span>
+      <span className="mt-1 block px-1 text-[11px] text-[#8A8A8A]">Archivo de conversación · {attachment.name}</span>
     </button>
   )
 }
@@ -434,7 +452,7 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
 // confirmed it yet. Hover says who has read it in a group.
 function Ticks({ receipt, userName, onIvory = false }) {
   if (!receipt) return null
-  if (receipt.state === 'sending') return <span className="text-[10px] text-[#7A7A7A]" title="Enviando">◷</span>
+  if (receipt.state === 'sending') return <span className="text-[10px] text-[#8A8A8A]" title="Enviando">◷</span>
   const read = receipt.state === 'read'
   const title = read ? 'Leído' : receipt.readers.length ? `Leído por ${receipt.readers.map(userName).join(', ')}` : 'Enviado'
   return (
@@ -473,7 +491,7 @@ function ThreadSummary({ message, userName, onOpen }) {
       <span className="whitespace-nowrap text-[12.5px] font-medium text-[#F4EEE2] group-hover/thread:underline">
         {message.replyCount} {message.replyCount === 1 ? 'respuesta' : 'respuestas'}
       </span>
-      <span className="whitespace-nowrap text-[11px] text-[#7A7A7A]">Última {timeAgoShort(message.lastReplyAt)}</span>
+      <span className="whitespace-nowrap text-[11px] text-[#8A8A8A]">Última {timeAgoShort(message.lastReplyAt)}</span>
     </button>
   )
 }
@@ -489,7 +507,10 @@ function QuoteBlock({ quote, mine, onJump }) {
       className="block max-w-[360px] rounded-xl border-l-2 px-3 py-1.5 text-left transition-colors hover:bg-white/[0.06]"
       style={{ borderColor: '#F4EEE2', background: mine ? 'rgba(244,238,226,0.06)' : 'rgba(255,255,255,0.04)' }}
     >
-      <span className="block text-[11px] font-medium text-[#F4EEE2]">{quote.authorName || 'Mensaje'}</span>
+      <span className="flex items-center gap-1 text-[11px] font-medium text-[#F4EEE2]">
+        {quote.authorName || 'Mensaje'}
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="opacity-60"><path d="M7 17 17 7M8 7h9v9" /></svg>
+      </span>
       <span className="line-clamp-2 block text-[12.5px] text-[#AAAAAA]">{quote.text}</span>
     </button>
   )
@@ -820,7 +841,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       )}
       {mine && (
         <span onBlur={() => setConfirmDelete(false)}>
-          <ActionIcon title={confirmDelete ? 'Clic otra vez para eliminar' : 'Eliminar'} danger={confirmDelete} onClick={() => (confirmDelete ? onDelete() : setConfirmDelete(true))}>
+          <ActionIcon title={confirmDelete ? 'Pulsa otra vez para confirmar' : 'Eliminar'} danger={confirmDelete} onClick={() => (confirmDelete ? onDelete() : setConfirmDelete(true))}>
             <CloseIcon size={11} />
           </ActionIcon>
         </span>

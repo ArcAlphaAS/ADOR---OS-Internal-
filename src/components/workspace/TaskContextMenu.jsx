@@ -135,7 +135,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
           <Item label={completed ? 'Reabrir' : 'Marcar como completada'} onClick={run(() => toggleTaskComplete(task, actorName))} />
           <Divider />
           {confirmDelete ? (
-            <Item label="Clic otra vez para eliminar" danger onClick={run(() => deleteTask(task.id))} />
+            <Item label="Pulsa otra vez para confirmar" danger onClick={run(() => deleteTask(task.id))} />
           ) : (
             <Item label="Eliminar" danger onClick={() => setConfirmDelete(true)} />
           )}

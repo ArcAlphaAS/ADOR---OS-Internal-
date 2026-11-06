@@ -119,7 +119,7 @@ function NoteCard({ note, actorName, onArchive, onDelete }) {
           type="button"
           onClick={() => onArchive(note.id)}
           title="Revisada"
-          className="flex h-7 w-7 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#4CAF50]"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#4CAF50]"
         >
           <CheckCircleIcon size={15} />
         </button>
@@ -127,7 +127,7 @@ function NoteCard({ note, actorName, onArchive, onDelete }) {
           type="button"
           onClick={() => onDelete(note.id)}
           title="Eliminar"
-          className="flex h-7 w-7 items-center justify-center rounded-full text-[#444444] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#E05252]"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#E05252]"
         >
           <CloseIcon size={12} />
         </button>
@@ -170,7 +170,7 @@ function QuickCapture({ user, actorName, inputRef }) {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder="¿Qué necesitas hacer? — Enter para guardar"
-        className="min-w-0 flex-1 bg-transparent py-3 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none disabled:opacity-50"
+        className="min-w-0 flex-1 bg-transparent py-3 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none disabled:opacity-50"
       />
     </div>
   )
@@ -190,14 +190,14 @@ function HoyHeader({ total, completedCount, overdueCount }) {
       <div>
         <h1 className="ador-title">Hoy</h1>
         <p className="mt-0.5 text-[13px] capitalize text-[#888888]">{dateLabel}</p>
-        <p className="mt-2 text-[12px] text-[#666666]">
+        <p className="mt-2 text-[12px] text-[#8A8A8A]">
           {total} tarea{total === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}
           <span style={{ color: statusColor }}>{statusLabel}.</span>
         </p>
       </div>
-      <p className="hidden max-w-[220px] text-right text-[13px] italic leading-relaxed text-[#666666] md:block">
+      <p className="hidden max-w-[220px] text-right text-[13px] italic leading-relaxed text-[#8A8A8A] md:block">
         "{dailyQuote()}"
-        <span className="mt-1 block text-[11px] not-italic text-[#444444]">— ADOR OS</span>
+        <span className="mt-1 block text-[11px] not-italic text-[#8A8A8A]">— ADOR OS</span>
       </p>
     </div>
   )
@@ -236,7 +236,7 @@ function FocusCard({ task, workstream, onStartFocus }) {
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#888888]">Enfoque actual</p>
           <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{task.title}</p>
-          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#666666]">
+          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#8A8A8A]">
             {workstream && <span>{workstream.name}</span>}
             {meta && (
               <span className="flex items-center gap-1" style={{ color: meta.color }}>
@@ -303,7 +303,7 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
         className="w-full max-w-[520px] px-6"
       >
         <div className="ador-modal-surface ador-grain rounded-[28px] px-8 py-10 text-center">
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#666666]">Modo enfoque</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Modo enfoque</p>
 
           <div className="mt-6 flex flex-col items-center gap-3">
             {meta && (
@@ -401,10 +401,10 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between gap-2 px-5 py-3.5">
         <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2.5 text-left">
-          <ChevronDownIcon size={13} className="text-[#767676] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          <ChevronDownIcon size={13} className="text-[#8A8A8A] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
           <SectionIcon Icon={CheckCircleIcon} color="#4CAF50" />
           <span className="text-[14px] font-semibold text-[#4CAF50]">Hecho</span>
-          <span className="text-[12px] text-[#767676]">{done.length}</span>
+          <span className="text-[12px] text-[#8A8A8A]">{done.length}</span>
         </button>
         <div className="flex items-center gap-0.5 rounded-full bg-white/[0.05] p-0.5">
           {HECHO_RANGES.map((r) => (
@@ -423,11 +423,11 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
       {open && (
         <div className="px-5 pb-4">
           {done.length === 0 ? (
-            <p className="py-2 text-[13px] text-[#767676]">{range === 'hoy' ? 'Todavía no completaste nada hoy.' : 'Nada completado en este periodo.'}</p>
+            <p className="py-2 text-[13px] text-[#8A8A8A]">{range === 'hoy' ? 'Todavía no completaste nada hoy.' : 'Nada completado en este periodo.'}</p>
           ) : (
             groups.map((g) => (
               <div key={g.label} className="mt-1">
-                <p className="pb-1 pt-2 text-[11px] font-medium capitalize tracking-wide text-[#767676]">{g.label}</p>
+                <p className="pb-1 pt-2 text-[11px] font-medium capitalize tracking-wide text-[#8A8A8A]">{g.label}</p>
                 {/* Línea de tiempo: hora a la izquierda, punto con check unido por un conector punteado, título tachado. */}
                 <ul>
                   {g.items.map((t, i) => {
@@ -439,11 +439,11 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
                       <li key={t.id} className="relative">
                         {!last && <span aria-hidden className="absolute bottom-[-4px] left-[62px] top-[30px] w-px border-l border-dashed border-white/[0.16]" />}
                         <button type="button" onClick={() => onOpenTask?.(t)} className="flex w-full items-start gap-3 py-2 text-left">
-                          <span className="w-[42px] flex-shrink-0 pt-[1px] text-[12px] tabular-nums text-[#767676]">{t.completedAt.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                          <span className="w-[42px] flex-shrink-0 pt-[1px] text-[12px] tabular-nums text-[#8A8A8A]">{t.completedAt.toDate().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                           <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[11px] font-bold leading-none text-[#0A0A0A]">✓</span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13.5px] text-[#767676] line-through decoration-white/[0.25]">{t.title}</span>
-                            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#767676]">
+                            <span className="block truncate text-[13.5px] text-[#8A8A8A] line-through decoration-white/[0.25]">{t.title}</span>
+                            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#8A8A8A]">
                               {ws && <span>{ws.name}</span>}
                               {obj && <span className="text-[#F4EEE2]">↗ {obj.title}</span>}
                             </span>
@@ -473,12 +473,12 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left">
         <div className="flex items-center gap-2.5">
-          <ChevronDownIcon size={13} className="text-[#444444] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          <ChevronDownIcon size={13} className="text-[#8A8A8A] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
           <SectionIcon Icon={Icon} color={color} />
           <span className="text-[14px] font-semibold" style={{ color }}>
             {title}
           </span>
-          {tasks.length > 0 && <span className="text-[12px] text-[#444444]">{tasks.length}</span>}
+          {tasks.length > 0 && <span className="text-[12px] text-[#8A8A8A]">{tasks.length}</span>}
         </div>
         {headerAction && <div onClick={(e) => e.stopPropagation()}>{headerAction}</div>}
       </button>
@@ -488,7 +488,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
             {tasks.length > 0 && (
               <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-1 md:grid" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
                 {COLUMN_HEADERS.map((h, i) => (
-                  <span key={h || i} className="font-medium text-[#444444]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <span key={h || i} className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     {h}
                   </span>
                 ))}
@@ -584,7 +584,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
       <button
         type="button"
         onClick={() => onOpenChange(true)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
       >
         <span className="text-[15px] leading-none">+</span> Agregar pendiente
       </button>
@@ -602,7 +602,7 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Qué tienes pendiente — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] max-md:w-full max-md:text-[16px] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] max-md:w-full max-md:text-[16px] placeholder:text-[#8A8A8A] outline-none focus:border-white/30 disabled:opacity-50"
       />
       <WorkstreamCell workstreams={workstreams} value={workstreamId} onChange={setWorkstreamId} />
       <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} onChange={setAssignedTo} />
@@ -622,7 +622,7 @@ function NadaUrgente() {
   return (
     <div className="flex items-center gap-2.5 rounded-xl px-1 py-1">
       <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#4CAF50]" style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }} />
-      <p className="text-[13px] text-[#444444]">Nada vencido, nada para hoy.</p>
+      <p className="text-[13px] text-[#8A8A8A]">Nada vencido, nada para hoy.</p>
     </div>
   )
 }

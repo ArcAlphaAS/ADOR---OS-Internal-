@@ -18,7 +18,7 @@ export default function AvatarStack({ userIds = [], userById, pendingIds = [], s
   if (visible.length === 0) {
     return (
       <span
-        className="text-[11px] text-[#444444]"
+        className="text-[11px] text-[#8A8A8A]"
         title={userIds.length > 0 ? 'Estaba asignada a alguien que ya no tiene acceso a ADOR OS' : undefined}
       >
         Sin asignar

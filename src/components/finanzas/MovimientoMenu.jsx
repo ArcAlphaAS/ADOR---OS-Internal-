@@ -79,7 +79,7 @@ export function MovimientoMenu({ movement, x, y, onClose, onEdit, onOpenClient }
           <div className="my-1 h-px bg-white/[0.08]" />
           {fromClient ? (
             <>
-              <p className="px-2.5 py-1.5 text-[11.5px] leading-snug text-[#767676]">Este ingreso viene del pago de un cliente. Se edita en Clientes → Pagos.</p>
+              <p className="px-2.5 py-1.5 text-[11.5px] leading-snug text-[#8A8A8A]">Este ingreso viene del pago de un cliente. Se edita en Clientes → Pagos.</p>
               <Item label="Abrir clientes" onClick={() => { onClose(); onOpenClient?.() }} />
             </>
           ) : (
@@ -101,7 +101,7 @@ export function MovimientoMenu({ movement, x, y, onClose, onEdit, onOpenClient }
 
 const inputClass =
   'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] outline-none transition-colors duration-150 focus:border-white/[0.2]'
-const labelClass = 'mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em] text-[#767676]'
+const labelClass = 'mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]'
 
 export function EditMovimientoModal({ movement, onClose }) {
   const isExpense = movement.type === 'gasto'

@@ -6,6 +6,7 @@ import { subscribeMyPresence, setDoNotDisturb, subscribeUsers, dmIdFor } from '.
 import { presenceOf, userLabel } from '../../lib/chat'
 import { isAdmin as isAdminProfile } from '../../lib/permissions'
 import PersonAvatar from '../chat/PersonAvatar'
+import { notifyFail } from '../../lib/notifyFail'
 
 const sv = (d) => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 const ICON = {
@@ -76,12 +77,12 @@ function StatusAndHelp({ user, onClose, onSelect, onNavigate }) {
     <div className="px-1.5 pb-1">
       <button type="button" onClick={() => setPanel(panel === 'estado' ? null : 'estado')} className={row}>
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: me.color }} /></span>
-        <span className="min-w-0 flex-1"><span className="block">Estado</span><span className="block truncate text-[11.5px] text-[#767676]">{me.label}</span></span>
+        <span className="min-w-0 flex-1"><span className="block">Estado</span><span className="block truncate text-[11.5px] text-[#8A8A8A]">{me.label}</span></span>
       </button>
       {panel === 'estado' && (
         <div className="mb-1 ml-10 flex flex-col">
           {choices.map(([label, until]) => (
-            <button key={label} type="button" onClick={() => { setDoNotDisturb(user.uid, until).catch(() => {}); setPanel(null); onClose?.() }} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">{label}</button>
+            <button key={label} type="button" onClick={() => { setDoNotDisturb(user.uid, until).catch(notifyFail); setPanel(null); onClose?.() }} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">{label}</button>
           ))}
         </div>
       )}
@@ -93,7 +94,7 @@ function StatusAndHelp({ user, onClose, onSelect, onNavigate }) {
       </button>
       {panel === 'ayuda' && (
         <div className="mb-1 ml-10 flex flex-col">
-          <p className="px-2.5 pb-1 text-[11.5px] text-[#767676]">Escribe a un administrador</p>
+          <p className="px-2.5 pb-1 text-[11.5px] text-[#8A8A8A]">Escribe a un administrador</p>
           {admins.map((a) => (
             <button key={a.id} type="button" onClick={() => { onClose?.(); onNavigate?.('chat', { type: 'chat', convType: 'dm', convId: dmIdFor(user.uid, a.id), participantUids: [user.uid, a.id] }) }} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E4E4E4] hover:bg-white/[0.07]">
               <PersonAvatar uid={a.id} name={userLabel(a)} size={22} />{userLabel(a)}
@@ -152,7 +153,7 @@ export default function ProfileMenu({ user, onClose, onSelect, onNavigate, ancho
       <div className="ador-glass ador-grain overflow-hidden rounded-[22px]">
         <div className="px-4 pb-2 pt-3.5">
           <p className="truncate text-[14px] font-semibold text-[#F5F5F5]">{user?.displayName || 'Mi cuenta'}</p>
-          <p className="truncate text-[12px] text-[#767676]">{user?.email}</p>
+          <p className="truncate text-[12px] text-[#8A8A8A]">{user?.email}</p>
         </div>
         <nav className="flex flex-col px-1.5 pb-1">
           {MENU_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => (

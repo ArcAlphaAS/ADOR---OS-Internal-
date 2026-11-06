@@ -16,11 +16,11 @@ function Stat({ label, value, sub, color = '#F5F5F5', onClick }) {
       onClick={onClick}
       className={`min-w-0 flex-1 rounded-2xl bg-white/[0.04] px-3.5 py-3.5 text-left ${onClick ? 'transition-colors duration-150 hover:bg-white/[0.08]' : ''}`}
     >
-      <span className="block text-[11px] text-[#767676]">{label}</span>
+      <span className="block text-[11px] text-[#8A8A8A]">{label}</span>
       <span className="mt-1 block truncate text-[16px] font-semibold tabular-nums tracking-tight" style={{ color }}>
         {value}
       </span>
-      {sub && <span className="mt-0.5 block truncate text-[11.5px] text-[#767676]">{sub}</span>}
+      {sub && <span className="mt-0.5 block truncate text-[11.5px] text-[#8A8A8A]">{sub}</span>}
     </Comp>
   )
 }
@@ -53,9 +53,9 @@ export default function FinanceHero({
           <AnimatedNumber value={cashBalance} format={(n) => currencyPEN.format(n)} />
         </p>
       ) : (
-        <p className="mt-5 text-[34px] font-light leading-none tracking-[-0.02em] text-[#5A5A5A]">Sin registrar</p>
+        <p className="mt-5 text-[34px] font-light leading-none tracking-[-0.02em] text-[#8A8A8A]">Sin registrar</p>
       )}
-      <p className="mt-2 text-[12.5px] text-[#767676]">{cashBalance ? 'Saldo registrado a mano en Proyección de caja' : 'Regístralo en Proyección de caja para ver el runway'}</p>
+      <p className="mt-2 text-[12.5px] text-[#8A8A8A]">{cashBalance ? 'Saldo registrado a mano en Proyección de caja' : 'Regístralo en Proyección de caja para ver el runway'}</p>
 
       <div className="mt-6 flex gap-2.5">
         <button type="button" onClick={onIngreso} className="ador-btn-primary flex-1 rounded-full px-4 py-2.5 text-[13px] font-medium">

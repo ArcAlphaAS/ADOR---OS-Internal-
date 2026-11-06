@@ -41,7 +41,7 @@ export default function LatestNewsCard({ uid, onNavigate }) {
         <Cover post={post} zoom />
       </span>
       <span className="flex flex-1 flex-col px-7 pb-6 pt-5 sm:px-8">
-        <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#7A7A7A]">
+        <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#8A8A8A]">
           Último anuncio{post.category ? ` · ${post.category}` : ''}
           {unread && <span className="h-1.5 w-1.5 rounded-full bg-[#E8C15A]" />}
         </span>

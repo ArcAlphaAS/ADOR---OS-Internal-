@@ -461,7 +461,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       )}
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-0.5 rounded-xl border border-white/[0.1] bg-[#141414] p-1.5">
-          <p className="px-2 pb-1 text-[11px] uppercase tracking-[0.08em] text-[#7A7A7A]">Mencionar</p>
+          <p className="px-2 pb-1 text-[11px] uppercase tracking-[0.08em] text-[#8A8A8A]">Mencionar</p>
           {suggestions.map((c, i) => (
             <button
               key={c.uid}
@@ -564,7 +564,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               {f.label}
             </button>
           ))}
-          <span className="ml-2 text-[11px] text-[#7A7A7A]">Selecciona texto y aplica · Shift+Enter para nueva línea</span>
+          <span className="ml-2 text-[11px] text-[#8A8A8A]">Selecciona texto y aplica · Shift+Enter para nueva línea</span>
         </div>
       )}
 
@@ -615,7 +615,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               </button>
             )}
           </span>
-          <span className="basis-full px-1.5 text-[11px] text-[#7A7A7A]">Sale solo a esa hora desde el ADOR OS de quien esté conectado — tú o quien lo recibe.</span>
+          <span className="basis-full px-1.5 text-[11px] text-[#8A8A8A]">Sale solo a esa hora desde el ADOR OS de quien esté conectado — tú o quien lo recibe.</span>
         </div>
       )}
 
@@ -758,7 +758,7 @@ function PollForm({ onPublish, onCancel, onError }) {
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(() => [newOption('Sí'), newOption('No')])
   const [multi, setMulti] = useState(false)
-  const inputClass = 'w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-1.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none focus:border-white/[0.22]'
+  const inputClass = 'w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-1.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/[0.22]'
 
   const publish = () => {
     const clean = options.map((o) => ({ ...o, label: o.label.trim() })).filter((o) => o.label)

@@ -110,7 +110,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#444444] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-[13px] text-[#8A8A8A] transition-colors duration-150 hover:bg-white/[0.03] hover:text-[#888888]"
       >
         <span className="text-[15px] leading-none">+</span> Agregar tarea
       </button>
@@ -140,7 +140,7 @@ function InlineAddTask({ workstreamId, actorUserId, actorName, userById, users }
         onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
         onKeyDown={(e) => e.key === 'Enter' && submit()}
         placeholder={saving ? 'Guardando...' : 'Título de la tarea — Enter para guardar'}
-        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/30 disabled:opacity-50"
+        className="min-w-0 rounded-lg border border-white/[0.14] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/30 disabled:opacity-50"
       />
 
       <AssigneeCell
@@ -220,7 +220,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
           <ChevronDownIcon
             size={14}
             className="flex-shrink-0"
-            style={{ color: '#444444', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
+            style={{ color: '#8A8A8A', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
           />
           {/* min-w-0 + truncate is the element that gives ground when the row
               runs out of space — without it, flexbox's default min-width:auto
@@ -231,7 +231,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
               here that's fine to ellipsize; the badge and stat never should. */}
           <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
           {tasks.length > 0 && (
-            <span className="flex-shrink-0 whitespace-nowrap text-[12px] text-[#444444]">
+            <span className="flex-shrink-0 whitespace-nowrap text-[12px] text-[#8A8A8A]">
               {completedCount} de {tasks.length} completadas
             </span>
           )}
@@ -314,7 +314,7 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
                   {COLUMN_HEADERS.map((h, i) => (
                     <span
                       key={h || i}
-                      className="font-medium text-[#444444]"
+                      className="font-medium text-[#8A8A8A]"
                       style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
                     >
                       {h}
@@ -345,12 +345,12 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
                     <button
                       type="button"
                       onClick={() => setShowDone((v) => !v)}
-                      className="flex w-full items-center gap-2 px-2 py-2.5 text-left text-[12px] text-[#767676] transition-colors hover:text-[#C9C9C9]"
+                      className="flex w-full items-center gap-2 px-2 py-2.5 text-left text-[12px] text-[#8A8A8A] transition-colors hover:text-[#C9C9C9]"
                     >
                       <ChevronDownIcon size={12} style={{ transform: showDone ? 'none' : 'rotate(-90deg)', transition: 'transform 150ms ease-out' }} />
                       <span className="text-[#4CAF50]">✓</span>
                       {doneTasks.length} completada{doneTasks.length === 1 ? '' : 's'}
-                      <span className="text-[#5A5A5A]">· {showDone ? 'ocultar' : 'ver'}</span>
+                      <span className="text-[#8A8A8A]">· {showDone ? 'ocultar' : 'ver'}</span>
                     </button>
                     {showDone && (
                       <div className="flex flex-col divide-y divide-white/[0.04]">
@@ -427,7 +427,7 @@ export default function ListaView({
   }
 
   if (groups.length === 0) {
-    return <p className="rounded-2xl border border-dashed border-white/[0.1] px-6 py-10 text-center text-[13px] text-[#777777]">Ninguna tarea coincide con los filtros. Cambia o quita alguno para ver más.</p>
+    return <p className="rounded-2xl border border-dashed border-white/[0.1] px-6 py-10 text-center text-[13px] text-[#8A8A8A]">Ninguna tarea coincide con los filtros. Cambia o quita alguno para ver más.</p>
   }
 
   return (

@@ -35,7 +35,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Título del documento"
-        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[15px] font-medium text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+        className="w-full rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[15px] font-medium text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
       />
 
       {/* Two-level picker: pick the top category, then one of its
@@ -102,11 +102,11 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
           onChange={(e) => setContent(e.target.value)}
           placeholder={'# Título\n\nEscribe en Markdown — **negrita**, *cursiva*, listas con "- ", `código`, [links](url)...'}
           rows={16}
-          className="w-full resize-y rounded-xl border border-white/[0.1] bg-[#0E0E0E] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+          className="w-full resize-y rounded-xl border border-white/[0.1] bg-[#0E0E0E] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
         />
       ) : (
         <div className="min-h-[300px] rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-4">
-          {content.trim() ? renderMarkdown(content) : <p className="text-[13px] text-[#444444]">Nada que previsualizar todavía.</p>}
+          {content.trim() ? renderMarkdown(content) : <p className="text-[13px] text-[#8A8A8A]">Nada que previsualizar todavía.</p>}
         </div>
       )}
 

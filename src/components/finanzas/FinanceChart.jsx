@@ -24,7 +24,7 @@ function niceMax(v) {
 function Stat({ label, value, color }) {
   return (
     <div>
-      <p className="text-[11px] text-[#767676]">{label}</p>
+      <p className="text-[11px] text-[#8A8A8A]">{label}</p>
       <p className="mt-0.5 text-[16px] font-semibold tabular-nums tracking-tight" style={{ color }}>
         {value}
       </p>
@@ -74,7 +74,7 @@ export default function FinanceChart({ series }) {
       {!hasData ? (
         <div className="flex flex-col items-center gap-3 py-14">
           <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[13px] font-light text-[#767676]">Sin movimientos registrados aún</p>
+          <p className="text-[13px] font-light text-[#8A8A8A]">Sin movimientos registrados aún</p>
         </div>
       ) : (
         <>
@@ -85,7 +85,7 @@ export default function FinanceChart({ series }) {
           </div>
 
           <div className="mt-6 flex">
-            <div className="relative mr-3 w-9 flex-shrink-0 text-right text-[10.5px] tabular-nums text-[#767676]" style={{ height: PLOT_H }}>
+            <div className="relative mr-3 w-9 flex-shrink-0 text-right text-[10.5px] tabular-nums text-[#8A8A8A]" style={{ height: PLOT_H }}>
               {[1, 0.5, 0].map((f) => (
                 <span key={f} className="absolute right-0 -translate-y-1/2" style={{ top: `${(1 - f) * 100}%` }}>
                   {f === 0 ? '0' : compact(top * f)}

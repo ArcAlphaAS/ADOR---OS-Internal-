@@ -57,12 +57,12 @@ function ContractTerms({ client, actorName }) {
           {b.options.map((o) => (
             <li key={o.id} className="flex items-center justify-between gap-3 text-[12px]">
               <span className="min-w-0 truncate text-[#C8C8C8]">
-                {o.label} <span className="text-[#767676]">· {o.months} meses · {currencyPEN.format(o.amount || 0)}</span>
+                {o.label} <span className="text-[#8A8A8A]">· {o.months} meses · {currencyPEN.format(o.amount || 0)}</span>
               </span>
               {o.status === 'pendiente' ? (
                 <span className="flex flex-shrink-0 items-center gap-2">
                   <button type="button" onClick={() => exercise(o)} className="rounded-full border border-white/[0.16] px-2.5 py-0.5 text-[11px] font-medium text-[#F5F5F5] hover:bg-white/10">Ejercer</button>
-                  <button type="button" onClick={() => decline(o)} className="text-[11px] text-[#767676] hover:text-[#F5F5F5]">No renovar</button>
+                  <button type="button" onClick={() => decline(o)} className="text-[11px] text-[#8A8A8A] hover:text-[#F5F5F5]">No renovar</button>
                 </span>
               ) : (
                 <span className="flex-shrink-0 text-[11px]" style={{ color: o.status === 'ejercida' ? '#4CAF50' : '#767676' }}>
@@ -119,7 +119,7 @@ function ServiceBar({ client, services, actorName, onComplete, onNewService, onC
         )
       )}
       {past.length > 0 && (
-        <p className="px-1 text-[11.5px] leading-relaxed text-[#767676]">
+        <p className="px-1 text-[11.5px] leading-relaxed text-[#8A8A8A]">
           Servicios anteriores: {past.map((c) => `${serviceLabel(c.type, services)}${c.completedAt ? ` (${fmt(c.completedAt)})` : ''}`).join(' · ')}
         </p>
       )}
@@ -164,7 +164,7 @@ function LostControl({ client, actorName }) {
         <button
           type="button"
           onClick={() => setPickingReason(false)}
-          className="ml-auto text-[11px] text-[#444444] hover:text-[#888888]"
+          className="ml-auto text-[11px] text-[#8A8A8A] hover:text-[#888888]"
         >
           Cancelar
         </button>
@@ -177,7 +177,7 @@ function LostControl({ client, actorName }) {
       <button
         type="button"
         onClick={() => setPickingReason(true)}
-        className="text-[12px] text-[#444444] transition-colors duration-150 hover:text-[#E05252]"
+        className="text-[12px] text-[#8A8A8A] transition-colors duration-150 hover:text-[#E05252]"
       >
         Marcar como perdido
       </button>
@@ -251,7 +251,7 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
                 {type}
               </span>
               {client.code && (
-                <span className="font-mono text-[10px] tracking-[0.04em] text-[#444444]">{client.code}</span>
+                <span className="font-mono text-[10px] tracking-[0.04em] text-[#8A8A8A]">{client.code}</span>
               )}
             </div>
             <h2 className="mt-1 text-[20px] font-semibold text-[#F5F5F5]">{client.name}</h2>

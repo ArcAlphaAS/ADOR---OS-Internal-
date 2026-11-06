@@ -22,7 +22,7 @@ function UnreadDot() {
 function SectionHeader({ label, onAdd, addTitle }) {
   return (
     <div className="mb-1 flex items-center justify-between px-1">
-      <p className="text-[13px] font-medium text-[#8E8E93] md:text-[11px] md:uppercase md:tracking-[0.08em] md:text-[#767676]">{label}</p>
+      <p className="text-[13px] font-medium text-[#8E8E93] md:text-[11px] md:uppercase md:tracking-[0.08em] md:text-[#8A8A8A]">{label}</p>
       {onAdd && (
         <button
           type="button"
@@ -38,7 +38,7 @@ function SectionHeader({ label, onAdd, addTitle }) {
 }
 
 function SubLabel({ children }) {
-  return <p className="mt-1.5 mb-0.5 px-2.5 text-[11px] font-medium text-[#767676]">{children}</p>
+  return <p className="mt-1.5 mb-0.5 px-2.5 text-[11px] font-medium text-[#8A8A8A]">{children}</p>
 }
 
 // A half-written message waiting in a conversation you're not looking at.
@@ -366,7 +366,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         <SectionHeader label="Mensajes directos" />
         <div className="flex flex-col gap-0.5">
           {allOthers.length === 0 && (
-            <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#767676]">
+            <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#8A8A8A]">
               Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
             </p>
           )}
@@ -389,7 +389,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
       <div>
         <SectionHeader label="Canales" onAdd={onNewChannel} addTitle="Nuevo canal" />
         <div className="flex flex-col gap-0.5">
-          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12.5px] text-[#767676]">Sin canales todavía</p>}
+          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12.5px] text-[#8A8A8A]">Sin canales todavía</p>}
           {publicChannels.length > 0 && <SubLabel>Empresa</SubLabel>}
           {publicChannels.map((c) => channelRow(c, false))}
           {privateChannels.length > 0 && <SubLabel>Privados</SubLabel>}

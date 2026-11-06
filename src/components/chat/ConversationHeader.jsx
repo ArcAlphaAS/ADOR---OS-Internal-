@@ -24,7 +24,7 @@ export function PinnedBar({ pins, open, onToggle, onJump, onUnpin }) {
             {pins[0].text}
           </span>
         )}
-        <span className="ml-auto flex-shrink-0 text-[11px] text-[#777777]">{open ? 'Cerrar' : 'Ver'}</span>
+        <span className="ml-auto flex-shrink-0 text-[11px] text-[#8A8A8A]">{open ? 'Cerrar' : 'Ver'}</span>
       </button>
       {open && (
         <div className="flex flex-col gap-0.5 border-t border-[#B8860B]/15 px-1.5 py-1.5">
@@ -119,7 +119,7 @@ export default function ConversationHeader({ onBack, selected, conversation, dmU
           <div className="min-w-0">
             <p className="line-clamp-1 text-[17px] font-semibold leading-tight tracking-[-0.01em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">{dmEntry?.name || userLabel(dmUser)}</p>
             {(presence.label || role) && (
-              <p className="truncate text-[12.5px] text-[#7A7A7A]">
+              <p className="truncate text-[12.5px] text-[#8A8A8A]">
                 {presence.label && <span style={{ color: presence.status === 'away' ? '#8A8A8A' : presence.color || undefined }}>{presence.label}</span>}
                 {presence.label && role ? ' · ' : ''}
                 {role}
@@ -162,7 +162,7 @@ export default function ConversationHeader({ onBack, selected, conversation, dmU
           {kind === 'channel' && (priv ? <LockIcon size={13} className="text-[#888888]" /> : <span className="text-[#858585]">#</span>)}
           <span className="truncate">{title}</span>
         </p>
-        <p className="truncate text-[12.5px] text-[#7A7A7A]" title={conversation.description || undefined}>
+        <p className="truncate text-[12.5px] text-[#8A8A8A]" title={conversation.description || undefined}>
           {conversation.description ? <span className="text-[#AAAAAA]">{conversation.description}</span> : subtitle}
           {conversation.description ? ` · ${subtitle}` : ''}
         </p>

@@ -86,7 +86,7 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
           </div>
 
           <div className="mt-2 flex min-h-[120px] flex-1 flex-col gap-0.5 overflow-y-auto">
-            {options.length === 0 && <p className="px-2 py-3 text-[12.5px] text-[#7A7A7A]">Nada coincide con “{search.trim()}”.</p>}
+            {options.length === 0 && <p className="px-2 py-3 text-[12.5px] text-[#8A8A8A]">Nada coincide con “{search.trim()}”.</p>}
             {options.map((o) => (
               <button
                 key={o.key}
@@ -99,7 +99,7 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
                 <span className="min-w-0 flex-1 truncate text-[13.5px]" style={{ color: isSelected(o) ? '#F4EEE2' : '#DDDDDD' }}>
                   {o.label}
                 </span>
-                <span className="flex-shrink-0 text-[11px] text-[#7A7A7A]">{o.hint}</span>
+                <span className="flex-shrink-0 text-[11px] text-[#8A8A8A]">{o.hint}</span>
               </button>
             ))}
           </div>
@@ -109,7 +109,7 @@ export default function ForwardModal({ message, fromLabel, users, groups, channe
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Añade un comentario (opcional)"
-            className="mt-3 w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none focus:border-white/[0.2]"
+            className="mt-3 w-full resize-none rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/[0.2]"
           />
 
           <div className="mt-4 flex justify-end gap-2">

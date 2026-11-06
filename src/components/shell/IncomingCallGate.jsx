@@ -176,7 +176,7 @@ export default function IncomingCallGate({ user }) {
             {video ? 'Videollamada' : 'Llamada'} entrante · Google Meet
           </p>
           {availability === 'meeting' && <p className="mt-1 text-[11px] text-[#A78BDA]">Sin sonido — estás en una reunión</p>}
-          <p className="mt-0.5 text-[12.5px] text-[#7A7A7A]">{current.conversationLabel}</p>
+          <p className="mt-0.5 text-[12.5px] text-[#8A8A8A]">{current.conversationLabel}</p>
           {ringing.length > 1 && <p className="mt-2 text-[11px] text-[#B8860B]">+{ringing.length - 1} llamada{ringing.length > 2 ? 's' : ''} más</p>}
 
           <div className="mt-8 flex w-full items-start justify-center gap-12">

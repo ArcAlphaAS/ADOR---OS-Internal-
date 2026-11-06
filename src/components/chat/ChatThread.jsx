@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageIcon } from '../icons'
-import { MessageBubble, loadBlob } from './MessageBubble'
+import { MessageBubble, HighlightContext, loadBlob } from './MessageBubble'
 
 function dayKey(ts) {
   if (!ts?.toDate) return null
@@ -64,7 +64,20 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
   const positionedRef = useRef(null) // conversationKey already positioned on open
   const seenRef = useRef({ key: null, ids: new Set() })
   const q = query?.trim().toLowerCase()
-  const shown = q ? messages.filter((m) => (m.text || '').toLowerCase().includes(q) || (m.attachment?.name || '').toLowerCase().includes(q)) : messages
+  // Como WhatsApp/iMessage: la conversación se queda completa (con su contexto),
+  // las coincidencias se marcan y ↑ ↓ saltan entre ellas.
+  const shown = messages
+  const matchIds = q ? messages.filter((m) => (m.text || '').toLowerCase().includes(q) || (m.attachment?.name || '').toLowerCase().includes(q)).map((m) => m.id) : []
+  const [matchIdx, setMatchIdx] = useState(0)
+  useEffect(() => setMatchIdx(Math.max(0, matchIds.length - 1)), [q]) // eslint-disable-line react-hooks/exhaustive-deps
+  const matchKey = matchIds[Math.min(matchIdx, matchIds.length - 1)]
+  useEffect(() => {
+    if (!q || !matchKey) return
+    const el = document.getElementById(`msg-${matchKey}`)
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    el.animate([{ background: 'rgba(244,238,226,0.14)' }, { background: 'transparent' }], { duration: 1400, easing: 'ease-out' })
+  }, [q, matchKey])
   const lastId = messages[messages.length - 1]?.id
   const flags = groupFlags(shown)
   // Whether the reader is at (or near) the bottom. While they're reading
@@ -183,6 +196,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
   let lastDay = null
 
   return (
+    <HighlightContext.Provider value={q || ""}>
     <div className="relative flex min-h-0 flex-1 flex-col">
     <div ref={scrollRef} onScroll={onScroll} data-keep-scroll className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 pb-0 pt-4 md:pb-4">
       {hasMore && !q && (
@@ -205,14 +219,24 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
         </div>
       )}
       {q && (
-        <p className="mb-3 px-1 text-[12.5px] text-[#8A8A8A]">
-          {shown.length ? `${shown.length} ${shown.length === 1 ? 'mensaje coincide' : 'mensajes coinciden'} con “${query.trim()}”` : `Nada coincide con “${query.trim()}” en los mensajes cargados.`}
-        </p>
+        <div className="sticky top-0 z-10 mb-3 flex items-center gap-1 self-start rounded-full border border-white/[0.12] bg-[#1C1C1E] py-1 pl-3.5 pr-1 text-[12.5px] text-[#CFCFCF]" role="status" aria-live="polite">
+          <span className="mr-1">{matchIds.length ? `${Math.min(matchIdx, matchIds.length - 1) + 1} de ${matchIds.length}` : 'Sin coincidencias en los mensajes cargados'}</span>
+          {matchIds.length > 1 && (
+            <>
+              <button type="button" aria-label="Coincidencia anterior" onClick={() => setMatchIdx((i) => (i - 1 + matchIds.length) % matchIds.length)} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/[0.08]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+              </button>
+              <button type="button" aria-label="Coincidencia siguiente" onClick={() => setMatchIdx((i) => (i + 1) % matchIds.length)} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/[0.08]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </>
+          )}
+        </div>
       )}
       {messages.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <MessageIcon size={20} className="text-[#5A5A5A]" />
-          <p className="text-[13.5px] text-[#7A7A7A]">Sin mensajes todavía — escribe el primero.</p>
+          <MessageIcon size={20} className="text-[#8A8A8A]" />
+          <p className="text-[13.5px] text-[#8A8A8A]">Sin mensajes todavía — escribe el primero.</p>
         </div>
       ) : (
         shown.map((mi, i) => {
@@ -280,6 +304,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
       </button>
     )}
     </div>
+    </HighlightContext.Provider>
   )
 }
 

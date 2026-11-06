@@ -42,7 +42,7 @@ export default function PhoneAgenda({ tasks, workstreamById, userById, actorUser
     <div className="flex flex-col gap-6">
       {groups.map(([label, list, color]) => (
         <section key={label} className="flex flex-col gap-2.5">
-          <h2 className="px-1 text-[14px] font-semibold" style={{ color }}>{label} <span className="font-normal text-[#767676]">{list.length}</span></h2>
+          <h2 className="px-1 text-[14px] font-semibold" style={{ color }}>{label} <span className="font-normal text-[#8A8A8A]">{list.length}</span></h2>
           {list.map((t) => (
             <PhoneTaskCard key={t.id} task={t} workstream={workstreamById[t.workstreamId]} workstreams={workstreams} userById={userById} actorUserId={actorUserId} actorName={actorName} onOpen={onOpenTask} />
           ))}

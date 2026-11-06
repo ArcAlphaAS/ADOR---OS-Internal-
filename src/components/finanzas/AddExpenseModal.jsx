@@ -10,10 +10,10 @@ import { driveFileKind } from '../../lib/googleDrive'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 
-const labelClass = 'mb-1.5 block font-medium text-[#444444]'
+const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
 const inputClass =
-  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none transition-colors duration-150 focus:border-white/[0.2]'
+  'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-[10px] text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors duration-150 focus:border-white/[0.2]'
 
 export default function AddExpenseModal({ actorName, onClose }) {
   useEscape(onClose)
@@ -142,7 +142,7 @@ export default function AddExpenseModal({ actorName, onClose }) {
               ))}
             </select>
             {repeat !== 'none' && (
-              <p className="mt-1 text-[11px] text-[#555555]">
+              <p className="mt-1 text-[11px] text-[#8A8A8A]">
                 Se registra hoy y volverá a registrarse solo {RECURRING_FREQUENCIES.find((f) => f.id === repeat).label.toLowerCase()}, el día {Number(date.slice(8))}. Lo gestionas desde “Recurrentes”.
               </p>
             )}
@@ -172,7 +172,7 @@ export default function AddExpenseModal({ actorName, onClose }) {
                 {drive.busy ? 'Abriendo Google Drive…' : 'Adjuntar desde Google Drive (PDF o foto)'}
               </button>
             )}
-            <p className="mt-1 text-[11px] text-[#555555]">El comprobante queda en el Drive de la empresa; aquí se guarda el enlace.</p>
+            <p className="mt-1 text-[11px] text-[#8A8A8A]">El comprobante queda en el Drive de la empresa; aquí se guarda el enlace.</p>
             {drive.prompt}
           </div>
           <div>

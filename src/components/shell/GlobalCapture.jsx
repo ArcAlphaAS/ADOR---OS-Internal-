@@ -105,10 +105,10 @@ export default function GlobalCapture({ user, actorName }) {
                     }}
                     placeholder="Tengo que… / Ordenar… / Llamar a… — como en tu cuaderno."
                     rows={3}
-                    className="mt-4 w-full resize-none rounded-2xl border border-white/[0.08] bg-[#1A1A1A] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#444444] outline-none focus:border-white/[0.2]"
+                    className="mt-4 w-full resize-none rounded-2xl border border-white/[0.08] bg-[#1A1A1A] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/[0.2]"
                   />
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[11px] text-[#444444]">⌘/Ctrl + Enter para guardar</span>
+                    <span className="text-[11px] text-[#8A8A8A]">⌘/Ctrl + Enter para guardar</span>
                     <button
                       type="button"
                       onClick={submit}

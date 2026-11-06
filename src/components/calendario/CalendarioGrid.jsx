@@ -60,7 +60,7 @@ function DayHeader({ day, compact }) {
   const isToday = day.toDateString() === new Date().toDateString()
   return (
     <div className="flex flex-col items-center gap-1 border-l border-white/[0.05] py-2 first:border-l-0">
-      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#666666]">
+      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
         {day.toLocaleDateString('es', { weekday: compact ? undefined : 'short' })}
       </span>
       <span
@@ -121,7 +121,7 @@ function TasksStrip({ days, tasks, actorName }) {
 
   return (
     <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
-      <div className="flex items-center justify-end pr-2 text-[9px] text-[#444444]">Tareas</div>
+      <div className="flex items-center justify-end pr-2 text-[9px] text-[#8A8A8A]">Tareas</div>
       {byDay.map((list, i) => (
         <div key={i} className="flex flex-col gap-1 border-l border-white/[0.05] px-1.5 py-1.5 first:border-l-0">
           {list.map((t) => (
@@ -131,7 +131,7 @@ function TasksStrip({ days, tasks, actorName }) {
               onClick={() => toggle(t)}
               className="flex w-full items-center gap-1 truncate rounded-md border border-dashed border-white/[0.18] px-1.5 py-0.5 text-left text-[10px] font-medium text-[#CCCCCC] transition-colors duration-150 hover:border-white/[0.3]"
             >
-              <CheckCircleIcon size={9} className="flex-shrink-0 text-[#444444]" />
+              <CheckCircleIcon size={9} className="flex-shrink-0 text-[#8A8A8A]" />
               <span className="truncate">{t.title}</span>
             </button>
           ))}
@@ -178,7 +178,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
           {/* Hour labels */}
           <div className="relative">
             {HOURS.map((h) => (
-              <div key={h} className="absolute right-2 -translate-y-1/2 text-[10px] text-[#444444]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }}>
+              <div key={h} className="absolute right-2 -translate-y-1/2 text-[10px] text-[#8A8A8A]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }}>
                 {formatHour(h)}
               </div>
             ))}

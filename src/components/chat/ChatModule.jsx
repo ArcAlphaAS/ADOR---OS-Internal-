@@ -206,7 +206,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     if (!el) return
     jumpToRef.current = null
     el.scrollIntoView({ block: 'center' })
-    el.animate([{ background: 'rgba(244,238,226,0.12)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+    el.animate([{ background: 'rgba(244,238,226,0.26)' }, { background: 'transparent' }], { duration: 2200, easing: 'ease-out' })
   }, [messages])
 
   // Marks the open conversation read whenever its message list changes —
@@ -542,7 +542,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     const el = document.getElementById(`msg-${id}`)
     if (!el) return showToast('Ese mensaje es más antiguo que los cargados — usa "Cargar mensajes anteriores".')
     el.scrollIntoView({ block: 'center' })
-    el.animate([{ background: 'rgba(244,238,226,0.12)' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' })
+    el.animate([{ background: 'rgba(244,238,226,0.26)' }, { background: 'transparent' }], { duration: 2200, easing: 'ease-out' })
   }
 
   // Tied to the conversation it was opened in; switching away hides it.
@@ -869,7 +869,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onAck={handleAck}
               audienceUids={conversationAudience}
             />
-            <p className="h-4 px-1 text-[11px] italic text-[#777777]">{typingLabel(typers)}</p>
+            <p className="h-4 px-1 text-[11px] italic text-[#8A8A8A]">{typingLabel(typers)}</p>
             {myScheduled.length > 0 && (
               <div className="mb-1 flex flex-col gap-1">
                 {myScheduled.map((x) =>
@@ -953,8 +953,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-            <MessageIcon size={20} className="text-[#5A5A5A]" />
-            <p className="max-w-[360px] text-[13.5px] leading-relaxed text-[#767676]">
+            <MessageIcon size={20} className="text-[#8A8A8A]" />
+            <p className="max-w-[360px] text-[13.5px] leading-relaxed text-[#8A8A8A]">
               Escribe un mensaje directo a alguien, abre un grupo privado, o crea el primer canal — empieza por <span className="text-[#888888]">#general</span>.
             </p>
             <button type="button" onClick={() => setModal('channel')} className="ador-btn-primary mt-3 rounded-xl px-4 py-2 text-[12.5px] font-medium">

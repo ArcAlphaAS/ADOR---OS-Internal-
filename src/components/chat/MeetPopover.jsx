@@ -101,7 +101,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
             </button>
           </div>
         )}
-        {canConnect && <p className="mt-3 text-[11px] text-[#7A7A7A]">O hazlo manual esta vez:</p>}
+        {canConnect && <p className="mt-3 text-[11px] text-[#8A8A8A]">O hazlo manual esta vez:</p>}
 
         <div className="mt-3 flex flex-col gap-2.5">
           <div className="flex items-start gap-2.5">
@@ -128,7 +128,7 @@ export default function MeetPopover({ type, anchorRef, onClose, onSend, canConne
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && valid && onSend(link)}
                 placeholder="Pega el enlace: meet.google.com/..."
-                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#7A7A7A] outline-none focus:border-white/[0.2]"
+                className="w-full rounded-lg border border-white/[0.1] bg-[#141414] px-3 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none focus:border-white/[0.2]"
               />
               {url.trim() && !valid && <p className="mt-1 text-[11px] text-[#EF5350]">Eso no parece un enlace de Google Meet.</p>}
               {detected && <p className="mt-1 text-[11px] text-[#4CAF50]">Enlace detectado — llamando…</p>}

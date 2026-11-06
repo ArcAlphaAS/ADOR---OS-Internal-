@@ -23,7 +23,7 @@ function ViewHeader({ icon, title, subtitle }) {
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-[#AAAAAA]">{icon}</span>
       <div>
         <p className="text-[15px] font-semibold text-[#F5F5F5]">{title}</p>
-        <p className="text-[12.5px] text-[#7A7A7A]">{subtitle}</p>
+        <p className="text-[12.5px] text-[#8A8A8A]">{subtitle}</p>
       </div>
     </div>
   )
@@ -32,8 +32,8 @@ function ViewHeader({ icon, title, subtitle }) {
 function Empty({ icon, text }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 py-16 text-center">
-      <span className="text-[#5A5A5A]">{icon}</span>
-      <p className="max-w-[320px] text-[13.5px] leading-relaxed text-[#767676]">{text}</p>
+      <span className="text-[#8A8A8A]">{icon}</span>
+      <p className="max-w-[320px] text-[13.5px] leading-relaxed text-[#8A8A8A]">{text}</p>
     </div>
   )
 }
@@ -51,10 +51,10 @@ function Row({ unread, onClick, leading, title, meta, preview }) {
           <span className="truncate text-[13.5px]" style={{ color: unread ? '#F5F5F5' : '#BBBBBB', fontWeight: unread ? 600 : 500 }}>
             {title}
           </span>
-          <span className="ml-auto flex-shrink-0 text-[11px] text-[#7A7A7A]">{meta}</span>
+          <span className="ml-auto flex-shrink-0 text-[11px] text-[#8A8A8A]">{meta}</span>
           {unread && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#F4EEE2' }} />}
         </span>
-        <span className="mt-0.5 block truncate text-[12.5px] text-[#777777]">{typeof preview === 'string' ? <PreviewText text={preview} /> : preview}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] text-[#8A8A8A]">{typeof preview === 'string' ? <PreviewText text={preview} /> : preview}</span>
       </span>
     </button>
   )
@@ -96,7 +96,7 @@ export function InboxView({ conversations, onOpen, onMarkRead, onMarkUnread, onM
         </span>
         <div className="flex-1">
           <p className="text-[15px] font-semibold text-[#F5F5F5]">Inbox</p>
-          <p className="text-[12.5px] text-[#7A7A7A]">{unread.length ? `${unread.length} ${unread.length === 1 ? 'conversación sin leer' : 'conversaciones sin leer'}` : 'Todo leído'}</p>
+          <p className="text-[12.5px] text-[#8A8A8A]">{unread.length ? `${unread.length} ${unread.length === 1 ? 'conversación sin leer' : 'conversaciones sin leer'}` : 'Todo leído'}</p>
         </div>
         {unread.length > 0 && (
           <button type="button" onClick={() => onMarkAllRead(unread)} className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[12.5px] text-[#AAAAAA] hover:text-[#F5F5F5]">
@@ -115,7 +115,7 @@ export function InboxView({ conversations, onOpen, onMarkRead, onMarkUnread, onM
             type="button"
             onClick={() => setTab(t.id)}
             className="rounded-full px-3 py-1 text-[12.5px] transition-colors"
-            style={tab === t.id ? { background: 'rgba(255,255,255,0.09)', color: '#F5F5F5' } : { color: '#777777' }}
+            style={tab === t.id ? { background: 'rgba(255,255,255,0.09)', color: '#F5F5F5' } : { color: '#8A8A8A' }}
           >
             {t.label}
           </button>
@@ -131,7 +131,7 @@ export function InboxView({ conversations, onOpen, onMarkRead, onMarkUnread, onM
         ) : (
           groups.map((g) => (
             <div key={g.bucket} className="mb-2">
-              <p className="px-3 pt-2 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">{g.bucket}</p>
+              <p className="px-3 pt-2 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">{g.bucket}</p>
               {g.items.map((c) => (
                 <InboxRow key={c.key} c={c} onOpen={onOpen} onMarkRead={onMarkRead} onMarkUnread={onMarkUnread} />
               ))}
@@ -159,7 +159,7 @@ function InboxRow({ c, onOpen, onMarkRead, onMarkUnread }) {
             <span className="truncate text-[13.5px]" style={{ color: c.unread ? '#F5F5F5' : '#AAAAAA', fontWeight: c.unread ? 600 : 500 }}>
               {c.convType === 'dm' ? c.label : sender}
             </span>
-            <span className="truncate text-[12.5px] text-[#7A7A7A]">{c.convType === 'dm' ? '' : where}</span>
+            <span className="truncate text-[12.5px] text-[#8A8A8A]">{c.convType === 'dm' ? '' : where}</span>
             <span className="ml-auto flex-shrink-0 text-[11px]" style={{ color: c.unread ? '#CCCCCC' : '#7A7A7A' }}>
               {timeAgo(c.lastAt)}
             </span>
@@ -255,7 +255,7 @@ export function SavedView({ saved, reminders = [], onOpen, onUnsave, onCancelRem
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-3">
         {reminders.length > 0 && (
           <div className="mb-3">
-            <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">Recordatorios pendientes</p>
+            <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Recordatorios pendientes</p>
             {reminders.map((r) => (
               <div key={r.id} className="group flex items-start gap-1">
                 <div className="min-w-0 flex-1">
@@ -322,7 +322,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
 
         {docs.length > 0 && (
           <div>
-            <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">Documentos oficiales · Google Drive</p>
+            <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Documentos oficiales · Google Drive</p>
             <div className="flex flex-col gap-0.5">
               {docs.map((f) => (
                 <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/[0.04]">
@@ -331,7 +331,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] text-[#DDDDDD]">{f.name}</span>
-                    <span className="block truncate text-[11px] text-[#7A7A7A]">
+                    <span className="block truncate text-[11px] text-[#8A8A8A]">
                       {f.authorName} · {f.conversationLabel} · {timeAgo(f.createdAt)}
                     </span>
                   </span>
@@ -343,7 +343,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
 
         {media.length > 0 && (
           <div>
-            <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#767676]">Archivos de conversación</p>
+            <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Archivos de conversación</p>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2">
               {media.map((f) =>
                 f.kind === 'image' ? (
@@ -360,7 +360,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
                   >
                     <MicIcon size={20} />
                     <span className="text-[11px]">Nota de voz</span>
-                    <span className="max-w-[90%] truncate text-[11px] text-[#7A7A7A]">{f.conversationLabel}</span>
+                    <span className="max-w-[90%] truncate text-[11px] text-[#8A8A8A]">{f.conversationLabel}</span>
                   </button>
                 )
               )}
@@ -436,9 +436,9 @@ export function SearchView({ query, onQueryChange, conversations, onOpen }) {
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Buscar en todos los mensajes…"
-          className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-[#F5F5F5] placeholder:font-normal placeholder:text-[#7A7A7A] outline-none"
+          className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-[#F5F5F5] placeholder:font-normal placeholder:text-[#8A8A8A] outline-none"
         />
-        {loading && <span className="text-[12.5px] text-[#777777]">Buscando…</span>}
+        {loading && <span className="text-[12.5px] text-[#8A8A8A]">Buscando…</span>}
       </div>
 
       {results.length > 0 && (
@@ -484,8 +484,8 @@ export function SearchView({ query, onQueryChange, conversations, onOpen }) {
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   <span className="truncate text-[13.5px] font-medium text-[#DDDDDD]">{message.authorName}</span>
-                  <span className="truncate text-[12.5px] text-[#7A7A7A]">{conv.label}</span>
-                  <span className="ml-auto flex-shrink-0 text-[11px] text-[#7A7A7A]">{timeAgo(message.createdAt)}</span>
+                  <span className="truncate text-[12.5px] text-[#8A8A8A]">{conv.label}</span>
+                  <span className="ml-auto flex-shrink-0 text-[11px] text-[#8A8A8A]">{timeAgo(message.createdAt)}</span>
                 </span>
                 <span className="mt-0.5 block text-[12.5px] leading-relaxed text-[#999999]">
                   <Highlight text={snippetAround(message.text || message.attachment?.name || '', words)} words={words} />

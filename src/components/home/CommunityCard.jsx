@@ -4,6 +4,7 @@ import { subscribeCommunityPosts, subscribeDirectoryPeople, setCommunityRsvp } f
 import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useAccess } from '../../hooks/useAccess'
 import PersonAvatar from '../chat/PersonAvatar'
+import { notifyFail } from '../../lib/notifyFail'
 
 // "Comunidad" on Inicio: the team's shared plans (events posted in Comunidad)
 // plus the human moments — birthdays today and people who just joined — which
@@ -61,7 +62,7 @@ function EventRow({ post, uid, name, onOpen }) {
       ) : (
         <button
           type="button"
-          onClick={() => setCommunityRsvp(post.id, uid, 'going', name, post).catch(() => {})}
+          onClick={() => setCommunityRsvp(post.id, uid, 'going', name, post).catch(notifyFail)}
           className="flex-shrink-0 rounded-full border border-white/[0.18] px-3.5 py-1.5 text-[12.5px] font-medium text-[#E4E4E4] transition-colors hover:border-[#E8C15A] hover:text-[#E8C15A]"
         >
           Voy
@@ -141,10 +142,10 @@ export default function CommunityCard({ user, onNavigate }) {
         </ul>
       )}
 
-      <p className="mb-0.5 mt-5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#767676]">Próximos encuentros</p>
+      <p className="mb-0.5 mt-5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próximos encuentros</p>
       {events.length === 0 ? (
         <div className="py-4">
-          <p className="text-[13.5px] text-[#7A7A7A]">Sin encuentros por ahora.</p>
+          <p className="text-[13.5px] text-[#8A8A8A]">Sin encuentros por ahora.</p>
           {canOrganizeEvents && (
             <button type="button" onClick={() => onNavigate?.('news', { type: 'community' })} className="mt-1.5 text-[13px] font-medium text-[#E8C15A] transition-opacity hover:opacity-80">
               Organizar uno →

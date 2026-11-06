@@ -73,7 +73,7 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
             )}
             {status === 'working' && <p className="mt-3 text-[12px] text-[#888888]">Un momento…</p>}
             {status === 'done' && <p className="mt-3 text-[12px] text-[#4CAF50]">✓ Hecho</p>}
-            {status === 'cancelled' && <p className="mt-3 text-[12px] text-[#777777]">Cancelado — no cambié nada.</p>}
+            {status === 'cancelled' && <p className="mt-3 text-[12px] text-[#8A8A8A]">Cancelado — no cambié nada.</p>}
             {status === 'error' && <p className="mt-3 text-[12px] text-[#EF5350]">No se pudo completar. Inténtalo de nuevo.</p>}
           </div>
         )}
@@ -202,7 +202,7 @@ export default function AdorIAModule({ user }) {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="mb-auto mt-10 sm:mt-16"
             >
-              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#767676]">ADOR IA</p>
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">ADOR IA</p>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -236,7 +236,7 @@ export default function AdorIAModule({ user }) {
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[14.5px] font-medium text-[#F0F0F0]">{title}</span>
-                    <span className="block truncate text-[12px] text-[#767676]">{prompt}</span>
+                    <span className="block truncate text-[12px] text-[#8A8A8A]">{prompt}</span>
                   </span>
                 </motion.button>
               ))}
@@ -245,7 +245,7 @@ export default function AdorIAModule({ user }) {
         ) : (
           <div className="flex flex-col gap-3">
             {trimmedOnce && (
-              <p className="pb-1 text-center text-[11px] text-[#444444]">
+              <p className="pb-1 text-center text-[11px] text-[#8A8A8A]">
                 Mostrando los últimos {MAX_MESSAGES} mensajes — la conversación sigue igual, solo se liberó espacio.
               </p>
             )}

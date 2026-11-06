@@ -73,7 +73,7 @@ export default function HistorialTab({ client, actorName }) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notas (opcional)"
             rows={2}
-            className="resize-none rounded-lg border border-white/[0.08] bg-[#1A1A1A] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#444444] outline-none"
+            className="resize-none rounded-lg border border-white/[0.08] bg-[#1A1A1A] px-3 py-2 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -91,7 +91,7 @@ export default function HistorialTab({ client, actorName }) {
       )}
 
       {events.length === 0 ? (
-        <p className="text-center text-[13px] font-light text-[#444444]">Sin historial registrado</p>
+        <p className="text-center text-[13px] font-light text-[#8A8A8A]">Sin historial registrado</p>
       ) : (
         <div className="flex flex-col">
           <AnimatePresence initial={false}>
@@ -108,7 +108,7 @@ export default function HistorialTab({ client, actorName }) {
                 />
                 <div>
                   <p className="text-[13px] text-[#F5F5F5]">{event.description}</p>
-                  <p className="text-[11px] text-[#444444]">{formatDate(event.createdAt)}</p>
+                  <p className="text-[11px] text-[#8A8A8A]">{formatDate(event.createdAt)}</p>
                 </div>
               </motion.div>
             ))}
