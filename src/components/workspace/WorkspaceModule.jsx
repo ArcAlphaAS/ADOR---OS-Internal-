@@ -5,6 +5,8 @@ import { subscribeNotes, getUserProfile, saveUserProfile } from '../../lib/fires
 import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon, GridIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
+import PhoneAgenda from './PhoneAgenda'
+import usePhone from '../../hooks/usePhone'
 import { useAccess } from '../../hooks/useAccess'
 import HoyView from './HoyView'
 import ListaView from './ListaView'
@@ -69,6 +71,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
 
   const actorName = actorNameFor(user)
   const access = useAccess()
+  const phone = usePhone()
 
   useEffect(() => subscribeNotes(setNotes), [])
 
@@ -190,6 +193,46 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             stats — see HoyHeader in HoyView.jsx), so the generic
             title/subtitle here would just be a redundant second "Hoy"
             sitting right above it. Every other view still uses it. */}
+        {phone ? (
+          <div className="mb-5 flex flex-col gap-3.5">
+            {view !== 'hoy' && <h1 className="ador-title">Workspace</h1>}
+            {/* Las vistas como filas de chips con su nombre (sin iconos sueltos que adivinar). */}
+            <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
+              <div className="flex gap-2">
+                {VIEWS.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => changeView(v.id)}
+                    className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-medium"
+                    style={{ background: view === v.id ? '#F5F5F5' : '#1C1C1E', color: view === v.id ? '#0A0A0A' : '#9A9A9A' }}
+                  >
+                    {v.id === 'timeline' ? 'Agenda' : v.label}
+                    {v.id === 'hoy' && myUrgentCount > 0 && view !== 'hoy' && <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: '#EF5350', color: '#F5F5F5' }}>{myUrgentCount}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {view !== 'hoy' && (
+              <select
+                value={onlyMine ? '__mine' : selectedWorkstreamId || '__all'}
+                onChange={(e) => {
+                  const v = e.target.value
+                  if (v === '__mine') {
+                    if (!onlyMine) toggleOnlyMine()
+                  } else selectWorkstream(v === '__all' ? null : v)
+                }}
+                className="w-full rounded-full bg-[#1C1C1E] px-5 py-3 text-[16px] text-[#F5F5F5] outline-none"
+              >
+                <option value="__mine">Personal — lo mío</option>
+                <option value="__all">Grupo — todo el equipo</option>
+                {workstreams.map((w) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        ) : (
         <div className={`mb-6 flex flex-wrap items-center gap-3 ${view === 'hoy' ? 'justify-end' : 'justify-between'}`}>
           {/* Phones: the side filter column is hidden, so the same choice
               (Personal / Grupo / one workstream) is a compact select here. */}
@@ -256,6 +299,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             ))}
           </div>
         </div>
+        )}
 
         {showToolbar && (
           <ViewToolbar
@@ -354,6 +398,9 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             </motion.div>
           ) : (
             <motion.div key="timeline" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
+              {phone ? (
+                <PhoneAgenda tasks={visibleTasks} workstreamById={workstreamById} workstreams={workstreams} userById={userById} actorUserId={user?.uid} actorName={actorName} onOpenTask={openTaskPanel} />
+              ) : (
               <TimelineView
                 workstreams={visibleWorkstreams}
                 tasksByWorkstream={visibleTasksByWorkstream}
@@ -361,6 +408,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 actorUserId={user?.uid}
                 actorName={actorName}
               />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

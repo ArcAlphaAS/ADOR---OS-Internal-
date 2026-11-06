@@ -164,7 +164,7 @@ export default function KanbanView({ tasks, workstreamById, userById, onOpenTask
         ) : (
           <div className="flex flex-col gap-2.5">
             {current.items.map((t) => (
-              <PhoneTaskCard key={t.id} task={t} workstream={workstreamById[t.workstreamId]} userById={userById} actorName={actorName} onOpen={onOpenTask} />
+              <PhoneTaskCard key={t.id} workstreams={Object.values(workstreamById)} actorUserId={actorUserId} task={t} workstream={workstreamById[t.workstreamId]} userById={userById} actorName={actorName} onOpen={onOpenTask} />
             ))}
           </div>
         )}

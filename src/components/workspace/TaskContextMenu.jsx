@@ -31,6 +31,12 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
   const [pos, setPos] = useState({ left: x, top: y })
   const [moving, setMoving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Tras mantener pulsado en el teléfono, soltar el dedo no debe cerrar el menú al instante.
+  const armed = useRef(false)
+  useEffect(() => {
+    const t = setTimeout(() => { armed.current = true }, 450)
+    return () => clearTimeout(t)
+  }, [])
   const completed = task.status === 'completado'
 
   // Keep it on screen (it can open near the right/bottom edge, and the
@@ -95,7 +101,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
     <>
       <div
         className="fixed inset-0 z-[998]"
-        onClick={onClose}
+        onClick={() => armed.current && onClose()}
         onContextMenu={(e) => {
           e.preventDefault()
           onClose()

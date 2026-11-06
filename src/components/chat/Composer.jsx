@@ -14,7 +14,7 @@ import GifPicker, { gifsEnabled } from './GifPicker'
 const MAX_BLOB_CHARS = 900_000
 const MAX_VOICE_SECONDS = 60
 
-function ToolButton({ title, onClick, active, disabled, children }) {
+function ToolButton({ title, onClick, active, disabled, children, className = '' }) {
   return (
     <button
       type="button"
@@ -22,7 +22,7 @@ function ToolButton({ title, onClick, active, disabled, children }) {
       aria-label={title}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-8 min-w-8 items-center justify-center rounded-full px-1.5 text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5] disabled:cursor-not-allowed disabled:opacity-35"
+      className={`flex h-8 min-w-8 items-center justify-center rounded-full px-1.5 text-[#888888] transition-colors duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5] disabled:cursor-not-allowed disabled:opacity-35 ${className}`}
       style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
     >
       {children}
@@ -218,6 +218,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     setImportant(false)
   }
 
+  const hasContent = Boolean(text.trim() || pendingImage)
   const submit = () => {
     if (!text.trim() && !pendingImage) return
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
@@ -573,7 +574,9 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       {/* Tools wrap onto their own line under the text when the column is
           narrow (a side panel open, or the thread composer), instead of
           squeezing the text box down to a few characters. */}
-      <div className="ador-lg-bar flex flex-nowrap items-end gap-x-1 rounded-[24px] py-1 pr-1 pl-3.5 md:flex-wrap md:gap-x-2 md:gap-y-1 md:rounded-[22px] md:border md:border-white/[0.1] md:bg-white/[0.03] md:py-1.5 md:pr-1.5 md:pl-4">
+      {/* Teléfono (como WhatsApp): [+]  [ caja de texto ]  [cámara] [micrófono o enviar].
+            Cada cosa va suelta, sin una barra que las envuelva; en computadora sigue la barra de siempre. */}
+      <div className="flex flex-nowrap items-end gap-x-2 md:gap-x-2 md:gap-y-1 md:flex-wrap md:rounded-[22px] md:border md:border-white/[0.1] md:bg-white/[0.03] md:py-1.5 md:pr-1.5 md:pl-4">
         <textarea
           ref={inputRef}
           rows={1}
@@ -606,15 +609,15 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             }
           }}
           placeholder={placeholder || 'Escribe un mensaje...'}
-          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none md:text-[13.5px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
+          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none max-md:order-2 max-md:rounded-[22px] max-md:bg-[#1C1C1E] max-md:px-4 max-md:py-2.5 md:text-[13.5px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
         />
-        <div className="flex flex-shrink-0 items-center gap-0.5 md:ml-auto">
+        <div className="flex flex-shrink-0 items-center gap-0.5 max-md:contents md:ml-auto">
           {/* Only the everyday tools stay in view (emoji, imagen, voz);
               everything else lives behind "+" with its name and what it
               does — nine buttons in a row read as clutter. */}
-          <span className="relative">
+          <span className="relative max-md:order-1 max-md:[&>button]:h-11 max-md:[&>button]:w-11 max-md:[&>button]:text-[#F5F5F5]">
             <ToolButton title="Más opciones" active={panel === 'more'} onClick={() => togglePanel('more')}>
-              <PlusIcon size={16} />
+              <PlusIcon size={22} />
             </ToolButton>
             {(important || panel === 'format' || panel === 'poll' || panel === 'schedule') && panel !== 'more' && (
               <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 rounded-full" style={{ background: '#F4EEE2' }} />
@@ -625,17 +628,17 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               <SmileIcon size={17} />
             </ToolButton>
           </span>
-          <ToolButton title={processing ? 'Procesando imagen…' : 'Imagen'} disabled={processing} onClick={() => fileRef.current?.click()}>
+          <ToolButton className={`max-md:order-3 max-md:h-11 max-md:w-11 max-md:text-[#F5F5F5] ${hasContent ? 'max-md:hidden' : ''}`} title={processing ? 'Procesando imagen…' : 'Imagen'} disabled={processing} onClick={() => fileRef.current?.click()}>
             <ImageIcon size={16} />
           </ToolButton>
-          <ToolButton title="Nota de voz (máx. 1 min)" onClick={voice.start}>
-            <MicIcon size={16} />
+          <ToolButton className={`max-md:order-4 max-md:h-11 max-md:w-11 max-md:bg-[#2C2C2E] max-md:text-[#F5F5F5] ${hasContent ? 'max-md:hidden' : ''}`} title="Nota de voz (máx. 1 min)" onClick={voice.start}>
+            <MicIcon size={19} />
           </ToolButton>
           <button
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className="ador-lg-white ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40"
+            className={`ador-lg-white ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />

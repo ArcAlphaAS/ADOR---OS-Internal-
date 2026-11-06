@@ -29,7 +29,7 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
     withTimeout(applyTaskUpdate(task, data, actorUserId, actorName)).catch((error) => showToast(`No se pudo guardar: ${error.message}`))
   }
 
-  if (phone) return <PhoneTaskCard task={task} workstream={workstreams.find((w) => w.id === task.workstreamId)} userById={userById} actorName={actorName} onOpen={onOpen} />
+  if (phone) return <PhoneTaskCard workstreams={workstreams} actorUserId={actorUserId} task={task} workstream={workstreams.find((w) => w.id === task.workstreamId)} userById={userById} actorName={actorName} onOpen={onOpen} />
 
   return (
     <div>

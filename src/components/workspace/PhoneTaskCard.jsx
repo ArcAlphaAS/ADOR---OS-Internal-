@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import TaskContextMenu from './TaskContextMenu'
 import { motion } from 'framer-motion'
 import { isTouchLayout } from '../../lib/motion'
 import { toggleTaskComplete } from '../../lib/firestore'
@@ -13,7 +14,9 @@ import AvatarStack from './AvatarStack'
 // columnas de la tabla (estado, fechas, descripción) viven ahí.
 const fmt = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 
-export default function PhoneTaskCard({ task, workstream, userById, actorName, onOpen, onReschedule }) {
+export default function PhoneTaskCard({ task, workstream, workstreams = [], userById, actorUserId, actorName, onOpen, onReschedule }) {
+  const [menu, setMenu] = useState(null) // mantener pulsado → menú de la tarea (el "clic derecho" del teléfono)
+  const press = useRef(null)
   const showToast = useToast()
   const dragged = useRef(false)
   const done = task.status === 'completado'
@@ -48,6 +51,20 @@ export default function PhoneTaskCard({ task, workstream, userById, actorName, o
       } : {})}
       className="relative flex items-center gap-3.5 bg-[#1C1C1E] px-4 py-3.5"
       onClick={() => { if (!dragged.current) onOpen(task) }}
+      onTouchStart={(e) => {
+        const t = e.touches?.[0]
+        if (!t) return
+        clearTimeout(press.current)
+        press.current = setTimeout(() => {
+          dragged.current = true
+          navigator.vibrate?.(12)
+          setMenu({ x: t.clientX, y: t.clientY })
+          setTimeout(() => { dragged.current = false }, 400)
+        }, 480)
+      }}
+      onTouchMove={() => clearTimeout(press.current)}
+      onTouchEnd={() => clearTimeout(press.current)}
+      onTouchCancel={() => clearTimeout(press.current)}
     >
       <motion.button
         type="button"
@@ -81,6 +98,7 @@ export default function PhoneTaskCard({ task, workstream, userById, actorName, o
         {(task.assignedTo || []).length > 0 && <AvatarStack userIds={task.assignedTo} userById={userById} pendingIds={task.pendingConfirmations || []} size={22} />}
       </span>
     </motion.div>
+      {menu && <TaskContextMenu task={task} x={menu.x} y={menu.y} workstreams={workstreams} actorUserId={actorUserId} actorName={actorName} onClose={() => setMenu(null)} onOpen={onOpen} onAddSubtask={() => onOpen(task)} />}
     </div>
   )
 }

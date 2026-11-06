@@ -40,7 +40,7 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
     }
   }
 
-  if (phone) return <PhoneTaskCard task={task} workstream={workstream} userById={userById} actorName={actorName} onOpen={onOpen} onReschedule={onReschedule} />
+  if (phone) return <PhoneTaskCard workstreams={workstreams} actorUserId={actorUserId} task={task} workstream={workstream} userById={userById} actorName={actorName} onOpen={onOpen} onReschedule={onReschedule} />
 
   return (
     <div>
