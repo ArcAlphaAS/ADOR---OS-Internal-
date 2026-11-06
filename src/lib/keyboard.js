@@ -10,11 +10,22 @@ export function installKeyboardHandling() {
   const root = document.documentElement
   const update = () => {
     root.style.setProperty('--app-h', `${Math.round(vv.height)}px`)
-    const open = window.innerHeight - vv.height > 140
+    // iOS a veces no encoge la pantalla: desplaza la parte visible hacia abajo.
+    root.style.setProperty('--app-top', `${Math.round(vv.offsetTop)}px`)
+    const open = window.innerHeight - vv.height > 100
     root.classList.toggle('kb-open', open)
     // Undo iOS's own slide-up so the resized app lines up with the screen.
     if (window.scrollY !== 0) window.scrollTo(0, 0)
   }
+  // iOS tarda en avisar que el teclado ya está: al tocar un campo, medimos varias
+  // veces mientras sube, para que la caja de escribir quede siempre encima.
+  const settle = () => [0, 80, 200, 400, 800].forEach((t) => setTimeout(update, t))
+  document.addEventListener('focusin', (e) => {
+    if (!/^(INPUT|TEXTAREA)$/.test(e.target?.tagName)) return
+    settle()
+    setTimeout(() => e.target.scrollIntoView?.({ block: 'nearest' }), 420)
+  })
+  document.addEventListener('focusout', settle)
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)
   update()

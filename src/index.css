@@ -55,6 +55,13 @@ html.kb-open body,
 html.kb-open #root {
   height: var(--app-h, 100%);
 }
+/* Con el teclado arriba, la app se ancla a la parte visible de la pantalla. */
+html.kb-open body {
+  position: fixed;
+  top: var(--app-top, 0px);
+  left: 0;
+  width: 100%;
+}
 html.kb-open .ador-hide-on-kb {
   display: none !important;
 }
@@ -553,4 +560,13 @@ html.light .ador-grain::after { opacity: 0.015; }
 @media (hover: none) and (pointer: coarse) {
   html, body, #root { overflow-x: hidden; overscroll-behavior-x: none; }
   main { overflow-x: hidden; overscroll-behavior-x: none; }
+}
+
+/* Es una app: en pantallas táctiles no se ven barras de desplazamiento (el
+   dedo ya sabe que se puede mover), y la altura sigue siempre a la parte
+   visible, con o sin teclado. */
+@media (hover: none) and (pointer: coarse) {
+  * { scrollbar-width: none; }
+  *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .h-screen { height: var(--app-h, 100dvh); }
 }
