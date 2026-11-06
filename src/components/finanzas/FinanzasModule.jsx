@@ -16,6 +16,8 @@ import RunwayCard from './RunwayCard'
 import CategoryBreakdownCard from './CategoryBreakdownCard'
 import AddIncomeModal from './AddIncomeModal'
 import AddExpenseModal from './AddExpenseModal'
+import PhoneFinanzas from './PhoneFinanzas'
+import usePhone from '../../hooks/usePhone'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -28,6 +30,7 @@ function actorNameFor(user) {
 // CLAUDE.md for the full reasoning on what changed and why.
 export default function FinanzasModule({ user, onNavigate }) {
   const data = useFinanceData()
+  const phone = usePhone()
   const [modal, setModal] = useState(null) // null | 'ingreso' | 'gasto'
   const [detailMode, setDetailMode] = useState(null) // null | 'porCobrar' | 'runway'
   const [recurring, setRecurring] = useState([])
@@ -41,6 +44,13 @@ export default function FinanzasModule({ user, onNavigate }) {
       initial={false}
       className="mx-auto max-w-[1480px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10"
     >
+      {phone ? (
+        <>
+          <h1 className="ador-title mb-5">Finanzas</h1>
+          <PhoneFinanzas data={data} onIngreso={() => setModal('ingreso')} onGasto={() => setModal('gasto')} onOpenPorCobrar={() => setDetailMode('porCobrar')} onOpenRunway={() => setDetailMode('runway')} />
+        </>
+      ) : (
+        <>
       <div className="mb-8">
         <h1 className="ador-title">Finanzas</h1>
         <p className="text-[13px] text-[#888888]">El estado financiero de ADOR, reducido a lo que importa.</p>
@@ -120,6 +130,9 @@ export default function FinanzasModule({ user, onNavigate }) {
       <div className="mt-6 xl:mt-8">
         <MovimientosTable movements={data.movements} onNavigate={onNavigate} />
       </div>
+
+        </>
+      )}
 
       <AnimatePresence>
         {detailMode && (
