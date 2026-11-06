@@ -223,6 +223,8 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
         </div>
 
         {lastSignIn && <p className="mt-5 text-center text-[12px] text-[#636366]">Última conexión: {lastSignIn}</p>}
+        {/* Para saber si tienes lo último: la hora en que se publicó la versión que estás usando. */}
+        <p className="mt-1 text-center text-[12px] text-[#636366]">Versión: {typeof __BUILD_ID__ !== 'undefined' ? new Date(Number(__BUILD_ID__)).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : 'desarrollo'}</p>
       </div>
 
       <AnimatePresence>
