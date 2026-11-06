@@ -154,15 +154,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // News: unread announcements badge, and (admins) publishing scheduled ones.
   const newsAttention = useNewsAttention(user?.uid)
   useNewsPublisher(user?.uid, access.isAdmin, user?.displayName || user?.email?.split('@')[0])
-  // The unread count on the app's icon (home screen / Dock), like WhatsApp.
-  // Installed app only; the service worker bumps it when a push arrives
-  // with the app closed, and this puts back the exact number on open.
-  useEffect(() => {
-    if (!('setAppBadge' in navigator)) return
-    const set = chatUnread > 0 ? navigator.setAppBadge(chatUnread) : navigator.clearAppBadge()
-    set?.catch?.(() => {})
-    navigator.serviceWorker?.controller?.postMessage({ type: 'ador-badge', count: chatUnread })
-  }, [chatUnread])
+  // El número sobre el icono de la app lo pone TopBar (todas las notificaciones).
 
   // Notificaciones push: keep this device's push address filed under whoever
   // is signed in, drop the ?open=… link once consumed, and follow a

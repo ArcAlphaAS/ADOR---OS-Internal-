@@ -335,6 +335,16 @@ export default function TopBar({
   const inbox = notifications.filter((n) => !archived[keyOfNotification(n)])
   const archivedItems = notifications.filter((n) => archived[keyOfNotification(n)])
   const hasUnreadNotifications = inbox.length > 0
+  // El número sobre el icono de la app (pantalla de inicio / Dock), como en
+  // Instagram: solo lo que te lleva a algo (chat, tareas, anuncios, comunidad),
+  // no los recordatorios diarios de fechas. Instalada, iOS 16.4+ / Android.
+  const badgeCount = inbox.filter((n) => n.onClick).length
+  useEffect(() => {
+    if (!('setAppBadge' in navigator) || user?.uid === 'preview') return
+    const set = badgeCount > 0 ? navigator.setAppBadge(badgeCount) : navigator.clearAppBadge()
+    set?.catch?.(() => {})
+    navigator.serviceWorker?.controller?.postMessage({ type: 'ador-badge', count: badgeCount })
+  }, [badgeCount, user?.uid])
 
   const closeProfileAll = () => {
     setProfileExpanded(false)
@@ -380,16 +390,22 @@ export default function TopBar({
       {/* "ADOR OS" — the wordmark's bottom edge is the letters' baseline
           (see Logo.jsx), so "OS" sits on the same line. It used to have
           0.3em tracking, which read as "O S". */}
+      {/* En teléfono el nombre lleva la misma cápsula translúcida que tu foto,
+          la campana y la búsqueda, para que no flote suelto sobre el contenido.
+          El movimiento va en el contenedor y el desenfoque en el hijo: juntos
+          en un mismo elemento se pierde el blur (CLAUDE.md §11). */}
       <motion.div
         animate={{ opacity: navHidden ? 0 : 1, y: navHidden ? -16 : 0 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-baseline gap-[5px] justify-self-start"
+        className="justify-self-start"
         aria-label="ADOR OS"
       >
-        <Logo size={13} />
-        <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
-          OS
-        </span>
+        <div className="flex items-baseline gap-[5px] max-lg:h-[40px] max-lg:items-center max-lg:rounded-full max-lg:bg-black/55 max-lg:px-4 max-lg:backdrop-blur-xl">
+          <Logo size={13} />
+          <span className="font-semibold leading-none text-[#9A9A9A]" style={{ fontSize: 13, letterSpacing: '0.04em' }}>
+            OS
+          </span>
+        </div>
       </motion.div>
 
       {/* Below 1024px these tabs live in the bottom bar (BottomNav). */}
