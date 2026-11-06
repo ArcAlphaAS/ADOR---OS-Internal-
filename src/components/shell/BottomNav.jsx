@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { haptic } from '../../lib/haptics'
 import {
   HomeIcon,
   LayersIcon,
@@ -42,12 +43,15 @@ const MORE = [
 
 // Icon-only tab, iOS-style: the active one sits in a filled gold circle.
 // The label stays for VoiceOver and the long-press tooltip.
-function Tab({ label, Icon, active, badge, onClick }) {
+function Tab({ label, Icon, active, badge, spin, onClick }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} title={label} className="relative flex flex-1 items-center justify-center">
-      <span
-        className="relative flex h-12 w-12 items-center justify-center rounded-full transition-[color,transform] duration-200 ease-out active:scale-90"
-        style={{ color: active ? '#0A0A0A' : '#8E8E93' }}
+    <button type="button" onClick={() => { haptic(); onClick() }} aria-label={label} title={label} className="relative flex flex-1 items-center justify-center">
+      {/* Se hunde al tocar y vuelve con un resorte, como un botón físico. */}
+      <motion.span
+        whileTap={{ scale: 0.8 }}
+        transition={{ type: 'spring', stiffness: 600, damping: 22 }}
+        className="relative flex h-12 w-12 items-center justify-center rounded-full"
+        style={{ color: active ? '#0A0A0A' : '#8E8E93', transition: 'color 200ms ease-out' }}
       >
         {/* One white circle that slides between tabs (shared layoutId) instead of each tab fading its own. */}
         {active && (
@@ -57,13 +61,29 @@ function Tab({ label, Icon, active, badge, onClick }) {
             transition={{ type: 'spring', stiffness: 520, damping: 38 }}
           />
         )}
-        <Icon size={21} className="relative" />
+        {/* El icono rebota al volverse el activo. */}
+        <motion.span
+          key={active ? 'on' : 'off'}
+          initial={active ? { scale: 0.6, rotate: -14 } : false}
+          animate={{ scale: 1, rotate: spin ?? 0 }}
+          transition={{ type: 'spring', stiffness: 460, damping: 14 }}
+          className="relative flex"
+        >
+          <Icon size={21} />
+        </motion.span>
         {badge > 0 && (
-          <span className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]" style={{ background: '#F4EEE2' }}>
+          <motion.span
+            key={badge}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 520, damping: 15 }}
+            className="absolute top-1 right-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-[#1C1A16] ring-2 ring-[#1C1C1E]"
+            style={{ background: '#F4EEE2' }}
+          >
             {badge > 9 ? '9+' : badge}
-          </span>
+          </motion.span>
         )}
-      </span>
+      </motion.span>
     </button>
   )
 }
@@ -93,7 +113,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
         {primary.map((m) => (
           <Tab key={m.id} {...m} active={activeModule === m.id && !moreOpen} badge={badges[m.id]} onClick={() => go(m.id)} />
         ))}
-        {more.length > 0 && <Tab label="Más" Icon={MoreIcon} active={moreActive || moreOpen} badge={more.reduce((n, m) => n + (badges[m.id] || 0), 0)} onClick={() => setMoreOpen((v) => !v)} />}
+        {more.length > 0 && <Tab label="Más" Icon={MoreIcon} spin={moreOpen ? 90 : 0} active={moreActive || moreOpen} badge={more.reduce((n, m) => n + (badges[m.id] || 0), 0)} onClick={() => setMoreOpen((v) => !v)} />}
       </nav>
 
       {createPortal(
@@ -112,11 +132,15 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
                   <div className="grid grid-cols-4 gap-2">
-                    {more.map((m) => (
-                      <button
+                    {more.map((m, i) => (
+                      <motion.button
                         key={m.id}
+                        initial={{ opacity: 0, y: 14, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 420, damping: 26, delay: 0.04 + i * 0.03 }}
+                        whileTap={{ scale: 0.92 }}
                         type="button"
-                        onClick={() => go(m.id)}
+                        onClick={() => { haptic(); go(m.id) }}
                         className="flex flex-col items-center gap-1.5 rounded-2xl py-3 transition-colors active:bg-white/[0.08]"
                         style={{ background: activeModule === m.id ? 'rgba(255,255,255,0.08)' : undefined, color: activeModule === m.id ? '#F5F5F5' : '#BBBBBB' }}
                       >
@@ -129,7 +153,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                           )}
                         </span>
                         <span className="text-[11px]">{m.label}</span>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
