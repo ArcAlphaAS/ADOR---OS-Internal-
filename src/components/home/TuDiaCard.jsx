@@ -251,7 +251,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
                 Nada urgente por ahora.
               </motion.h2>
               <motion.p {...rise(0.5)} className="mt-3 text-[14px] text-[#8A8A8A]">
-                Buen momento para avanzar algo importante.
+                {day.nextPending ? <>Buen momento para adelantar <button type="button" onClick={() => openTask(day.nextPending)} className="font-medium text-[#F4EEE2] hover:underline">«{day.nextPending.title}»</button>.</> : 'Buen momento para avanzar algo importante.'}
               </motion.p>
               <motion.div {...rise(0.65)} className="mt-8">
                 <button
@@ -266,19 +266,22 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
           )}
 
           {day.totalToday > 0 && (
-            <motion.div {...rise(0.8)} className="mt-10 max-w-[360px]">
-              <div className="h-[2px] w-full overflow-hidden rounded-full bg-white/[0.08]">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ background: GOLD }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${pct}%` }}
+            <motion.div {...rise(0.8)} className="mt-10 flex max-w-[360px] items-center gap-4">
+              <svg width="56" height="56" viewBox="0 0 56 56" className="flex-shrink-0 -rotate-90" aria-hidden>
+                <circle cx="28" cy="28" r="23" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="4" />
+                <motion.circle
+                  cx="28" cy="28" r="23" fill="none" strokeWidth="4" strokeLinecap="round"
+                  stroke={pct >= 100 ? GOLD : '#F4EEE2'}
+                  strokeDasharray={2 * Math.PI * 23}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 23 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 23 * (1 - pct / 100) }}
                   transition={{ duration: 1.4, delay: 0.9, ease: SLOW }}
                 />
-              </div>
-              <p className="mt-2 text-[12px] text-[#767676]">
-                {day.completedToday} de {day.totalToday} {day.totalToday === 1 ? 'hecha' : 'hechas'} hoy
-              </p>
+              </svg>
+              <span>
+                <span className="block text-[15px] font-medium text-[#F5F5F5]">{pct >= 100 ? 'Día despejado' : `${pct}% del día`}</span>
+                <span className="block text-[12.5px] text-[#767676]">{day.completedToday} de {day.totalToday} {day.totalToday === 1 ? 'hecha' : 'hechas'} hoy</span>
+              </span>
             </motion.div>
           )}
         </div>

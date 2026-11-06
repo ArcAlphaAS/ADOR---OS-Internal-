@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import ThanksModal from './ThanksModal'
 import { useTeamActivity } from '../../hooks/useTeamActivity'
 import { usePerson } from '../chat/PersonAvatar'
 import PersonAvatar from '../chat/PersonAvatar'
@@ -21,11 +24,17 @@ function Row({ item }) {
   )
 }
 
-export default function TeamPulseCard() {
+export default function TeamPulseCard({ user }) {
   const { items, loaded } = useTeamActivity()
+  const [thanking, setThanking] = useState(false)
   return (
     <div className={`ador-glass ador-quiet ador-grain h-full ${CARD_RADIUS} ${CARD_PAD}`}>
-      <CardHeader label="Hoy en el equipo" />
+      <div className="flex items-center justify-between gap-3">
+        <CardHeader label="Hoy en el equipo" />
+        {user && user.uid !== 'preview' && (
+          <button type="button" onClick={() => setThanking(true)} className="flex-shrink-0 rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[12.5px] font-medium text-[#F4EEE2]">🙌 Dar las gracias</button>
+        )}
+      </div>
       {!loaded ? (
         <div className="mt-4 flex flex-col gap-3">
           {[0, 1, 2].map((i) => <div key={i} className="ador-skeleton h-11 w-full rounded-xl" />)}
@@ -37,6 +46,7 @@ export default function TeamPulseCard() {
           {items.map((it) => <Row key={it.key} item={it} />)}
         </ul>
       )}
+      <AnimatePresence>{thanking && <ThanksModal me={user} onClose={() => setThanking(false)} />}</AnimatePresence>
     </div>
   )
 }

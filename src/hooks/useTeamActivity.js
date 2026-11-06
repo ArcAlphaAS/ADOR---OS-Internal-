@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeAllTasks, subscribeClients, subscribeNews } from '../lib/firestore'
+import { subscribeAllTasks, subscribeClients, subscribeNews, subscribeKudos } from '../lib/firestore'
 import { allPayments, currencyPEN } from '../lib/clientStages'
 import { isPublished } from '../lib/news'
 
@@ -12,10 +12,12 @@ export function useTeamActivity() {
   const [tasks, setTasks] = useState([])
   const [clients, setClients] = useState([])
   const [posts, setPosts] = useState([])
+  const [kudos, setKudos] = useState([])
   const [loaded, setLoaded] = useState(false)
   useEffect(() => subscribeAllTasks((v) => { setTasks(v); setLoaded(true) }), [])
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeNews(setPosts), [])
+  useEffect(() => subscribeKudos(setKudos), [])
 
   const now = Date.now()
   const items = []
@@ -43,6 +45,10 @@ export function useTeamActivity() {
     if (isPublished(p) && at && now - at < 3 * DAY) {
       items.push({ key: `n-${p.id}`, at, uids: p.createdByUid ? [p.createdByUid] : [], verb: 'publicó', what: p.title })
     }
+  }
+  for (const k of kudos) {
+    const at = ms(k.createdAt)
+    if (at && now - at < 3 * DAY) items.push({ key: `k-${k.id}`, at, uids: k.fromUid ? [k.fromUid] : [], verb: 'dio las gracias a', what: `${(k.toName || '').split(' ')[0]}: «${k.text}»` })
   }
   items.sort((a, b) => b.at - a.at)
   return { items: items.slice(0, 5), loaded }

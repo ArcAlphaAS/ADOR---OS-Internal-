@@ -74,6 +74,7 @@ export const COLLECTIONS = {
   knowledgeDocs: 'knowledgeDocs',
   knowledgeSections: 'knowledgeSections',
   news: 'news',
+  kudos: 'kudos',
   communityPosts: 'communityPosts',
   chatChannels: 'chatChannels',
   chatDms: 'chatDms',
@@ -1482,6 +1483,18 @@ export function createKnowledgeSection(data, actorName) {
 // (a manual editorial call, not derived) so a founder can keep an
 // important announcement at the top past newer ones. Admin-gated writes,
 // same isAdmin() check as Directorio/Conocimiento.
+// "Gracias": un reconocimiento de una persona a otra, visible para el equipo.
+export function subscribeKudos(onData) {
+  return subscribeToCollection(COLLECTIONS.kudos, [orderBy('createdAt', 'desc'), limit(30)], onData)
+}
+export function createKudos({ fromUid, fromName, toUid, toName, text }) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return addDoc(collection(db, COLLECTIONS.kudos), { fromUid, fromName, toUid, toName, text: String(text || '').slice(0, 140), createdAt: serverTimestamp() }).then((ref) => {
+    pushNotify([toUid], { title: `🙌 ${firstWord(fromName)} te dio las gracias`, body: String(text || '').slice(0, 140), tag: `kudos:${ref.id}`, url: '/' }, { uid: fromUid, name: fromName })
+    return ref
+  })
+}
+
 export function subscribeNews(onData) {
   return subscribeToCollection(COLLECTIONS.news, [orderBy('createdAt', 'desc')], onData)
 }

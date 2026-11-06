@@ -11,6 +11,7 @@ import WeeklySummaryCard from './WeeklySummaryCard'
 import FinanceBlock from './FinanceBlock'
 import InterventionsBlock from './InterventionsBlock'
 import LatestNewsCard from './LatestNewsCard'
+import CierraTuDiaCard from './CierraTuDiaCard'
 import TeEsperanCard from './TeEsperanCard'
 import TeamPulseCard from './TeamPulseCard'
 import CommunityCard from './CommunityCard'
@@ -76,6 +77,9 @@ export default function HomeScreen({ user, onNavigate }) {
         <motion.div variants={itemVariants}>
           <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
         </motion.div>
+        <motion.div variants={itemVariants} className="empty:hidden">
+          <CierraTuDiaCard user={user} />
+        </motion.div>
         <HomePeople>
           <motion.div variants={itemVariants} className="empty:hidden">
             <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
@@ -112,7 +116,7 @@ export default function HomeScreen({ user, onNavigate }) {
         <HomePeople>
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
             <motion.div variants={itemVariants} className="h-full lg:col-span-5">
-              <TeamPulseCard />
+              <TeamPulseCard user={user} />
             </motion.div>
             <motion.div variants={itemVariants} className="h-full empty:hidden lg:col-span-4">
               <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />

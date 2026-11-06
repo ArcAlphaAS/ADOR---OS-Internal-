@@ -46,6 +46,8 @@ export function useDayData(uid) {
     workstreamName,
     priorityMeta,
     dueByDay,
+    openToday: [...vencidas, ...hoy],
+    nextPending: [...pendientes].sort(byPriority)[0] || null,
     openCount: vencidas.length + hoy.length,
     completedToday,
     totalToday: vencidas.length + hoy.length + completedToday,
