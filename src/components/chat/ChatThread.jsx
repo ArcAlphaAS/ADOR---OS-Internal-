@@ -160,7 +160,25 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
     }
   }
 
-  let lastDay = null
+  // "Lo que te perdiste": con varios mensajes nuevos de otras personas, un resumen
+  // de lo que pasó (quién escribió, si te mencionaron, archivos y encuestas), por
+  // reglas simples, sin inteligencia externa.
+  const missed = firstNewIndex >= 0 ? shown.slice(firstNewIndex).filter((m) => m.authorUid !== currentUid) : []
+  const [catchHidden, setCatchHidden] = useState(false)
+  let catchUp = null
+  if (missed.length >= 6 && !catchHidden && !q) {
+    const by = new Map()
+    for (const m of missed) by.set(m.authorName || 'Alguien', (by.get(m.authorName || 'Alguien') || 0) + 1)
+    const who = [...by.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, c]) => `${n.split(' ')[0]} (${c})`).join(', ')
+    const mentions = missed.filter((m) => (m.mentionUids || []).includes(currentUid)).length
+    const files = missed.filter((m) => m.attachment).length
+    const polls = missed.filter((m) => m.poll).length
+    const important = missed.filter((m) => m.important).length
+    const questions = missed.filter((m) => /\?/.test(m.text || '')).length
+    const bits = [mentions && `${mentions} te ${mentions === 1 ? 'menciona' : 'mencionan'}`, important && `${important} ${important === 1 ? 'importante' : 'importantes'}`, polls && `${polls} ${polls === 1 ? 'encuesta' : 'encuestas'}`, files && `${files} ${files === 1 ? 'archivo' : 'archivos'}`, questions && `${questions} ${questions === 1 ? 'pregunta' : 'preguntas'}`].filter(Boolean)
+    const last = missed[missed.length - 1]
+    catchUp = { count: missed.length, who, bits, last }
+  }
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -169,6 +187,20 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
         <button type="button" onClick={loadOlder} className="mx-auto mb-3 rounded-full border border-white/[0.1] px-3 py-1 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
           Cargar mensajes anteriores
         </button>
+      )}
+      {catchUp && (
+        <div className="mx-1 mb-4 rounded-[20px] bg-white/[0.06] px-4 py-3.5">
+          <p className="text-[13px] font-medium text-[#F4EEE2]">Lo que te perdiste</p>
+          <p className="mt-1 text-[14.5px] leading-snug text-[#E4E4E4]">
+            {catchUp.count} mensajes nuevos de {catchUp.who}
+            {catchUp.bits.length > 0 && <span className="text-[#9A9A9A]"> · {catchUp.bits.join(' · ')}</span>}
+          </p>
+          {catchUp.last?.text && <p className="mt-1 line-clamp-1 text-[13px] text-[#8E8E93]">Último: {catchUp.last.authorName?.split(' ')[0]}: {catchUp.last.text}</p>}
+          <div className="mt-2.5 flex gap-2">
+            <button type="button" onClick={() => document.getElementById('chat-new-divider')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="rounded-full bg-[#F5F5F5] px-3.5 py-1.5 text-[12.5px] font-semibold text-[#0A0A0A]">Ir a lo nuevo</button>
+            <button type="button" onClick={() => setCatchHidden(true)} className="rounded-full px-3 py-1.5 text-[12.5px] text-[#8E8E93]">Ocultar</button>
+          </div>
+        </div>
       )}
       {q && (
         <p className="mb-3 px-1 text-[12.5px] text-[#8A8A8A]">

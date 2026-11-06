@@ -55,6 +55,8 @@ export const SUGGESTED_CHANNELS = [
   { name: 'finanzas', visibility: 'private', description: 'Finanzas y temas de caja.' },
   { name: 'marketing', visibility: 'private', description: 'Marketing y marca.' },
   { name: 'proyectos', visibility: 'private', description: 'Coordinación de proyectos e intervenciones.' },
+  { name: 'random', visibility: 'public', description: 'Lo que no es trabajo: memes, música, lo que viste hoy.' },
+  { name: 'cafe', visibility: 'public', description: 'Para conversar ligero, celebrar logros y cumpleaños.' },
 ]
 
 // Channel names follow Slack's convention: lowercase, no spaces or accents.

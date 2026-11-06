@@ -833,7 +833,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
   return (
     // Capped at a comfortable reading width: on a wide screen, 75% of the
     // column made lines far too long to read.
-    <div className={`group flex max-w-[86%] gap-2 md:max-w-[min(75%,600px)] ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
+    <div className={`group relative flex max-w-[86%] gap-2 md:max-w-[min(75%,600px)] ${mine ? 'flex-row-reverse' : ''}`} onMouseLeave={() => {
         setPicking(false)
         setMenu(null)
       }}>
