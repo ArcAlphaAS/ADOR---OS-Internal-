@@ -4,7 +4,7 @@ import { getDraft, setDraft } from '../../lib/chatDrafts'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import ItemPicker from './ItemPicker'
 import { resizeImageToDataUrl } from '../../lib/image'
-import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, MicIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon } from '../icons'
+import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, ClockIcon, ReplyIcon, PollIcon, AlertIcon, PlusIcon, PlayIcon, PauseIcon } from '../icons'
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
@@ -59,8 +59,11 @@ async function computePeaks(blob, bars = 36) {
 function useVoiceRecorder({ onDone, onError }) {
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
+  const [levels, setLevels] = useState([]) // volumen en vivo, una barra cada 0,6 s (para dibujar la onda mientras grabas)
+  const [review, setReview] = useState(null) // nota ya grabada, esperando "enviar" o "descartar"
   const recRef = useRef(null)
   const cancelRef = useRef(false)
+  const meterRef = useRef(null)
 
   const start = async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return onError('Este navegador no permite grabar audio.')
@@ -72,12 +75,40 @@ function useVoiceRecorder({ onDone, onError }) {
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
     const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+    // Medidor de volumen: alimenta la onda que se dibuja mientras grabas.
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext
+      const ctx = new AC()
+      const an = ctx.createAnalyser()
+      an.fftSize = 256
+      ctx.createMediaStreamSource(stream).connect(an)
+      const buf = new Uint8Array(an.fftSize)
+      const t0 = Date.now()
+      const arr = []
+      const timer = setInterval(() => {
+        an.getByteTimeDomainData(buf)
+        let sum = 0
+        for (let i = 0; i < buf.length; i++) sum += ((buf[i] - 128) / 128) ** 2
+        const rms = Math.min(1, Math.sqrt(sum / buf.length) * 4)
+        const slot = Math.min(99, Math.floor((Date.now() - t0) / 600))
+        arr[slot] = Math.max(arr[slot] || 0, rms)
+        setLevels([...arr].map((v) => v || 0.04))
+      }, 90)
+      meterRef.current = { ctx, timer }
+    } catch {
+      meterRef.current = null
+    }
     const chunks = []
     const startedAt = Date.now()
     cancelRef.current = false
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
     rec.onstop = () => {
       stream.getTracks().forEach((t) => t.stop())
+      if (meterRef.current) {
+        clearInterval(meterRef.current.timer)
+        meterRef.current.ctx.close().catch(() => {})
+        meterRef.current = null
+      }
       setRecording(false)
       if (cancelRef.current) return
       const duration = (Date.now() - startedAt) / 1000
@@ -87,13 +118,15 @@ function useVoiceRecorder({ onDone, onError }) {
       reader.onload = async () => {
         if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
         const peaks = await computePeaks(blob)
-        onDone({ dataUrl: reader.result, duration, peaks })
+        setReview({ dataUrl: reader.result, duration, peaks }) // se escucha y se decide: enviar o descartar
       }
       reader.readAsDataURL(blob)
     }
     rec.start()
     recRef.current = rec
     setSeconds(0)
+    setLevels([])
+    setReview(null)
     setRecording(true)
   }
 
@@ -121,6 +154,13 @@ function useVoiceRecorder({ onDone, onError }) {
   return {
     recording,
     seconds,
+    levels,
+    review,
+    send: () => {
+      if (review) onDone(review)
+      setReview(null)
+    },
+    discard: () => setReview(null),
     start,
     stop: () => recRef.current?.stop(),
     cancel: () => {
@@ -128,6 +168,54 @@ function useVoiceRecorder({ onDone, onError }) {
       recRef.current?.stop()
     },
   }
+}
+
+// Escuchar la nota antes de enviarla: reproducir/pausar, su onda y duración, descartar y enviar.
+export function VoiceReview({ review, onSend, onDiscard }) {
+  const audioRef = useRef(null)
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  useEffect(() => () => audioRef.current?.pause(), [])
+  const toggle = () => {
+    if (!audioRef.current) {
+      const a = new Audio(review.dataUrl)
+      a.ontimeupdate = () => setProgress(a.currentTime / (review.duration || a.duration || 1))
+      a.onended = () => { setPlaying(false); setProgress(0) }
+      audioRef.current = a
+    }
+    if (playing) { audioRef.current.pause(); setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
+  }
+  const peaks = review.peaks?.length ? review.peaks : Array.from({ length: 36 }, () => 30)
+  return (
+    <div className="flex items-center gap-2.5 pt-1">
+      <button type="button" onClick={onDiscard} aria-label="Descartar" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[#FF8A84]">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+      </button>
+      <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full bg-[#2C2C2E] py-2 pl-2 pr-2">
+        <button type="button" onClick={toggle} aria-label={playing ? 'Pausar' : 'Escuchar'} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-white">
+          {playing ? <PauseIcon size={15} /> : <PlayIcon size={14} />}
+        </button>
+        <div className="flex h-8 min-w-0 flex-1 items-center gap-[2px]">
+          {peaks.map((p, i) => (
+            <span key={i} className="flex-1 rounded-full" style={{ height: `${Math.max(12, p)}%`, minWidth: 1, background: i / peaks.length < progress ? '#FFFFFF' : 'rgba(255,255,255,0.35)' }} />
+          ))}
+        </div>
+        <span className="flex-shrink-0 rounded-full bg-white/[0.1] px-2.5 py-1 text-[13px] tabular-nums text-[#E4E4E4]">{formatDuration(review.duration)}</span>
+        <button type="button" onClick={onSend} aria-label="Enviar nota de voz" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A]">
+          <ArrowRightIcon size={17} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Icono de "audio": barritas de distinta altura, en vez de un micrófono.
+function WaveIcon({ size = 19 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
+    </svg>
+  )
 }
 
 // The composer, following the reference layout: text in the middle, tools
@@ -326,23 +414,32 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   const togglePanel = (id) => setPanel((p) => (p === id ? null : id))
 
   if (voice.recording) {
+    // Grabando: una cápsula con la onda en vivo (rojo), el tiempo y el botón de parar.
+    const slots = 100
     return (
-      <div className="flex items-center gap-3 border-t border-white/[0.06] pt-3">
-        <div className="flex flex-1 items-center gap-3 rounded-full border border-[#EF5350]/40 bg-[#EF5350]/[0.06] px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#EF5350]" style={{ animation: 'ador-pulse 1.2s ease-in-out infinite' }} />
-          <span className="text-[13.5px] text-[#F5F5F5]">Grabando nota de voz</span>
-          <span className="ml-auto font-mono text-[12.5px] text-[#AAAAAA]">
-            {formatDuration(voice.seconds)} / {formatDuration(MAX_VOICE_SECONDS)}
-          </span>
+      <div className="flex items-center gap-2.5 pt-1">
+        <button type="button" onClick={voice.cancel} aria-label="Cancelar grabación" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[#9A9A9A]">
+          <CloseIcon size={15} />
+        </button>
+        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full bg-[#2C2C2E] py-2 pl-5 pr-2">
+          <div className="flex h-8 min-w-0 flex-1 items-center gap-[2px] overflow-hidden">
+            {Array.from({ length: slots }).map((_, i) => {
+              const v = voice.levels[i]
+              return <span key={i} className="w-[2px] flex-1 flex-shrink-0 rounded-full" style={{ height: v != null ? `${Math.max(14, Math.min(100, v * 100))}%` : 3, background: v != null ? '#FF6B63' : 'rgba(255,107,99,0.35)', minWidth: 1 }} />
+            })}
+          </div>
+          <span className="flex-shrink-0 text-[15px] tabular-nums text-[#FF8A84]">{formatDuration(voice.seconds)}</span>
+          <button type="button" onClick={voice.stop} aria-label="Parar" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(255,107,99,0.28)' }}>
+            <span className="h-4 w-4 rounded-[4px]" style={{ background: '#FF6B63' }} />
+          </button>
         </div>
-        <button type="button" onClick={voice.cancel} className="text-[12.5px] text-[#888888] hover:text-[#F5F5F5]">
-          Cancelar
-        </button>
-        <button type="button" onClick={voice.stop} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#1A1814]" style={{ background: '#F4EEE2' }} title="Enviar nota de voz">
-          <ArrowRightIcon size={16} />
-        </button>
       </div>
     )
+  }
+
+  if (voice.review) {
+    // Ya grabada: se puede escuchar, descartar o enviar.
+    return <VoiceReview review={voice.review} onSend={voice.send} onDiscard={voice.discard} />
   }
 
   return (
@@ -632,7 +729,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             <ImageIcon size={16} />
           </ToolButton>
           <ToolButton className={`max-md:order-4 max-md:h-11 max-md:w-11 max-md:bg-[#2C2C2E] max-md:text-[#F5F5F5] ${hasContent ? 'max-md:hidden' : ''}`} title="Nota de voz (máx. 1 min)" onClick={voice.start}>
-            <MicIcon size={19} />
+            <WaveIcon size={19} />
           </ToolButton>
           <button
             type="button"
