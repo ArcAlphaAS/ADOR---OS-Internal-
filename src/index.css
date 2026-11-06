@@ -634,3 +634,65 @@ html.light .ador-grain::after { opacity: 0.015; }
 @media (max-width: 767px) {
   html.ador-chat-open .ador-chat-bg textarea { padding-top: 8px; padding-bottom: 8px; }
 }
+
+/* ───────── Capas de profundidad (sin brillos ni sombras) ─────────
+   Tres niveles de gris, como el modo oscuro de Apple:
+     fondo  #000000   →  tarjeta  #1C1C1E   →  elemento elevado dentro de la tarjeta  #2C2C2E
+   y una línea fina más clara en el borde de arriba de cada tarjeta: da relieve sin luces. */
+:root {
+  --ador-bg: #000000;
+  --ador-card: #1c1c1e;
+  --ador-raised: #2c2c2e;
+  --ador-edge: rgba(255, 255, 255, 0.07);
+  --ador-edge-top: rgba(255, 255, 255, 0.15);
+}
+.ador-glass:not(.ador-card-attention):not(.ador-card-urgent):not(.ador-quiet) {
+  background: var(--ador-card);
+  border: 1px solid var(--ador-edge);
+  border-top-color: var(--ador-edge-top);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+.ador-glass.ador-card-hover:not(.ador-card-attention):not(.ador-card-urgent):not(.ador-quiet):hover {
+  background: #232326;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+/* Lo que va "levantado" dentro de una tarjeta (pastillas, casillas, pistas de barra). */
+.ador-glass :is(
+    [class~='bg-white/[0.04]'],
+    [class~='bg-white/[0.045]'],
+    [class~='bg-white/[0.05]'],
+    [class~='bg-white/[0.06]'],
+    [class~='bg-white/[0.07]']
+  ) {
+  background-color: var(--ador-raised);
+}
+/* Las tarjetas de atención/urgentes conservan su filo de color y ganan la línea de arriba. */
+.ador-card-attention, .ador-card-urgent { border-top-color: var(--ador-edge-top); }
+
+/* Modo claro: la tarjeta es blanca y lo elevado, gris claro (el filtro invierte todo). */
+html.light .ador-glass:not(.ador-card-attention):not(.ador-card-urgent):not(.ador-quiet) {
+  background: #000;
+  border-color: rgba(255, 255, 255, 0.07);
+  border-top-color: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.1), 0 10px 28px -10px rgba(255, 255, 255, 0.1);
+}
+html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]'], [class~='bg-white/[0.05]'], [class~='bg-white/[0.06]'], [class~='bg-white/[0.07]']) {
+  background-color: #1c1c1e;
+}
+
+/* ───────── Grano casi invisible sobre el fondo ─────────
+   Una textura muy fina (ruido en gris, ~4 % de opacidad) detrás de todo el contenido,
+   para que el negro no sea plano. Se nota como calidad, no como efecto. */
+.ador-bg-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce) { .ador-bg-grain { opacity: 0.03; } }
