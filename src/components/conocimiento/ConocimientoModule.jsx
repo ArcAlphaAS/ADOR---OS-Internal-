@@ -16,6 +16,8 @@ import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import DocEditor from './DocEditor'
 import FolderIllustration from './FolderIllustration'
+import PhoneKnowledge from './PhoneKnowledge'
+import usePhone from '../../hooks/usePhone'
 import Avatar from '../shell/Avatar'
 import {
   BookIcon,
@@ -505,6 +507,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   const [editing, setEditing] = useState(false) // false | true (editing open doc) | 'new'
   const [saving, setSaving] = useState(false)
   const showToast = useToast()
+  const phone = usePhone()
   const actorName = actorNameFor(user)
   const isAdminUser = isAdmin(profile)
 
@@ -603,12 +606,36 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       showToast(`No se pudo crear la sección: ${error.message}`)
     )
 
+  if (phone && !editing && !openDoc) {
+    return (
+      <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6">
+        <PhoneKnowledge
+          index={index}
+          filter={filter}
+          search={search}
+          onSearch={setSearch}
+          catCounts={catCounts}
+          subCounts={subCounts}
+          docs={filter.type === 'all' && !q ? scoped.slice(0, 8) : scoped}
+          scopedTitle={tableTitle}
+          isAdminUser={isAdminUser}
+          onSelectAll={selectAll}
+          onSelectCategory={selectCategory}
+          onSelectSubcategory={selectSubcategory}
+          onOpen={handleOpen}
+          onNew={() => { setOpenDocId(null); setEditing('new') }}
+          ago={timeAgo}
+        />
+      </div>
+    )
+  }
+
   return (
     <motion.div
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 pb-16 pt-6 md:px-8 lg:flex-row lg:px-12 lg:pt-10"
     >
-      <KnowledgeTree
+      {!phone && <KnowledgeTree
         tree={index.tree}
         search={search}
         onSearch={setSearch}
@@ -621,7 +648,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
         total={docs.length}
         isAdminUser={isAdminUser}
         onCreateSection={handleCreateSection}
-      />
+      />}
 
       <div className="min-w-0 flex-1">
         <div className="mb-8 flex items-start justify-between">
