@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
+import { isTouchLayout } from '../../lib/motion'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { priorityMeta, isOverdue, isDueToday, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -13,6 +15,7 @@ const fmt = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' }
 
 export default function PhoneTaskCard({ task, workstream, userById, actorName, onOpen, onReschedule }) {
   const showToast = useToast()
+  const dragged = useRef(false)
   const done = task.status === 'completado'
   const due = task.dueDate?.toDate?.() || null
   const overdue = isOverdue(task)
@@ -21,8 +24,31 @@ export default function PhoneTaskCard({ task, workstream, userById, actorName, o
   const pm = task.priority ? priorityMeta(task.priority) : null
   const dueText = due ? (isDueToday(task) ? 'Hoy' : overdue ? `Venció ${fmt(due)}` : fmt(due)) : null
 
+  const complete = () => withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+  const touch = isTouchLayout()
+
   return (
-    <div className="flex items-center gap-3.5 rounded-[22px] bg-[#1C1C1E] px-4 py-3.5" onClick={() => onOpen(task)}>
+    <div className="relative overflow-hidden rounded-[22px]">
+      {touch && (
+        <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-5 text-[14px] font-semibold text-[#1C1A16]">
+          ✓ {done ? 'Reabrir' : 'Completar'}
+        </div>
+      )}
+    <motion.div
+      {...(touch ? {
+        drag: 'x',
+        dragConstraints: { left: 0, right: 0 },
+        dragElastic: { left: 0.05, right: 0.7 },
+        dragSnapToOrigin: true,
+        onDragStart: () => { dragged.current = true },
+        onDragEnd: (_e, info) => {
+          setTimeout(() => { dragged.current = false }, 80)
+          if (info.offset.x > 110 || info.velocity.x > 700) complete()
+        },
+      } : {})}
+      className="relative flex items-center gap-3.5 bg-[#1C1C1E] px-4 py-3.5"
+      onClick={() => { if (!dragged.current) onOpen(task) }}
+    >
       <motion.button
         type="button"
         whileTap={{ scale: 0.8 }}
@@ -30,7 +56,7 @@ export default function PhoneTaskCard({ task, workstream, userById, actorName, o
         aria-label={done ? 'Reabrir tarea' : 'Completar tarea'}
         onClick={(e) => {
           e.stopPropagation()
-          withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+          complete()
         }}
         className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] text-[13px] font-bold text-[#0A0A0A]"
         style={{ borderColor: done ? '#F4EEE2' : overdue ? '#D98A86' : 'rgba(255,255,255,0.32)', background: done ? '#F4EEE2' : 'transparent' }}
@@ -54,6 +80,7 @@ export default function PhoneTaskCard({ task, workstream, userById, actorName, o
         {pm && <span className="rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold" style={{ background: `${pm.color}22`, color: pm.color }}>{pm.label}</span>}
         {(task.assignedTo || []).length > 0 && <AvatarStack userIds={task.assignedTo} userById={userById} pendingIds={task.pendingConfirmations || []} size={22} />}
       </span>
+    </motion.div>
     </div>
   )
 }

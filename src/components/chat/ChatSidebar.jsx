@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { dmIdFor } from '../../lib/firestore'
 import { isPrivate, userLabel, groupLabel, presenceOf, shortTime } from '../../lib/chat'
 import { PlusIcon, SearchIcon, LockIcon, InboxIcon, AtIcon, BookmarkIcon, FolderIcon, EditIcon, PinIcon } from '../icons'
 import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
 import usePhone from '../../hooks/usePhone'
+import { isTouchLayout } from '../../lib/motion'
+import { motion } from 'framer-motion'
 import PushNotificationsCard from '../shell/PushNotificationsCard'
 
 // Comunicación's left column: search, the Inbox/Hilos/Menciones/Guardados/
@@ -72,11 +74,29 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
 // right (WhatsApp/Slack style), the unread count, a draft mark, and a pin
 // that appears on hover. Pinned rows can be dragged to reorder.
 function PreviewRow({ big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
+  const touch = big && isTouchLayout()
+  const dragged = useRef(false)
+  const Wrap = touch ? motion.div : 'div'
+  const swipe = touch
+    ? {
+        drag: 'x',
+        dragConstraints: { left: 0, right: 0 },
+        dragElastic: { left: 0.05, right: 0.6 },
+        dragSnapToOrigin: true,
+        onDragStart: () => { dragged.current = true },
+        onDragEnd: (_e, info) => {
+          setTimeout(() => { dragged.current = false }, 80)
+          if (info.offset.x > 100 || info.velocity.x > 650) onTogglePin?.()
+        },
+      }
+    : {}
   return (
-    <div className="group/row relative" {...dragProps}>
+    <div className="relative overflow-hidden rounded-xl">
+    {touch && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
+    <Wrap className={`group/row relative ${touch ? "bg-black" : ""}`} {...dragProps} {...swipe}>
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => { if (!dragged.current) onClick() }}
         className={`flex w-full items-center rounded-xl text-left transition-colors duration-150 hover:bg-white/[0.04] ${big ? 'gap-4 px-1 py-2.5' : 'gap-2.5 px-2 py-1.5'}`}
         style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
@@ -111,6 +131,7 @@ function PreviewRow({ big, active, unreadCount, unread, draftText, preview, time
       >
         <PinIcon size={10} />
       </button>
+    </Wrap>
     </div>
   )
 }

@@ -19,6 +19,7 @@ import CellPopover from '../workspace/CellPopover'
 import Avatar from '../shell/Avatar'
 import { SearchIcon, PlusIcon, UsersIcon, LayersIcon, BriefcaseIcon, MoreIcon, GridIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
+import usePhone from '../../hooks/usePhone'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -113,6 +114,7 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
 }
 
 function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelete, isAdmin }) {
+  const phone = usePhone()
   const q = search.trim().toLowerCase()
   const filtered = q
     ? people.filter((p) => `${p.name} ${p.role} ${p.area}`.toLowerCase().includes(q))
@@ -160,6 +162,26 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
             </div>
             <span className="text-[12px] text-[#444444]">{equipo.length} miembros</span>
           </div>
+          {phone ? (
+            <div className="mt-4 flex flex-col gap-2.5">
+              {equipo.map((p) => {
+                const meta = statusMeta(p.status)
+                return (
+                  <button key={p.id} type="button" onClick={() => onOpen(p)} className="flex w-full items-center gap-3.5 rounded-[22px] bg-[#1C1C1E] p-4 text-left active:bg-[#242426]">
+                    <Avatar photoURL={p.photoDataUrl} displayName={p.name} size={46} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[16px] font-semibold text-[#F5F5F5]">{p.name}</span>
+                      <span className="block truncate text-[13.5px] text-[#8E8E93]">{[p.role, p.area].filter(Boolean).join(' · ') || 'General'}</span>
+                    </span>
+                    <span className="flex flex-shrink-0 items-center gap-1.5 text-[12px]" style={{ color: meta.color }}>
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
+                      {meta.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
           <div className="ador-glass ador-grain mt-4 overflow-x-auto rounded-2xl px-3 py-2">
             <div className="grid min-w-[720px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-2 pb-2 pt-1">
               {['Nombre', 'Rol', 'Área', 'Estado', 'Ubicación', ''].map((h) => (
@@ -174,6 +196,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
               ))}
             </div>
           </div>
+          )}
         </div>
       )}
     </div>
