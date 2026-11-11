@@ -48,7 +48,7 @@ function Metric({ label, value, color = '#F5F5F5', badge, points, wide }) {
 
 // The month read as one unit: income, spending, and what's left. The delta
 // sits on the result (the number that matters), not on income alone.
-export default function SituacionActualCard({ monthLabel, ingresosDelMes, gastosDelMes, utilidadNeta, resultDeltaPct, series = [] }) {
+export default function SituacionActualCard({ vsLabel, monthLabel, ingresosDelMes, gastosDelMes, utilidadNeta, resultDeltaPct, series = [] }) {
   return (
     <div>
       <div className="mb-3 px-1">

@@ -35,6 +35,7 @@ export default function FinanceHero({
   totalPorCobrar,
   porCobrarClientCount,
   estado,
+  sentence,
   onOpenPorCobrar,
   onOpenRunway,
   onIngreso,
@@ -55,7 +56,7 @@ export default function FinanceHero({
       ) : (
         <p className="mt-5 text-[34px] font-light leading-none tracking-[-0.02em] text-[#8A8A8A]">Sin registrar</p>
       )}
-      <p className="mt-2 text-[12.5px] text-[#8A8A8A]">{cashBalance ? 'Saldo registrado a mano en Proyección de caja' : 'Regístralo en Proyección de caja para ver el runway'}</p>
+      <p className="mt-3 max-w-[520px] text-[15px] leading-snug text-[#C9C9C9]">{sentence || (cashBalance ? 'Saldo registrado a mano en Proyección de caja' : 'Regístralo en Proyección de caja para ver el runway')}</p>
 
       <div className="mt-6 flex gap-2.5">
         <button type="button" onClick={onIngreso} className="ador-btn-primary flex-1 rounded-full px-4 py-2.5 text-[13px] font-medium">

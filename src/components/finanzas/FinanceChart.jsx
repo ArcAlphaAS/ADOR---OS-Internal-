@@ -35,7 +35,7 @@ function Stat({ label, value, color }) {
 // Cash flow of the last six months as plain HTML columns (no stretched SVG, so
 // the rounded corners stay round): income in ivory, spending in gold, a scale
 // on the left, and a tooltip with the month's income, spending and result.
-export default function FinanceChart({ series }) {
+export default function FinanceChart({ series, selectedMonth, onSelectMonth }) {
   const [mode, setMode] = useState('ambos')
   const [hoverIndex, setHoverIndex] = useState(null)
 
@@ -55,7 +55,7 @@ export default function FinanceChart({ series }) {
   return (
     <div className="ador-glass ador-grain rounded-[24px] px-7 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Flujo de caja · 6 meses</h3>
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Flujo de caja · {series.length} meses</h3>
         <div className="flex items-center gap-0.5 rounded-full bg-white/[0.06] p-0.5">
           {TOGGLES.map((t) => (
             <button
@@ -108,8 +108,9 @@ export default function FinanceChart({ series }) {
                       key={p.month}
                       onMouseEnter={() => setHoverIndex(i)}
                       onMouseLeave={() => setHoverIndex(null)}
-                      className="relative flex flex-1 items-end justify-center gap-[5px] rounded-xl px-1 transition-colors duration-150"
-                      style={{ background: isActive ? 'rgba(255,255,255,0.04)' : 'transparent' }}
+                      onClick={() => onSelectMonth?.(selectedMonth === p.month ? null : p.month)}
+                      className="relative flex flex-1 cursor-pointer items-end justify-center gap-[5px] rounded-xl px-1 transition-colors duration-150"
+                      style={{ background: selectedMonth === p.month ? 'rgba(244,238,226,0.1)' : isActive ? 'rgba(255,255,255,0.04)' : 'transparent' }}
                     >
                       {showIngresos && (
                         <span
@@ -138,6 +139,7 @@ export default function FinanceChart({ series }) {
             ))}
           </div>
 
+          {selectedMonth && <p className="mt-3 text-[11.5px] text-[#8A8A8A]">Mostrando solo los movimientos de {monthLabel(selectedMonth)} abajo. Toca la barra otra vez para quitar el filtro.</p>}
           {active && (
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl bg-white/[0.04] px-4 py-3 text-[12.5px]">
               <span className="font-medium capitalize text-[#F5F5F5]">{monthLabel(active.month)}</span>
