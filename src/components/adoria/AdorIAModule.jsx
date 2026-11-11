@@ -11,6 +11,7 @@ import { firstName } from '../../lib/user'
 import { setThinking } from '../../lib/liveStatus'
 import { haptic } from '../../lib/haptics'
 import usePhone from '../../hooks/usePhone'
+import ParticleCore from './ParticleCore'
 
 // The four starting points on the empty screen: a short title and the full
 // question each one sends.
@@ -241,7 +242,7 @@ export default function AdorIAModule({ user, onNavigate }) {
               <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">ADOR IA</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }} className="mb-7 md:hidden">
-              <GlassOrbs size={74} />
+              <ParticleCore size={190} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -293,7 +294,7 @@ export default function AdorIAModule({ user, onNavigate }) {
             ))}
             {sending && (
               <div className="flex items-center gap-3 pl-1 pt-1">
-                <GlassOrbs size={30} busy />
+                <ParticleCore size={44} busy />
                 <span className="ador-shimmer-text text-[17px] font-medium">Pensando…</span>
               </div>
             )}
@@ -310,7 +311,7 @@ export default function AdorIAModule({ user, onNavigate }) {
         }}
         className="relative mt-4 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] py-2 pl-3 pr-2 backdrop-blur-xl transition-colors focus-within:border-white/[0.2] focus-within:bg-white/[0.08] md:border-transparent md:bg-white/[0.06]"
       >
-        <span className="-ml-1 flex w-9 justify-center"><GlassOrbs size={22} busy={sending} /></span>
+        <span className="-ml-1 flex w-9 justify-center"><ParticleCore size={30} busy={sending} /></span>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}

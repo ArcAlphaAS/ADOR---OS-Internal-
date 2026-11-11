@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { getActiveSeasons, seasonBadge } from '../../lib/seasons'
 import useSeasonsOff from '../../hooks/useSeasons'
@@ -80,18 +81,31 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
 
   return (
     <div>
-      <h1
-        className="font-semibold tracking-[-0.02em]"
-        style={{
-          fontSize: '42px',
-          backgroundImage: 'linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.85) 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent',
-        }}
-      >
-        {getGreeting(now.getHours(), name)}
-      </h1>
+      {(() => {
+        // "Buenas noches," pequeño y suave arriba; el nombre grande y brillante abajo.
+        const full = getGreeting(now.getHours(), name)
+        const cut = full.indexOf(',')
+        const lead = cut > -1 ? full.slice(0, cut + 1) : ''
+        const rest = cut > -1 ? full.slice(cut + 1).trim() : full
+        return (
+          <h1 className="tracking-[-0.03em]">
+            {lead && (
+              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[22px] font-medium leading-tight tracking-[-0.01em] text-[#9A9AA0] md:text-[24px]">
+                {lead}
+              </motion.span>
+            )}
+            <motion.span
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="block text-[54px] font-bold leading-[1.02] md:text-[56px]"
+              style={{ backgroundImage: 'linear-gradient(180deg, #FFFFFF 10%, rgba(255,255,255,0.78) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
+            >
+              {rest}
+            </motion.span>
+          </h1>
+        )
+      })()}
       <div className="mt-2 flex items-center gap-2.5">
         <p className="text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
         {badge && (
