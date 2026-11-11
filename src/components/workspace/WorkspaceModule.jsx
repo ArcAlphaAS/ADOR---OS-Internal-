@@ -172,7 +172,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   return (
     <motion.div
       initial={false}
-      className="-mt-16 flex h-[calc(100%+4rem)]"
+      className={phone ? 'flex' : '-mt-16 flex h-[calc(100%+4rem)]'}
     >
       {view !== 'hoy' && (
         <WorkspaceSidebar
@@ -190,7 +190,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
         />
       )}
 
-      <div className="min-w-0 flex-1 overflow-y-auto px-4 pb-16 pt-[88px] [scrollbar-gutter:stable] md:px-8 lg:pt-[104px]">
+      <div className={`min-w-0 flex-1 px-4 md:px-8 ${phone ? 'pb-4 pt-6' : 'overflow-y-auto pb-16 pt-[88px] [scrollbar-gutter:stable] lg:pt-[104px]'}`}>
         {/* Hoy renders its own richer header (date, rotating quote, live
             stats — see HoyHeader in HoyView.jsx), so the generic
             title/subtitle here would just be a redundant second "Hoy"
