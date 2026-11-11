@@ -4,18 +4,21 @@ import { motion } from 'framer-motion'
 import { applyTaskUpdate, createTask, deleteTask, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { withTimeout, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
+import { isTouchLayout, SHEET } from '../../lib/motion'
+import { haptic } from '../../lib/haptics'
 
 // Right-click on a task row, like Monday's: copy name/link, open, duplicate,
 // add a subtask, move to another project, complete/reopen, delete. One menu
 // for every task table (Grupo/Lista, Hoy, Personal). Portaled to
 // document.body at the cursor (§1) and clamped to the viewport.
 function Item({ label, onClick, danger, hint }) {
+  const touch = isTouchLayout()
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-white/[0.07]"
-      style={{ color: danger ? '#EF5350' : '#E8E8E8' }}
+      onClick={(e) => { if (touch) haptic(danger ? 'heavy' : 'tap'); onClick(e) }}
+      className={touch ? 'flex w-full items-center justify-between gap-3 px-5 text-left text-[17px] active:bg-white/[0.07]' : 'flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-white/[0.07]'}
+      style={{ color: danger ? (touch ? '#FF6961' : '#EF5350') : touch ? '#F5F5F5' : '#E8E8E8', ...(touch ? { minHeight: 52, borderTop: '0.5px solid rgba(255,255,255,0.08)' } : null) }}
     >
       {label}
       {hint && <span className="text-[11px] text-[#888888]">{hint}</span>}
@@ -23,7 +26,7 @@ function Item({ label, onClick, danger, hint }) {
   )
 }
 
-const Divider = () => <div className="my-1 h-px bg-white/[0.08]" />
+const Divider = () => (isTouchLayout() ? <div className="h-1.5 bg-black/40" /> : <div className="my-1 h-px bg-white/[0.08]" />)
 
 export default function TaskContextMenu({ task, x, y, workstreams = [], actorUserId, actorName, onClose, onOpen, onAddSubtask }) {
   const showToast = useToast()
@@ -54,7 +57,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
-    window.addEventListener('scroll', onClose, true)
+    if (!isTouchLayout()) window.addEventListener('scroll', onClose, true)
     window.addEventListener('resize', onClose)
     return () => {
       window.removeEventListener('keydown', onKey)
@@ -100,7 +103,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
   return createPortal(
     <>
       <div
-        className="fixed inset-0 z-[998]"
+        className={`fixed inset-0 z-[998] ${isTouchLayout() ? 'bg-black/45' : ''}`}
         onClick={() => armed.current && onClose()}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -109,14 +112,14 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
       />
       <motion.div
         ref={ref}
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.12, ease: 'easeOut' }}
-        className="fixed z-[999] w-[230px]"
-        style={{ left: pos.left, top: pos.top, transformOrigin: 'top left' }}
+        initial={isTouchLayout() ? { y: 60, opacity: 0 } : { opacity: 0, scale: 0.97 }}
+        animate={isTouchLayout() ? { y: 0, opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={isTouchLayout() ? SHEET : { duration: 0.12, ease: 'easeOut' }}
+        className={isTouchLayout() ? 'fixed inset-x-3 z-[999] mx-auto max-w-[520px]' : 'fixed z-[999] w-[230px]'}
+        style={isTouchLayout() ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' } : { left: pos.left, top: pos.top, transformOrigin: 'top left' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="ador-glass ador-grain max-h-[70vh] overflow-y-auto rounded-xl p-1.5">
+        <div className={isTouchLayout() ? 'max-h-[72vh] overflow-y-auto rounded-[22px] bg-[#1C1C1E]/95 backdrop-blur-xl' : 'ador-glass ador-grain max-h-[70vh] overflow-y-auto rounded-xl p-1.5'} data-keep-scroll>
           <Item label="Copiar nombre" onClick={copy(task.title, 'Nombre copiado.')} />
           <Item label="Copiar enlace de la tarea" onClick={copy(`${window.location.origin}/?open=workspace&task=${task.id}`, 'Enlace copiado.')} />
           <Divider />
@@ -140,6 +143,11 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
             <Item label="Eliminar" danger onClick={() => setConfirmDelete(true)} />
           )}
         </div>
+        {isTouchLayout() && (
+          <button type="button" onClick={onClose} className="mt-2 w-full rounded-[22px] bg-[#2C2C2E] text-[17px] font-semibold text-[#F4EEE2] active:bg-[#3A3A3C]" style={{ minHeight: 54 }}>
+            Cancelar
+          </button>
+        )}
       </motion.div>
     </>,
     document.body

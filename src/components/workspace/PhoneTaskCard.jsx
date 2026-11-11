@@ -18,6 +18,7 @@ const fmt = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' }
 export default function PhoneTaskCard({ task, workstream, workstreams = [], userById, actorUserId, actorName, onOpen, onReschedule }) {
   const [menu, setMenu] = useState(null) // mantener pulsado → menú de la tarea (el "clic derecho" del teléfono)
   const press = useRef(null)
+  const startPt = useRef(null)
   const showToast = useToast()
   const dragged = useRef(false)
   const done = task.status === 'completado'
@@ -56,6 +57,7 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
         const t = e.touches?.[0]
         if (!t) return
         clearTimeout(press.current)
+        startPt.current = { x: t.clientX, y: t.clientY }
         press.current = setTimeout(() => {
           dragged.current = true
           haptic('heavy')
@@ -63,7 +65,11 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
           setTimeout(() => { dragged.current = false }, 400)
         }, 480)
       }}
-      onTouchMove={() => clearTimeout(press.current)}
+      onTouchMove={(e) => {
+        const t = e.touches?.[0]
+        if (t && startPt.current && Math.hypot(t.clientX - startPt.current.x, t.clientY - startPt.current.y) < 8) return
+        clearTimeout(press.current)
+      }}
       onTouchEnd={() => clearTimeout(press.current)}
       onTouchCancel={() => clearTimeout(press.current)}
     >

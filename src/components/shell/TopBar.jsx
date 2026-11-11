@@ -12,6 +12,7 @@ import usePhone from '../../hooks/usePhone'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
 import SearchResults from './SearchResults'
+import PhoneSearch from './PhoneSearch'
 import Avatar from './Avatar'
 import { useClientNotifications } from '../../hooks/useClientNotifications'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -75,6 +76,7 @@ function PillTabs({ activeModule, onNavigate, canSee }) {
 }
 
 function SearchToggle({ onNavigate, uid, canSee }) {
+  const phone = usePhone()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [rect, setRect] = useState(null)
@@ -115,8 +117,13 @@ function SearchToggle({ onNavigate, uid, canSee }) {
 
   return (
     <motion.div layout="position" transition={REFLOW_TRANSITION} className="flex items-center">
+      {phone && (
+        <AnimatePresence>
+          {open && <PhoneSearch query={query} setQuery={setQuery} results={results} onSelect={choose} onClose={close} />}
+        </AnimatePresence>
+      )}
       <AnimatePresence>
-        {open && (
+        {open && !phone && (
           <motion.input
             key="search-input"
             ref={inputRef}
@@ -160,7 +167,7 @@ function SearchToggle({ onNavigate, uid, canSee }) {
       </button>
 
       <AnimatePresence>
-        {open && query.trim() && (
+        {open && !phone && query.trim() && (
           <SearchResults
             results={results}
             anchorRect={rect}

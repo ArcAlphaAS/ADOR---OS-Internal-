@@ -9,6 +9,8 @@ import { haptic } from '../lib/haptics'
 export function useContextMenu() {
   const [menu, setMenu] = useState(null)
   const timer = useRef(null)
+  const openedAt = useRef(0)
+  const start = useRef(null)
   const close = useCallback(() => setMenu(null), [])
   const bind = (payload) => ({
     onContextMenu: (e) => {
@@ -20,12 +22,26 @@ export function useContextMenu() {
       const t = e.touches?.[0]
       if (!t) return
       clearTimeout(timer.current)
+      start.current = { x: t.clientX, y: t.clientY }
       timer.current = setTimeout(() => {
-        haptic()
+        haptic('heavy')
+        openedAt.current = Date.now()
         setMenu({ x: t.clientX, y: t.clientY, payload })
       }, 520)
     },
-    onTouchMove: () => clearTimeout(timer.current),
+    // Al soltar el dedo tras mantener pulsado, el "clic" fantasma no debe abrir la fila.
+    onClickCapture: (e) => {
+      if (Date.now() - openedAt.current < 700) {
+        e.stopPropagation()
+        e.preventDefault()
+      }
+    },
+    'data-ctx': '',
+    onTouchMove: (e) => {
+      const t = e.touches?.[0]
+      if (t && start.current && Math.hypot(t.clientX - start.current.x, t.clientY - start.current.y) < 8) return
+      clearTimeout(timer.current)
+    },
     onTouchEnd: () => clearTimeout(timer.current),
     onTouchCancel: () => clearTimeout(timer.current),
   })
