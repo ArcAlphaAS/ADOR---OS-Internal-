@@ -4,7 +4,27 @@
 // the part of the screen that's actually visible (visualViewport) and
 // marks <html class="kb-open"> while the keyboard is up, so the bottom tab
 // bar steps aside and the box sits right on top of the keyboard.
+// iPhone con la app instalada: a veces la altura que reporta el sistema queda más
+// corta que la pantalla real y sobra una franja negra abajo. Medimos esa diferencia y la
+// exponemos como --ios-gap para que la raíz, la barra y las hojas lleguen al borde real.
+function installIosGap() {
+  const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
+  if (!standalone || !/iP(hone|ad)/.test(navigator.userAgent)) return
+  const root = document.documentElement
+  const measure = () => {
+    if (root.classList.contains('kb-open')) return
+    const portrait = window.innerHeight >= window.innerWidth
+    const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)
+    const gap = Math.round(screenH - window.innerHeight)
+    root.style.setProperty('--ios-gap', gap > 12 && gap < 140 ? `${gap}px` : '0px')
+  }
+  measure()
+  window.addEventListener('resize', measure)
+  window.addEventListener('orientationchange', () => setTimeout(measure, 300))
+}
+
 export function installKeyboardHandling() {
+  installIosGap()
   const vv = window.visualViewport
   if (!vv || !window.matchMedia('(pointer: coarse)').matches) return
   const root = document.documentElement

@@ -581,7 +581,7 @@ html.light .ador-grain::after { opacity: 0.015; }
      más cortos que la pantalla y dejaban un rectángulo negro sin usar. Fijar la raíz
      a los cuatro bordes la estira hasta el borde real. Con el teclado abierto manda
      la altura visible (lib/keyboard.js). */
-  .ador-app-root.h-screen { position: fixed; inset: 0; width: 100%; height: auto; }
+  .ador-app-root.h-screen { position: fixed; inset: 0; bottom: calc(-1 * var(--ios-gap, 0px)); width: 100%; height: auto; }
   html.kb-open .ador-app-root.h-screen { bottom: auto; top: var(--app-top, 0px); height: var(--app-h, 100%) !important; }
 }
 

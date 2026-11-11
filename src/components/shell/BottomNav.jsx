@@ -106,15 +106,18 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
     <>
       {/* A floating capsule just above the home indicator, not a
           full-width bar — the way Apple's own newer apps do it. */}
+      {createPortal(
       <nav
         className="ador-bottomnav ador-hide-on-kb fixed inset-x-3 z-[46] flex h-16 items-center rounded-full border border-white/[0.08] bg-[#1C1C1E]/90 px-2 shadow-[0_10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden"
-        style={{ bottom: 'max(10px, calc(env(safe-area-inset-bottom) - 14px))' }}
+        style={{ bottom: 'calc(max(10px, calc(env(safe-area-inset-bottom) - 14px)) - var(--ios-gap, 0px))' }}
       >
         {primary.map((m) => (
           <Tab key={m.id} {...m} active={activeModule === m.id && !moreOpen} badge={badges[m.id]} onClick={() => go(m.id)} />
         ))}
         {more.length > 0 && <Tab label="Más" Icon={MoreIcon} spin={moreOpen ? 90 : 0} active={moreActive || moreOpen} badge={more.reduce((n, m) => n + (badges[m.id] || 0), 0)} onClick={() => setMoreOpen((v) => !v)} />}
-      </nav>
+      </nav>,
+      document.body
+      )}
 
       {createPortal(
         <AnimatePresence>
@@ -127,11 +130,12 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 transition={SHEET}
                 {...swipeToClose('y', () => setMoreOpen(false))}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[680px]"
+                className="absolute inset-x-3 mx-auto max-w-[680px]"
+                style={{ bottom: 'calc(max(10px, calc(env(safe-area-inset-bottom) - 14px)) - var(--ios-gap, 0px) + 74px)' }}
               >
-                <div className="ador-modal-surface rounded-t-[24px] px-4 pt-3" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
+                <div className="ador-modal-surface rounded-[30px] px-3.5 pb-3.5 pt-3">
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-                  <div className="grid max-h-[64vh] grid-cols-4 gap-2 overflow-y-auto sm:gap-2.5">
+                  <div className="grid max-h-[60vh] grid-cols-4 gap-2 overflow-y-auto sm:gap-2.5">
                     {more.map((m, i) => {
                       const on = activeModule === m.id
                       return (
