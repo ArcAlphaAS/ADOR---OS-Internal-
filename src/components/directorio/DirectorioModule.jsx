@@ -38,7 +38,7 @@ const TABS = [
 
 function StatCard({ Icon, value, label }) {
   return (
-    <div className="ador-glass flex items-center gap-3 rounded-2xl px-4 py-3.5">
+    <div className="ador-glass flex items-center gap-3 rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5">
       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#888888]">
         <Icon size={16} />
       </span>
@@ -146,7 +146,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
           <div className="flex items-baseline justify-between">
             <div>
               <h2 className="text-[18px] font-semibold text-[#F5F5F5]">Dirección</h2>
-              <p className="text-[13px] text-[#888888]">Liderazgo y visión de ADOR.</p>
+              <p className="hidden text-[13px] text-[#888888] md:block">Liderazgo y visión de ADOR.</p>
             </div>
             <span className="text-[12px] text-[#8A8A8A]">{directivos.length} miembros</span>
           </div>
@@ -163,16 +163,16 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
           <div className="flex items-baseline justify-between">
             <div>
               <h2 className="text-[18px] font-semibold text-[#F5F5F5]">Equipo</h2>
-              <p className="text-[13px] text-[#888888]">Talento, ejecución y desarrollo.</p>
+              <p className="hidden text-[13px] text-[#888888] md:block">Talento, ejecución y desarrollo.</p>
             </div>
             <span className="text-[12px] text-[#8A8A8A]">{equipo.length} miembros</span>
           </div>
           {phone ? (
-            <div className="mt-4 flex flex-col gap-2.5">
+            <div className="mt-3 flex flex-col divide-y divide-white/[0.06] overflow-hidden rounded-[22px] bg-[#1C1C1E]">
               {equipo.map((p) => {
                 const meta = statusMeta(p.status)
                 return (
-                  <button key={p.id} type="button" onClick={() => onOpen(p)} className="flex w-full items-center gap-3.5 rounded-[22px] bg-[#1C1C1E] p-4 text-left active:bg-[#242426]">
+                  <button key={p.id} type="button" onClick={() => onOpen(p)} className="flex w-full items-center gap-3.5 px-4 py-3 text-left active:bg-[#242426]">
                     <Avatar photoURL={p.photoDataUrl} displayName={p.name} size={46} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] font-semibold text-[#F5F5F5]">{p.name}</span>
@@ -506,12 +506,12 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Organización</p>
+          <p className="hidden text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A] md:block">Organización</p>
           <h1 className="ador-title mt-1">Directorio</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">Personas, estructura y equipos que hacen posible ADOR.</p>
+          <p className="mt-1 hidden text-[13px] text-[#888888] md:block">Personas, estructura y equipos que hacen posible ADOR.</p>
         </div>
         <div className="flex flex-col items-end gap-3">
-          <p className="max-w-[260px] text-right text-[12px] italic text-[#8A8A8A]">
+          <p className="hidden max-w-[260px] text-right text-[12px] italic text-[#8A8A8A] md:block">
             "Las grandes organizaciones son la suma de grandes personas."
             <span className="mt-0.5 block not-italic text-[#8A8A8A]">— ADOR</span>
           </p>
@@ -521,22 +521,23 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => setModalPerson(null)}
-              className="ador-btn-primary flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium"
+              aria-label="Añadir persona"
+              className="ador-btn-primary flex h-11 w-11 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium md:h-auto md:w-auto md:px-5 md:py-2.5"
             >
-              <PlusIcon size={14} /> Añadir persona
+              <PlusIcon size={16} /> <span className="hidden md:inline">Añadir persona</span>
             </motion.button>
           )}
         </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="ador-glass flex max-w-full items-center gap-1 self-start overflow-x-auto rounded-full p-1 [scrollbar-width:none] sm:self-auto [&::-webkit-scrollbar]:hidden">
+        <div className="ador-glass flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] sm:w-auto sm:self-auto [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className="relative rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150"
+              className="relative flex-1 rounded-full px-4 py-2 text-[13.5px] font-medium transition-colors duration-150 sm:flex-none sm:py-1.5 sm:text-[12.5px]"
               style={{ color: tab === t.id ? '#0A0A0A' : '#888888' }}
             >
               {tab === t.id && (
@@ -553,7 +554,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
         </div>
 
         {tab === 'personas' && (
-          <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 sm:py-2">
+          <div className="flex h-11 items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-4 max-sm:border-transparent max-sm:bg-[#1C1C1E] sm:h-auto sm:px-3.5 sm:py-2">
             <SearchIcon size={14} className="text-[#8A8A8A]" />
             <input
               type="text"
@@ -567,7 +568,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
       </div>
 
       {tab === 'personas' && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           <StatCard Icon={UsersIcon} value={people.length} label="Personas" />
           <StatCard Icon={LayersIcon} value={areaCounts(people).length} label="Áreas" />
           <StatCard Icon={BriefcaseIcon} value={teams.length} label="Equipos" />
@@ -599,7 +600,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
           {tab === 'roles' && <RolesTab people={people} />}
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className={`flex flex-col gap-4 ${selectedPerson ? '' : 'max-md:hidden'}`}>
           {selectedPerson ? (
             <PersonDetailPanel
               person={selectedPerson}

@@ -26,9 +26,13 @@ function iosTick() {
 
 const isIOS = () => typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent)
 
+let lastAt = 0
 export function haptic(kind = 'tap') {
   try {
     if (typeof navigator === 'undefined') return
+    const now = Date.now()
+    if (now - lastAt < 180) return // un solo toque aunque varias capas lo pidan
+    lastAt = now
     if (navigator.vibrate) {
       navigator.vibrate(kind === 'success' ? [10, 40, 16] : kind === 'heavy' ? 18 : 8)
       return

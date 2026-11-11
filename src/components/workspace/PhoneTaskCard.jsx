@@ -34,7 +34,10 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
   const pm = task.priority ? priorityMeta(task.priority) : null
   const dueText = due ? (isDueToday(task) ? 'Hoy' : overdue ? `Venció ${fmt(due)}` : fmt(due)) : null
 
-  const complete = () => withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+  const complete = () => {
+    haptic(done ? 'tap' : 'success') // en el mismo gesto del dedo (iOS lo exige)
+    return withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+  }
   const touch = isTouchLayout()
   const closeActions = () => {
     setOpen(false)

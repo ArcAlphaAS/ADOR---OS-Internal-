@@ -9,6 +9,7 @@ import { SparkleIcon, WalletIcon, TargetIcon, UsersIcon, PlusIcon } from '../ico
 import { SERIF } from '../news/NewsLayout'
 import { firstName } from '../../lib/user'
 import { setThinking } from '../../lib/liveStatus'
+import { haptic } from '../../lib/haptics'
 
 // The four starting points on the empty screen: a short title and the full
 // question each one sends.
@@ -50,25 +51,25 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className="max-w-[80%] rounded-[20px] px-4 py-2.5 text-[14px] leading-relaxed"
+        className="ador-msg-in max-w-[86%] rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:max-w-[80%] md:text-[14px]"
         style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: isUser ? '#2C2C2E' : '#1C1C1E' }}
       >
         {content}
         {card && (
-          <div className="mt-3 rounded-xl border border-white/[0.1] bg-white/[0.03] p-3" style={{ whiteSpace: 'normal' }}>
+          <div className="mt-3 rounded-2xl bg-white/[0.07] p-3.5" style={{ whiteSpace: 'normal' }}>
             <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#E8C15A]">{card.heading}</p>
             <dl className="mt-2 flex flex-col gap-1">
               {card.rows.map(([k, v]) => (
-                <div key={k} className="flex gap-2 text-[12.5px]">
+                <div key={k} className="flex gap-2 text-[14px] md:text-[12.5px]">
                   <dt className="w-[72px] flex-shrink-0 text-[#888888]">{k}</dt>
                   <dd className="min-w-0 text-[#F0F0F0]">{v}</dd>
                 </div>
               ))}
             </dl>
             {status === 'pending' && (
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={onConfirm} className="ador-btn-primary rounded-lg px-3.5 py-1.5 text-[12px] font-medium">{card.cta}</button>
-                <button type="button" onClick={onCancel} className="rounded-lg px-3 py-1.5 text-[12px] text-[#888888] hover:text-[#F5F5F5]">Cancelar</button>
+              <div className="mt-3 flex items-center gap-2">
+                <button type="button" onClick={() => { haptic('success'); onConfirm() }} className="ador-btn-primary h-11 flex-1 rounded-full px-4 text-[15px] font-semibold md:h-auto md:flex-none md:rounded-lg md:px-3.5 md:py-1.5 md:text-[12px] md:font-medium">{card.cta}</button>
+                <button type="button" onClick={onCancel} className="h-11 rounded-full px-4 text-[15px] text-[#8E8E93] hover:text-[#F5F5F5] md:h-auto md:rounded-lg md:px-3 md:py-1.5 md:text-[12px]">Cancelar</button>
               </div>
             )}
             {status === 'working' && <p className="mt-3 text-[12px] text-[#888888]">Un momento…</p>}
@@ -99,6 +100,7 @@ export default function AdorIAModule({ user }) {
   const send = async (text) => {
     const trimmed = text.trim()
     if (!trimmed || sending) return
+    haptic()
     setError('')
     setMessages((prev) => {
       const { messages: next, trimmed: didTrim } = appendCapped(prev, { role: 'user', content: trimmed })
@@ -186,7 +188,7 @@ export default function AdorIAModule({ user }) {
               lastTopicRef.current = null
               setTrimmedOnce(false)
             }}
-            className="rounded-full border border-white/[0.12] px-3.5 py-1.5 text-[12.5px] text-[#B5B5B5] transition-colors hover:border-white/[0.24] hover:text-[#F5F5F5]"
+            className="rounded-full bg-[#1C1C1E] px-4 py-2 text-[14px] font-medium text-[#F4EEE2] transition-colors active:bg-[#2C2C2E] md:text-[12.5px]"
           >
             Nueva conversación
           </button>
@@ -225,11 +227,11 @@ export default function AdorIAModule({ user }) {
                 <motion.button
                   key={title}
                   type="button"
-                  onClick={() => send(prompt)}
+                  onClick={() => { haptic(); send(prompt) }}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.7, delay: 0.3 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center gap-4 rounded-[22px] bg-white/[0.045] p-2.5 pr-5 text-left transition-colors duration-150 hover:bg-white/[0.08]"
+                  className="flex items-center gap-4 rounded-[22px] bg-[#1C1C1E] p-2.5 pr-5 text-left transition-colors duration-150 active:bg-[#2C2C2E] md:hover:bg-white/[0.08]"
                 >
                   <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/[0.08] text-[#F4EEE2]">
                     <Icon size={20} />
@@ -276,20 +278,20 @@ export default function AdorIAModule({ user }) {
           e.preventDefault()
           send(input)
         }}
-        className="mt-4 flex items-center gap-2 rounded-full bg-white/[0.06] py-2 pl-3 pr-2 transition-colors focus-within:bg-white/[0.09]"
+        className="mt-4 flex items-center gap-2 rounded-full bg-[#1C1C1E] py-2 pl-3.5 pr-2 transition-colors focus-within:bg-[#242426] md:bg-white/[0.06]"
       >
         <Orb />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Pregunta o escribe una orden…"
-          className="flex-1 bg-transparent px-2 text-[14px] text-[#F5F5F5] placeholder:text-[#6A6A6A] outline-none"
+          className="min-w-0 flex-1 bg-transparent px-2 text-[16px] text-[#F5F5F5] placeholder:text-[#8E8E93] outline-none md:text-[14px]" enterKeyHint="send"
         />
         <button
           type="submit"
           disabled={!input.trim() || sending}
           aria-label="Enviar"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A] transition-opacity disabled:opacity-30"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A] transition-opacity disabled:opacity-30 md:h-9 md:w-9"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
         </button>
