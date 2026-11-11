@@ -165,8 +165,9 @@ const VIEWS = [
 // was carrying too much at the same visual weight. The open view widens to
 // show its name in gold, so it's clear where you are without a tooltip.
 function ViewNav({ view, counts, onSelectView }) {
+  const phone = usePhone()
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
+    <div className={phone ? 'flex items-center justify-between rounded-[18px] bg-[#1C1C1E] p-1' : 'flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] p-1'}>
       {VIEWS.map(({ id, label, short, Icon }) => {
         const active = view === id
         const count = counts[id]
@@ -177,14 +178,14 @@ function ViewNav({ view, counts, onSelectView }) {
             title={count ? `${label} · ${count} sin leer` : label}
             aria-label={label}
             onClick={() => onSelectView(id)}
-            className={`relative flex h-9 items-center justify-center gap-1.5 rounded-lg transition-[flex,background-color] duration-200 hover:bg-white/[0.05] ${active ? 'flex-[2.6] px-2' : 'flex-1'}`}
+            className={`relative flex ${phone ? 'h-11 rounded-[14px]' : 'h-9 rounded-lg'} items-center justify-center gap-1.5 transition-[flex,background-color] duration-200 hover:bg-white/[0.05] ${active ? 'flex-[2.6] px-2' : 'flex-1'}`}
             style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined, color: active ? '#F4EEE2' : count ? '#F5F5F5' : '#9A9A9A' }}
           >
-            <Icon size={active ? 15 : 17} />
-            {active && <span className="truncate text-[12.5px] font-medium">{short}</span>}
+            <Icon size={phone ? 20 : active ? 15 : 17} />
+            {active && <span className={`truncate font-medium ${phone ? 'text-[14px]' : 'text-[12.5px]'}`}>{short}</span>}
             {count > 0 && (
               <span
-                className="absolute top-0.5 right-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold"
+                className="absolute right-1 top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold"
                 style={{ background: id === 'mentions' ? '#E8C15A' : '#F2EBDD', color: '#1C1A16' }}
               >
                 {count > 9 ? '9+' : count}
@@ -310,15 +311,16 @@ export default function ChatSidebar({ channels, groups, users, presence, current
     <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 [overscroll-behavior-x:none] md:w-[230px]">
       <div>
         <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
-        <div className="mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5">
-          <SearchIcon size={12} className="text-[#858585]" />
+        <div className={phone ? 'mt-3 flex items-center gap-2.5 rounded-full bg-[#1C1C1E] px-4' : 'mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5'} style={phone ? { height: 44 } : undefined}>
+          <SearchIcon size={phone ? 16 : 12} className={phone ? 'text-[#8E8E93]' : 'text-[#858585]'} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && search.trim() && onSearchMessages(search.trim())}
             placeholder="Buscar…"
-            className="w-full bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#858585] outline-none"
+            enterKeyHint="search"
+            className={`w-full bg-transparent text-[#F5F5F5] outline-none ${phone ? 'text-[16px] placeholder:text-[#8E8E93]' : 'text-[12.5px] placeholder:text-[#858585]'}`}
           />
         </div>
         {searching && (
