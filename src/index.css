@@ -776,3 +776,20 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
     box-shadow: none;
   }
 }
+
+
+/* Teléfono: ninguna tarjeta de vidrio lleva contorno (como pidió el equipo: eso no lo
+   haría Apple). El relleno gris ya las separa del fondo. */
+@media (max-width: 767px) {
+  .ador-glass:not(.ador-card-attention):not(.ador-card-urgent) { border-color: transparent; }
+}
+
+/* Vida: en el teléfono, las tarjetas de cada pantalla aparecen con una subida suave
+   y un leve escalonado, en vez de estar ya puestas. Solo al entrar a la pantalla. */
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  main .ador-glass { animation: ador-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  main > div > div > .ador-glass:nth-child(2), main .ador-glass:nth-of-type(2) { animation-delay: 60ms; }
+  main .ador-glass:nth-of-type(3) { animation-delay: 120ms; }
+  main .ador-glass:nth-of-type(4) { animation-delay: 180ms; }
+  main .ador-glass:nth-of-type(n+5) { animation-delay: 240ms; }
+}

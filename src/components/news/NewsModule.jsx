@@ -428,13 +428,13 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">
+          <p className="hidden text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A] md:block">
             {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
           </p>
           <h1 className="mt-1 text-[38px] leading-none text-[#F5F5F5] md:text-[46px]" style={SERIF}>
             {tab === 'anuncios' ? 'News' : 'Comunidad ADOR'}
           </h1>
-          <p className="mt-2 text-[13.5px] text-[#9A9A9A]">
+          <p className="mt-2 hidden text-[13.5px] text-[#9A9A9A] md:block">
             {tab === 'anuncios'
               ? 'Decisiones, hitos y anuncios de ADOR, escritos por el equipo.'
               : 'Personas, ideas y conversaciones que impulsan lo que construimos.'}

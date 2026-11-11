@@ -24,6 +24,8 @@ import { EventFields, HonoreePicker, ResourceFields, EventBlock, AchievementBloc
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { UsersIcon, CalendarIcon, FileIcon, ImageIcon, BookmarkIcon, MessageIcon, CloseIcon } from '../icons'
 import { notifyFail } from '../../lib/notifyFail'
+import { haptic } from '../../lib/haptics'
+import usePhone from '../../hooks/usePhone'
 
 // Comunidad — the informal side of News (from the user's reference image):
 // a type filter row, a composer that picks a type and can carry photos,
@@ -501,6 +503,106 @@ function PostCard({ post, user, actorName, saved, canDelete, isAdminUser, onDele
   )
 }
 
+
+// En el teléfono Comunidad es un feed como el de una red social moderna: sin tarjetas,
+// foto de la persona a la izquierda, nombre · hora, el texto, las fotos redondeadas y
+// una fila de botones en píldora (comentar, me gusta, guardar). Cada publicación
+// separada por una línea fina. Doble toque para dar me gusta.
+function PhonePost({ post, index, user, actorName, saved, canDelete, isAdminUser, onDelete, onOpenImage, onTag }) {
+  const { directory } = useMemoPeople()
+  const [menu, setMenu] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [burst, setBurst] = useState(0)
+  const uid = user?.uid
+  const entry = directory.find((p) => p.linkedUserId === post.authorUid)
+  const area = entry?.isDirectivo ? 'Dirección' : entry?.area || null
+  const type = TYPE_BY_ID[post.type]
+  const reactors = [...new Set(Object.values(post.reactions || {}).flat())]
+  const myReaction = Object.entries(post.reactions || {}).find(([, uids]) => uids?.includes(uid))?.[0] || null
+  const liked = Boolean(myReaction)
+  const toggleLike = () => {
+    haptic(liked ? 'tap' : 'success')
+    setCommunityReaction(post.id, myReaction || LIKE, uid, myReaction).catch(notifyFail)
+  }
+  const doubleTap = () => {
+    if (liked) return
+    setBurst((n) => n + 1)
+    toggleLike()
+  }
+  const pill = 'flex h-9 items-center gap-1.5 rounded-full bg-[#1C1C1E] px-3.5 text-[14px] font-medium active:bg-[#2C2C2E]'
+
+  return (
+    <article className="ador-wrap ador-card-in relative flex gap-3 border-b border-white/[0.07] px-1 py-4" style={{ animationDelay: `${Math.min(index, 6) * 55}ms` }}>
+      <div className="flex-shrink-0 pt-0.5"><PersonAvatar uid={post.authorUid} name={post.authorName} size={42} /></div>
+      <div className="min-w-0 flex-1">
+        <header className="flex items-center gap-1.5">
+          <span className="min-w-0 truncate text-[15.5px] font-semibold text-[#F5F5F5]">{post.authorName}</span>
+          <span className="flex-shrink-0 text-[13.5px] text-[#8E8E93]">· {timeAgo(post.createdAt)}</span>
+          {post.pinned && <span className="flex-shrink-0 text-[12px]" title="Fijado">📌</span>}
+          {(canDelete || isAdminUser) && (
+            <div className="relative ml-auto flex-shrink-0">
+              <button type="button" onClick={() => setMenu((v) => !v)} className="flex h-8 w-8 items-center justify-center rounded-full text-[#8E8E93] active:bg-white/[0.08]" aria-label="Más opciones">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+              </button>
+              {menu && (
+                <div className="absolute right-0 top-9 z-10 w-52 overflow-hidden rounded-2xl bg-[#2C2C2E] shadow-[0_12px_32px_rgba(0,0,0,0.55)]">
+                  {isAdminUser && (
+                    <button type="button" onClick={() => { updateCommunityPost(post.id, { pinned: !post.pinned }).catch(notifyFail); setMenu(false) }} className="w-full px-4 text-left text-[15px] text-[#F5F5F5] active:bg-white/[0.06]" style={{ minHeight: 46 }}>
+                      {post.pinned ? 'Desfijar' : 'Fijar arriba'}
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button type="button" onClick={() => (confirm ? onDelete(post) : setConfirm(true))} className="w-full px-4 text-left text-[15px] text-[#FF6961] active:bg-white/[0.06]" style={{ minHeight: 46 }}>
+                      {confirm ? 'Pulsa otra vez para confirmar' : 'Eliminar publicación'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </header>
+        <p className="text-[12.5px] text-[#8E8E93]">{[area, type?.label].filter(Boolean).join(' · ')}</p>
+
+        <div className="relative mt-1.5 flex flex-col gap-2.5" onDoubleClick={doubleTap}>
+          {post.title && <h3 className="text-[19px] leading-snug text-[#F5F5F5]" style={SERIF}>{post.title}</h3>}
+          {post.text && <PostText text={post.text} mentions={post.mentions} onTag={onTag} className="whitespace-pre-wrap text-[15.5px] leading-[1.4] text-[#E4E4E4]" />}
+          {post.type === 'logro' && <AchievementBlock post={post} />}
+          {post.type === 'evento' && <EventBlock post={post} uid={uid} name={actorName} />}
+          {post.type === 'recurso' && <ResourceCard resource={post.resource} />}
+          <Photos images={post.images} onOpen={onOpenImage} />
+          {post.type === 'idea' && <IdeaBar post={post} uid={uid} isAdminUser={isAdminUser} />}
+          <AnimatePresence>
+            {burst > 0 && (
+              <motion.span key={burst} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.3, 1, 1] }} transition={{ duration: 0.8 }} onAnimationComplete={() => setBurst(0)} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[64px]" style={{ color: '#FF5A6E' }}>
+                ❤️
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <button type="button" onClick={() => { haptic(); setShowComments((v) => !v) }} className={pill} style={{ color: '#CFCFCF' }} aria-label="Comentarios">
+            <MessageIcon size={17} />
+            <span>{post.commentCount || (post.type === 'pregunta' ? 'Responder' : '')}</span>
+          </button>
+          <button type="button" onClick={toggleLike} className={pill} style={{ color: liked ? '#FF5A6E' : '#CFCFCF' }} aria-label="Me gusta">
+            <motion.span key={String(liked)} initial={{ scale: liked ? 0.5 : 1 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 520, damping: 14 }} className="flex">
+              {post.type === 'logro' ? <span className="text-[16px]">🎉</span> : <HeartIcon filled={liked} />}
+            </motion.span>
+            {reactors.length > 0 && <span>{reactors.length}</span>}
+          </button>
+          <button type="button" onClick={() => { haptic(); setCommunitySaved(uid, post.id, !saved).catch(notifyFail) }} className={`${pill} ml-auto w-9 justify-center !px-0`} style={{ color: saved ? '#F4EEE2' : '#CFCFCF' }} aria-label={saved ? 'Quitar de guardados' : 'Guardar'}>
+            <BookmarkIcon size={16} filled={saved} />
+          </button>
+        </div>
+
+        {showComments && <div className="mt-3"><Comments post={post} user={user} actorName={actorName} canModerate={isAdminUser} canAccept={post.type === 'pregunta' && post.authorUid === uid} /></div>}
+      </div>
+    </article>
+  )
+}
+
 // People data for avatars and author areas ("Dirección" for directivos,
 // else their Directorio area) — shared through the chat's context so
 // PersonAvatar resolves real photos here too.
@@ -546,22 +648,23 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
     withTimeout(deleteCommunityPost(post.id)).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
   }
 
+  const phone = usePhone()
   const tabs = [{ id: 'todo', plural: 'Todo' }, ...COMMUNITY_TYPES, ...(Object.keys(saved).length ? [{ id: 'guardados', plural: 'Guardados' }] : [])]
 
   return (
     <ChatPeopleContext.Provider value={{ users, directory, presence: {} }}>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-1 overflow-x-auto border-b border-white/[0.08] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className={phone ? '-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex gap-1 overflow-x-auto border-b border-white/[0.08] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
-              onClick={() => setFilter(t.id)}
-              className="relative flex-shrink-0 px-3.5 pb-3 pt-1 text-[14px] transition-colors"
-              style={{ color: filter === t.id ? '#F5F5F5' : '#8A8A8A' }}
+              onClick={() => { haptic(); setFilter(t.id) }}
+              className={phone ? 'relative flex-shrink-0 py-1 transition-[color,font-size] duration-200' : 'relative flex-shrink-0 px-3.5 pb-3 pt-1 text-[14px] transition-colors'}
+              style={phone ? { color: filter === t.id ? '#F5F5F5' : '#6E6E73', fontSize: filter === t.id ? 26 : 19, fontWeight: 700, letterSpacing: '-0.02em' } : { color: filter === t.id ? '#F5F5F5' : '#8A8A8A' }}
             >
               {t.plural}
-              {filter === t.id && <motion.span layoutId="community-filter" className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-[#E8C15A]" />}
+              {!phone && filter === t.id && <motion.span layoutId="community-filter" className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-[#E8C15A]" />}
             </button>
           ))}
         </div>
@@ -575,7 +678,9 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
             <p className="text-[13px] text-[#8A8A8A]">{posts.length ? 'Prueba con otra categoría o búsqueda.' : 'Sé el primero en compartir algo con el equipo.'}</p>
           </div>
         ) : (
-          visible.map((post) => (
+          visible.map((post, index) => phone ? (
+            <PhonePost key={post.id} index={index} post={post} user={user} actorName={actorName} saved={Boolean(saved[post.id])} isAdminUser={isAdminUser} canDelete={isAdminUser || post.authorUid === user?.uid} onDelete={handleDelete} onOpenImage={setViewing} onTag={onSearch} />
+          ) : (
             <PostCard
               key={post.id}
               post={post}
