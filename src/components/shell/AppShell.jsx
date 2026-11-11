@@ -349,7 +349,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       case 'chat':
         return <ChatModule user={user} scheduledMessages={scheduledMessages} focus={focus?.type === 'chat' ? focus : null} onFocusHandled={() => setFocus(null)} onNavigate={navigateTo} />
       case 'ador-ia':
-        return <AdorIAModule user={user} />
+        return <AdorIAModule user={user} onNavigate={navigateTo} />
       default:
         return <ModulePlaceholder name={MODULE_LABELS[id]} />
     }

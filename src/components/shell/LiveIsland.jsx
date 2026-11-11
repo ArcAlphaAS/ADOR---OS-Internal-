@@ -60,7 +60,7 @@ export default function LiveIsland() {
   let mode = null
   if (!online) mode = 'offline'
   else if (update) mode = 'update'
-  else if (live.thinking) mode = 'thinking'
+  else if (live.thinking && typeof document !== 'undefined' && !document.documentElement.classList.contains('ador-chat-open')) mode = 'thinking'
   else if (live.saving) mode = 'saving'
   else if (back) mode = 'back'
   else if (live.saved) mode = 'saved'

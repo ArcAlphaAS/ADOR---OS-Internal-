@@ -10,6 +10,7 @@ import { SERIF } from '../news/NewsLayout'
 import { firstName } from '../../lib/user'
 import { setThinking } from '../../lib/liveStatus'
 import { haptic } from '../../lib/haptics'
+import usePhone from '../../hooks/usePhone'
 
 // The four starting points on the empty screen: a short title and the full
 // question each one sends.
@@ -29,6 +30,21 @@ function Orb({ size = 34 }) {
         style={{ background: 'radial-gradient(circle, rgba(232,193,90,0.75), rgba(244,238,226,0.25) 60%, transparent 75%)', animation: 'ador-pulse 3.2s ease-in-out infinite' }}
       />
       <span className="relative h-[60%] w-[60%] rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%, #FFFFFF, #F4EEE2 35%, #E8C15A 80%)' }} />
+    </span>
+  )
+}
+
+// Dos esferas de cristal que se superponen y flotan, con un resplandor suave detrás (lavanda
+// y verde agua, muy tenue). Es la "presencia" de ADOR IA: respira en la pantalla de inicio y
+// se acelera mientras piensa.
+function GlassOrbs({ size = 40, busy = false }) {
+  const d = size * 0.68
+  const orb = { width: d, height: d, background: 'radial-gradient(circle at 34% 28%, rgba(255,255,255,0.82), rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.02) 80%)', border: '1px solid rgba(255,255,255,0.38)', boxShadow: 'inset 0 0 12px rgba(255,255,255,0.18), 0 0 18px rgba(255,255,255,0.12)', backdropFilter: 'blur(2px)' }
+  return (
+    <span className="relative inline-flex flex-shrink-0 items-center justify-center" style={{ width: size * 1.5, height: size * 1.2 }} aria-hidden>
+      <span className="absolute rounded-full" style={{ width: size * 1.5, height: size * 1.2, background: 'radial-gradient(ellipse at 45% 50%, rgba(170,150,255,0.62), rgba(110,220,205,0.34) 52%, transparent 74%)', filter: 'blur(14px)', animation: `ador-orb-glow ${busy ? 1.6 : 3.4}s ease-in-out infinite` }} />
+      <span className="absolute rounded-full" style={{ ...orb, left: '12%', top: '8%', animation: `ador-orb-a ${busy ? 2.2 : 5.5}s ease-in-out infinite` }} />
+      <span className="absolute rounded-full" style={{ ...orb, right: '12%', bottom: '8%', animation: `ador-orb-b ${busy ? 2.6 : 6.5}s ease-in-out infinite` }} />
     </span>
   )
 }
@@ -83,7 +99,8 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
   )
 }
 
-export default function AdorIAModule({ user }) {
+export default function AdorIAModule({ user, onNavigate }) {
+  const phone = usePhone()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -91,6 +108,12 @@ export default function AdorIAModule({ user }) {
   const [trimmedOnce, setTrimmedOnce] = useState(false)
   const context = useAdorIAContext()
   const scrollRef = useRef(null)
+  // Teléfono: ADOR IA ocupa toda la pantalla (como Siri o Mensajes): se van la barra de arriba
+  // y la de abajo, y el campo de escribir queda pegado al borde.
+  useEffect(() => {
+    document.documentElement.classList.toggle('ador-chat-open', phone)
+    return () => document.documentElement.classList.remove('ador-chat-open')
+  }, [phone])
   const lastTopicRef = useRef(null)
 
   useEffect(() => {
@@ -173,10 +196,21 @@ export default function AdorIAModule({ user }) {
   return (
     <motion.div
       initial={false}
-      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pb-2 pt-3 md:px-8 md:pb-8 md:pt-6 lg:px-12 lg:pt-10"
+      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] pb-[calc(env(safe-area-inset-bottom,0px)+10px)] md:px-8 md:pb-8 md:pt-6 lg:px-12 lg:pt-10"
     >
+      <div className="flex items-center justify-between gap-3 md:hidden">
+        <button type="button" onClick={() => { haptic(); onNavigate?.('inicio') }} aria-label="Cerrar ADOR IA" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] active:bg-white/[0.12]">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <span className="text-[16px] font-semibold text-[#F5F5F5]">ADOR IA</span>
+        {messages.length > 0 ? (
+          <button type="button" aria-label="Nueva conversación" onClick={() => { haptic(); setMessages([]); lastTopicRef.current = null; setTrimmedOnce(false) }} className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] active:bg-white/[0.12]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z" /></svg>
+          </button>
+        ) : <span className="h-11 w-11" />}
+      </div>
       {messages.length > 0 && (
-        <div className="flex items-center justify-between gap-3">
+        <div className="hidden items-center justify-between gap-3 md:flex">
           <div className="flex items-center gap-2.5">
             <Orb size={30} />
             <h1 className="text-[18px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
@@ -207,7 +241,7 @@ export default function AdorIAModule({ user }) {
               <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">ADOR IA</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }} className="mb-7 md:hidden">
-              <Orb size={84} />
+              <GlassOrbs size={74} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -258,16 +292,9 @@ export default function AdorIAModule({ user }) {
               <MessageBubble key={i} role={m.role} content={m.content} action={m.action} status={m.status} actorId={user?.uid} onConfirm={() => confirm(i)} onCancel={() => setStatus(i, 'cancelled')} />
             ))}
             {sending && (
-              <div className="flex justify-start">
-                <div className="flex items-center gap-1.5 rounded-[20px] bg-[#1C1C1E] px-4 py-3">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="h-1.5 w-1.5 rounded-full bg-[#888888]"
-                      style={{ animation: `ador-pulse 1.2s ease-in-out ${i * 0.15}s infinite` }}
-                    />
-                  ))}
-                </div>
+              <div className="flex items-center gap-3 pl-1 pt-1">
+                <GlassOrbs size={30} busy />
+                <span className="ador-shimmer-text text-[17px] font-medium">Pensando…</span>
               </div>
             )}
           </div>
@@ -281,9 +308,9 @@ export default function AdorIAModule({ user }) {
           e.preventDefault()
           send(input)
         }}
-        className="mt-4 flex items-center gap-2 rounded-full bg-[#1C1C1E] py-2 pl-3.5 pr-2 transition-colors focus-within:bg-[#242426] md:bg-white/[0.06]"
+        className="relative mt-4 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] py-2 pl-3 pr-2 backdrop-blur-xl transition-colors focus-within:border-white/[0.2] focus-within:bg-white/[0.08] md:border-transparent md:bg-white/[0.06]"
       >
-        <Orb />
+        <span className="-ml-1 flex w-9 justify-center"><GlassOrbs size={22} busy={sending} /></span>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
