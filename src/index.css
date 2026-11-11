@@ -716,3 +716,27 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
     scroll-behavior: auto !important;
   }
 }
+
+
+/* Workspace en teléfono: sin contornos. Todo es relleno gris, como las apps de iOS
+   (Recordatorios, Notas): ni bordes finos ni líneas de luz en tarjetas, campos y botones. */
+@media (max-width: 767px) {
+  .ador-ws-phone .ador-glass,
+  .ador-ws-phone .ador-modal-surface {
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: #1C1C1E !important;
+  }
+  .ador-ws-phone .ador-glass::before,
+  .ador-ws-phone .ador-glass::after { display: none !important; }
+  .ador-ws-phone [class*='border-white'],
+  .ador-ws-phone input,
+  .ador-ws-phone textarea,
+  .ador-ws-phone select {
+    border-color: transparent !important;
+  }
+  .ador-ws-phone input:not([type='checkbox']),
+  .ador-ws-phone textarea,
+  .ador-ws-phone [class*='border-white']:not(.ador-glass) { background-color: #1C1C1E; }
+  .ador-ws-phone button.border { border-color: transparent !important; background-color: rgba(239, 83, 80, 0.14); }
+}

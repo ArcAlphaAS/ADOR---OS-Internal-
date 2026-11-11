@@ -172,7 +172,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   return (
     <motion.div
       initial={false}
-      className={phone ? 'flex' : '-mt-16 flex h-[calc(100%+4rem)]'}
+      className={phone ? 'ador-ws-phone flex' : '-mt-16 flex h-[calc(100%+4rem)]'}
     >
       {view !== 'hoy' && (
         <WorkspaceSidebar
