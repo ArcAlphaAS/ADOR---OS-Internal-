@@ -9,6 +9,10 @@ import {
   fetchPrimaryCalendarEmail,
   assertCompanyGoogleAccount,
   fetchEvents,
+  hasCalendarWriteScope,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
 } from '../lib/googleCalendar'
 
 function startOfWeek(date) {
@@ -47,6 +51,8 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
   const accessTokenRef = useRef(null) // { token, expiresAt } — never persisted
   const refreshTokenRef = useRef(null)
   const oauthHandledRef = useRef(false)
+  const rangeRef = useRef(null)
+  const [canWrite, setCanWrite] = useState(false)
 
   const ensureAccessToken = useCallback(async () => {
     let cached = accessTokenRef.current
@@ -63,6 +69,7 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
   const loadRange = useCallback(
     async (range) => {
       if (!refreshTokenRef.current) return
+      rangeRef.current = range
       setStatus('loading')
       setError(null)
       try {
@@ -114,6 +121,7 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
           accessTokenRef.current = { token: accessToken, expiresAt: Date.now() + expiresIn * 1000 }
           refreshTokenRef.current = refreshToken
           setConnectedEmail(email)
+          setCanWrite(hasCalendarWriteScope({ scopes: scope }))
           if (userId !== 'preview') {
             await saveUserProfile(userId, { googleCalendar: { refreshToken, connectedEmail: email, scopes: scope || '', connectedAt: new Date().toISOString() } })
           }
@@ -151,6 +159,7 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
       if (saved?.refreshToken) {
         refreshTokenRef.current = saved.refreshToken
         setConnectedEmail(saved.connectedEmail || null)
+        setCanWrite(hasCalendarWriteScope(saved))
         loadRange(firstRange())
       } else {
         setStatus('disconnected')
@@ -181,5 +190,19 @@ export function useGoogleCalendar(userId, { initialRange } = {}) {
     }
   }
 
-  return { configured: isGoogleCalendarConfigured, status, connectedEmail, events, error, connect, disconnect, refresh, loadRange }
+  // Crear / editar / borrar: pide un token, escribe y vuelve a cargar el rango que se está viendo.
+  const write = async (fn) => {
+    const token = await ensureAccessToken()
+    const result = await fn(token)
+    if (rangeRef.current) {
+      const items = await fetchEvents(token, { timeMin: rangeRef.current.start, timeMax: rangeRef.current.end })
+      setEvents(items)
+    }
+    return result
+  }
+  const createEvent = (body, opts) => write((t) => createCalendarEvent(t, body, opts))
+  const updateEvent = (id, patch, opts) => write((t) => updateCalendarEvent(t, id, patch, opts))
+  const deleteEvent = (id, opts) => write((t) => deleteCalendarEvent(t, id, opts))
+
+  return { configured: isGoogleCalendarConfigured, status, connectedEmail, events, error, connect, disconnect, refresh, loadRange, canWrite, createEvent, updateEvent, deleteEvent }
 }

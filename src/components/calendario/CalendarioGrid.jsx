@@ -205,7 +205,7 @@ function TasksStrip({ days, tasks, actorName }) {
   )
 }
 
-export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent }) {
+export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent, canWrite = false, onCreateRange, onMoveEvent }) {
   const now = new Date()
   const showNowLine = days.some((d) => d.toDateString() === now.toDateString())
   const [full, setFull] = useState(false)
@@ -228,6 +228,55 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
     hoverTimer.current = setTimeout(() => setHover(null), 160)
   }
   useEffect(() => () => clearTimeout(hoverTimer.current), [])
+
+  // ---- Gestos con el mouse: arrastrar en vacío = crear · arrastrar un evento = moverlo ·
+  // arrastrar su borde inferior = cambiar la duración. Cada 15 min; solo si hay permiso de edición.
+  const [drag, setDrag] = useState(null) // { kind, event?, dayKey, startMin, endMin }
+  const dragRef = useRef(null)
+  const justDragged = useRef(false)
+  const snap = (min) => Math.round(min / 15) * 15
+  const columnAt = (clientX) => {
+    const cols = [...(containerRef.current?.querySelectorAll('[data-day]') || [])]
+    return cols.find((c) => { const r = c.getBoundingClientRect(); return clientX >= r.left && clientX < r.right }) || null
+  }
+  const minuteAt = (col, clientY) => START_HOUR * 60 + ((clientY - col.getBoundingClientRect().top) / ROW_HEIGHT) * 60
+  const atMinute = (dayKey, min) => { const d = new Date(dayKey); d.setHours(0, 0, 0, 0); d.setMinutes(min); return d }
+
+  const beginDrag = (e, init) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !canWrite) return
+    dragRef.current = { ...init, x0: e.clientX, y0: e.clientY, active: false }
+    const onMove = (ev) => {
+      const d = dragRef.current
+      if (!d) return
+      if (!d.active && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 6) return
+      d.active = true
+      const col = columnAt(ev.clientX) || [...containerRef.current.querySelectorAll('[data-day]')].find((c) => c.dataset.day === d.dayKey)
+      if (!col) return
+      const dayKey = d.kind === 'resize' ? d.dayKey : col.dataset.day
+      const m = minuteAt(col, ev.clientY)
+      let next
+      if (d.kind === 'create') next = { dayKey: d.dayKey, startMin: Math.min(d.anchorMin, snap(m)), endMin: Math.max(d.anchorMin, snap(m)) }
+      else if (d.kind === 'move') { const st = Math.max(0, Math.min(snap(m - d.offsetMin), 24 * 60 - d.durMin)); next = { dayKey, startMin: st, endMin: st + d.durMin } }
+      else next = { dayKey, startMin: d.startMin, endMin: Math.max(d.startMin + 15, snap(m)) }
+      setDrag({ kind: d.kind, event: d.event, ...next })
+      d.last = next
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      const d = dragRef.current
+      dragRef.current = null
+      setDrag(null)
+      if (!d?.active || !d.last) return
+      justDragged.current = true
+      setTimeout(() => { justDragged.current = false }, 0)
+      const st = atMinute(d.last.dayKey, d.last.startMin), en = atMinute(d.last.dayKey, d.last.endMin)
+      if (d.kind === 'create') { if (en - st >= 15 * 60000) onCreateRange?.(st, en < st + 30 * 60000 ? new Date(st.getTime() + 30 * 60000) : en) }
+      else if (st.getTime() !== new Date(d.event.start).getTime() || en.getTime() !== new Date(d.event.end).getTime()) onMoveEvent?.(d.event, st, en)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
 
   const internalRef = useRef(null)
   const containerRef = scrollRef || internalRef
@@ -260,7 +309,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       <AllDayStrip days={days} events={events} onOpenEvent={onOpenEvent} />
       <TasksStrip days={days} tasks={tasks} actorName={actorName} />
 
-      <div ref={containerRef} className="max-h-[640px] overflow-y-auto">
+      <div ref={containerRef} className="max-h-[640px] overflow-y-auto" style={drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : undefined}>
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
@@ -279,6 +328,13 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
             return (
               <div
                 key={day.toISOString()}
+                data-day={day.toDateString()}
+                onPointerDown={(ev) => {
+                  if (ev.target.closest('[data-event]')) return
+                  const col = ev.currentTarget
+                  const m = snap(minuteAt(col, ev.clientY - 0) - 7.5)
+                  beginDrag(ev, { kind: 'create', dayKey: day.toDateString(), anchorMin: Math.max(0, m) })
+                }}
                 className="relative border-l border-white/[0.05]"
                 style={{ background: isToday ? 'rgba(244,238,226,0.045)' : [0, 6].includes(day.getDay()) ? 'rgba(0,0,0,0.18)' : 'transparent' }}
               >
@@ -307,7 +363,15 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                     <button
                       key={e.id}
                       type="button"
-                      onClick={() => { setHover(null); onOpenEvent(e) }}
+                      data-event
+                      onClick={() => { if (justDragged.current) return; setHover(null); onOpenEvent(e) }}
+                      onPointerDown={(ev) => {
+                        if (!e.canEdit) return
+                        setHover(null)
+                        clearTimeout(hoverTimer.current)
+                        const col = ev.currentTarget.closest('[data-day]')
+                        beginDrag(ev, { kind: 'move', event: e, dayKey: day.toDateString(), offsetMin: minuteAt(col, ev.clientY) - e.startMin, durMin: e.endMin - e.startMin })
+                      }}
                       onMouseEnter={(ev) => showHover(e, ev.currentTarget)}
                       onMouseLeave={hideHover}
                       className="absolute overflow-hidden rounded-[10px] px-2.5 py-1.5 text-left text-[11.5px] font-medium leading-tight transition-[filter,transform] duration-150 hover:brightness-125 active:scale-[0.99]"
@@ -319,11 +383,22 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                         background: `${color}2E`,
                         borderLeft: `3px solid ${color}`,
                         color: '#F5F5F5',
-                        opacity: past ? 0.62 : 1,
+                        opacity: drag?.event?.id === e.id ? 0.3 : past ? 0.62 : 1,
+                        cursor: canWrite && e.canEdit ? 'grab' : 'pointer',
                         boxShadow: live ? `0 0 0 1px ${color}AA, 0 4px 14px -6px ${color}88` : 'none',
                       }}
                     >
                       <span className="block truncate">{e.title}</span>
+                      {canWrite && e.canEdit && height > 24 && (
+                        <span
+                          className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize"
+                          onPointerDown={(ev) => {
+                            ev.stopPropagation()
+                            setHover(null)
+                            beginDrag(ev, { kind: 'resize', event: e, dayKey: day.toDateString(), startMin: e.startMin })
+                          }}
+                        />
+                      )}
                       {height > 32 && (
                         <span className="block truncate text-[10.5px] tabular-nums text-[#B5B5B5]">
                           {new Date(e.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – {new Date(e.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}
@@ -332,6 +407,12 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                     </button>
                   )
                 })}
+                {drag && drag.dayKey === day.toDateString() && (
+                  <div className="pointer-events-none absolute inset-x-1 z-20 overflow-hidden rounded-[10px] border border-dashed border-[#F4EEE2]/70 bg-[#F4EEE2]/[0.14] px-2 py-1 text-[11px] font-medium tabular-nums text-[#F4EEE2]" style={{ top: ((drag.startMin - START_HOUR * 60) / 60) * ROW_HEIGHT, height: Math.max(((drag.endMin - drag.startMin) / 60) * ROW_HEIGHT, 18) }}>
+                    {drag.kind === 'create' ? 'Nuevo evento' : drag.event.title}
+                    <span className="block text-[10.5px] text-[#F4EEE2]/80">{String(Math.floor(drag.startMin / 60)).padStart(2, '0')}:{String(drag.startMin % 60).padStart(2, '0')} – {String(Math.floor(drag.endMin / 60)).padStart(2, '0')}:{String(drag.endMin % 60).padStart(2, '0')}</span>
+                  </div>
+                )}
               </div>
             )
           })}

@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 import { dailyQuote } from '../../lib/workspace'
-import { eventColor } from '../../lib/googleCalendar'
+import { eventColor, buildEventBody } from '../../lib/googleCalendar'
+import { parseQuickEvent } from '../../lib/calendarQuickAdd'
+import { registerUndo } from '../../lib/undo'
+import { useToast } from '../../hooks/useToast'
+import { SPRING } from '../../lib/motion'
 import { subscribeTasksForUser } from '../../lib/firestore'
 import { CalendarIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon, PlusIcon } from '../icons'
 import CalendarioGrid from './CalendarioGrid'
@@ -11,6 +16,7 @@ import { MiniMonthCalendar } from './CalendarioRightRail'
 import DayAgenda from './DayAgenda'
 import CalendarioGreeting from './CalendarioGreeting'
 import EventDetailModal from './EventDetailModal'
+import EventEditorModal from './EventEditorModal'
 import PhoneCalendar from './PhoneCalendar'
 import usePhone from '../../hooks/usePhone'
 
@@ -200,8 +206,38 @@ function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
 }
 
+function PermissionPrompt({ onConnect, onClose }) {
+  return createPortal(
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6 backdrop-blur-[10px]" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="w-full max-w-[420px]">
+        <div className="ador-modal-surface ador-grain rounded-[28px] p-7">
+          <h2 className="text-[17px] font-semibold text-[#F5F5F5]">Permiso para crear y editar</h2>
+          <p className="mt-2.5 text-[13.5px] leading-relaxed text-[#9A9A9A]">
+            Hasta ahora ADOR OS solo podía ver tu calendario. Para crear, mover y borrar eventos desde aquí, Google necesita que lo autorices una vez más.
+            Solo toca los <span className="text-[#D0D0D0]">eventos</span> de tu calendario, nada más, y no se envía ni cambia nada sin que lo pidas.
+          </p>
+          <p className="mt-3 text-[12px] leading-relaxed text-[#8A8A8A]">En la pantalla de Google verás "no ha verificado esta app": pulsa <span className="text-[#D0D0D0]">Avanzado</span> y continúa, y deja marcado el permiso de ver y editar eventos.</p>
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-[13px] text-[#888888] hover:text-[#F5F5F5]">Ahora no</button>
+            <button type="button" onClick={onConnect} className="ador-btn-primary rounded-xl px-5 py-2.5 text-[13px] font-semibold">Dar permiso con Google</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>,
+    document.body
+  )
+}
+
+const nextRoundHour = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d }
+
 export default function CalendarioModule({ user }) {
-  const { configured, status, connectedEmail, events, error, connect, disconnect, refresh, loadRange } = useGoogleCalendar(user?.uid)
+  const { configured, status, connectedEmail, events, error, connect, disconnect, refresh, loadRange, canWrite, createEvent, updateEvent, deleteEvent } = useGoogleCalendar(user?.uid)
+  const showToast = useToast()
+  const [editor, setEditor] = useState(null) // { event } | { draft }
+  const [saving, setSaving] = useState(false)
+  const [needPermission, setNeedPermission] = useState(false)
+  const [quick, setQuick] = useState('')
+  const quickRef = useRef(null)
   const [view, setView] = useState('semana')
   const [anchor, setAnchor] = useState(new Date())
   const [tasks, setTasks] = useState([])
@@ -231,7 +267,9 @@ export default function CalendarioModule({ user }) {
       const tag = e.target?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return
       const k = e.key.toLowerCase()
-      if (k === 't') setAnchor(new Date())
+      if (k === 'c') { e.preventDefault(); openCreate() }
+      else if (k === '/') { e.preventDefault(); quickRef.current?.focus() }
+      else if (k === 't') setAnchor(new Date())
       else if (k === 'd') setView('dia')
       else if (k === 's') setView('semana')
       else if (k === 'm') setView('mes')
@@ -242,7 +280,7 @@ export default function CalendarioModule({ user }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [phone, view])
+  }, [phone, view, canWrite])
 
   const goToday = () => setAnchor(new Date())
   const goPrev = () => setAnchor((a) => shiftAnchor(view, a, -1))
@@ -250,6 +288,86 @@ export default function CalendarioModule({ user }) {
   const openDay = (day) => {
     setAnchor(day)
     setView('dia')
+  }
+
+  // Mantiene abierto el detalle al día con los cambios (p. ej. tu respuesta a una invitación).
+  useEffect(() => {
+    if (!openEvent) return
+    const fresh = events.find((e) => e.id === openEvent.id)
+    if (fresh && fresh !== openEvent) setOpenEvent(fresh)
+  }, [events])
+
+  const requireWrite = (fn) => (canWrite ? fn() : setNeedPermission(true))
+  const openCreate = (draft = {}) => requireWrite(() => { setOpenEvent(null); setEditor({ draft: { start: nextRoundHour(), end: new Date(nextRoundHour().getTime() + 3600000), ...draft } }) })
+  const openEdit = (event) => requireWrite(() => { setOpenEvent(null); setEditor({ event }) })
+  const fail = (e) => showToast(`No se pudo guardar en Google Calendar: ${e.message}`, { tone: 'error' })
+
+  const saveEditor = async (payload) => {
+    setSaving(true)
+    try {
+      const body = buildEventBody(payload)
+      if (editor.event) {
+        if (!payload.meet) delete body.conferenceData
+        await updateEvent(editor.event.id, body, { notify: payload.notify })
+        showToast('Cambios guardados en tu calendario.')
+      } else {
+        const created = await createEvent(body, { notify: payload.notify })
+        showToast(payload.notify ? 'Evento creado e invitaciones enviadas.' : 'Evento creado.')
+        if (created?.id) registerUndo('Evento creado', () => deleteEvent(created.id, { notify: payload.notify }))
+      }
+      setEditor(null)
+    } catch (e) {
+      fail(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const removeEvent = async (event) => {
+    const others = (event.attendees || []).some((a) => !a.self)
+    try {
+      await deleteEvent(event.id, { notify: others })
+      setEditor(null)
+      setOpenEvent(null)
+      registerUndo(`Evento «${event.title}» eliminado`, () =>
+        createEvent(buildEventBody({ title: event.title, allDay: event.allDay, start: new Date(event.start), end: event.allDay ? new Date(new Date(event.end).getTime() - 86400000) : new Date(event.end), location: event.location, description: event.description, colorId: event.colorId, guests: (event.attendees || []).filter((a) => !a.self).map((a) => ({ email: a.email })) }), { notify: false })
+      )
+    } catch (e) {
+      fail(e)
+    }
+  }
+
+  // Arrastrar un evento (mover) o su borde inferior (cambiar duración) en la cuadrícula.
+  const moveEvent = async (event, start, end) => {
+    const oldStart = new Date(event.start), oldEnd = new Date(event.end)
+    const patch = { start: { dateTime: start.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }, end: { dateTime: end.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone } }
+    const guests = (event.attendees || []).some((a) => !a.self)
+    try {
+      await updateEvent(event.id, patch, { notify: false })
+      registerUndo(guests ? 'Evento movido (no se avisó a los invitados)' : 'Evento movido', () =>
+        updateEvent(event.id, { start: { dateTime: oldStart.toISOString() }, end: { dateTime: oldEnd.toISOString() } }, { notify: false })
+      )
+    } catch (e) {
+      fail(e)
+    }
+  }
+
+  const respond = async (event, status) => {
+    const attendees = (event.attendees || []).map((a) => (a.self ? { email: a.email, self: true, responseStatus: status } : { email: a.email, responseStatus: a.status }))
+    try {
+      await updateEvent(event.id, { attendees }, { notify: true })
+      showToast(status === 'accepted' ? 'Respondiste que vas.' : status === 'declined' ? 'Respondiste que no vas.' : 'Respondiste «tal vez».')
+    } catch (e) {
+      fail(e)
+    }
+  }
+
+  const submitQuick = (e) => {
+    e.preventDefault()
+    if (!quick.trim()) return
+    const r = parseQuickEvent(quick)
+    setQuick('')
+    openCreate({ title: r.title, start: r.start, end: r.end, guests: r.guests, meet: r.meet })
   }
 
   const connected = status === 'ready' || status === 'loading'
@@ -296,9 +414,9 @@ export default function CalendarioModule({ user }) {
           </p>
           <button
             type="button"
-            disabled
-            title="Solo lectura por ahora — crear eventos necesita un permiso de Google distinto, todavía no habilitado"
-            className="ador-btn-primary flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-medium opacity-40"
+            onClick={() => openCreate()}
+            title="Crear un evento (C)"
+            className="ador-btn-primary flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-5 py-2.5 text-[13px] font-semibold"
           >
             <PlusIcon size={14} /> Nuevo evento
           </button>
@@ -320,6 +438,18 @@ export default function CalendarioModule({ user }) {
             <button type="button" title="Ir a hoy (T)" onClick={goToday} className="rounded-full bg-white/[0.07] px-4 py-2 text-[12.5px] font-medium text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
               Hoy
             </button>
+            {connected && (
+              <form onSubmit={submitQuick} className="ml-3 hidden items-center lg:flex">
+                <input
+                  ref={quickRef}
+                  value={quick}
+                  onChange={(e) => setQuick(e.target.value)}
+                  placeholder="Crear: «Cena con Leo viernes 8pm»  ( / )"
+                  title="Escribe el evento tal como lo dirías y pulsa Enter: se abre listo para confirmar"
+                  className="w-[300px] rounded-full bg-white/[0.06] px-4 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none ring-1 ring-transparent transition focus:bg-white/[0.09] focus:ring-white/[0.18]"
+                />
+              </form>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -374,9 +504,9 @@ export default function CalendarioModule({ user }) {
             {status === 'loading' ? (
               <Skeleton />
             ) : view === 'semana' ? (
-              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
+              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} />
             ) : view === 'dia' ? (
-              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
+              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} />
             ) : view === 'mes' ? (
               <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={openDay} onOpenEvent={setOpenEvent} />
             ) : (
@@ -390,7 +520,9 @@ export default function CalendarioModule({ user }) {
         </div>
       )}
 
-      <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
+      <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
+      <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
+      <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
     </motion.div>
   )
 }

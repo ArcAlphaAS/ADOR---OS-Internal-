@@ -1,3 +1,7 @@
+// (2026-11-11) Ya no es solo lectura: con el permiso `calendar.events` se crean, editan,
+// mueven y borran eventos desde ADOR OS (ver CLAUDE.md §66). Lo de abajo describe el
+// origen de solo lectura y por qué se evitó entonces el permiso de escritura.
+//
 // Google Calendar integration — read-only "reflejo" of the signed-in
 // founder's own Google Calendar, per direct user decision (see CLAUDE.md):
 // full read/write uses a Google-classified "restricted" scope that's a real
@@ -43,7 +47,12 @@ export const MEET_SCOPE = 'https://www.googleapis.com/auth/meetings.space.create
 // never the rest of your Drive. Google classifies it as non-sensitive.
 // Older connections lack it; lib/googleDrive.js asks to reconnect once.
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
-const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${MEET_SCOPE} ${DRIVE_SCOPE}`
+// Calendario: ver (`calendar.readonly`, también lee el calendario principal para saber
+// con qué correo estás conectado) y crear/editar/borrar eventos (`calendar.events`).
+// Las conexiones hechas antes solo tienen la lectura: pueden ver el calendario y se les
+// pide reconectar una vez cuando quieren crear o editar (hasCalendarWriteScope).
+export const CAL_WRITE_SCOPE = 'https://www.googleapis.com/auth/calendar.events'
+const SCOPE = `https://www.googleapis.com/auth/calendar.readonly ${CAL_WRITE_SCOPE} ${MEET_SCOPE} ${DRIVE_SCOPE}`
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -114,6 +123,10 @@ export async function assertCompanyGoogleAccount(userId, googleEmail, refreshTok
   }
   const expected = policy.allowedDomains.length ? `tu cuenta de ADOR (${loginEmail} o @${policy.allowedDomains.join(', @')})` : `la misma cuenta con la que entras a ADOR OS (${loginEmail || 'tu correo de ADOR'})`
   throw new Error(`Solo se puede conectar ${expected}. ${googleEmail || 'Esa cuenta'} no está permitida — no se guardó nada.`)
+}
+
+export function hasCalendarWriteScope(saved) {
+  return Boolean(saved?.scopes && saved.scopes.includes(CAL_WRITE_SCOPE))
 }
 
 export function hasMeetScope(saved) {
@@ -216,7 +229,67 @@ export async function fetchEvents(accessToken, { timeMin, timeMax }) {
     // (excluding yourself as organizer) — used by the greeting card's
     // "eventos" vs. "reuniones" split, a real distinction, not a guess.
     isMeeting: (e.attendees || []).some((a) => !a.self),
+    // ¿Puede esta persona cambiarlo? Los eventos de su calendario sí; los que le invitaron,
+    // solo si el organizador dejó que los invitados los modifiquen.
+    canEdit: e.organizer?.self !== false || Boolean(e.guestsCanModify),
+    organizerName: e.organizer?.displayName || e.organizer?.email || null,
+    recurring: Boolean(e.recurringEventId),
   }))
+}
+
+// ---- Escritura (calendar.events) ----
+async function writeCalendarApi(method, path, accessToken, body) {
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${accessToken}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (res.status === 204) return null
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const raw = data.error?.message || ''
+    if (res.status === 403 || /insufficient|scope/i.test(raw)) throw new Error('Tu conexión con Google no permite editar. Pulsa "Dar permiso de edición" una vez.')
+    throw new Error(raw || 'Google no pudo guardar el cambio.')
+  }
+  return data
+}
+
+const TZ = () => Intl.DateTimeFormat().resolvedOptions().timeZone
+
+// Datos del formulario → cuerpo de la API. `start`/`end` son Date (o 'YYYY-MM-DD' si allDay).
+export function buildEventBody({ title, allDay, start, end, location, description, guests, meet, colorId }) {
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const body = {
+    summary: title,
+    location: location || '',
+    description: description || '',
+    ...(colorId ? { colorId: String(colorId) } : { colorId: null }),
+  }
+  if (allDay) {
+    const endEx = new Date(end); endEx.setDate(endEx.getDate() + 1) // Google: el fin de un evento de día completo es exclusivo
+    body.start = { date: ymd(start) }
+    body.end = { date: ymd(endEx) }
+  } else {
+    body.start = { dateTime: start.toISOString(), timeZone: TZ() }
+    body.end = { dateTime: end.toISOString(), timeZone: TZ() }
+  }
+  if (guests) body.attendees = guests
+  if (meet) body.conferenceData = { createRequest: { requestId: `ador-${Date.now().toString(36)}`, conferenceSolutionKey: { type: 'hangoutsMeet' } } }
+  return body
+}
+
+const sendParam = (notify) => `sendUpdates=${notify ? 'all' : 'none'}`
+
+export function createCalendarEvent(accessToken, body, { notify = false } = {}) {
+  return writeCalendarApi('POST', `calendars/primary/events?conferenceDataVersion=1&${sendParam(notify)}`, accessToken, body)
+}
+
+export function updateCalendarEvent(accessToken, eventId, patch, { notify = false } = {}) {
+  return writeCalendarApi('PATCH', `calendars/primary/events/${encodeURIComponent(eventId)}?conferenceDataVersion=1&${sendParam(notify)}`, accessToken, patch)
+}
+
+export function deleteCalendarEvent(accessToken, eventId, { notify = false } = {}) {
+  return writeCalendarApi('DELETE', `calendars/primary/events/${encodeURIComponent(eventId)}?${sendParam(notify)}`, accessToken)
 }
 
 // For "En reunión" presence: is there a timed, busy event happening right

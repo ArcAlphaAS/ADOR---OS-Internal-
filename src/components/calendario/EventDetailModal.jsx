@@ -36,7 +36,7 @@ function Tile({ icon, label, sub, tint, onClick, href }) {
   )
 }
 
-export default function EventDetailModal({ event, uid, onClose }) {
+export default function EventDetailModal({ event, uid, onClose, onEdit, onRespond }) {
   useEscape(onClose)
   const showToast = useToast()
   const meet = useGoogleMeet(uid)
@@ -116,6 +116,15 @@ export default function EventDetailModal({ event, uid, onClose }) {
             </div>
           )}
 
+          {me && !me.organizer && onRespond && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="mr-1 text-[12.5px] text-[#8E8E93]">¿Vas?</span>
+              {[['accepted', 'Sí'], ['tentative', 'Tal vez'], ['declined', 'No']].map(([st, lbl]) => (
+                <button key={st} type="button" onClick={() => onRespond(event, st)} className="rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors" style={{ background: me.status === st ? RESPONSE[st].color : 'rgba(255,255,255,0.07)', color: me.status === st ? '#0A0A0A' : '#F5F5F5' }}>{lbl}</button>
+              ))}
+            </div>
+          )}
+
           {everyone.length > 0 && (
             <div className="mt-4 rounded-[20px] bg-white/[0.045] px-4 py-3.5">
               <p className="mb-2 text-[12.5px] font-medium text-[#8E8E93]">Participantes · {everyone.length}</p>
@@ -140,6 +149,9 @@ export default function EventDetailModal({ event, uid, onClose }) {
 
           <div className="sticky bottom-0 -mb-1 mt-6 flex items-center gap-2.5 bg-[#1C1C1E] pb-1 pt-2 md:bg-transparent">
             <button type="button" onClick={onClose} className="rounded-full px-4 py-3.5 text-[14px] text-[#8E8E93]">Cerrar</button>
+            {event.canEdit && onEdit && (
+              <button type="button" onClick={() => onEdit(event)} className="rounded-full bg-white/[0.08] px-5 py-3.5 text-[14px] font-medium text-[#F5F5F5] hover:bg-white/[0.14]">Editar</button>
+            )}
             {link ? (
               <a href={link} target="_blank" rel="noreferrer" className="ador-btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-semibold">
                 <VideoIcon size={18} /> Unirse a Meet
