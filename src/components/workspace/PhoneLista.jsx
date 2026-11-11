@@ -4,6 +4,7 @@ import { workstreamId as buildWorkstreamId, withTimeout, workstreamHealth } from
 import { sortTasks, groupTasks } from '../../lib/workspaceFilters'
 import { useToast } from '../../hooks/useToast'
 import PhoneTaskCard from './PhoneTaskCard'
+import { BriefcaseIcon, UsersIcon } from '../icons'
 
 // La vista Lista en el teléfono: no una tabla de siete columnas, sino un
 // grupo por proyecto con sus tareas como tarjetas (las mismas que en Hoy y en la
@@ -71,7 +72,7 @@ function Group({ group, workstreams, userById, actorUserId, actorName, onOpenTas
   const open = group.tasks.filter((t) => t.status !== 'completado')
   const done = group.tasks.filter((t) => t.status === 'completado')
   const virtual = group.kind === 'virtual'
-  const accent = virtual ? group.accent : group.kind === 'intervencion' ? '#6B9AD6' : '#E8C15A'
+  const accent = virtual ? group.accent : group.kind === 'intervencion' ? '#0A84FF' : '#FF9F0A'
   const health = workstreamHealth(group.tasks)
   const pct = group.tasks.length ? Math.round((done.length / group.tasks.length) * 100) : 0
   const card = (t) => (
@@ -80,7 +81,13 @@ function Group({ group, workstreams, userById, actorUserId, actorName, onOpenTas
   return (
     <section className="flex flex-col gap-2">
       <button type="button" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed} className="flex min-h-[44px] items-center gap-2.5 px-1 text-left">
-        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: accent || '#888' }} />
+        {virtual ? (
+          <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: accent || '#888' }} />
+        ) : (
+          <span className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full text-white" style={{ background: accent }}>
+            {group.kind === 'intervencion' ? <UsersIcon size={15} /> : <BriefcaseIcon size={15} />}
+          </span>
+        )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[16px] font-semibold text-[#F5F5F5]">{group.name}</span>
           <span className="block text-[12.5px] text-[#8E8E93]">
@@ -92,7 +99,7 @@ function Group({ group, workstreams, userById, actorUserId, actorName, onOpenTas
       </button>
       {group.tasks.length > 0 && (
         <div className="mx-1 h-[3px] overflow-hidden rounded-full bg-white/[0.08]">
-          <div className="h-full rounded-full bg-[#F4EEE2] transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: accent || 'var(--mod, #F4EEE2)' }} />
         </div>
       )}
       {!collapsed && (

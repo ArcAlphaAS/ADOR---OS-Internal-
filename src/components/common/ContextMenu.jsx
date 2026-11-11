@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useEscape } from '../../hooks/useEscape'
 import { isTouchLayout, swipeToClose, SHEET } from '../../lib/motion'
 import { haptic } from '../../lib/haptics'
+import { useSheetScale } from '../../hooks/useSheetScale'
 
 // Menú de clic derecho (o mantener presionado en el teléfono), el mismo en toda
 // la app: se abre en el cursor, no se sale de la pantalla y se cierra con Esc,
@@ -14,6 +15,7 @@ import { haptic } from '../../lib/haptics'
 // compacto junto al cursor.
 function ActionSheet({ title, subtitle, items, onClose }) {
   useEscape(onClose)
+  useSheetScale(true)
   const list = items.filter(Boolean)
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[998] bg-black/45" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose() }}>

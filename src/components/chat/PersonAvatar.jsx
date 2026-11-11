@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { presenceOf, userLabel } from '../../lib/chat'
+import { avatarGradient } from '../../lib/avatarColor'
 
 // Who's who, shared by every avatar inside Comunicación without threading
 // users/directory/presence through each component. Provided once by
@@ -41,7 +42,7 @@ export default function PersonAvatar({ uid, name, size = 28, showPresence = fals
       ) : (
         <span
           className="flex items-center justify-center rounded-full font-medium"
-          style={{ width: size, height: size, fontSize: Math.max(9, size * 0.38), background: '#26231E', color: '#D9CFBF', boxShadow: 'inset 0 0 0 1px rgba(244,238,226,0.1)' }}
+          style={{ width: size, height: size, fontSize: Math.max(9, size * 0.38), background: avatarGradient(uid || label), color: '#FFFFFF' }}
         >
           {initials(label)}
         </span>

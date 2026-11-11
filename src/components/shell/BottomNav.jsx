@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SHEET, swipeToClose } from '../../lib/motion'
 import { haptic } from '../../lib/haptics'
+import { moduleColor } from '../../lib/moduleColors'
+import { useSheetScale } from '../../hooks/useSheetScale'
 import {
   HomeIcon,
   LayersIcon,
@@ -102,6 +104,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
     onNavigate(id)
   }
 
+  useSheetScale(moreOpen)
   return (
     <>
       {/* A floating capsule just above the home indicator, not a
@@ -150,7 +153,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                           className="flex flex-col items-center gap-2 rounded-[22px] px-1 py-3 text-center sm:items-start sm:gap-3 sm:rounded-[24px] sm:p-4 sm:text-left"
                           style={{ background: on ? '#F5F5F5' : '#232325' }}
                         >
-                          <span className="relative flex h-[46px] w-[46px] items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: on ? '#0A0A0A' : '#323235', color: on ? '#F5F5F5' : '#E4DCCB' }}>
+                          <span className="relative flex h-[46px] w-[46px] items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: on ? '#0A0A0A' : `${moduleColor(m.id)}2E`, color: on ? '#F5F5F5' : moduleColor(m.id) }}>
                             <m.Icon size={22} />
                             {badges[m.id] > 0 && (
                               <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-[#1C1A16] ring-2 ring-[#232325]" style={{ background: '#F4EEE2' }}>

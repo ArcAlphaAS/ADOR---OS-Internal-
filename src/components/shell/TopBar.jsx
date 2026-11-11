@@ -9,6 +9,7 @@ import ProfileMenu from './ProfileMenu'
 import PhoneProfile from './PhoneProfile'
 import { useArchivedNotifications } from '../../hooks/useArchivedNotifications'
 import usePhone from '../../hooks/usePhone'
+import { MODULE_LABELS, moduleColor } from '../../lib/moduleColors'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
 import SearchResults from './SearchResults'
@@ -312,6 +313,7 @@ export default function TopBar({
   onShowOnboarding,
   access = { isAdmin: true, canSee: () => true },
   navHidden = false,
+  scrolled = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifRect, setNotifRect] = useState(null)
@@ -420,6 +422,18 @@ export default function TopBar({
             </span>
           </span>
         </div>
+      </motion.div>
+
+      {/* Teléfono: al bajar, el título grande se va y aparece este, chico y centrado (como iOS). */}
+      <motion.div
+        aria-hidden={!(scrolled && !navHidden)}
+        animate={{ opacity: scrolled && !navHidden ? 1 : 0, y: scrolled && !navHidden ? 0 : 6 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 items-center gap-2 lg:hidden"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 32px)', marginTop: -10 }}
+      >
+        <span className="h-2 w-2 rounded-full" style={{ background: moduleColor(activeModule) }} />
+        <span className="text-[16px] font-semibold text-[#F5F5F5]">{MODULE_LABELS[activeModule] || ''}</span>
       </motion.div>
 
       {/* Below 1024px these tabs live in the bottom bar (BottomNav). */}

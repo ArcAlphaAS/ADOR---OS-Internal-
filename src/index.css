@@ -34,15 +34,15 @@ body,
     min-width: 0;
   }
   .ador-title {
-    font-size: 26px;
-    line-height: 1.15;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: 34px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
     color: #f5f5f5;
   }
   @media (min-width: 768px) {
     .ador-title {
-      font-size: 30px;
+      font-size: 36px;
     }
   }
 }
@@ -793,3 +793,25 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
   main .ador-glass:nth-of-type(4) { animation-delay: 180ms; }
   main .ador-glass:nth-of-type(n+5) { animation-delay: 240ms; }
 }
+
+
+/* Un punto del color de la sección junto al título (--mod lo pone AppShell). */
+[data-mod] .ador-title::before {
+  content: '';
+  display: inline-block;
+  width: 0.26em;
+  height: 0.26em;
+  border-radius: 50%;
+  background: var(--mod);
+  margin-right: 0.36em;
+  vertical-align: 0.14em;
+}
+[data-mod='inicio'] .ador-title::before { display: none; }
+
+/* Hoja abierta: la pantalla de atrás se aleja y se oscurece (iOS). Solo teléfono/tablet
+   vertical; la barra de arriba y la de abajo no se tocan. */
+@media (max-width: 1023px) {
+  main { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.5s, filter 0.5s; transform-origin: 50% 35%; }
+  html.sheet-open main { transform: scale(0.95); border-radius: 28px; filter: brightness(0.8); }
+}
+@media (prefers-reduced-motion: reduce) { html.sheet-open main { transform: none; } }

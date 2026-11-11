@@ -6,6 +6,7 @@ import { withTimeout, workstreamId as buildWorkstreamId } from '../../lib/worksp
 import { useToast } from '../../hooks/useToast'
 import { isTouchLayout, SHEET } from '../../lib/motion'
 import { haptic } from '../../lib/haptics'
+import { useSheetScale } from '../../hooks/useSheetScale'
 
 // Right-click on a task row, like Monday's: copy name/link, open, duplicate,
 // add a subtask, move to another project, complete/reopen, delete. One menu
@@ -30,6 +31,7 @@ const Divider = () => (isTouchLayout() ? <div className="h-1.5 bg-black/40" /> :
 
 export default function TaskContextMenu({ task, x, y, workstreams = [], actorUserId, actorName, onClose, onOpen, onAddSubtask }) {
   const showToast = useToast()
+  useSheetScale(isTouchLayout())
   const ref = useRef(null)
   const [pos, setPos] = useState({ left: x, top: y })
   const [moving, setMoving] = useState(false)

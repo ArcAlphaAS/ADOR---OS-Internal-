@@ -32,6 +32,7 @@ import LiveIsland from './LiveIsland'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useA11yPolish } from '../../hooks/useA11yPolish'
+import { moduleColor } from '../../lib/moduleColors'
 import AchievementMoment from './AchievementMoment'
 
 // Every module except Home is its own code-split chunk, downloaded the
@@ -193,6 +194,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // The top bar's pill and logo tuck away while scrolling down and return on
   // scrolling up (the profile/search/bell cluster always stays).
   const [navHidden, setNavHidden] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const lastTop = useRef(0)
   // Desktop: bringing the cursor to the top edge brings the bar back (like the
   // Dock or the menu bar), so you never have to scroll up just to switch module.
@@ -206,6 +208,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   }, [])
   const onMainScroll = (e) => {
     const top = e.currentTarget.scrollTop
+    setScrolled((v) => (v !== top > 72 ? top > 72 : v))
     const delta = top - lastTop.current
     if (top < 60) setNavHidden(false)
     else if (delta > 6) setNavHidden(true)
@@ -361,6 +364,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       }}
     >
       <div className="ador-bg-grain" aria-hidden="true" />
+      {/* El contenido se desvanece al subir bajo la barra (sin vidrio): da profundidad. */}
+      <div className="ador-topbar pointer-events-none absolute inset-x-0 top-0 z-30 lg:hidden" style={{ height: 'calc(env(safe-area-inset-top, 0px) + 78px)', background: 'linear-gradient(to bottom, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.72) 52%, rgba(0,0,0,0) 100%)' }} aria-hidden="true" />
       <TopBar
         user={user}
         onSignOut={onSignOut}
@@ -371,6 +376,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
         onShowOnboarding={() => setShowOnboarding(true)}
         access={access}
         navHidden={navHidden}
+        scrolled={scrolled}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -382,7 +388,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
             const visible = id === activeModule
             return (
               <Activity key={id} mode={visible ? 'visible' : 'hidden'}>
-                <div className="ador-module-in h-full">
+                <div className="ador-module-in h-full" data-mod={id} style={{ '--mod': moduleColor(id) }}>
                   <ModuleErrorBoundary resetKey={visible}>
                     <Suspense fallback={<ModuleSkeleton />}>{renderModule(id)}</Suspense>
                   </ModuleErrorBoundary>
