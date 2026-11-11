@@ -18,6 +18,13 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   const [files, setFiles] = useState(parsed.files)
   const [note, setNote] = useState(startsAsFiles ? parsed.note : '')
   const [content, setContent] = useState(initial?.content || '')
+  const [tags, setTags] = useState(initial?.tags || [])
+  const [tagDraft, setTagDraft] = useState('')
+  const addTag = (raw) => {
+    const t = raw.trim().replace(/^#/, '').slice(0, 24)
+    if (t && !tags.some((x) => x.toLowerCase() === t.toLowerCase())) setTags((cur) => [...cur, t].slice(0, 8))
+    setTagDraft('')
+  }
   const [linkUrl, setLinkUrl] = useState('')
   const drive = useDrivePicker('conocimiento')
   const switchMode = (m) => {
@@ -161,6 +168,28 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
           </div>
           <div className="flex flex-col gap-7 lg:sticky lg:top-6 lg:self-start">
         <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Etiquetas</p>
+          <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/[0.05] px-3 py-2.5">
+            {tags.map((t) => (
+              <span key={t} className="flex items-center gap-1 rounded-md bg-white/[0.1] px-2 py-0.5 text-[12px] text-[#E4E4E4]">
+                #{t}
+                <button type="button" aria-label={`Quitar ${t}`} onClick={() => setTags((cur) => cur.filter((x) => x !== t))} className="text-[#8A8A8A] hover:text-[#F5F5F5]">×</button>
+              </span>
+            ))}
+            <input
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagDraft) }
+                else if (e.key === 'Backspace' && !tagDraft && tags.length) setTags((cur) => cur.slice(0, -1))
+              }}
+              onBlur={() => tagDraft.trim() && addTag(tagDraft)}
+              placeholder={tags.length ? '' : 'Escribe y pulsa Enter'}
+              className="min-w-[90px] flex-1 bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Guardar en</p>
           <div className="flex flex-wrap gap-2">
             {tree.map((cat, i) => {
@@ -195,7 +224,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
 
       <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] px-8 py-4">
         <button type="button" onClick={onCancel} className="rounded-full px-5 py-2.5 text-[13px] text-[#9A9A9A] hover:text-[#F5F5F5]">Cancelar</button>
-        <button type="button" disabled={!canSave} onClick={() => onSave({ title: title.trim(), subcategory, content: finalContent })} className="ador-btn-primary rounded-full px-6 py-2.5 text-[13px] font-medium disabled:opacity-40">
+        <button type="button" disabled={!canSave} onClick={() => onSave({ title: title.trim(), subcategory, content: finalContent, tags })} className="ador-btn-primary rounded-full px-6 py-2.5 text-[13px] font-medium disabled:opacity-40">
           {saving ? 'Guardando…' : 'Guardar'}
         </button>
       </div>

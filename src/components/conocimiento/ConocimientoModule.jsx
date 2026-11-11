@@ -198,7 +198,13 @@ function NewSectionRow({ onCreate }) {
 // per the reference image the user shared. Categories collapse/expand via
 // a chevron (separate from the label, which filters); admins can add a
 // custom section to any category from "+ Nueva sección". ----
-function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, total, isAdminUser, onCreateSection }) {
+function CountPill({ n }) {
+  return n > 0 ? <span className="flex-shrink-0 rounded-md bg-white/[0.08] px-1.5 py-0.5 text-[11px] leading-none text-[#B5B5B5]">{n}</span> : null
+}
+
+function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, onSelectTag, tagList, total, isAdminUser, onCreateSection }) {
+  const [view, setView] = useState(filter.type === 'tag' ? 'tags' : 'folders')
+  useEffect(() => { if (filter.type === 'tag') setView('tags') }, [filter])
   // Como Notas o Finder: las carpetas empiezan cerradas y solo se abre la que estás usando.
   const [open, setOpen] = useState(() => new Set())
   useEffect(() => {
@@ -226,7 +232,30 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
         />
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex rounded-xl bg-black/60 p-1 ring-1 ring-white/[0.06]">
+        {[['folders', 'Carpetas'], ['tags', 'Etiquetas']].map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setView(id)} className="flex-1 rounded-lg py-1.5 text-[12.5px] font-medium transition-colors duration-150" style={{ background: view === id ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === id ? '#F5F5F5' : '#8A8A8A' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'tags' && (
+        <div className="flex flex-col gap-0.5">
+          {tagList.length === 0 && <p className="px-2.5 py-3 text-[12.5px] leading-relaxed text-[#8A8A8A]">Aún no hay etiquetas. Añádelas al crear o editar un documento (campo «Etiquetas») para encontrarlo por tema.</p>}
+          {tagList.map(({ tag, n }) => {
+            const on = filter.type === 'tag' && filter.id === tag
+            return (
+              <button key={tag} type="button" onClick={() => onSelectTag(tag)} className="flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-2 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.05]" style={{ color: on ? '#FFFFFF' : '#D0D0D0', background: on ? 'rgba(255,255,255,0.1)' : undefined }}>
+                <span className="flex min-w-0 items-center gap-2"><span className="text-[#8A8A8A]">#</span><span className="truncate">{tag}</span></span>
+                <CountPill n={n} />
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {view === 'folders' && <div className="flex flex-col gap-0.5">
         <button
           type="button"
           onClick={onSelectAll}
@@ -237,7 +266,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
             <BookIcon size={15} style={{ color: 'var(--mod, #8A8A8A)' }} />
             Todos
           </span>
-          {total > 0 && <span className="text-[11.5px] text-[#8A8A8A]">{total}</span>}
+          <CountPill n={total} />
         </button>
 
         <p className="px-2.5 pb-0.5 pt-4 text-[11px] font-medium text-[#8A8A8A]">Carpetas</p>
@@ -260,14 +289,15 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                     <FolderIcon size={15} style={{ color: 'var(--mod, #8A8A8A)' }} />
                     <span className="truncate">{cat.label}</span>
                   </span>
-                  {(counts[cat.id] || 0) > 0 && <span className="text-[11.5px] text-[#8A8A8A]">{counts[cat.id]}</span>}
+                  <CountPill n={counts[cat.id] || 0} />
                 </button>
               </div>
               <AnimatePresence initial={false}>
               {!isCollapsed && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: 'spring', stiffness: 320, damping: 34 }} className="overflow-hidden">
-                <div className="ml-[19px] flex flex-col pb-1 pl-2.5 pt-0.5">
-                  {cat.subcategories.map((sub) => {
+                <div className="ml-[19px] flex flex-col pb-1 pt-0.5">
+                  {cat.subcategories.map((sub, si) => {
+                    const lastSub = si === cat.subcategories.length - 1 && !isAdminUser
                     const Icon = subIcon(sub)
                     const subActive = filter.type === 'subcategory' && filter.id === sub.id
                     return (
@@ -275,14 +305,16 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                         key={sub.id}
                         type="button"
                         onClick={() => onSelectSubcategory(sub.id)}
-                        className="relative flex items-center justify-between gap-2 rounded-[9px] py-1.5 pl-2.5 pr-2 text-left text-[12.5px] transition-colors duration-150 hover:bg-white/[0.05]"
+                        className="relative ml-4 flex items-center justify-between gap-2 rounded-[9px] py-1.5 pl-2.5 pr-2 text-left text-[12.5px] transition-colors duration-150 hover:bg-white/[0.05]"
                         style={{ color: subActive ? '#FFFFFF' : '#A0A0A5', background: subActive ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                       >
+                        <span aria-hidden className="absolute -left-4 top-0 w-px bg-white/[0.12]" style={{ height: lastSub ? '50%' : '100%' }} />
+                        <span aria-hidden className="absolute -left-4 top-1/2 h-px w-3.5 bg-white/[0.12]" />
                         <span className="flex min-w-0 items-center gap-1.5">
                           <Icon size={12} className="flex-shrink-0" />
                           <span className="truncate">{sub.label}</span>
                         </span>
-                        {(subCounts[sub.id] || 0) > 0 && <span className="flex-shrink-0 text-[11px] text-[#8A8A8A]">{subCounts[sub.id]}</span>}
+                        <CountPill n={subCounts[sub.id] || 0} />
                       </button>
                     )
                   })}
@@ -294,7 +326,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
             </div>
           )
         })}
-      </div>
+      </div>}
     </div>
   )
 }
@@ -728,16 +760,24 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   const togglePin = (d) => withTimeout(setKnowledgePinned(d.id, !d.pinned)).catch((error) => showToast(`No se pudo fijar: ${error.message}`))
   const subCounts = subcategoryCounts(index, docs)
   const catCounts = categoryCounts(index, docs)
+  const tagList = useMemo(() => {
+    const m = new Map()
+    docs.forEach((d) => (d.tags || []).forEach((t) => m.set(t, (m.get(t) || 0) + 1)))
+    return [...m].map(([tag, n]) => ({ tag, n })).sort((a, b) => b.n - a.n || a.tag.localeCompare(b.tag))
+  }, [docs])
 
   const q = search.trim().toLowerCase()
   let scoped = docs
   if (filter.type === 'category') scoped = scoped.filter((d) => subcategoryMeta(index, d.subcategory)?.categoryId === filter.id)
   if (filter.type === 'subcategory') scoped = scoped.filter((d) => d.subcategory === filter.id)
+  if (filter.type === 'tag') scoped = scoped.filter((d) => (d.tags || []).includes(filter.id))
   if (q) scoped = scoped.filter((d) => `${d.title} ${d.content}`.toLowerCase().includes(q))
 
   const visibleDocs = showAll || filter.type !== 'all' || q ? scoped : scoped.slice(0, 6)
   const tableTitle =
-    filter.type === 'subcategory'
+    filter.type === 'tag'
+      ? `#${filter.id}`
+      : filter.type === 'subcategory'
       ? subcategoryMeta(index, filter.id)?.label
       : filter.type === 'category'
         ? index.tree.find((c) => c.id === filter.id)?.label
@@ -749,6 +789,10 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   }
   const selectCategory = (id) => {
     setFilter({ type: 'category', id })
+    setShowAll(false)
+  }
+  const selectTag = (id) => {
+    setFilter({ type: 'tag', id })
     setShowAll(false)
   }
   const selectSubcategory = (id) => {
@@ -821,7 +865,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       const cat = subcategoryMeta(index, filter.id)?.categoryId
       return cat ? selectCategory(cat) : selectAll()
     }
-    if (filter.type === 'category') return selectAll()
+    if (filter.type === 'category' || filter.type === 'tag') return selectAll()
   }
   const edge = useRef(null)
   const edgeProps = phone
@@ -884,6 +928,8 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
         onSelectAll={selectAll}
         onSelectCategory={selectCategory}
         onSelectSubcategory={selectSubcategory}
+        onSelectTag={selectTag}
+        tagList={tagList}
         total={docs.length}
         isAdminUser={isAdminUser}
         onCreateSection={handleCreateSection}
