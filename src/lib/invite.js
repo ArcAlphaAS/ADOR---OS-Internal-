@@ -28,17 +28,19 @@ export async function inviteMember({ email, name, role, invitedBy }) {
   await allowEmail(clean, { role, name: name.trim(), invitedBy })
   const auth2 = inviteAuth()
   let existed = false
+  let uid = null
   try {
     const cred = await createUserWithEmailAndPassword(auth2, clean, randomPassword())
     if (name.trim()) await updateProfile(cred.user, { displayName: name.trim() }).catch(() => {})
-    await saveUserProfile(cred.user.uid, { displayName: name.trim() || null, email: clean, isAdmin: role === 'admin' })
+    uid = cred.user.uid
+    await saveUserProfile(cred.user.uid, { displayName: name.trim() || null, email: clean, isAdmin: role === 'admin', pendingFirstLogin: true })
   } catch (error) {
     if (error.code === 'auth/email-already-in-use') existed = true
     else throw new Error(error.code === 'auth/operation-not-allowed' ? 'El inicio de sesión con correo y contraseña está desactivado en Firebase.' : error.message)
   }
   await sendPasswordResetEmail(auth2, clean)
   await signOut(auth2).catch(() => {})
-  return { existed }
+  return { existed, uid }
 }
 
 // "Reenviar correo" for someone who lost the first email.

@@ -22,19 +22,6 @@ const STARTERS = [
   { Icon: PlusIcon, title: 'Crear una tarea', prompt: 'Crea una tarea para mí: revisar propuesta, mañana' },
 ]
 
-// A soft light that breathes — ADOR IA's "presence" in the input bar.
-function Orb({ size = 34 }) {
-  return (
-    <span className="relative flex flex-shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-hidden>
-      <span
-        className="absolute inset-0 rounded-full blur-[10px]"
-        style={{ background: 'radial-gradient(circle, rgba(232,193,90,0.75), rgba(244,238,226,0.25) 60%, transparent 75%)', animation: 'ador-pulse 3.2s ease-in-out infinite' }}
-      />
-      <span className="relative h-[60%] w-[60%] rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%, #FFFFFF, #F4EEE2 35%, #E8C15A 80%)' }} />
-    </span>
-  )
-}
-
 // Dos esferas de cristal que se superponen y flotan, con un resplandor suave detrás (lavanda
 // y verde agua, muy tenue). Es la "presencia" de ADOR IA: respira en la pantalla de inicio y
 // se acelera mientras piensa.
@@ -68,7 +55,6 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
   const flat = plain && !isUser // escritorio: la respuesta va como texto, sin burbuja
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {flat && <span className="mt-0.5"><Orb size={28} /></span>}
       <div
         className={flat ? 'ador-msg-in min-w-0 max-w-[88%] py-0.5 text-[15px] leading-[1.65]' : 'ador-msg-in max-w-[86%] rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:max-w-[80%] md:text-[14px]'}
         style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: flat ? 'transparent' : isUser ? '#2C2C2E' : '#1C1C1E' }}
@@ -265,10 +251,7 @@ export default function AdorIAModule({ user, onNavigate }) {
         ) : (
           <>
             <div className="flex items-center justify-between gap-3 pb-4">
-              <div className="flex items-center gap-2.5">
-                <Orb size={28} />
-                <h1 className="text-[17px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
-              </div>
+              <h1 className="text-[17px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
               <button type="button" onClick={reset} className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-4 py-2 text-[12.5px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/[0.12]">
                 <PlusIcon size={12} /> Nueva conversación
               </button>
@@ -314,10 +297,7 @@ export default function AdorIAModule({ user, onNavigate }) {
       </div>
       {messages.length > 0 && (
         <div className="hidden items-center justify-between gap-3 md:flex">
-          <div className="flex items-center gap-2.5">
-            <Orb size={30} />
-            <h1 className="text-[18px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
-          </div>
+          <h1 className="text-[18px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
           <button
             type="button"
             onClick={() => {

@@ -8,6 +8,7 @@ import {
   subscribeDirectoryPeople,
   subscribeDirectoryTeams,
   deleteDirectoryPerson,
+  updateDirectoryPerson,
   createDirectoryTeam,
   updateDirectoryTeam,
   deleteDirectoryTeam,
@@ -55,7 +56,42 @@ function StatCard({ Icon, value, label }) {
   )
 }
 
-function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
+// Celda editable en la tabla: un clic y se escribe encima (Enter guarda, Esc cancela),
+// con las áreas y roles que ya existen como sugerencias para no partirlos en variantes.
+function InlineCell({ value, placeholder, field, personId, options, canEdit, className }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value || '')
+  const showToast = useToast()
+  const save = () => {
+    setEditing(false)
+    const t = draft.trim()
+    const canon = options.find((o) => o.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || t
+    if (canon === (value || '')) return
+    withTimeout(updateDirectoryPerson(personId, { [field]: canon })).catch((e) => showToast(`No se pudo guardar: ${e.message}`))
+  }
+  if (!canEdit) return <span className={className}>{value || placeholder}</span>
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        list={`dir-${field}-opts`}
+        value={draft}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') { setDraft(value || ''); setEditing(false) } }}
+        className="w-full min-w-0 rounded-md bg-white/[0.1] px-1.5 py-0.5 text-[12.5px] text-[#F5F5F5] outline-none ring-1 ring-white/[0.2]"
+      />
+    )
+  }
+  return (
+    <button type="button" title="Clic para editar" onClick={(e) => { e.stopPropagation(); setDraft(value || ''); setEditing(true) }} className={`${className} -mx-1.5 rounded-md px-1.5 text-left transition-colors hover:bg-white/[0.08]`}>
+      {value || placeholder}
+    </button>
+  )
+}
+
+function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin, areaOptions = [], roleOptions = [] }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [rect, setRect] = useState(null)
   const triggerRef = useRef(null)
@@ -71,9 +107,10 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin }) {
         <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={26} />
         <span className="min-w-0 truncate text-[13px] font-medium text-[#F5F5F5]">{person.name}</span>
         {person.noAccess && <span title="Su cuenta ya no tiene acceso a ADOR OS" className="flex-shrink-0 rounded-full bg-[#EF5350]/15 px-1.5 py-0.5 text-[10px] text-[#EF5350]">sin acceso</span>}
+        {person.invited && <span title="Recibió la invitación, aún no ha entrado" className="flex-shrink-0 rounded-full bg-[#E8C15A]/15 px-1.5 py-0.5 text-[10px] text-[#E8C15A]">invitado</span>}
       </div>
-      <span className="min-w-0 truncate text-[12.5px] text-[#888888]">{person.role}</span>
-      <span className="min-w-0 truncate text-[12.5px] text-[#888888]">{person.area || 'General'}</span>
+      <InlineCell value={person.role} placeholder="—" field="role" personId={person.id} options={roleOptions} canEdit={isAdmin} className="min-w-0 truncate text-[12.5px] text-[#888888]" />
+      <InlineCell value={person.area} placeholder="General" field="area" personId={person.id} options={areaOptions} canEdit={isAdmin} className="min-w-0 truncate text-[12.5px] text-[#888888]" />
       <span className="flex items-center gap-1.5 text-[12px]" style={{ color: meta.color }}>
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
         {meta.label}
@@ -129,6 +166,8 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
   const filtered = q
     ? people.filter((p) => `${p.name} ${p.role} ${p.area}`.toLowerCase().includes(q))
     : people
+  const areaOptions = [...new Set(people.map((p) => p.area).filter(Boolean))]
+  const roleOptions = [...new Set(people.map((p) => p.role).filter(Boolean))]
   const directivos = filtered.filter((p) => p.isDirectivo)
   const equipo = filtered.filter((p) => !p.isDirectivo)
 
@@ -146,6 +185,8 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
 
   return (
     <div className="flex flex-col gap-8">
+      <datalist id="dir-role-opts">{roleOptions.map((o) => <option key={o} value={o} />)}</datalist>
+      <datalist id="dir-area-opts">{areaOptions.map((o) => <option key={o} value={o} />)}</datalist>
       {directivos.length > 0 && (
         <div>
           <div className="flex items-baseline justify-between">
@@ -202,7 +243,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
             </div>
             <div className="flex flex-col divide-y divide-white/[0.04]">
               {equipo.map((p) => (
-                <EquipoRow key={p.id} person={p} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} />
+                <EquipoRow key={p.id} person={p} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} areaOptions={areaOptions} roleOptions={roleOptions} />
               ))}
             </div>
           </div>
@@ -466,8 +507,10 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     if (!p.linkedUserId) return p
     const account = users.find((u) => u.id === p.linkedUserId)
     const noAccess = users.length > 0 && !account
-    if (p.photoDataUrl) return noAccess ? { ...p, noAccess } : p
-    return account?.photoDataUrl ? { ...p, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : noAccess ? { ...p, noAccess } : p
+    const invited = Boolean(account?.pendingFirstLogin)
+    const base = { ...p, ...(noAccess ? { noAccess } : {}), ...(invited ? { invited: true } : {}) }
+    if (p.photoDataUrl) return base
+    return account?.photoDataUrl ? { ...base, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : base
   })
   const [tab, setTab] = useState('personas')
   const [search, setSearch] = useState('')

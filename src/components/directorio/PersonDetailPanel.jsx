@@ -1,6 +1,8 @@
 import { statusMeta } from '../../lib/directorio'
 import Avatar from '../shell/Avatar'
 import { MailIcon, PinIcon, ClockIcon, CloseIcon, EditIcon } from '../icons'
+import { resendAccessEmail } from '../../lib/invite'
+import { useToast } from '../../hooks/useToast'
 
 // The right-column detail shown when a person is selected — deliberately
 // truncated at "Áreas de responsabilidad" per direct instruction: the
@@ -11,6 +13,9 @@ import { MailIcon, PinIcon, ClockIcon, CloseIcon, EditIcon } from '../icons'
 // faked. Revisit once Equipos/roles has a real assignment model.
 export default function PersonDetailPanel({ person, onClose, onEdit }) {
   const meta = statusMeta(person.status)
+  const showToast = useToast()
+  const resend = () => resendAccessEmail(person.email).then(() => showToast(`Invitación reenviada a ${person.email}.`)).catch((e) => showToast(`No se pudo reenviar: ${e.message}`))
+  const account = person.noAccess ? null : person.invited ? { label: 'Invitado — aún no ha entrado', color: '#E8C15A' } : person.linkedUserId ? { label: 'Tiene acceso a ADOR OS', color: '#4CAF50' } : { label: 'Solo ficha — sin cuenta en ADOR OS', color: '#8A8A8A' }
 
   return (
     <div className="ador-glass ador-grain rounded-2xl p-5">
@@ -39,6 +44,14 @@ export default function PersonDetailPanel({ person, onClose, onEdit }) {
           <p className="mt-2 rounded-lg bg-[#EF5350]/10 px-2.5 py-1.5 text-[12px] leading-snug text-[#EF9A98]">
             Su cuenta ya no tiene acceso a ADOR OS. Si esta persona salió del equipo, puedes eliminar su ficha desde el menú de la tabla.
           </p>
+        )}
+        {account && (
+          <p className="mt-2 flex items-center gap-1.5 text-[12px]" style={{ color: account.color }}>
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: account.color }} /> {account.label}
+          </p>
+        )}
+        {person.invited && onEdit && person.email && (
+          <button type="button" onClick={resend} className="mt-2 rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-[#F5F5F5] hover:bg-white/[0.14]">Reenviar invitación</button>
         )}
         {person.quote && <p className="mt-2 text-[12px] italic text-[#8A8A8A]">"{person.quote}"</p>}
       </div>

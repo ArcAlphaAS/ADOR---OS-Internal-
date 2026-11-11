@@ -40,7 +40,7 @@ function App() {
   // Admin SDK backend to list every Auth user. See lib/firestore.js.
   useEffect(() => {
     if (!user || user.uid === 'preview') return
-    saveUserProfile(user.uid, { displayName: user.displayName || null, email: user.email })
+    saveUserProfile(user.uid, { displayName: user.displayName || null, email: user.email, pendingFirstLogin: false })
     // Someone invited from Administración whose profile doesn't carry a
     // role yet gets the one they were invited with (allowedEmails.role).
     // Profiles that already have isAdmin are never touched here.
