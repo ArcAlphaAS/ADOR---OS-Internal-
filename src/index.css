@@ -764,3 +764,15 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 @keyframes ador-card-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
 .ador-card-in { animation: ador-card-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 @media (prefers-reduced-motion: reduce) { .ador-card-in { animation: none; } }
+
+/* Modo claro en teléfono: todas las tarjetas son el mismo gris liso (como en oscuro son
+   #1C1C1E), sin sombra ni borde. Antes unas eran blancas con sombra (Inicio, News) y otras
+   grises (Workspace, Finanzas), y se veía descuidado. */
+@media (max-width: 767px) {
+  html.light .ador-glass:not(.ador-quiet),
+  html.light .ador-glass:not(.ador-card-attention):not(.ador-card-urgent):not(.ador-quiet) {
+    background: #1c1c1e;
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
