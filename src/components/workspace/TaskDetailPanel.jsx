@@ -1,3 +1,4 @@
+import { shareLink } from '../../lib/share'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -333,6 +334,11 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                     <button type="button" onClick={copyLink} className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E8E8E8] hover:bg-white/[0.07]">
                       Copiar enlace
                     </button>
+                    {typeof navigator !== 'undefined' && navigator.share && (
+                      <button type="button" onClick={() => { setMenuOpen(false); shareLink({ title: task.title, text: 'Tarea en ADOR OS', path: `/?open=workspace&task=${task.id}` }, showToast) }} className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#E8E8E8] hover:bg-white/[0.07]">
+                        Compartir…
+                      </button>
+                    )}
                     <button type="button" onClick={handleDelete} className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12.5px] hover:bg-white/[0.07]" style={{ color: '#EF5350' }}>
                       {confirmingDelete ? 'Pulsa otra vez para confirmar' : 'Eliminar tarea'}
                     </button>

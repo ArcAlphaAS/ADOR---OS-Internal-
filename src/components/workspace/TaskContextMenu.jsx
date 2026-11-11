@@ -1,3 +1,4 @@
+import { shareLink } from '../../lib/share'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
@@ -123,6 +124,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
       >
         <div className={isTouchLayout() ? 'max-h-[72vh] overflow-y-auto rounded-[22px] bg-[#1C1C1E]/95 backdrop-blur-xl' : 'ador-glass ador-grain max-h-[70vh] overflow-y-auto rounded-xl p-1.5'} data-keep-scroll>
           <Item label="Copiar nombre" onClick={copy(task.title, 'Nombre copiado.')} />
+          {typeof navigator !== 'undefined' && navigator.share && <Item label="Compartir…" onClick={() => { onClose(); shareLink({ title: task.title, text: 'Tarea en ADOR OS', path: `/?open=workspace&task=${task.id}` }, showToast) }} />}
           <Item label="Copiar enlace de la tarea" onClick={copy(`${window.location.origin}/?open=workspace&task=${task.id}`, 'Enlace copiado.')} />
           <Divider />
           <Item label="Abrir tarea" onClick={() => { onClose(); onOpen(task) }} />

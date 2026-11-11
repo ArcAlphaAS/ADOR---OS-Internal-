@@ -1,3 +1,4 @@
+import { useEdgeSwipeBack } from '../../hooks/useEdgeSwipeBack'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
@@ -485,6 +486,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
   const selectedPerson = people.find((p) => p.id === selectedPersonId) || null
   const phoneView = usePhone()
   const [personOrigin, setPersonOrigin] = useState(null)
+  useEdgeSwipeBack(() => setSelectedPersonId(null), phoneView && Boolean(selectedPerson))
 
   useEffect(() => {
     if (focus?.type !== 'person') return

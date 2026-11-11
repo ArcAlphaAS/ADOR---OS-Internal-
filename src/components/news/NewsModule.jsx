@@ -1,3 +1,5 @@
+import { shareLink } from '../../lib/share'
+import { useEdgeSwipeBack } from '../../hooks/useEdgeSwipeBack'
 import CardSkeleton from '../common/CardSkeleton'
 import { useMarkCommunitySeen } from '../../hooks/useCommunityNotifications'
 import { useEffect, useRef, useState } from 'react'
@@ -65,7 +67,10 @@ function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminU
   const topRef = useRef(null)
   const edited = post.updatedAt?.toMillis?.() && post.updatedAt.toMillis() - (post.createdAt?.toMillis?.() || 0) > 60_000
 
+  useEdgeSwipeBack(onBack, true)
+  const canShare = typeof navigator !== 'undefined' && Boolean(navigator.share)
   const copyLink = () => {
+    if (canShare) return shareLink({ title: post.title, text: post.subtitle || 'Anuncio de ADOR', path: `/?open=news&nid=${post.id}` })
     const url = `${window.location.origin}/?open=news&nid=${post.id}`
     navigator.clipboard?.writeText(url).then(() => {
       setCopied(true)
@@ -100,7 +105,7 @@ function PostDetail({ post, user, users = [], related = [], onOpenPost, isAdminU
               onClick={copyLink}
               className="flex-shrink-0 rounded-2xl border border-white/20 bg-white/15 px-5 py-3 text-[14px] font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/25 md:px-7"
             >
-              {copied ? 'Enlace copiado ✓' : 'Copiar enlace'}
+              {copied ? 'Enlace copiado ✓' : canShare ? 'Compartir' : 'Copiar enlace'}
             </button>
           </div>
         </div>
