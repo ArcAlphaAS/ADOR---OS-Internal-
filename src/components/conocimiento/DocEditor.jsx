@@ -64,7 +64,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   const field = 'w-full rounded-2xl bg-white/[0.05] px-4 py-3 text-[14px] text-[#F5F5F5] placeholder:text-[#767676] outline-none transition-colors focus:bg-white/[0.08]'
 
   return (
-    <div className="mx-auto w-full max-w-[780px] rounded-[28px] bg-[#141414] shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+    <div className="mx-auto w-full max-w-[1120px] rounded-[28px] bg-[#141414] shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-between px-8 pt-6">
         <p className="text-[12px] font-medium text-[#8A8A8A]">{initial ? 'Editar documento' : 'Nuevo documento'}</p>
         <button type="button" onClick={onCancel} aria-label="Cerrar" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[#B5B5B5] hover:bg-white/[0.12]">
@@ -83,28 +83,8 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
           style={{ fontFamily: "ui-serif, 'New York', Georgia, serif" }}
         />
 
-        <div className="flex flex-col gap-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Guardar en</p>
-          <div className="flex flex-wrap gap-2">
-            {tree.map((cat, i) => {
-              const on = activeCategoryId === cat.id
-              return (
-                <button key={cat.id} type="button" onClick={() => setSubcategory(cat.subcategories[0].id)} className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors" style={{ background: on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.045)', color: on ? '#F5F5F5' : '#9A9A9A' }}>
-                  <span className="h-2 w-2 rounded-full" style={{ background: FOLDER_TINTS[i % FOLDER_TINTS.length], opacity: on ? 1 : 0.6 }} />
-                  {cat.label}
-                </button>
-              )
-            })}
-          </div>
-          <div className="flex flex-wrap gap-1.5 pl-1">
-            {tree.find((c) => c.id === activeCategoryId)?.subcategories.map((sub) => (
-              <button key={sub.id} type="button" onClick={() => setSubcategory(sub.id)} className="rounded-full px-3 py-1 text-[12px] transition-colors" style={{ background: subcategory === sub.id ? tint : 'transparent', color: subcategory === sub.id ? '#0B0B0B' : '#8A8A8A', fontWeight: subcategory === sub.id ? 600 : 400 }}>
-                {sub.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+          <div className="flex min-w-0 flex-col gap-7">
         <div className="flex items-center gap-1 self-start rounded-full bg-white/[0.05] p-1">
           {[['archivo', 'Archivo o enlace'], ['escribir', 'Escribir']].map(([id, label]) => (
             <button key={id} type="button" onClick={() => switchMode(id)} className="rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150" style={{ background: mode === id ? 'rgba(255,255,255,0.12)' : 'transparent', color: mode === id ? '#F5F5F5' : '#888888' }}>
@@ -156,7 +136,6 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
               </ul>
             )}
 
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Descripción (opcional): de qué trata, cuándo usarlo…" rows={3} className={`${field} resize-none leading-relaxed`} />
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -179,6 +158,38 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
             )}
           </div>
         )}
+          </div>
+          <div className="flex flex-col gap-7 lg:sticky lg:top-6 lg:self-start">
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Guardar en</p>
+          <div className="flex flex-wrap gap-2">
+            {tree.map((cat, i) => {
+              const on = activeCategoryId === cat.id
+              return (
+                <button key={cat.id} type="button" onClick={() => setSubcategory(cat.subcategories[0].id)} className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors" style={{ background: on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.045)', color: on ? '#F5F5F5' : '#9A9A9A' }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: FOLDER_TINTS[i % FOLDER_TINTS.length], opacity: on ? 1 : 0.6 }} />
+                  {cat.label}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1.5 pl-1">
+            {tree.find((c) => c.id === activeCategoryId)?.subcategories.map((sub) => (
+              <button key={sub.id} type="button" onClick={() => setSubcategory(sub.id)} className="rounded-full px-3 py-1 text-[12px] transition-colors" style={{ background: subcategory === sub.id ? tint : 'transparent', color: subcategory === sub.id ? '#0B0B0B' : '#8A8A8A', fontWeight: subcategory === sub.id ? 600 : 400 }}>
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+            {mode === 'archivo' && (
+              <div className="flex flex-col gap-2.5">
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Descripción</p>
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="De qué trata, cuándo usarlo… (opcional)" rows={6} className={`${field} resize-none leading-relaxed`} />
+              </div>
+            )}
+          </div>
+        </div>
         {drive.prompt}
       </div>
 
