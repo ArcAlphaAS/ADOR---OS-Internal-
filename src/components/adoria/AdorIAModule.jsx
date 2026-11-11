@@ -241,8 +241,8 @@ export default function AdorIAModule({ user, onNavigate }) {
             >
               <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">ADOR IA</p>
             </motion.div>
-            <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }} className="mb-7 md:hidden">
-              <ParticleCore size={190} />
+            <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }} className="mb-7 md:mb-6">
+              <ParticleCore size={phone ? 190 : 170} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -309,7 +309,7 @@ export default function AdorIAModule({ user, onNavigate }) {
           e.preventDefault()
           send(input)
         }}
-        className="relative mt-4 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] py-2 pl-3 pr-2 backdrop-blur-xl transition-colors focus-within:border-white/[0.2] focus-within:bg-white/[0.08] md:border-transparent md:bg-white/[0.06]"
+        className="relative mt-4 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] py-2 pl-3 pr-2 backdrop-blur-xl transition-colors focus-within:border-white/[0.2] focus-within:bg-white/[0.08]"
       >
         <span className="-ml-1 flex w-9 justify-center"><ParticleCore size={30} busy={sending} /></span>
         <input

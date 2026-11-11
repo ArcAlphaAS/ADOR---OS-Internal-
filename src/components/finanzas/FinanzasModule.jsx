@@ -1,4 +1,4 @@
-import { PageSkeleton } from '../common/CardSkeleton'
+import { PageSkeleton, DesktopSkeleton } from '../common/CardSkeleton'
 import { useEffect, useState } from 'react'
 import { subscribeFinanceRecurring } from '../../lib/firestore'
 import RecurrentesCard from './RecurrentesCard'
@@ -39,6 +39,8 @@ export default function FinanzasModule({ user, onNavigate }) {
 
   const actorName = actorNameFor(user)
   const currentMonthLabel = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' })
+
+  if (!data.loaded && !phone) return <DesktopSkeleton title="Finanzas" />
 
   return (
     <motion.div

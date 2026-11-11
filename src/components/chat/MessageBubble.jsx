@@ -946,7 +946,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
                 ...(phone
                   ? { '--b': mine ? '#3a3a3c' : '#1a1a1c' }
                   : {
-                      background: mine ? '#2C2C2E' : '#1C1C1E',
+                      background: mine ? '#3A3A3C' : '#1A1A1C',
                       border: '1px solid transparent',
                     }),
                 color: mine ? MINE_INK : phone ? '#E8E8E8' : '#DDDDDD',

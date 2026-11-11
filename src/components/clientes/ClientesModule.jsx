@@ -1,3 +1,4 @@
+import { DesktopSkeleton } from '../common/CardSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
@@ -340,6 +341,8 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
   }).length
 
   const phoneMain = phone && (view === 'kanban' || view === 'list')
+
+  if (!clientsLoaded && !phone) return <DesktopSkeleton title="Clientes" />
 
   return (
     <motion.div

@@ -198,7 +198,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
   const pct = day.totalToday ? Math.round((day.completedToday / day.totalToday) * 100) : 0
 
   return (
-    <div className="ador-glass ador-grain relative overflow-hidden rounded-[28px]">
+    <div className="ador-glass ador-glow ador-grain relative overflow-hidden rounded-[28px]">
       <div
         className="pointer-events-none absolute inset-x-10 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${GOLD}99, transparent)` }}

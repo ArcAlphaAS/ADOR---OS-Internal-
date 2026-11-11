@@ -41,3 +41,26 @@ export function PageSkeleton() {
     </div>
   )
 }
+
+// Esqueleto para computadora: el título de la pantalla y tres columnas de tarjetas con brillo
+// suave, mientras llegan los datos.
+export function DesktopSkeleton({ title }) {
+  return (
+    <div className="mx-auto max-w-[1480px] px-4 pb-16 pt-6 md:px-8 lg:px-12 lg:pt-10" aria-busy="true" aria-label="Cargando">
+      {title && <h1 className="ador-title mb-8">{title}</h1>}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {[0, 1, 2].map((c) => (
+          <div key={c} className="flex flex-col gap-6">
+            {[0, 1].map((r) => (
+              <div key={r} className="rounded-[24px] bg-white/[0.04] p-6" style={{ height: r === 0 ? 220 : 170 }}>
+                <span className="ador-skeleton block h-[12px] w-[28%] rounded-full" />
+                <span className="ador-skeleton mt-5 block h-[30px] w-[58%] rounded-full" />
+                <span className="ador-skeleton mt-6 block h-[44px] w-full rounded-[14px]" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
