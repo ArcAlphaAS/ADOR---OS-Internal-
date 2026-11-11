@@ -21,11 +21,16 @@ function dayLabel(ts) {
 
 function DateDivider({ ts }) {
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="h-px flex-1 bg-white/[0.06]" />
-      <span className="text-[11px] font-medium text-[#8A8A8A]">{dayLabel(ts)}</span>
-      <div className="h-px flex-1 bg-white/[0.06]" />
-    </div>
+    <>
+      <div className="flex items-center gap-3 py-2 max-md:hidden">
+        <div className="h-px flex-1 bg-white/[0.06]" />
+        <span className="text-[11px] font-medium text-[#8A8A8A]">{dayLabel(ts)}</span>
+        <div className="h-px flex-1 bg-white/[0.06]" />
+      </div>
+      <div className="flex justify-center py-3 md:hidden">
+        <span className="rounded-full bg-[#1C1C1E] px-3 py-1 text-[12px] font-medium text-[#B5B5BA]">{dayLabel(ts)}</span>
+      </div>
+    </>
   )
 }
 
@@ -135,6 +140,8 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
     }
   }, [lastId, messages.length, q, conversationKey])
 
+  const [floatDay, setFloatDay] = useState(null)
+  const floatTimer = useRef(null)
   const onScroll = () => {
     const el = scrollRef.current
     if (!el) return
@@ -142,6 +149,14 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
     atBottomRef.current = bottom
     setAtBottom(bottom)
     if (bottom && anchorId !== lastId) setAnchorId(lastId)
+    // Teléfono: mientras desplazas, una píldora arriba dice de qué día son los mensajes que ves.
+    if (window.innerWidth < 768) {
+      const top = el.getBoundingClientRect().top + 24
+      const first = [...el.querySelectorAll('[data-day]')].find((n) => n.getBoundingClientRect().bottom > top)
+      if (first) setFloatDay(first.dataset.day)
+      clearTimeout(floatTimer.current)
+      floatTimer.current = setTimeout(() => setFloatDay(null), 1100)
+    }
   }
 
   const anchorIndex = anchorId ? messages.findIndex((m) => m.id === anchorId) : -1
@@ -198,6 +213,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
   return (
     <HighlightContext.Provider value={q || ""}>
     <div className="relative flex min-h-0 flex-1 flex-col">
+    {floatDay && <div className="pointer-events-none absolute left-0 right-0 top-2 z-20 flex justify-center md:hidden"><span className="ador-pop-in rounded-full bg-[#2C2C2E]/90 px-3 py-1 text-[12px] font-medium text-[#E4E4E4] backdrop-blur-md">{floatDay}</span></div>}
     <div ref={scrollRef} onScroll={onScroll} data-keep-scroll className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-1 pb-0 pt-4 md:pb-4">
       {hasMore && !q && (
         <button type="button" onClick={loadOlder} className="mx-auto mb-3 rounded-full border border-white/[0.1] px-3 py-1 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
@@ -251,7 +267,7 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
           const end = al ? flags[al.to].end : flags[i].end
           const gap = i === 0 ? 0 : start || showDivider ? 14 : 3
           return (
-            <div key={m.id} id={`msg-${m.id}`} className={`flex flex-col ${isNew(m.id) ? (mine ? 'ador-msg-send' : 'ador-msg-in') : ''}`} style={{ marginTop: gap }}>
+            <div key={m.id} id={`msg-${m.id}`} data-day={dayLabel(m.createdAt)} className={`flex flex-col ${isNew(m.id) ? (mine ? 'ador-msg-send' : 'ador-msg-in') : ''}`} style={{ marginTop: gap }}>
               {showDivider && <DateDivider ts={m.createdAt} />}
               {i === firstNewIndex && <NewDivider />}
               <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>

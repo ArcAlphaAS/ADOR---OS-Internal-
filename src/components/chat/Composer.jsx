@@ -737,7 +737,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className={`ador-lg-white ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
+            className={`ador-pop-in ador-lg-white ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />

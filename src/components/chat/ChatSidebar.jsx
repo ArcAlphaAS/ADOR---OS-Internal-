@@ -347,7 +347,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
             </button>
             {[...allOthers].sort((a, b) => ms(dmKey(b)) - ms(dmKey(a)) || userLabel(a).localeCompare(userLabel(b), 'es')).map((u) => (
               <button key={u.id} type="button" onClick={() => onSelect({ type: 'dm', id: u.id })} className="flex w-[64px] flex-shrink-0 flex-col items-center gap-1.5">
-                <span className="rounded-full p-[3px]" style={{ boxShadow: unreadMap[dmKey(u)] ? '0 0 0 2px #F4EEE2' : '0 0 0 2px transparent' }}><PersonAvatar uid={u.id} name={userLabel(u)} size={58} showPresence /></span>
+                <span className="rounded-full p-[3px]" style={{ boxShadow: unreadMap[dmKey(u)] ? '0 0 0 2.5px #F4EEE2, 0 0 14px rgba(244,238,226,0.25)' : '0 0 0 2px transparent' }}><PersonAvatar uid={u.id} name={userLabel(u)} size={58} showPresence /></span>
                 <span className="w-full truncate text-center text-[12px] text-[#D5D5D5]">{userLabel(u).split(' ')[0]}</span>
               </button>
             ))}

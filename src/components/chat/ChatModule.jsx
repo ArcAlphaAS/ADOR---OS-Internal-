@@ -875,7 +875,15 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onAck={handleAck}
               audienceUids={conversationAudience}
             />
-            <p className="h-4 px-1 text-[11px] italic text-[#8A8A8A]">{typingLabel(typers)}</p>
+            <p className="h-4 px-1 text-[11px] italic text-[#8A8A8A] max-md:hidden">{typingLabel(typers)}</p>
+            {typers.length > 0 && (
+              <div className="ador-pop-in flex items-end gap-2 px-1 pb-1 md:hidden" aria-label={typingLabel(typers)}>
+                <span className="flex items-center gap-1.5 rounded-[20px] bg-[#1A1A1C] px-4 py-3">
+                  {[0, 1, 2].map((i) => <span key={i} className="h-[7px] w-[7px] rounded-full bg-[#9A9AA0]" style={{ animation: `ador-typing-dot 1.2s ease-in-out ${i * 0.16}s infinite` }} />)}
+                </span>
+                <span className="pb-1 text-[11.5px] text-[#8E8E93]">{typers.length === 1 ? String(typers[0]).split(' ')[0] : `${typers.length} personas`}</span>
+              </div>
+            )}
             {myScheduled.length > 0 && (
               <div className="mb-1 flex flex-col gap-1">
                 {myScheduled.map((x) =>

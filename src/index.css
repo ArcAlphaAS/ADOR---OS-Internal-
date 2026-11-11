@@ -409,12 +409,12 @@ input:-webkit-autofill:focus {
     border: 0;
   }
   .ador-lg-mine {
-    background: #2c2c2e;
+    background: #3a3a3c;
     box-shadow: none;
     border: 0;
   }
   .ador-lg-theirs {
-    background: #1c1c1e;
+    background: #1a1a1c;
     box-shadow: none;
     border: 0;
   }
@@ -888,3 +888,22 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 @media (max-width: 1023px) {
   .ador-title { opacity: calc(1 - var(--tp, 0)); transform: scale(calc(1 - var(--tp, 0) * 0.06)); transform-origin: 0 50%; }
 }
+
+
+/* Chat en teléfono: "cola" de iOS en la última burbuja de cada bloque. La cola es un recorte
+   curvo del mismo color de la burbuja (--b) más un tapón negro del color de fondo. */
+@media (max-width: 767px) {
+  .ador-tail { position: relative; }
+  .ador-tail::before, .ador-tail::after { content: ''; position: absolute; bottom: 0; }
+  .ador-tail-r::before { right: -7px; width: 20px; height: 18px; background: var(--b); border-bottom-left-radius: 16px 14px; }
+  .ador-tail-r::after { right: -26px; width: 26px; height: 18px; background: #000; border-bottom-left-radius: 10px; }
+  .ador-tail-l::before { left: -7px; width: 20px; height: 18px; background: var(--b); border-bottom-right-radius: 16px 14px; }
+  .ador-tail-l::after { left: -26px; width: 26px; height: 18px; background: #000; border-bottom-right-radius: 10px; }
+}
+
+/* "Escribiendo…": burbuja con tres puntos que suben y bajan. */
+@keyframes ador-typing-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
+/* Aparece con resorte (el botón de enviar cuando empiezas a escribir). */
+@keyframes ador-pop-in { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+.ador-pop-in { animation: ador-pop-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@media (prefers-reduced-motion: reduce) { .ador-pop-in { animation: none; } }

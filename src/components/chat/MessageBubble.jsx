@@ -421,11 +421,13 @@ function CallCard({ call, authorName, mine, createdAt, currentUid, userName }) {
   )
 }
 
-function Reactions({ reactions, currentUid, userName, onReact }) {
+function Reactions({ reactions, currentUid, userName, onReact, mine, phone }) {
   const entries = Object.entries(reactions || {}).filter(([, uids]) => uids?.length)
   if (!entries.length) return null
+  // Teléfono: las reacciones son un globito pegado al borde de abajo de la burbuja (se montan
+  // sobre ella), con un aro del color del fondo, como el tapback de iOS.
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className={`flex flex-wrap gap-1 ${phone ? `-mt-3 mb-1 ${mine ? 'justify-end pr-3' : 'justify-start pl-3'} relative z-[1]` : ''}`}>
       {entries.map(([emoji, uids]) => {
         const mine = uids.includes(currentUid)
         return (
@@ -434,8 +436,8 @@ function Reactions({ reactions, currentUid, userName, onReact }) {
             type="button"
             title={uids.map(userName).join(', ')}
             onClick={() => onReact(emoji, mine)}
-            className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12.5px] transition-colors"
-            style={{
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[12.5px] transition-colors ${phone ? 'border-0' : 'border'}`}
+            style={phone ? { background: mine ? '#4a4a4d' : '#2c2c2e', boxShadow: '0 0 0 2.5px #000', color: '#F2F2F2' } : {
               borderColor: mine ? 'rgba(244,238,226,0.4)' : 'rgba(255,255,255,0.1)',
               background: mine ? 'rgba(244,238,226,0.12)' : 'rgba(255,255,255,0.03)',
               color: '#DDDDDD',
@@ -936,13 +938,13 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           )}
           {showBubble && !emojiOnly && (
             <div
-              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
+              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'} ${groupEnd && !message.important ? `ador-tail ${mine ? 'ador-tail-r' : 'ador-tail-l'}` : ''}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
               style={{
                 // Phones: flat Apple dark-mode greys (index.css .ador-lg-*) —
                 // yours the elevated grey, what you receive the darker one.
                 // Computers keep the flat look below.
                 ...(phone
-                  ? {}
+                  ? { '--b': mine ? '#3a3a3c' : '#1a1a1c' }
                   : {
                       background: mine ? '#2C2C2E' : '#1C1C1E',
                       border: '1px solid transparent',
@@ -995,7 +997,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
         </div>
       </div>
       {heart && <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-[56px]" style={{ animation: 'ador-heart-pop 0.7s ease-out forwards' }}>❤️</span>}
-      <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} />
+      <Reactions reactions={message.reactions} currentUid={currentUid} userName={userName} onReact={onReact} mine={mine} phone={phone} />
       {onOpenThread && <ThreadSummary message={message} userPhoto={userPhoto} userName={userName} onOpen={onOpenThread} />}
       {(groupEnd || message.editedAt || pinned) && !(phone && showBubble && !emojiOnly) && (
         <p className="flex items-center gap-1.5 px-1 text-[11px] text-[#8A8A8A]">
