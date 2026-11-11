@@ -30,6 +30,7 @@ import usePhone from '../../hooks/usePhone'
 import Avatar from '../shell/Avatar'
 import {
   BookIcon,
+  FolderIcon,
   SearchIcon,
   PlusIcon,
   EditIcon,
@@ -156,9 +157,14 @@ function NewSectionRow({ onCreate }) {
 // a chevron (separate from the label, which filters); admins can add a
 // custom section to any category from "+ Nueva sección". ----
 function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, total, isAdminUser, onCreateSection }) {
-  const [collapsed, setCollapsed] = useState(() => new Set())
+  // Como Notas o Finder: las carpetas empiezan cerradas y solo se abre la que estás usando.
+  const [open, setOpen] = useState(() => new Set())
+  useEffect(() => {
+    const parent = filter.type === 'category' ? filter.id : filter.type === 'subcategory' ? tree.find((c) => c.subcategories.some((x) => x.id === filter.id))?.id : null
+    if (parent) setOpen((prev) => (prev.has(parent) ? prev : new Set(prev).add(parent)))
+  }, [filter, tree])
   const toggleCollapsed = (id) =>
-    setCollapsed((prev) => {
+    setOpen((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -167,7 +173,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 
   return (
     <div className="flex w-full flex-shrink-0 flex-col gap-4 lg:w-[240px]">
-      <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
+      <div className="flex items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 py-2.5">
         <SearchIcon size={13} className="text-[#8A8A8A]" />
         <input
           type="text"
@@ -182,22 +188,24 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
         <button
           type="button"
           onClick={onSelectAll}
-          className="flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-150"
-          style={{ color: filter.type === 'all' ? '#F4EEE2' : '#CCCCCC' }}
+          className="flex items-center justify-between rounded-[10px] px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors duration-150 hover:bg-white/[0.05]"
+          style={{ color: filter.type === 'all' ? '#FFFFFF' : '#D0D0D0', background: filter.type === 'all' ? 'rgba(255,255,255,0.1)' : undefined }}
         >
-          <span className="flex items-center gap-2">
-            <BookIcon size={14} />
+          <span className="flex items-center gap-2.5">
+            <BookIcon size={15} style={{ color: 'var(--mod, #8A8A8A)' }} />
             Todos
           </span>
-          <span className="text-[11px] text-[#8A8A8A]">{total}</span>
+          {total > 0 && <span className="text-[11.5px] text-[#8A8A8A]">{total}</span>}
         </button>
+
+        <p className="px-2.5 pb-0.5 pt-4 text-[11px] font-medium text-[#8A8A8A]">Carpetas</p>
 
         {tree.map((cat) => {
           const catActive = filter.type === 'category' && filter.id === cat.id
-          const isCollapsed = collapsed.has(cat.id)
+          const isCollapsed = !open.has(cat.id)
           return (
             <div key={cat.id}>
-              <div className="flex items-center rounded-lg transition-colors duration-150" style={{ color: catActive ? '#F4EEE2' : '#CCCCCC' }}>
+              <div className="flex items-center rounded-[10px] transition-colors duration-150 hover:bg-white/[0.05]" style={{ color: catActive ? '#FFFFFF' : '#D0D0D0', background: catActive ? 'rgba(255,255,255,0.1)' : undefined }}>
                 <button
                   type="button"
                   onClick={() => toggleCollapsed(cat.id)}
@@ -205,13 +213,18 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                 >
                   <ChevronDownIcon size={11} style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }} />
                 </button>
-                <button type="button" onClick={() => onSelectCategory(cat.id)} className="flex flex-1 items-center justify-between py-2 pr-2.5 text-left text-[13px] font-medium">
-                  <span className="truncate">{cat.label}</span>
-                  <span className="text-[11px] text-[#8A8A8A]">{counts[cat.id] || 0}</span>
+                <button type="button" onClick={() => onSelectCategory(cat.id)} className="flex flex-1 items-center justify-between gap-2 py-2 pr-2.5 text-left text-[13.5px] font-medium">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <FolderIcon size={15} style={{ color: 'var(--mod, #8A8A8A)' }} />
+                    <span className="truncate">{cat.label}</span>
+                  </span>
+                  {(counts[cat.id] || 0) > 0 && <span className="text-[11.5px] text-[#8A8A8A]">{counts[cat.id]}</span>}
                 </button>
               </div>
+              <AnimatePresence initial={false}>
               {!isCollapsed && (
-                <div className="ml-[13px] flex flex-col border-l border-white/[0.1] pb-0.5 pl-3">
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: 'spring', stiffness: 320, damping: 34 }} className="overflow-hidden">
+                <div className="ml-[19px] flex flex-col pb-1 pl-2.5 pt-0.5">
                   {cat.subcategories.map((sub) => {
                     const Icon = subIcon(sub)
                     const subActive = filter.type === 'subcategory' && filter.id === sub.id
@@ -220,21 +233,22 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                         key={sub.id}
                         type="button"
                         onClick={() => onSelectSubcategory(sub.id)}
-                        className="relative flex items-center justify-between gap-2 rounded-lg py-1.5 pl-4 pr-2 text-left text-[12px] transition-colors duration-150"
-                        style={{ color: subActive ? '#F4EEE2' : '#888888', background: subActive ? 'rgba(244,238,226,0.1)' : 'transparent' }}
+                        className="relative flex items-center justify-between gap-2 rounded-[9px] py-1.5 pl-2.5 pr-2 text-left text-[12.5px] transition-colors duration-150 hover:bg-white/[0.05]"
+                        style={{ color: subActive ? '#FFFFFF' : '#A0A0A5', background: subActive ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                       >
-                        <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-white/[0.12]" />
                         <span className="flex min-w-0 items-center gap-1.5">
                           <Icon size={12} className="flex-shrink-0" />
                           <span className="truncate">{sub.label}</span>
                         </span>
-                        <span className="flex-shrink-0 text-[10.5px] text-[#8A8A8A]">{subCounts[sub.id] || 0}</span>
+                        {(subCounts[sub.id] || 0) > 0 && <span className="flex-shrink-0 text-[11px] text-[#8A8A8A]">{subCounts[sub.id]}</span>}
                       </button>
                     )
                   })}
                   {isAdminUser && <NewSectionRow onCreate={(name) => onCreateSection(cat.id, name)} />}
                 </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           )
         })}
