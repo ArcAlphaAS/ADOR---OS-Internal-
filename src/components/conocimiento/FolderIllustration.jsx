@@ -69,3 +69,6 @@ export default function FolderIllustration({ id, size = 72, tint = '#8A8F98' }) 
     </svg>
   )
 }
+
+// Muted, corporate tints, assigned by position so a new category always gets one.
+export const FOLDER_TINTS = ['#7B8CA8', '#A39382', '#7E9A8D', '#8F8BA3', '#9A8A8A', '#7D95A0']

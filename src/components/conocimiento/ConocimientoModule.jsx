@@ -25,7 +25,7 @@ import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import DocEditor from './DocEditor'
-import FolderIllustration from './FolderIllustration'
+import FolderIllustration, { FOLDER_TINTS } from './FolderIllustration'
 import PhoneKnowledge from './PhoneKnowledge'
 import usePhone from '../../hooks/usePhone'
 import Avatar from '../shell/Avatar'
@@ -309,7 +309,6 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 // illustrative treatment than a UI icon normally would.
 // Neutral, corporate tints — muted, never saturated — assigned by position
 // so a new category always gets one.
-const FOLDER_TINTS = ['#7B8CA8', '#A39382', '#7E9A8D', '#8F8BA3', '#9A8A8A', '#7D95A0']
 
 function TypeCards({ tree, counts, onSelect, docs }) {
   return (
