@@ -806,7 +806,7 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
   margin-right: 0.36em;
   vertical-align: 0.14em;
 }
-[data-mod='inicio'] .ador-title::before { display: none; }
+[data-mod] .ador-title::before { display: none; }
 
 /* Hoja abierta: la pantalla de atrás se aleja y se oscurece (iOS). Solo teléfono/tablet
    vertical; la barra de arriba y la de abajo no se tocan. */

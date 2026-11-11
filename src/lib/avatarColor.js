@@ -1,14 +1,6 @@
-// Fondo de las iniciales cuando alguien no tiene foto: un degradado suave y estable
-// (siempre el mismo para la misma persona), tomado de la paleta de iOS pero apagado
-// para que una lista llena de avatares no se vuelva un arcoíris.
-const GRADIENTS = [
-  ['#D98A1E', '#A85F00'], ['#2FA84F', '#1B7A35'], ['#3A8EE8', '#2260B8'], ['#A55BD8', '#7A3BAA'],
-  ['#D8445F', '#A82744'], ['#4FA9CC', '#2F7C9E'], ['#C9A227', '#9A7A12'], ['#6360C8', '#4745A0'],
-]
-export function avatarGradient(seed) {
-  const s = String(seed || '?')
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
-  const [a, b] = GRADIENTS[h % GRADIENTS.length]
-  return `linear-gradient(145deg, ${a}, ${b})`
+// Fondo de las iniciales cuando alguien no tiene foto: el degradado gris de Contactos de
+// Apple (el mismo para todos, sin colores). Se mantiene `seed` por si algún día se
+// quiere variar por persona.
+export function avatarGradient() {
+  return 'linear-gradient(180deg, #8E9097 0%, #6C6E75 100%)'
 }

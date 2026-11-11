@@ -9,7 +9,7 @@ import ProfileMenu from './ProfileMenu'
 import PhoneProfile from './PhoneProfile'
 import { useArchivedNotifications } from '../../hooks/useArchivedNotifications'
 import usePhone from '../../hooks/usePhone'
-import { MODULE_LABELS, moduleColor } from '../../lib/moduleColors'
+import { MODULE_LABELS } from '../../lib/moduleColors'
 import ProfileModal from './ProfileModal'
 import SettingsModal from './SettingsModal'
 import SearchResults from './SearchResults'
@@ -432,7 +432,6 @@ export default function TopBar({
         className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 items-center gap-2 lg:hidden"
         style={{ top: 'calc(env(safe-area-inset-top, 0px) + 32px)', marginTop: -10 }}
       >
-        <span className="h-2 w-2 rounded-full" style={{ background: moduleColor(activeModule) }} />
         <span className="text-[16px] font-semibold text-[#F5F5F5]">{MODULE_LABELS[activeModule] || ''}</span>
       </motion.div>
 
