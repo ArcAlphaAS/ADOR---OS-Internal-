@@ -18,9 +18,10 @@ export function useObjetivosData(selectedQuarter) {
   const [clients, setClients] = useState([])
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
+  const [loaded, setLoaded] = useState(false)
   const { recaudadoTrimestre } = useFinanceData()
 
-  useEffect(() => subscribeObjetivos(setObjetivos), [])
+  useEffect(() => subscribeObjetivos((o) => { setObjetivos(o); setLoaded(true) }), [])
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeAllTasks(setTasks), [])
   useEffect(() => subscribeUsers(setUsers), [])
@@ -89,6 +90,7 @@ export function useObjetivosData(selectedQuarter) {
   }).length
 
   return {
+    loaded,
     objetivos: currentQuarterObjetivos,
     quarterKey: qKey,
     isCurrentQuarter: isCurrent,

@@ -1,3 +1,4 @@
+import { PageSkeleton } from '../common/CardSkeleton'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useObjetivosData } from '../../hooks/useObjetivosData'
@@ -197,7 +198,7 @@ function MetricasCard({ liveValues, objetivos, isCurrentQuarter }) {
 export default function ObjetivosModule({ user, onNavigate }) {
   const access = useAccess()
   const [viewQuarter, setViewQuarter] = useState(currentQuarterKey())
-  const { objetivos, quarterKey, isCurrentQuarter, northStar, users, openLinkedTasks, liveValueByMetric, activeExperiments, quarterDecisions } = useObjetivosData(viewQuarter)
+  const { loaded, objetivos, quarterKey, isCurrentQuarter, northStar, users, openLinkedTasks, liveValueByMetric, activeExperiments, quarterDecisions } = useObjetivosData(viewQuarter)
   const [showNew, setShowNew] = useState(false)
   const [preset, setPreset] = useState(null)
   const actorName = actorNameFor(user)
@@ -270,9 +271,10 @@ export default function ObjetivosModule({ user, onNavigate }) {
         </button>
       </div>
 
-      <SummaryStrip items={summary} />
+      {!loaded && <PageSkeleton />}
+      {loaded && <SummaryStrip items={summary} />}
 
-      {objetivos.length === 0 ? (
+      {!loaded ? null : objetivos.length === 0 ? (
         <EmptyBoardCTA quarterKey={quarterKey} onCreate={() => openModal()} onPreset={openModal} />
       ) : (
         <div className="flex flex-col gap-4">

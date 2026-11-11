@@ -26,9 +26,10 @@ export function useFinanceData() {
   const [expenses, setExpenses] = useState([])
   const [manualIncomes, setManualIncomes] = useState([])
   const [settings, setSettings] = useState({})
+  const [ready, setReady] = useState({ c: false, e: false })
 
-  useEffect(() => subscribeClients(setClients), [])
-  useEffect(() => subscribeExpenses(setExpenses), [])
+  useEffect(() => subscribeClients((v) => { setClients(v); setReady((r) => (r.c ? r : { ...r, c: true })) }), [])
+  useEffect(() => subscribeExpenses((v) => { setExpenses(v); setReady((r) => (r.e ? r : { ...r, e: true })) }), [])
   useEffect(() => subscribeManualIncomes(setManualIncomes), [])
   useEffect(() => subscribeFinanceSettings(setSettings), [])
 
@@ -236,6 +237,7 @@ export function useFinanceData() {
   const estadoSalud = runwayMonths === null && cashBalance === 0 ? null : isCritico ? 'Crítico' : isAtencion ? 'Atención' : 'Estable'
 
   return {
+    loaded: ready.c && ready.e,
     ingresosDelMes,
     gastosDelMes,
     utilidadNeta,

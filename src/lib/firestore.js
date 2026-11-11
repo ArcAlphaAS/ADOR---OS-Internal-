@@ -116,13 +116,18 @@ function subscribeToCollection(collectionName, constraints, onData) {
   if (!db) return () => {}
   const ref = collection(db, collectionName)
   const q = constraints.length ? query(ref, ...constraints) : ref
+  let received = false
   return onSnapshot(
     q,
     (snapshot) => {
+      received = true
       onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) })))
     },
     (error) => {
       console.error(`Firestore subscription to "${collectionName}" failed:`, error.message)
+      // Si la lectura falla antes de recibir nada, se entrega una lista vacía: así los esqueletos de
+      // carga terminan en un estado vacío en vez de quedarse brillando para siempre.
+      if (!received) onData([])
     }
   )
 }

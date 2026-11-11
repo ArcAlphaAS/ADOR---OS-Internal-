@@ -1,3 +1,4 @@
+import CardSkeleton from '../common/CardSkeleton'
 import { useMarkCommunitySeen } from '../../hooks/useCommunityNotifications'
 import { useEffect, useRef, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
@@ -414,9 +415,11 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
   useEffect(() => subscribeUsers(setUsers), [])
   const [query, setQuery] = useState('')
   const [composeRequest, setComposeRequest] = useState(0)
-  useEffect(() => subscribeNews(setPosts), [])
+  const [newsLoaded, setNewsLoaded] = useState(false)
+  const [communityLoaded, setCommunityLoaded] = useState(false)
+  useEffect(() => subscribeNews((p) => { setPosts(p); setNewsLoaded(true) }), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
-  useEffect(() => subscribeCommunityPosts(setCommunityPosts), [])
+  useEffect(() => subscribeCommunityPosts((p) => { setCommunityPosts(p); setCommunityLoaded(true) }), [])
   // Abrir Comunidad marca como vista la actividad en tus publicaciones (campana).
   const latestActivityOnMine = Math.max(0, ...communityPosts.filter((p) => p.authorUid === user?.uid).map((p) => p.lastActivity?.at?.toMillis?.() || 0))
   useMarkCommunitySeen(user?.uid, tab === 'comunidad', latestActivityOnMine)
@@ -491,7 +494,9 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
         ))}
       </div>
 
-      {tab === 'anuncios' ? (
+      {(tab === 'anuncios' ? !newsLoaded : !communityLoaded) ? (
+        <CardSkeleton rows={4} />
+      ) : tab === 'anuncios' ? (
         <ChatPeopleContext.Provider value={{ users, directory: [], presence: {} }}>
           <AnunciosTab user={user} isAdminUser={isAdminUser} focusPostId={focusPostId} posts={posts} query={query} composeRequest={composeRequest} users={users} />
         </ChatPeopleContext.Provider>

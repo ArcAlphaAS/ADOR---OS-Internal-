@@ -1,3 +1,4 @@
+import { PageSkeleton } from '../common/CardSkeleton'
 import { useEffect, useState } from 'react'
 import { subscribeFinanceRecurring } from '../../lib/firestore'
 import RecurrentesCard from './RecurrentesCard'
@@ -47,7 +48,7 @@ export default function FinanzasModule({ user, onNavigate }) {
       {phone ? (
         <>
           <h1 className="ador-title mb-5">Finanzas</h1>
-          <PhoneFinanzas data={data} onIngreso={() => setModal('ingreso')} onGasto={() => setModal('gasto')} onOpenPorCobrar={() => setDetailMode('porCobrar')} onOpenRunway={() => setDetailMode('runway')} />
+          {!data.loaded ? <PageSkeleton /> : <PhoneFinanzas data={data} onIngreso={() => setModal('ingreso')} onGasto={() => setModal('gasto')} onOpenPorCobrar={() => setDetailMode('porCobrar')} onOpenRunway={() => setDetailMode('runway')} />}
         </>
       ) : (
         <>

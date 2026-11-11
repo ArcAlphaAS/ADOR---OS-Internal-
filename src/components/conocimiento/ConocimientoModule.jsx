@@ -1,3 +1,4 @@
+import CardSkeleton from '../common/CardSkeleton'
 import { useGrowFrom } from '../../hooks/useGrowFrom'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import ContextMenu from '../common/ContextMenu'
@@ -594,7 +595,8 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   const actorName = actorNameFor(user)
   const isAdminUser = isAdmin(profile)
 
-  useEffect(() => subscribeKnowledgeDocs(setDocs), [])
+  const [docsLoaded, setDocsLoaded] = useState(false)
+  useEffect(() => subscribeKnowledgeDocs((d) => { setDocs(d); setDocsLoaded(true) }), [])
   useEffect(() => subscribeKnowledgeSections(setSections), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
@@ -733,7 +735,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
   if (phone && !editing && !openDoc) {
     return (
       <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6" {...edgeProps}>
-        <PhoneKnowledge
+        {!docsLoaded ? <CardSkeleton rows={5} /> : <PhoneKnowledge
           pinned={pinnedDocs}
           recent={recentDocs}
           index={index}
@@ -751,7 +753,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           onOpen={handleOpen}
           onNew={() => { setOpenDocId(null); setEditing('new') }}
           ago={timeAgo}
-        />
+        />}
       </div>
     )
   }
