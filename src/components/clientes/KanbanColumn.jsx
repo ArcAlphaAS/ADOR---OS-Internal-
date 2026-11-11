@@ -3,7 +3,7 @@ import { stageColor } from '../../lib/clientStages'
 import { PlusIcon } from '../icons'
 import ClientCard from './ClientCard'
 
-export default function KanbanColumn({ stage, clients, users, registerRef, onOpenClient, onContextClient, onDropStage, resolveDropStage, justConvertedId, onAddOpportunity }) {
+export default function KanbanColumn({ stage, clients, users, registerRef, onOpenClient, onContextClient, onDropStage, resolveDropStage, justConvertedId, onAddOpportunity, highlight, dragging, onDragHover, actorName }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -14,8 +14,14 @@ export default function KanbanColumn({ stage, clients, users, registerRef, onOpe
   return (
     <div
       ref={ref}
-      className="flex flex-shrink-0 flex-col rounded-2xl"
-      style={{ width: 280, background: 'rgba(255,255,255,0.02)', padding: 16 }}
+      className="flex flex-shrink-0 flex-col rounded-2xl transition-all duration-200"
+      style={{
+        width: 280,
+        padding: 16,
+        background: highlight ? 'rgba(244,238,226,0.07)' : 'rgba(255,255,255,0.02)',
+        boxShadow: highlight ? 'inset 0 0 0 1.5px rgba(244,238,226,0.35)' : 'none',
+        opacity: dragging && !highlight ? 0.72 : 1,
+      }}
     >
       <div className="mb-3 flex items-start justify-between gap-2 px-1">
         <div className="min-w-0">
@@ -38,7 +44,7 @@ export default function KanbanColumn({ stage, clients, users, registerRef, onOpe
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.1]">
               <PlusIcon size={13} />
             </span>
-            <span className="text-[12px]">Sin oportunidades en esta etapa.</span>
+            <span className="px-3 text-center text-[12px] leading-snug">{stage.type === 'SP' ? 'Aquí aparecen los SP cuando una oportunidad pasa a Intervención Activa.' : `${stage.description}. Arrastra una oportunidad aquí o añade una nueva.`}</span>
           </button>
         ) : (
           clients.map((client) => (
@@ -51,6 +57,8 @@ export default function KanbanColumn({ stage, clients, users, registerRef, onOpe
               onDropStage={onDropStage}
               resolveDropStage={resolveDropStage}
               justConverted={client.id === justConvertedId}
+              onDragHover={onDragHover}
+              actorName={actorName}
             />
           ))
         )}

@@ -3,7 +3,7 @@ import { subscribeAllTasks, subscribeUsers } from '../lib/firestore'
 import { useFinanceData } from './useFinanceData'
 import { useObjetivosData } from './useObjetivosData'
 import { computeWorkload, isOverdue } from '../lib/workspace'
-import { daysSince } from '../lib/clientStages'
+import { daysSince, contactDate } from '../lib/clientStages'
 import { weekRange, buildWeeklyNarrative, weeklyRhythm } from '../lib/weeklySummary'
 import { allPayments } from '../lib/clientStages'
 
@@ -54,7 +54,7 @@ export function useWeeklySummary() {
     const createdAt = client.createdAt?.toDate?.()
     if (createdAt && createdAt >= range.start && createdAt <= range.end) newClients.push(client)
     if (client.stage !== 'intervencion_activa' && !client.lost) {
-      const days = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
+      const days = daysSince(contactDate(client))
       if (days !== null && days >= 7) staleClients.push(client)
     }
   }

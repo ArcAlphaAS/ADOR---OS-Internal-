@@ -1,7 +1,9 @@
 import { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { clientType, daysSince, urgencyColor, paymentStatusLabel, currencyPEN } from '../../lib/clientStages'
+import { clientType, daysSince, urgencyColor, paymentStatusLabel, currencyPEN, contactDate, collectionProgress } from '../../lib/clientStages'
 import { ArrowRightIcon } from '../icons'
+import { registerContact } from '../../lib/firestore'
+import { useToast } from '../../hooks/useToast'
 
 function AsociadoAvatar({ uid, users }) {
   const person = users?.find((u) => u.id === uid)
@@ -16,9 +18,12 @@ function AsociadoAvatar({ uid, users }) {
   )
 }
 
-export default function ClientCard({ client, users, onOpen, onContext, onDropStage, resolveDropStage, justConverted }) {
+export default function ClientCard({ client, users, onOpen, onContext, onDropStage, resolveDropStage, justConverted, onDragHover, actorName }) {
+  const showToast = useToast()
+  const money = collectionProgress(client)
+  const moneyPct = money.total > 0 ? Math.min(100, Math.round((money.received / money.total) * 100)) : 0
   const type = clientType(client.stage)
-  const daysSinceContact = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
+  const daysSinceContact = daysSince(contactDate(client))
   const payment = paymentStatusLabel(client)
   const showPayment = client.pago1?.status === 'Recibido' || client.pago2?.status === 'Recibido'
 
@@ -37,12 +42,15 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
       layoutId={client.id}
       drag
       dragSnapToOrigin
+      dragTransition={{ bounceStiffness: 520, bounceDamping: 28 }}
       dragMomentum={false}
       whileDrag={{ scale: 1.04, boxShadow: '0 20px 40px -12px rgba(0,0,0,0.6)', zIndex: 20 }}
       onDragStart={() => {
         didDragRef.current = true
       }}
+      onDrag={(_, info) => onDragHover?.(resolveDropStage(info.point.x, info.point.y))}
       onDragEnd={(_, info) => {
+        onDragHover?.(null)
         const targetStage = resolveDropStage(info.point.x, info.point.y)
         if (targetStage && targetStage !== client.stage) onDropStage(client, targetStage)
         // Cleared a tick later, not synchronously — the native click for
@@ -73,7 +81,7 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
           : {}
       }
       transition={justConverted ? { duration: 1.4, ease: 'easeOut' } : { duration: 0.15 }}
-      className="ador-glass ador-grain relative cursor-pointer rounded-xl p-4"
+      className="ador-glass ador-grain group relative cursor-pointer rounded-xl p-4"
     >
       <div className="flex items-center justify-between">
         <span className="text-[14px] font-semibold text-[#F5F5F5]">{client.name}</span>
@@ -92,6 +100,15 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
           <span className="text-[12px] font-medium text-[#F5F5F5]">{currencyPEN.format(client.montoAcordado)}</span>
         ) : null}
       </div>
+
+      {money.total > 0 && (
+        <div className="mt-2.5" title={`${currencyPEN.format(money.received)} cobrado de ${currencyPEN.format(money.total)}`}>
+          <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.08]">
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${moneyPct}%`, background: money.overdue ? '#E05252' : '#F4EEE2' }} />
+          </div>
+          {money.overdue && <p className="mt-1 text-[10.5px] text-[#E05252]">Pago atrasado</p>}
+        </div>
+      )}
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
@@ -114,6 +131,20 @@ export default function ClientCard({ client, users, onOpen, onContext, onDropSta
           </span>
         )}
       </div>
+
+      {actorName && (
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            registerContact(client, actorName).then(() => showToast(`Contacto con ${client.name} registrado.`)).catch((err) => showToast(`No se pudo registrar: ${err.message}`))
+          }}
+          className="absolute right-3 top-3 rounded-full bg-white/[0.1] px-2.5 py-1 text-[10.5px] font-medium text-[#F5F5F5] opacity-0 transition-opacity duration-150 hover:bg-white/[0.18] group-hover:opacity-100"
+        >
+          Contacté hoy
+        </button>
+      )}
 
       {client.nextStep && (
         <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/[0.06] pt-2.5 text-[12px] text-[#888888]">

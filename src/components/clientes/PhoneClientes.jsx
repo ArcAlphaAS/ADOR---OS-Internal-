@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { STAGES, daysSince, currencyPEN } from '../../lib/clientStages'
+import { STAGES, daysSince, currencyPEN, contactDate } from '../../lib/clientStages'
 import { SearchIcon, PlusIcon, UsersIcon } from '../icons'
 import EmptyState from '../common/EmptyState'
 import SwipeRow from '../common/SwipeRow'
@@ -18,7 +18,7 @@ const Chip = ({ active, onClick, children }) => (
 function ClientRow({ client, assignee, onOpen, onNextStage }) {
   const stage = STAGES.find((s) => s.id === client.stage)
   const isSP = stage?.type === 'SP'
-  const last = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
+  const last = daysSince(contactDate(client))
   const stale = last != null && last >= 14 && !isSP
   const initial = (assignee?.displayName || assignee?.email || '?').charAt(0).toUpperCase()
   const idx = STAGES.findIndex((s) => s.id === client.stage)
@@ -57,7 +57,7 @@ export default function PhoneClientes({ clients, users, completedCount, lostCoun
     const needle = q.trim().toLowerCase()
     if (needle) rows = rows.filter((c) => `${c.name} ${c.contactName || ''} ${c.industria || ''}`.toLowerCase().includes(needle))
     // Lo más urgente primero: el que lleva más días sin contacto.
-    return [...rows].sort((a, b) => (daysSince(b.lastContactAt?.toDate?.() || b.createdAt?.toDate?.()) ?? 0) - (daysSince(a.lastContactAt?.toDate?.() || a.createdAt?.toDate?.()) ?? 0))
+    return [...rows].sort((a, b) => (daysSince(contactDate(b)) ?? 0) - (daysSince(contactDate(a)) ?? 0))
   }, [clients, stage, q])
   const pipeline = clients.filter((c) => c.stage !== 'intervencion_activa')
   const potencial = pipeline.reduce((s, c) => s + (c.montoAcordado || 0), 0)

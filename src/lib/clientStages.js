@@ -230,3 +230,35 @@ export function pipelineHealth(clients) {
 
   return { conversionRate, avgDaysInStage, lostBreakdown, lostTotal: lostClients.length }
 }
+
+// Last contact as a Date. `lastContactAt` is a "YYYY-MM-DD" string when the
+// team registers a contact and a Timestamp on older records; falls back to
+// when the client was created.
+export function contactDate(client) {
+  const v = client?.lastContactAt
+  if (v?.toDate) return v.toDate()
+  if (typeof v === 'string' && v) {
+    const d = new Date(`${v.slice(0, 10)}T12:00:00`)
+    if (!Number.isNaN(d.getTime())) return d
+  }
+  return client?.createdAt?.toDate?.() || null
+}
+
+// Money progress for a client: what is already collected out of the total,
+// and whether anything pending is past its date.
+export function collectionProgress(client) {
+  const today = todayISO()
+  if (client?.billing) {
+    const cobros = client.cobros || []
+    const total = cobros.reduce((s, c) => s + (Number(c.amount) || 0), 0)
+    const received = cobros.filter((c) => c.status === 'Recibido').reduce((s, c) => s + (Number(c.amount) || 0), 0)
+    const overdue = cobros.some((c) => c.status !== 'Recibido' && c.date && c.date < today)
+    return { total, received, overdue }
+  }
+  const total = Number(client?.montoAcordado) || 0
+  const received = (client?.pago1?.status === 'Recibido' ? (total * PAGO1_PERCENT) / 100 : 0) + (client?.pago2?.status === 'Recibido' ? (total * PAGO2_PERCENT) / 100 : 0)
+  const overdue = ['pago1', 'pago2'].some((k) => client?.[k]?.status === 'Pendiente' && client[k].date && client[k].date < today)
+  return { total, received, overdue }
+}
+
+export const hasPendingMoney = (client) => pendingPaymentAmount(client) > 0

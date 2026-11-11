@@ -7,6 +7,7 @@ import {
   paymentStatusLabel,
   daysSince,
   currencyPEN,
+  contactDate,
 } from '../../lib/clientStages'
 import { updateClient, moveClientStage } from '../../lib/firestore'
 import { EditIcon, ArrowRightIcon, SearchIcon } from '../icons'
@@ -62,7 +63,7 @@ function NextStepCell({ client }) {
 const FILTERS_DEFAULT = { stage: 'all', type: 'all', assignedTo: 'all', payment: 'all' }
 
 export default function ListView({ clients, users, onOpenClient, onContextClient, actorName }) {
-  const [search, setSearch] = useState('')
+  const search = ''
   const [filters, setFilters] = useState(FILTERS_DEFAULT)
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState('asc')
@@ -83,18 +84,36 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
     const sorted = [...rows].sort((a, b) => {
       let av, bv
       if (sortKey === 'name') [av, bv] = [a.name || '', b.name || '']
+      else if (sortKey === 'code') [av, bv] = [a.code || '', b.code || '']
+      else if (sortKey === 'type') [av, bv] = [clientType(a.stage), clientType(b.stage)]
+      else if (sortKey === 'nextStep') [av, bv] = [a.nextStep || '', b.nextStep || '']
+      else if (sortKey === 'payment') [av, bv] = [paymentStatusLabel(a), paymentStatusLabel(b)]
+      else if (sortKey === 'assigned') [av, bv] = [users.find((u) => u.id === a.assignedTo)?.displayName || '', users.find((u) => u.id === b.assignedTo)?.displayName || '']
       else if (sortKey === 'stage') [av, bv] = [STAGES.findIndex((s) => s.id === a.stage), STAGES.findIndex((s) => s.id === b.stage)]
       else if (sortKey === 'revenue') [av, bv] = [a.revenueEstimado || 0, b.revenueEstimado || 0]
       else if (sortKey === 'contact') {
-        av = daysSince(a.lastContactAt?.toDate?.() || a.createdAt?.toDate?.()) ?? -1
-        bv = daysSince(b.lastContactAt?.toDate?.() || b.createdAt?.toDate?.()) ?? -1
+        av = daysSince(contactDate(a)) ?? -1
+        bv = daysSince(contactDate(b)) ?? -1
       }
       if (av < bv) return sortDir === 'asc' ? -1 : 1
       if (av > bv) return sortDir === 'asc' ? 1 : -1
       return 0
     })
     return sorted
-  }, [clients, search, filters, sortKey, sortDir])
+  }, [clients, search, filters, sortKey, sortDir, users])
+
+  const onKeys = (e) => {
+    const row = e.target.closest?.('[data-client-id]')
+    if (!row || e.target.closest('select,input,button')) return
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const rows = [...e.currentTarget.querySelectorAll('[data-client-id]')]
+      rows[rows.indexOf(row) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      onOpenClient(filtered.find((c) => c.id === row.dataset.clientId))
+    }
+  }
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -109,16 +128,6 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="ador-glass flex items-center gap-2 rounded-full px-4 py-2">
-          <SearchIcon size={14} style={{ color: '#888888' }} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar SPC/SP..."
-            className="w-48 bg-transparent text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
-          />
-        </div>
-
         <select
           value={filters.stage}
           onChange={(e) => setFilters((f) => ({ ...f, stage: e.target.value }))}
@@ -186,9 +195,9 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
               ].map(([key, label]) => (
                 <th
                   key={key}
-                  onClick={() => ['name', 'stage', 'revenue', 'contact'].includes(key) && toggleSort(key)}
+                  onClick={() => toggleSort(key)}
                   className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]"
-                  style={{ cursor: ['name', 'stage', 'revenue', 'contact'].includes(key) ? 'pointer' : 'default' }}
+                  style={{ cursor: 'pointer' }}
                 >
                   {label}
                   {sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
@@ -197,7 +206,7 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
               <th className="px-5 py-3" />
             </tr>
           </thead>
-          <tbody>
+          <tbody onKeyDown={onKeys}>
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={10} className="px-5 py-10 text-center text-[13px] font-light text-[#8A8A8A]">
@@ -207,18 +216,19 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
             ) : (
               filtered.map((client) => {
                 const type = clientType(client.stage)
-                const stage = STAGES.find((s) => s.id === client.stage)
-                const days = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
+                const days = daysSince(contactDate(client))
                 return (
                   <tr
                     key={client.id}
+                    data-client-id={client.id}
+                    tabIndex={0}
                     onClick={() => onOpenClient(client)}
                     onContextMenu={(e) => {
                       if (!onContextClient) return
                       e.preventDefault()
                       onContextClient(client, e.clientX, e.clientY)
                     }}
-                    className="group cursor-pointer border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.03]"
+                    className="group cursor-pointer border-b border-white/[0.04] outline-none transition-colors duration-150 hover:bg-white/[0.03] focus-visible:bg-white/[0.07]"
                   >
                     <td className="px-5 py-3">
                       <span className="font-mono text-[11px] tracking-[0.03em] text-[#8A8A8A]">
@@ -245,12 +255,18 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span
-                        className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+                      <select
+                        value={client.stage}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => moveClientStage(client, e.target.value, actorName)}
+                        className="cursor-pointer appearance-none rounded-full px-2.5 py-1 text-[11px] font-medium outline-none"
                         style={{ background: `${stageColor(client.stage)}22`, color: stageColor(client.stage) }}
+                        title="Cambiar etapa"
                       >
-                        {stage?.label}
-                      </span>
+                        {STAGES.map((st) => (
+                          <option key={st.id} value={st.id} style={{ color: '#111' }}>{st.label}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-5 py-3 text-[12px]" style={{ color: urgencyColor(days) }}>
                       {days === null ? '—' : days === 0 ? 'Hoy' : `${days}d`}
@@ -259,7 +275,19 @@ export default function ListView({ clients, users, onOpenClient, onContextClient
                       <NextStepCell client={client} />
                     </td>
                     <td className="px-5 py-3">
-                      <AsociadoAvatar uid={client.assignedTo} users={users} />
+                      <div className="relative" onClick={(e) => e.stopPropagation()} title="Cambiar responsable">
+                        <AsociadoAvatar uid={client.assignedTo} users={users} />
+                        <select
+                          value={client.assignedTo || ''}
+                          onChange={(e) => updateClient(client.id, { assignedTo: e.target.value || null })}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        >
+                          <option value="">Sin asignar</option>
+                          {users.map((u) => (
+                            <option key={u.id} value={u.id}>{u.displayName || u.email}</option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-[12px] text-[#888888]">
                       {client.revenueEstimado ? currencyPEN.format(client.revenueEstimado) : '—'}

@@ -3,12 +3,13 @@ import { DesktopSkeleton } from '../common/CardSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { subscribeClients, subscribeUsers, getUserProfile, saveUserProfile, moveClientStage, createTask, findOrCreateGeneralProyecto } from '../../lib/firestore'
-import { daysSince, urgencyColor, currencyPEN, pendingPaymentAmount, pipelineHealth, stageLabel } from '../../lib/clientStages'
+import { daysSince, urgencyColor, currencyPEN, pendingPaymentAmount, pipelineHealth, stageLabel, contactDate, hasPendingMoney } from '../../lib/clientStages'
 import { workstreamId as buildWorkstreamId, withTimeout } from '../../lib/workspace'
 import { KanbanIcon, ListViewIcon, ArrowRightIcon, CheckCircleIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import KanbanBoard from './KanbanBoard'
 import ListView from './ListView'
+import ClientFilterBar from './ClientFilterBar'
 import LostClientsView from './LostClientsView'
 import ClientContextMenu from './ClientContextMenu'
 import CompleteClientModal from './CompleteClientModal'
@@ -46,7 +47,7 @@ function StatCard({ value, label }) {
 // stalled deal costs real pipeline value if nobody notices in time.
 function RequiereAtencion({ clients, onOpenClient }) {
   const rows = clients
-    .map((c) => ({ client: c, days: daysSince(c.lastContactAt?.toDate?.() || c.createdAt?.toDate?.()) }))
+    .map((c) => ({ client: c, days: daysSince(contactDate(c)) }))
     .filter(({ days }) => days !== null && days >= 14)
     .sort((a, b) => b.days - a.days)
 
@@ -175,7 +176,7 @@ function ProximasAcciones({ clients, onOpenClient, actorName, actorUserId }) {
 
   const rows = clients
     .filter((c) => c.nextStep?.trim())
-    .map((c) => ({ client: c, days: daysSince(c.lastContactAt?.toDate?.() || c.createdAt?.toDate?.()) }))
+    .map((c) => ({ client: c, days: daysSince(contactDate(c)) }))
     .sort((a, b) => (b.days ?? -1) - (a.days ?? -1))
     .slice(0, 5)
 
@@ -324,6 +325,17 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
 
   const selectedClient = clients.find((c) => c.id === selectedClientId) || null
   const activeClients = clients.filter((c) => !c.lost && !c.completed)
+  const [cSearch, setCSearch] = useState('')
+  const [cChips, setCChips] = useState([])
+  const toggleChip = (id) => setCChips((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  const shownClients = activeClients.filter((c) => {
+    const q = cSearch.trim().toLowerCase()
+    if (q && !`${c.name} ${c.contactName || ''} ${c.code || ''}`.toLowerCase().includes(q)) return false
+    if (cChips.includes('mine') && c.assignedTo !== user?.uid) return false
+    if (cChips.includes('money') && !hasPendingMoney(c)) return false
+    if (cChips.includes('stale') && !((daysSince(contactDate(c)) ?? 0) >= 14)) return false
+    return true
+  })
   const lostClients = clients.filter((c) => c.lost)
   const completedClients = clients.filter((c) => c.completed && !c.lost)
   // Completed SP can still owe money (Por cobrar keeps showing them).
@@ -452,6 +464,10 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
 
       )}
 
+      {!phoneMain && (view === 'kanban' || view === 'list') && (
+        <ClientFilterBar search={cSearch} onSearch={setCSearch} active={cChips} onToggle={toggleChip} shown={shownClients.length} total={activeClients.length} />
+      )}
+
       {!phoneMain && view === 'kanban' && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard value={spcInPipeline.length} label="Oportunidades" />
@@ -464,7 +480,8 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
       {phoneMain ? null : view === 'kanban' ? (
         <div className="flex flex-col gap-5">
           <KanbanBoard
-            clients={activeClients}
+            actorName={actorName}
+            clients={shownClients}
             users={users}
             onContextClient={openMenu}
             onOpenClient={(c, rect) => {
@@ -506,7 +523,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
         </div>
       ) : view === 'list' ? (
         <ListView
-          clients={activeClients}
+          clients={shownClients}
           users={users}
           onContextClient={openMenu}
           onOpenClient={(c) => {
@@ -569,6 +586,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
 
       <ClientDetailPanel
         client={selectedClient}
+        users={users}
         actorName={actorName}
         services={services}
         onComplete={setCompleting}

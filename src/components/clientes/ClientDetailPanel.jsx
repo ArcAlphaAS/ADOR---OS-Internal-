@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CloseIcon } from '../icons'
-import { clientType, LOST_REASONS } from '../../lib/clientStages'
-import { markClientLost, restoreClient } from '../../lib/firestore'
+import { clientType, LOST_REASONS, stageLabel, stageColor, daysSince, contactDate, urgencyColor, collectionProgress, currencyPEN as pen } from '../../lib/clientStages'
+import { markClientLost, restoreClient, registerContact } from '../../lib/firestore'
 import GeneralTab from './tabs/GeneralTab'
 import PagosTab from './tabs/PagosTab'
 import DocumentosTab from './tabs/DocumentosTab'
@@ -185,6 +185,49 @@ function LostControl({ client, actorName }) {
   )
 }
 
+// Top of the ficha: who they are right now at a glance — stage, owner, how
+// long since the last contact (with a one-tap "registrar contacto"), how
+// much of the money is already in, and what comes next.
+function ClientHero({ client, users, actorName }) {
+  const showToast = useToast()
+  const owner = users?.find((u) => u.id === client.assignedTo)
+  const days = daysSince(contactDate(client))
+  const money = collectionProgress(client)
+  const pct = money.total > 0 ? Math.min(100, Math.round((money.received / money.total) * 100)) : 0
+  const log = () => registerContact(client, actorName).then(() => showToast('Contacto registrado.')).catch((e) => showToast(`No se pudo registrar: ${e.message}`))
+  return (
+    <div className="mx-7 mt-4 flex flex-col gap-3.5 rounded-2xl bg-white/[0.04] p-4">
+      <div className="flex flex-wrap items-center gap-2 text-[12px]">
+        <span className="rounded-full px-2.5 py-1 font-medium" style={{ background: `${stageColor(client.stage)}22`, color: stageColor(client.stage) }}>{stageLabel(client.stage)}</span>
+        <span className="text-[#8A8A8A]">{owner ? `Lo lleva ${owner.displayName || owner.email}` : 'Sin responsable'}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.06em] text-[#8A8A8A]">Último contacto</p>
+          <p className="mt-0.5 text-[14px] font-medium" style={{ color: days !== null && days >= 14 ? '#E05252' : '#F5F5F5' }}>
+            {days === null ? 'Sin registro' : days === 0 ? 'Hoy' : `Hace ${days} día${days === 1 ? '' : 's'}`}
+          </p>
+        </div>
+        <button type="button" onClick={log} className="rounded-full bg-white px-4 py-2 text-[12.5px] font-medium text-[#0B0B0B] transition-transform active:scale-95">Registrar contacto</button>
+      </div>
+      {money.total > 0 && (
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between text-[12px]">
+            <span className="text-[#B5B5B5]">{pen.format(money.received)} <span className="text-[#8A8A8A]">de {pen.format(money.total)}</span></span>
+            {money.overdue ? <span className="text-[#E05252]">Pago atrasado</span> : <span className="text-[#8A8A8A]">{pct}%</span>}
+          </div>
+          <div className="h-1 overflow-hidden rounded-full bg-white/[0.08]">
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: money.overdue ? '#E05252' : '#F4EEE2' }} />
+          </div>
+        </div>
+      )}
+      {client.nextStep && (
+        <p className="border-t border-white/[0.06] pt-3 text-[12.5px] text-[#B5B5B5]"><span className="text-[#8A8A8A]">Siguiente paso · </span>{client.nextStep}</p>
+      )}
+    </div>
+  )
+}
+
 const PANEL_WIDTH = 480
 
 // When the panel was opened from a clicked card (originRect), it should
@@ -206,7 +249,7 @@ function originTransform(originRect) {
   }
 }
 
-export default function ClientDetailPanel({ client, actorName, originRect, onClose, services = [], onComplete, onNewService, onConfigure }) {
+export default function ClientDetailPanel({ client, users, actorName, originRect, onClose, services = [], onComplete, onNewService, onConfigure }) {
   useEscape(onClose)
   const [activeTab, setActiveTab] = useState('general')
 
@@ -264,6 +307,8 @@ export default function ClientDetailPanel({ client, actorName, originRect, onClo
             <CloseIcon size={16} />
           </button>
         </div>
+
+        <ClientHero client={client} users={users} actorName={actorName} />
 
         {(type !== 'SP' || client.lost) && <LostControl client={client} actorName={actorName} />}
         <ServiceBar client={client} services={services} actorName={actorName} onComplete={onComplete} onNewService={onNewService} onConfigure={onConfigure} />

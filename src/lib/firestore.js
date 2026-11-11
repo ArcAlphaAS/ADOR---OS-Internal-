@@ -2607,3 +2607,9 @@ export function markManyChatRead(uid, entries) {
   }
   return updateDoc(doc(db, COLLECTIONS.users, uid), patch)
 }
+
+// One-tap "contacté hoy": logs the interaction and moves the last-contact date.
+export async function registerContact(client, actorName, kind = 'Contacto') {
+  await addHistoryEvent(client.id, { type: 'interaction', description: `${kind} registrado por ${actorName}` })
+  await updateClient(client.id, { lastContactAt: new Date().toISOString().slice(0, 10) })
+}
