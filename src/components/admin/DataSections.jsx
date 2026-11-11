@@ -174,7 +174,9 @@ export function DeadlineTestSection({ user }) {
       {r && (
         <p className="mt-2 text-[12px] leading-relaxed" style={{ color: r.ok ? '#8FD19A' : '#EF8A88' }}>
           {r.ok && r.skipped && 'Faltan variables en Cloudflare: no hizo nada.'}
-          {r.ok && !r.skipped && `Funciona ✓ — se enviaron ${r.sent || 0} avisos ahora.`}
+          {r.ok && !r.skipped && r.sample && r.noDevice && 'El proceso funciona, pero no tienes notificaciones activadas en este dispositivo. Actívalas en Configuración → Notificaciones y vuelve a probar.'}
+          {r.ok && !r.skipped && r.sample && !r.noDevice && `Funciona ✓ — no había tareas por avisar, así que te mandé un aviso de prueba (${r.sent}).`}
+          {r.ok && !r.skipped && !r.sample && `Funciona ✓ — se enviaron ${r.sent || 0} avisos ahora.`}
           {!r.ok && r.missing && `Faltan en Cloudflare: ${r.missing.join(', ')}.`}
           {!r.ok && !r.missing && `No funcionó: ${r.error || 'error desconocido'}.`}
         </p>

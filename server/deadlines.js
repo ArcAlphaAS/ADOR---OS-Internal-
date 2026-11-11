@@ -45,7 +45,26 @@ async function signIn(env) {
   return (await res.json()).idToken
 }
 
-export async function runDeadlineReminders(env, { test = false } = {}) {
+// Aviso de muestra para la prueba manual: llega a los dispositivos de quien pulsó el botón, haya o
+// no tareas por avisar, para que siempre se vea cómo queda una notificación.
+async function sendSample(fs, env, uid) {
+  if (!uid) return { sent: 0, sample: true, noDevice: true }
+  const subs = (await fs.list('pushSubscriptions')).filter((s) => s.uid === uid && s.endpoint && s.keys?.p256dh && s.keys?.auth)
+  if (!subs.length) return { sent: 0, sample: true, noDevice: true }
+  let sent = 0
+  for (const s of subs) {
+    try {
+      const status = await sendPush(s, { title: 'Hoy · Aviso de prueba', body: 'Así se verán tus avisos de fecha límite.', tag: 'deadline-test', url: '/?open=workspace' }, env)
+      if (status === 404 || status === 410) await fs.remove(`pushSubscriptions/${s.id}`)
+      else if (status < 300) sent++
+    } catch {
+      // un dispositivo malo no frena a los demás
+    }
+  }
+  return { sent, sample: true, noDevice: false }
+}
+
+export async function runDeadlineReminders(env, { test = false, testUid = null } = {}) {
   if (!env.FIREBASE_API_KEY || !env.BOT_EMAIL || !env.BOT_PASSWORD || !env.VAPID_PRIVATE_KEY) return { skipped: true }
   const now = Date.now()
   const fs = firestore(env, await signIn(env))
@@ -60,7 +79,7 @@ export async function runDeadlineReminders(env, { test = false } = {}) {
     const people = (t.assignedTo || []).filter((u) => !(t.pendingConfirmations || []).includes(u))
     if (people.length) todo.push({ t, stage, people })
   }
-  if (!todo.length) return { sent: 0 }
+  if (!todo.length) return test ? sendSample(fs, env, testUid) : { sent: 0 }
 
   const subs = await fs.list('pushSubscriptions')
   const uids = [...new Set(todo.flatMap((x) => x.people))]
@@ -87,6 +106,8 @@ export async function runDeadlineReminders(env, { test = false } = {}) {
     // Se marca aunque nadie tenga el aviso activado: si no, saldría de golpe cuando lo active.
     if (!test && (delivered || !subs.some((s) => people.includes(s.uid)))) await fs.markFlag(`tasks/${t.id}`, 'deadlineSent', stage)
   }
+  // Prueba manual: si ninguno de los avisos reales fue para ti, igual recibes uno de muestra.
+  if (test && sent === 0) return sendSample(fs, env, testUid)
   return { sent }
 }
 
@@ -105,7 +126,15 @@ export async function deadlinesRun({ method, headers }, env) {
   const missing = ['FIREBASE_API_KEY', 'BOT_EMAIL', 'BOT_PASSWORD', 'VAPID_PRIVATE_KEY'].filter((k) => !env[k])
   if (missing.length) return { status: 200, json: { ok: false, missing } }
   try {
-    const result = await runDeadlineReminders(env, { test: true })
+    // El uid de quien pulsó el botón sale de su propio token (ya verificado con la lectura de arriba).
+    let testUid = null
+    try {
+      const payload = JSON.parse(atob(auth.slice(7).split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+      testUid = payload.user_id || payload.sub || null
+    } catch {
+      testUid = null
+    }
+    const result = await runDeadlineReminders(env, { test: true, testUid })
     return { status: 200, json: { ok: true, ...result } }
   } catch (e) {
     return { status: 200, json: { ok: false, error: e.message } }
