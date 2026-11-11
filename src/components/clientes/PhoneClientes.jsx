@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { STAGES, daysSince, currencyPEN } from '../../lib/clientStages'
-import { SearchIcon, PlusIcon } from '../icons'
+import { SearchIcon, PlusIcon, UsersIcon } from '../icons'
+import EmptyState from '../common/EmptyState'
+import SwipeRow from '../common/SwipeRow'
+import CardSkeleton from '../common/CardSkeleton'
 
 // Clientes en el teléfono: sin tabla ni tablero que se deslicen de lado.
 // Título grande con dos botones redondos (buscar y nuevo SPC), las etapas
@@ -12,13 +15,16 @@ const Chip = ({ active, onClick, children }) => (
   </button>
 )
 
-function ClientRow({ client, assignee, onOpen }) {
+function ClientRow({ client, assignee, onOpen, onNextStage }) {
   const stage = STAGES.find((s) => s.id === client.stage)
   const isSP = stage?.type === 'SP'
   const last = daysSince(client.lastContactAt?.toDate?.() || client.createdAt?.toDate?.())
   const stale = last != null && last >= 14 && !isSP
   const initial = (assignee?.displayName || assignee?.email || '?').charAt(0).toUpperCase()
+  const idx = STAGES.findIndex((s) => s.id === client.stage)
+  const next = idx >= 0 ? STAGES[idx + 1] : null
   return (
+    <SwipeRow className="rounded-[24px]" actions={next ? [{ label: next.label.length > 11 ? 'Etapa →' : `${next.label} →`, color: '#0A84FF', onClick: () => onNextStage(client, next) }] : []}>
     <button type="button" onClick={() => onOpen(client)} className="flex w-full items-start gap-3.5 rounded-[24px] bg-[#1C1C1E] p-4 text-left active:bg-[#242426]">
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -35,10 +41,11 @@ function ClientRow({ client, assignee, onOpen }) {
       </span>
       <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[12.5px] font-medium text-[#F5F5F5]" title={assignee?.displayName || ''}>{initial}</span>
     </button>
+    </SwipeRow>
   )
 }
 
-export default function PhoneClientes({ clients, users, completedCount, lostCount, onOpenClient, onNew, onShowCompleted, onShowLost }) {
+export default function PhoneClientes({ clients, users, completedCount, lostCount, onOpenClient, onNew, onShowCompleted, onShowLost, onNextStage, loaded = true }) {
   const [stage, setStage] = useState('all')
   const [searching, setSearching] = useState(false)
   const [q, setQ] = useState('')
@@ -79,11 +86,13 @@ export default function PhoneClientes({ clients, users, completedCount, lostCoun
         </div>
       </div>
 
-      {shown.length === 0 ? (
-        <p className="rounded-[24px] bg-[#1C1C1E] px-5 py-8 text-center text-[14px] text-[#8E8E93]">{q ? 'Ningún cliente coincide.' : 'Aún no hay clientes en esta etapa.'}</p>
+      {!loaded ? (
+        <CardSkeleton rows={4} />
+      ) : shown.length === 0 ? (
+        <EmptyState Icon={UsersIcon} title={q ? 'Sin coincidencias' : 'Sin clientes aquí'} hint={q ? 'Ningún cliente coincide con tu búsqueda.' : 'Aún no hay clientes en esta etapa.'} className="py-14" />
       ) : (
         <div className="flex flex-col gap-2.5">
-          {shown.map((c) => <ClientRow key={c.id} client={c} assignee={byId[c.assignedTo]} onOpen={onOpenClient} />)}
+          {shown.map((c) => <ClientRow key={c.id} client={c} assignee={byId[c.assignedTo]} onOpen={onOpenClient} onNextStage={onNextStage} />)}
         </div>
       )}
 

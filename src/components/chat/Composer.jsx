@@ -707,7 +707,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
               reset()
             }
           }}
-          placeholder={placeholder || 'Escribe un mensaje...'}
+          placeholder={placeholder || (typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mensaje' : 'Escribe un mensaje...')}
           className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none max-md:order-2 max-md:rounded-[22px] max-md:bg-[#1C1C1E] max-md:px-4 max-md:py-2 md:text-[13.5px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
         />
         <div className="flex flex-shrink-0 items-center gap-0.5 max-md:contents md:ml-auto">

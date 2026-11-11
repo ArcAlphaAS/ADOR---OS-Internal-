@@ -692,6 +692,10 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   const phone = usePhone()
   const immersive = phone && mobilePane === 'conv' && !view && Boolean(selected)
   useEffect(() => {
+    document.documentElement.classList.toggle('ador-chat-list', phone && mobilePane === 'list')
+    return () => document.documentElement.classList.remove('ador-chat-list')
+  }, [phone, mobilePane])
+  useEffect(() => {
     document.documentElement.classList.toggle('ador-chat-open', immersive)
     return () => document.documentElement.classList.remove('ador-chat-open')
   }, [immersive])
@@ -733,6 +737,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           setView('search')
           setMobilePane('conv')
         }}
+        mutedMap={profile?.chatMuted || {}}
+        onToggleMute={(id, muted) => withTimeout(setChatMuted(user.uid, id, muted)).catch(fail('silenciar'))}
         onSetDnd={(until) =>
           withTimeout(setDoNotDisturb(user.uid, until))
             .then(() => showToast(until ? `No molestar activado hasta ${until.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}` : 'Estás disponible'))

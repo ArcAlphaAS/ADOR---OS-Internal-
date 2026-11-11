@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { SHEET, swipeToClose } from '../../lib/motion'
 import {
   subscribeDirectoryPeople,
   subscribeDirectoryTeams,
@@ -24,6 +26,7 @@ import ContextMenu from '../common/ContextMenu'
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import EmptyState from '../common/EmptyState'
+import CardSkeleton from '../common/CardSkeleton'
 
 function actorNameFor(user) {
   return user?.displayName || user?.email?.split('@')[0] || 'Usuario'
@@ -152,7 +155,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {directivos.map((p) => (
-              <PersonCard key={p.id} person={p} selected={p.id === selectedPersonId} onClick={() => onOpen(p)} />
+              <PersonCard key={p.id} person={p} selected={p.id === selectedPersonId} onClick={(e) => onOpen(p, e?.currentTarget?.getBoundingClientRect?.())} />
             ))}
           </div>
         </div>
@@ -172,7 +175,7 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
               {equipo.map((p) => {
                 const meta = statusMeta(p.status)
                 return (
-                  <button key={p.id} type="button" onClick={() => onOpen(p)} className="flex w-full items-center gap-3.5 px-4 py-3 text-left active:bg-[#242426]">
+                  <button key={p.id} type="button" onClick={(e) => onOpen(p, e.currentTarget.getBoundingClientRect())} className="flex w-full items-center gap-3.5 px-4 py-3 text-left active:bg-[#242426]">
                     <Avatar photoURL={p.photoDataUrl} displayName={p.name} size={46} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] font-semibold text-[#F5F5F5]">{p.name}</span>
@@ -473,12 +476,15 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
   const actorName = actorNameFor(user)
   const isAdmin = isDirectorioAdmin(profile)
 
-  useEffect(() => subscribeDirectoryPeople(setPeople), [])
+  const [peopleLoaded, setPeopleLoaded] = useState(false)
+  useEffect(() => subscribeDirectoryPeople((p) => { setPeople(p); setPeopleLoaded(true) }), [])
   useEffect(() => subscribeUsers(setUsers), [])
   useEffect(() => subscribeDirectoryTeams(setTeams), [])
   useEffect(() => subscribeUserProfile(user?.uid, setProfile), [user?.uid])
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId) || null
+  const phoneView = usePhone()
+  const [personOrigin, setPersonOrigin] = useState(null)
 
   useEffect(() => {
     if (focus?.type !== 'person') return
@@ -582,12 +588,13 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
         <div className="min-w-0">
-          {tab === 'personas' && (
+          {tab === 'personas' && !peopleLoaded && <CardSkeleton rows={5} />}
+          {tab === 'personas' && peopleLoaded && (
             <PersonasTab
               people={people}
               search={search}
               selectedPersonId={selectedPersonId}
-              onOpen={(p) => setSelectedPersonId(p.id)}
+              onOpen={(p, rect) => { setSelectedPersonId(p.id); setPersonOrigin(rect || null) }}
               onEdit={setModalPerson}
               onDelete={handleDeletePerson}
               isAdmin={isAdmin}
@@ -600,7 +607,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
           {tab === 'roles' && <RolesTab people={people} />}
         </div>
 
-        <div className={`flex flex-col gap-4 ${selectedPerson ? '' : 'max-md:hidden'}`}>
+        <div className="flex flex-col gap-4 max-md:hidden">
           {selectedPerson ? (
             <PersonDetailPanel
               person={selectedPerson}
@@ -612,6 +619,37 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
           )}
         </div>
       </div>
+
+      {phoneView && createPortal(
+        <AnimatePresence>
+          {selectedPerson && (() => {
+            const top = 48
+            const H = typeof window !== 'undefined' ? window.innerHeight - top : 800
+            const W = typeof window !== 'undefined' ? window.innerWidth : 400
+            const o = personOrigin ? { x: personOrigin.left, y: personOrigin.top - top, scaleX: Math.max(0.2, personOrigin.width / W), scaleY: Math.max(0.05, personOrigin.height / H) } : { y: H }
+            return (
+              <>
+                <motion.div key="pbd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/50" onClick={() => setSelectedPersonId(null)} />
+                <motion.div
+                  key="psheet"
+                  initial={{ ...o, opacity: 0 }}
+                  animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
+                  exit={{ ...o, opacity: 0 }}
+                  transition={{ ...SHEET, opacity: { duration: 0.16 } }}
+                  {...swipeToClose('y', () => setSelectedPersonId(null))}
+                  className="fixed inset-x-0 bottom-0 z-[61] overflow-y-auto rounded-t-[30px] bg-[#1C1C1E] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3"
+                  style={{ top, transformOrigin: '0 0' }}
+                  data-keep-scroll
+                >
+                  <div className="mx-auto mb-2 h-[5px] w-10 rounded-full bg-white/25" />
+                  <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPersonId(null)} onEdit={isAdmin ? () => setModalPerson(selectedPerson) : null} />
+                </motion.div>
+              </>
+            )
+          })()}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {menu && (
         <ContextMenu

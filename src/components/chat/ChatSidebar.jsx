@@ -6,6 +6,7 @@ import { useChatDrafts } from '../../lib/chatDrafts'
 import PersonAvatar from './PersonAvatar'
 import PreviewText from './PreviewText'
 import usePhone from '../../hooks/usePhone'
+import SwipeRow from '../common/SwipeRow'
 import { isTouchLayout } from '../../lib/motion'
 import { motion } from 'framer-motion'
 import PushNotificationsCard from '../shell/PushNotificationsCard'
@@ -76,31 +77,13 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
 // DM / group row with the last message under the name and its time on the
 // right (WhatsApp/Slack style), the unread count, a draft mark, and a pin
 // that appears on hover. Pinned rows can be dragged to reorder.
-function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
+function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, onToggleMute, muted, dragProps }) {
   const touch = big && isTouchLayout()
-  const dragged = useRef(false)
-  const [swiping, setSwiping] = useState(false)
-  const Wrap = touch ? motion.div : 'div'
-  const swipe = touch
-    ? {
-        drag: 'x',
-        dragConstraints: { left: 0, right: 0 },
-        dragElastic: { left: 0.05, right: 0.6 },
-        dragSnapToOrigin: true,
-        onDragStart: () => { dragged.current = true; setSwiping(true) },
-        onDragEnd: (_e, info) => {
-          setTimeout(() => { dragged.current = false; setSwiping(false) }, 80)
-          if (info.offset.x > 100 || info.velocity.x > 650) onTogglePin?.()
-        },
-      }
-    : {}
-  return (
-    <div className="relative overflow-hidden rounded-xl">
-    {touch && swiping && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
-    <Wrap className={`group/row relative ${touch && swiping ? "bg-black" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
+  const row = (
+    <div className="group/row relative" {...dragProps} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
       <button
         type="button"
-        onClick={() => { if (!dragged.current) onClick() }}
+        onClick={onClick}
         className={`flex w-full items-center text-left transition-colors duration-150 hover:bg-white/[0.04] ${big ? 'rounded-xl gap-4 px-1 py-2.5' : 'rounded-xl gap-2.5 px-2 py-1.5'}`}
         style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
@@ -135,8 +118,21 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
       >
         <PinIcon size={10} />
       </button>
-    </Wrap>
     </div>
+  )
+  if (!touch) return <div className="relative overflow-hidden rounded-xl">{row}</div>
+  // Teléfono: a la derecha fija la conversación; a la izquierda salen Silenciar y Fijar.
+  return (
+    <SwipeRow
+      background="#000"
+      rightAction={onTogglePin ? { label: pinned ? 'Quitar de fijados' : 'Fijar arriba', color: '#FF9F0A', onClick: onTogglePin } : null}
+      actions={[
+        ...(onToggleMute ? [{ label: muted ? 'Activar' : 'Silenciar', color: '#636366', onClick: onToggleMute }] : []),
+        ...(onTogglePin ? [{ label: pinned ? 'Soltar' : 'Fijar', color: '#FF9F0A', onClick: onTogglePin }] : []),
+      ]}
+    >
+      {row}
+    </SwipeRow>
   )
 }
 
@@ -199,7 +195,7 @@ function ViewNav({ view, counts, onSelectView }) {
   )
 }
 
-export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, activity = {}, pinned = [], onSetPinned, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages }) {
+export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, activity = {}, pinned = [], onSetPinned, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages, mutedMap = {}, onToggleMute }) {
   const [search, setSearch] = useState('')
   const phone = usePhone()
   const drafts = useChatDrafts()
@@ -265,6 +261,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         label={userLabel(u)}
         pinned={isPinned(key)}
         onTogglePin={() => togglePin(key)}
+        muted={Boolean(mutedMap[key])}
+        onToggleMute={onToggleMute ? () => onToggleMute(key, !mutedMap[key]) : null}
         dragProps={dragProps(key)}
       />
     )
@@ -287,6 +285,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         label={groupLabel(g, users, currentUid)}
         pinned={isPinned(g.id)}
         onTogglePin={() => togglePin(g.id)}
+        muted={Boolean(mutedMap[g.id])}
+        onToggleMute={onToggleMute ? () => onToggleMute(g.id, !mutedMap[g.id]) : null}
         dragProps={dragProps(g.id)}
       />
     )
@@ -310,7 +310,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
-    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 [overscroll-behavior-x:none] md:w-[230px]">
+    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 max-md:pb-[calc(112px+env(safe-area-inset-bottom,0px))] [overscroll-behavior-x:none] md:w-[230px]">
       <div>
         <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
         <div className={phone ? 'mt-3 flex items-center gap-2.5 rounded-full bg-[#1C1C1E] px-4' : 'mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5'} style={phone ? { height: 44 } : undefined}>

@@ -196,8 +196,8 @@ function ImageAttachment({ attachment, onOpen }) {
   const src = attachment.thumbUrl || attachment.dataUrl
   return (
     <button type="button" onClick={() => onOpen(attachment)} className="block text-left">
-      <img src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[240px] max-w-[300px] rounded-xl border border-white/[0.08] object-cover" />
-      <span className="mt-1 block px-1 text-[11px] text-[#8A8A8A]">Archivo de conversación · {attachment.name}</span>
+      <img src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[320px] max-w-[min(72vw,300px)] rounded-xl border border-white/[0.08] object-cover max-md:rounded-[18px] max-md:border-0" />
+      <span className="mt-1 block px-1 text-[11px] text-[#8A8A8A] max-md:hidden">Archivo de conversación · {attachment.name}</span>
     </button>
   )
 }

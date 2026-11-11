@@ -874,3 +874,17 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 }
 .ador-acc-body .ador-glass { background: transparent !important; border-color: transparent !important; box-shadow: none !important; padding-top: 0 !important; }
 .ador-acc-open .ador-ch { display: none; }
+
+
+/* Lista de Comunicación en teléfono: la lista se desplaza hasta el borde de la pantalla (por
+   debajo de la barra flotante) en vez de cortarse en seco sobre ella. */
+@media (max-width: 767px) {
+  html.ador-chat-list main { padding-bottom: 0 !important; }
+}
+
+
+/* Título que se encoge: mientras bajas, el título grande se atenúa y se hace un poco más
+   chico, y el título compacto de la barra aparece (AppShell calcula --tp según el scroll). */
+@media (max-width: 1023px) {
+  .ador-title { opacity: calc(1 - var(--tp, 0)); transform: scale(calc(1 - var(--tp, 0) * 0.06)); transform-origin: 0 50%; }
+}

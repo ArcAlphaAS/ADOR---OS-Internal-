@@ -272,7 +272,8 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
 
   const actorName = actorNameFor(user)
 
-  useEffect(() => subscribeClients(setClients), [])
+  const [clientsLoaded, setClientsLoaded] = useState(false)
+  useEffect(() => subscribeClients((c) => { setClients(c); setClientsLoaded(true) }), [])
   useEffect(() => subscribeUsers(setUsers), [])
 
   // Opens straight to a client's Ficha when arriving from a global-search
@@ -347,6 +348,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
     >
       {phoneMain && (
         <PhoneClientes
+          loaded={clientsLoaded}
           clients={activeClients}
           users={users}
           completedCount={completedClients.length}
@@ -358,6 +360,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           onNew={() => setShowNewModal(true)}
           onShowCompleted={() => setView('completados')}
           onShowLost={() => setView('perdidos')}
+          onNextStage={(client, next) => withTimeout(moveClientStage(client, next.id, actorName).then(() => showToast(`Movido a ${next.label}.`))).catch((e) => showToast(`No se pudo mover: ${e.message}`))}
         />
       )}
 

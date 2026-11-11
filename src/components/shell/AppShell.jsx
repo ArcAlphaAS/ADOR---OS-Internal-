@@ -209,6 +209,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const onMainScroll = (e) => {
     const top = e.currentTarget.scrollTop
     setScrolled((v) => (v !== top > 72 ? top > 72 : v))
+    // Progreso del título que se encoge (0 = grande, 1 = ya solo el compacto de la barra).
+    document.documentElement.style.setProperty('--tp', String(Math.max(0, Math.min(1, (top - 28) / 52)).toFixed(3)))
     const delta = top - lastTop.current
     if (top < 60) setNavHidden(false)
     else if (delta > 6) setNavHidden(true)
@@ -243,6 +245,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   // Each module keeps its own scroll position inside the shared <main>.
   useLayoutEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = scrollPos.current[activeModule] || 0
+    document.documentElement.style.setProperty('--tp', String(Math.max(0, Math.min(1, ((scrollPos.current[activeModule] || 0) - 28) / 52)).toFixed(3)))
     lastTop.current = mainRef.current?.scrollTop || 0
     setNavHidden(false)
   }, [activeModule])
