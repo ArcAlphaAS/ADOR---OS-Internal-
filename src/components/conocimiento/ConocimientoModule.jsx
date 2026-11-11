@@ -265,25 +265,35 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 // color FolderIcon used elsewhere — this grid is the one spot in the
 // module meant to read as a set of "shelves," so it earns a richer, more
 // illustrative treatment than a UI icon normally would.
-function TypeCards({ tree, counts, onSelect }) {
+// Neutral, corporate tints — muted, never saturated — assigned by position
+// so a new category always gets one.
+const FOLDER_TINTS = ['#7B8CA8', '#A39382', '#7E9A8D', '#8F8BA3', '#9A8A8A', '#7D95A0']
+
+function TypeCards({ tree, counts, onSelect, docs }) {
   return (
     <div>
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Tipos de conocimiento</p>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {tree.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => onSelect(cat.id)}
-            className="flex flex-col items-start gap-2.5 rounded-2xl px-3 py-4 text-left transition-colors duration-150 hover:bg-white/[0.03]"
-          >
-            <FolderIllustration id={cat.id} size={68} />
-            <span>
-              <span className="block text-[13.5px] font-medium text-[#F5F5F5]">{cat.label}</span>
-              <span className="block text-[11px] text-[#8A8A8A]">{counts[cat.id] || 0} documentos</span>
-            </span>
-          </button>
-        ))}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tree.map((cat, i) => {
+          const tint = FOLDER_TINTS[i % FOLDER_TINTS.length]
+          const n = counts[cat.id] || 0
+          const last = docs.find((d) => cat.subcategories.some((s) => s.id === d.subcategory))
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onSelect(cat.id)}
+              className="group flex flex-col items-start gap-3 rounded-2xl bg-white/[0.04] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
+            >
+              <FolderIllustration id={cat.id} size={56} tint={tint} />
+              <span className="min-w-0">
+                <span className="block text-[14px] font-medium text-[#F5F5F5]">{cat.label}</span>
+                <span className="block text-[11.5px] text-[#8A8A8A]">{n === 0 ? 'Vacía' : n === 1 ? '1 documento' : `${n} documentos`}</span>
+                {last && <span className="mt-0.5 block truncate text-[11px] text-[#767676]">Última: {last.title}</span>}
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -837,7 +847,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[1fr_300px]">
             <div className="min-w-0">
               {filter.type === 'all' && !q && <PinnedAndRecent pinned={pinnedDocs} recent={recentDocs} index={index} onOpen={handleOpen} />}
-              {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} />}
+              {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} docs={docs} />}
               <DocsTable
                 index={index}
                 title={tableTitle}
@@ -855,8 +865,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
               />
             </div>
             <div className="flex flex-col gap-4">
-              <IntroCard />
-              <StatsCard index={index} docs={docs} />
+              {docs.length === 0 ? <IntroCard /> : <StatsCard index={index} docs={docs} />}
             </div>
           </div>
         )}

@@ -13,7 +13,7 @@
 // `id` must be unique per rendered instance — SVG gradient/filter ids are
 // global to the document, so two folders on screen at once would otherwise
 // silently share (and fight over) the same <linearGradient>.
-export default function FolderIllustration({ id, size = 72 }) {
+export default function FolderIllustration({ id, size = 72, tint = '#8A8F98' }) {
   const gBack = `folder-back-${id}`
   const gFlap = `folder-flap-${id}`
   const gPage = `folder-page-${id}`
@@ -23,18 +23,17 @@ export default function FolderIllustration({ id, size = 72 }) {
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={gBack} x1="10" y1="10" x2="90" y2="92" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#3A3A3E" />
-          <stop offset="0.5" stopColor="#18181B" />
-          <stop offset="1" stopColor="#0A0A0B" />
+          <stop offset="0" stopColor={tint} />
+          <stop offset="1" stopColor={tint} stopOpacity="0.55" />
         </linearGradient>
         <linearGradient id={gPage} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#FAFAFA" />
           <stop offset="1" stopColor="#DADADD" />
         </linearGradient>
         <linearGradient id={gFlap} x1="10" y1="30" x2="88" y2="94" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="rgba(255,255,255,0.22)" />
+          <stop offset="0" stopColor="rgba(255,255,255,0.16)" />
           <stop offset="0.45" stopColor="rgba(255,255,255,0.06)" />
-          <stop offset="1" stopColor="rgba(0,0,0,0.35)" />
+          <stop offset="1" stopColor="rgba(0,0,0,0.18)" />
         </linearGradient>
         <linearGradient id={gShine} x1="14" y1="34" x2="40" y2="90" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="rgba(255,255,255,0.16)" />
