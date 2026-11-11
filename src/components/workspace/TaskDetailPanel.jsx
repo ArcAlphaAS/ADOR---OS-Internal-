@@ -74,7 +74,7 @@ function Chips({ options, value, onChange }) {
 // control on the right. Hints live in the tooltip instead of long captions.
 function Prop({ icon: Icon, label, hint, children }) {
   return (
-    <div className="grid grid-cols-[104px_1fr] items-start gap-2 py-1.5" title={hint}>
+    <div className="ador-prop grid grid-cols-[104px_1fr] items-start gap-2 py-1.5" title={hint}>
       <span className="flex items-center gap-2 pt-1.5 text-[12px] text-[#8A8A8A]">
         <Icon size={13} />
         {label}
@@ -418,7 +418,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
             {/* Detalles */}
             <div className={tab === 'details' ? 'block' : 'hidden'}>
-              <div className="py-2">
+              <div className="ador-props py-2">
                 <Prop icon={CheckCircleIcon} label="Estado">
                   <Chips options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
                 </Prop>

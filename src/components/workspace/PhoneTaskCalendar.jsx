@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import PhoneTaskCard from './PhoneTaskCard'
+import EmptyState from '../common/EmptyState'
+import { CalendarIcon } from '../icons'
 
 // El calendario de Workspace en el teléfono: un mes compacto (7 columnas, un punto
 // por tarea del día) arriba y, debajo, las tareas del día elegido como tarjetas.
@@ -88,7 +90,7 @@ export default function PhoneTaskCalendar({ tasks, workstreamById, workstreams, 
         <h2 className="px-1 text-[15px] font-semibold text-[#F5F5F5]">
           {cap(selLabel)} <span className="font-normal text-[#8A8A8A]">{dayTasks.length || ''}</span>
         </h2>
-        {dayTasks.length ? dayTasks.map(card) : <p className="rounded-[20px] bg-[#1C1C1E] px-5 py-6 text-center text-[14px] text-[#8E8E93]">Nada con fecha límite este día.</p>}
+        {dayTasks.length ? dayTasks.map(card) : <EmptyState Icon={CalendarIcon} compact title="Día libre" hint="Nada con fecha límite este día." />}
       </section>
 
       {undated.length > 0 && (

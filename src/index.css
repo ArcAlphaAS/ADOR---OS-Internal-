@@ -34,15 +34,15 @@ body,
     min-width: 0;
   }
   .ador-title {
-    font-size: 38px;
-    line-height: 1.08;
+    font-size: 42px;
+    line-height: 1.06;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #f5f5f5;
   }
   @media (min-width: 768px) {
     .ador-title {
-      font-size: 38px;
+      font-size: 42px;
     }
   }
 }
@@ -825,4 +825,23 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
   .ador-modal-surface textarea { border-color: transparent !important; }
   .ador-modal-surface [class*='border-white']:not(.border-l):not(.border-t):not(.border-b):not(.divide-y) { background-color: #2C2C2E; }
   .ador-modal-surface input[type='date'] { min-width: 0; max-width: 42vw; }
+}
+
+
+/* Teléfono: las propiedades de una tarea son una lista agrupada de iOS (una tarjeta con
+   filas: nombre a la izquierda, valor a la derecha, líneas finas entre ellas). */
+@media (max-width: 767px) {
+  .ador-props { margin: 8px 16px; padding: 0; background: #1c1c1e; border-radius: 20px; overflow: hidden; }
+  .ador-props .ador-prop {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 16px; min-height: 50px; border-top: 0.5px solid rgba(255, 255, 255, 0.08); flex-wrap: wrap;
+  }
+  .ador-props .ador-prop button, .ador-props .ador-prop input { border-color: transparent !important; }
+  .ador-props .ador-prop button:not([style*='background']) { background-color: #2c2c2e; }
+  .ador-props .ador-prop:first-child { border-top: none; }
+  .ador-props .ador-prop > span { padding-top: 0; font-size: 15px; color: #f5f5f5; flex-shrink: 0; }
+  .ador-props .ador-prop > span svg { color: #8e8e93; }
+  .ador-props .ador-prop > div { display: flex; justify-content: flex-end; text-align: right; min-width: 0; flex: 0 1 auto; }
+  .ador-props .ador-prop input[type='date'],
+  .ador-props .ador-prop select { text-align: right; background: transparent; }
 }

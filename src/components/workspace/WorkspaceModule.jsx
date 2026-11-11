@@ -7,6 +7,7 @@ import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon, GridIcon } from '
 import WorkspaceSidebar from './WorkspaceSidebar'
 import PhoneAgenda from './PhoneAgenda'
 import PhoneLista from './PhoneLista'
+import CardSkeleton from '../common/CardSkeleton'
 import PhoneTaskCalendar from './PhoneTaskCalendar'
 import usePhone from '../../hooks/usePhone'
 import { useAccess } from '../../hooks/useAccess'
@@ -50,7 +51,7 @@ const HEADER_COPY = {
 }
 
 export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onNavigate }) {
-  const { workstreams, tasksByWorkstream, tasks, users, userById } = useWorkspaceData()
+  const { workstreams, tasksByWorkstream, tasks, users, userById, loaded } = useWorkspaceData()
   const [notes, setNotes] = useState([])
   const [view, setView] = useState('hoy')
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
@@ -330,8 +331,9 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
           />
         )}
 
+        {phone && !loaded && view !== 'kanban' && <CardSkeleton rows={5} />}
         <AnimatePresence initial={false}>
-          {view === 'hoy' ? (
+          {phone && !loaded && view !== 'kanban' ? null : view === 'hoy' ? (
             <motion.div key="hoy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <HoyView
                 user={user}

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 import PhoneTaskCard from './PhoneTaskCard'
+import EmptyState from '../common/EmptyState'
+import { CalendarIcon } from '../icons'
 
 // La "línea de tiempo" en el teléfono: un diagrama de barras con scroll lateral no
 // es de app. Aquí son tus tareas abiertas agrupadas por cuándo vencen — Vencidas,
@@ -36,7 +38,7 @@ export default function PhoneAgenda({ tasks, workstreamById, userById, actorUser
     ].filter(([, list]) => list.length)
   }, [tasks])
 
-  if (groups.length === 0) return <p className="rounded-[24px] bg-[#1C1C1E] px-5 py-8 text-center text-[14px] text-[#8E8E93]">No hay tareas abiertas en este alcance.</p>
+  if (groups.length === 0) return <EmptyState Icon={CalendarIcon} title="Todo al día" hint="No hay tareas abiertas en este alcance." className="py-16" />
 
   return (
     <div className="flex flex-col gap-6">

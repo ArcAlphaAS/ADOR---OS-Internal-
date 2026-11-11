@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import TaskContextMenu from './TaskContextMenu'
-import { motion } from 'framer-motion'
+import { motion, useAnimationControls } from 'framer-motion'
 import { isTouchLayout } from '../../lib/motion'
-import { toggleTaskComplete } from '../../lib/firestore'
+import { toggleTaskComplete, applyTaskUpdate, deleteTask } from '../../lib/firestore'
 import { priorityMeta, isOverdue, isDueToday, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import AvatarStack from './AvatarStack'
+import QuickTaskSheet from './QuickTaskSheet'
 import { haptic } from '../../lib/haptics'
 
 // Una tarea en el teléfono: una tarjeta, no una fila de tabla. Círculo para
@@ -21,6 +22,10 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
   const startPt = useRef(null)
   const showToast = useToast()
   const dragged = useRef(false)
+  const controls = useAnimationControls()
+  const [open, setOpen] = useState(false) // acciones de la izquierda a la vista
+  const [confirming, setConfirming] = useState(false)
+  const [quick, setQuick] = useState(false)
   const done = task.status === 'completado'
   const due = task.dueDate?.toDate?.() || null
   const overdue = isOverdue(task)
@@ -31,28 +36,55 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
 
   const complete = () => withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const touch = isTouchLayout()
+  const closeActions = () => {
+    setOpen(false)
+    setConfirming(false)
+    controls.start({ x: 0, transition: { type: 'spring', stiffness: 520, damping: 42 } })
+  }
 
   return (
     <div className="ador-card-in relative overflow-hidden rounded-[22px]">
       {touch && (
-        <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-5 text-[14px] font-semibold text-[#1C1A16]">
+        <div className="absolute inset-0 flex items-center gap-2 bg-[#34C759] px-5 text-[15px] font-semibold text-white">
           ✓ {done ? 'Reabrir' : 'Completar'}
+        </div>
+      )}
+      {touch && (
+        <div className="absolute inset-y-0 right-0 flex w-[176px]">
+          <button type="button" onClick={() => { haptic(); closeActions(); const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); withTimeout(applyTaskUpdate(task, { dueDate: d }, actorUserId, actorName)).catch((error) => showToast(`No se pudo mover: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF9F0A] text-[13px] font-semibold text-white active:brightness-90">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
+            Mañana
+          </button>
+          <button type="button" onClick={() => { if (!confirming) { haptic('heavy'); setConfirming(true); return } haptic('heavy'); deleteTask(task.id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF3B30] text-[13px] font-semibold text-white active:brightness-90">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+            {confirming ? '¿Seguro?' : 'Eliminar'}
+          </button>
         </div>
       )}
     <motion.div
       {...(touch ? {
         drag: 'x',
-        dragConstraints: { left: 0, right: 0 },
-        dragElastic: { left: 0.05, right: 0.7 },
-        dragSnapToOrigin: true,
+        animate: controls,
+        dragConstraints: { left: -176, right: 0 },
+        dragElastic: { left: 0.06, right: 0.7 },
+        dragMomentum: false,
         onDragStart: () => { dragged.current = true },
         onDragEnd: (_e, info) => {
           setTimeout(() => { dragged.current = false }, 80)
-          if (info.offset.x > 110 || info.velocity.x > 700) complete()
+          if (info.offset.x > 110 || info.velocity.x > 700) {
+            closeActions()
+            complete()
+          } else if (info.offset.x < -64 || info.velocity.x < -500) {
+            haptic()
+            setOpen(true)
+            controls.start({ x: -176, transition: { type: 'spring', stiffness: 520, damping: 42 } })
+          } else {
+            closeActions()
+          }
         },
       } : {})}
       className="relative flex items-center gap-3.5 bg-[#1C1C1E] px-4 py-3.5"
-      onClick={(e) => { if (!dragged.current) onOpen(task, null, e.currentTarget.getBoundingClientRect()) }}
+      onClick={(e) => { if (dragged.current) return; if (open) return closeActions(); onOpen(task, null, e.currentTarget.getBoundingClientRect()) }}
       onTouchStart={(e) => {
         const t = e.touches?.[0]
         if (!t) return
@@ -101,10 +133,11 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
       </span>
 
       <span className="flex flex-shrink-0 flex-col items-end gap-2">
-        {pm && <span className="rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold" style={{ background: `${pm.color}22`, color: pm.color }}>{pm.label}</span>}
+        {pm && <button type="button" onClick={(e) => { e.stopPropagation(); haptic(); setQuick(true) }} aria-label="Cambiar estado, prioridad o fecha" className="rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold" style={{ background: `${pm.color}22`, color: pm.color }}>{pm.label}</button>}
         {(task.assignedTo || []).length > 0 && <AvatarStack userIds={task.assignedTo} userById={userById} pendingIds={task.pendingConfirmations || []} size={22} />}
       </span>
     </motion.div>
+      {quick && <QuickTaskSheet task={task} actorUserId={actorUserId} actorName={actorName} onClose={() => setQuick(false)} onOpenFull={() => onOpen(task)} />}
       {menu && <TaskContextMenu task={task} x={menu.x} y={menu.y} workstreams={workstreams} actorUserId={actorUserId} actorName={actorName} onClose={() => setMenu(null)} onOpen={onOpen} onAddSubtask={() => onOpen(task)} />}
     </div>
   )

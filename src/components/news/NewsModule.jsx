@@ -431,7 +431,7 @@ export default function NewsModule({ user, focus, onFocusHandled }) {
           <p className="hidden text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A] md:block">
             {tab === 'anuncios' ? 'Anuncios oficiales' : 'Pulso del equipo'}
           </p>
-          <h1 className="mt-1 text-[38px] leading-none text-[#F5F5F5] md:text-[46px]" style={SERIF}>
+          <h1 className="mt-1 text-[42px] leading-[1.06] text-[#F5F5F5] md:text-[46px]" style={SERIF}>
             {tab === 'anuncios' ? 'News' : 'Comunidad ADOR'}
           </h1>
           <p className="mt-2 hidden text-[13.5px] text-[#9A9A9A] md:block">

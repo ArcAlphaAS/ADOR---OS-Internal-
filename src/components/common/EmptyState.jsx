@@ -1,9 +1,14 @@
 // Un solo estado vacío para toda la app: un título corto, una línea que explica
 // qué va a haber aquí y, si existe, una acción clara. Evita que cada módulo invente
 // el suyo (texto gris suelto, "Sin datos todavía"…).
-export default function EmptyState({ title, hint, actionLabel, onAction, compact = false, className = '' }) {
+export default function EmptyState({ title, hint, actionLabel, onAction, Icon, compact = false, className = '' }) {
   return (
     <div className={`flex flex-col items-center text-center ${compact ? 'gap-1 py-5' : 'gap-1.5 py-9'} ${className}`}>
+      {Icon && (
+        <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.06] text-[#8E8E93]">
+          <Icon size={26} />
+        </span>
+      )}
       <p className="text-[14px] font-medium text-[#CFCFCF]">{title}</p>
       {hint && <p className="max-w-[300px] text-[12.5px] leading-relaxed text-[#8A8A8A]">{hint}</p>}
       {actionLabel && onAction && (

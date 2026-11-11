@@ -450,7 +450,7 @@ function MeHeader({ presence, uid, onSetDnd, calendarConnected }) {
     <div>
       <div className="flex items-center justify-between gap-2 px-1">
         <div className="min-w-0">
-          <p className="text-[28px] font-semibold tracking-[-0.02em] text-[#F5F5F5] md:text-[15px] md:tracking-normal">Comunicación</p>
+          <p className="text-[42px] font-bold leading-[1.06] tracking-[-0.03em] text-[#F5F5F5] md:text-[15px] md:font-semibold md:leading-normal md:tracking-normal">Comunicación</p>
           <button type="button" onClick={() => setOpen((v) => !v)} className="flex max-w-full items-center gap-1.5 text-[11px] text-[#9A9A9A] hover:text-[#F5F5F5]">
             <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: current.color }} />
             <span className="truncate">{current.label}</span>

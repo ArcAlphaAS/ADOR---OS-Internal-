@@ -10,10 +10,11 @@ export function useWorkspaceData() {
   const [proyectos, setProyectos] = useState([])
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeProyectosInternos(setProyectos), [])
-  useEffect(() => subscribeAllTasks(setTasks), [])
+  useEffect(() => subscribeAllTasks((t) => { setTasks(t); setLoaded(true) }), [])
   useEffect(() => subscribeUsers(setUsers), [])
 
   const intervenciones = clients
@@ -47,5 +48,5 @@ export function useWorkspaceData() {
 
   const userById = Object.fromEntries(users.map((u) => [u.id, u]))
 
-  return { workstreams, tasksByWorkstream, tasks, users, userById }
+  return { workstreams, tasksByWorkstream, tasks, users, userById, loaded }
 }

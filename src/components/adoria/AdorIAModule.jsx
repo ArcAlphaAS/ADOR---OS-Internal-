@@ -209,7 +209,7 @@ export default function AdorIAModule({ user }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h1 className="text-[40px] leading-[1.05] tracking-[-0.02em] sm:text-[52px]" style={SERIF}>
+              <h1 className="text-[42px] leading-[1.05] tracking-[-0.02em] sm:text-[52px]" style={SERIF}>
                 <span className="text-[#F5F5F5]">Hola</span>
                 {firstName(user) && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {firstName(user)}</span>}
               </h1>

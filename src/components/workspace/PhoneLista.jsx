@@ -4,7 +4,8 @@ import { workstreamId as buildWorkstreamId, withTimeout, workstreamHealth } from
 import { sortTasks, groupTasks } from '../../lib/workspaceFilters'
 import { useToast } from '../../hooks/useToast'
 import PhoneTaskCard from './PhoneTaskCard'
-import { BriefcaseIcon, UsersIcon } from '../icons'
+import { BriefcaseIcon, UsersIcon, SearchIcon as FilterIcon } from '../icons'
+import EmptyState from '../common/EmptyState'
 
 // La vista Lista en el teléfono: no una tabla de siete columnas, sino un
 // grupo por proyecto con sus tareas como tarjetas (las mismas que en Hoy y en la
@@ -130,7 +131,7 @@ export default function PhoneLista({ workstreams, tasksByWorkstream, workstreamB
     const real = filtersActive ? workstreams.filter((w) => (tasksByWorkstream.get(w.id) || []).length > 0) : workstreams
     groups = (real.length > 0 ? real : filtersActive ? [] : [{ ...GENERAL, name: emptyLabel }]).map((w) => ({ ...w, tasks: sortTasks((w.id && tasksByWorkstream.get(w.id)) || [], sort) }))
   }
-  if (groups.length === 0) return <p className="rounded-[24px] bg-[#1C1C1E] px-5 py-8 text-center text-[14px] text-[#8E8E93]">Ninguna tarea coincide con los filtros.</p>
+  if (groups.length === 0) return <EmptyState Icon={FilterIcon} title="Sin coincidencias" hint="Ninguna tarea coincide con los filtros. Cambia o quita alguno." className="py-16" />
   return (
     <div className="flex flex-col gap-7">
       {groups.map((g) => (
