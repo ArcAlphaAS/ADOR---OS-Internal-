@@ -173,7 +173,7 @@ export default function AdorIAModule({ user }) {
   return (
     <motion.div
       initial={false}
-      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pb-8 pt-6 md:px-8 lg:px-12 lg:pt-10"
+      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pb-2 pt-3 md:px-8 md:pb-8 md:pt-6 lg:px-12 lg:pt-10"
     >
       {messages.length > 0 && (
         <div className="flex items-center justify-between gap-3">
@@ -197,14 +197,17 @@ export default function AdorIAModule({ user }) {
 
       <div ref={scrollRef} className={`flex-1 overflow-y-auto ${messages.length > 0 ? 'mt-6' : ''}`}>
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col justify-end pb-6">
+          <div className="flex h-full flex-col items-center justify-center pb-4 text-center md:items-stretch md:justify-end md:pb-6 md:text-left">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-auto mt-10 sm:mt-16"
+              className="mb-auto mt-10 hidden sm:mt-16 md:block"
             >
               <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">ADOR IA</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }} className="mb-7 md:hidden">
+              <Orb size={84} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -215,14 +218,14 @@ export default function AdorIAModule({ user }) {
                 <span className="text-[#F5F5F5]">Hola</span>
                 {firstName(user) && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {firstName(user)}</span>}
               </h1>
-              <h2 className="mt-1 text-[40px] leading-[1.05] tracking-[-0.02em] text-[#F5F5F5] sm:text-[52px]" style={SERIF}>
+              <h2 className="mt-1 text-[34px] leading-[1.08] tracking-[-0.02em] text-[#F5F5F5] sm:text-[52px]" style={SERIF}>
                 ¿En qué te ayudo hoy?
               </h2>
-              <p className="mt-5 max-w-[460px] text-[14.5px] leading-relaxed text-[#8A8A8A]">
+              <p className="mt-5 hidden max-w-[460px] text-[14.5px] leading-relaxed text-[#8A8A8A] md:block">
                 Respondo con los datos reales de la empresa y ejecuto órdenes sencillas. Antes de cambiar algo, siempre te pido confirmación.
               </p>
             </motion.div>
-            <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-9 flex flex-wrap justify-center gap-2.5 md:mt-10 md:grid md:grid-cols-2 md:justify-start md:gap-3">
               {STARTERS.map(({ Icon, title, prompt }, i) => (
                 <motion.button
                   key={title}
@@ -231,14 +234,14 @@ export default function AdorIAModule({ user }) {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.7, delay: 0.3 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center gap-4 rounded-[22px] bg-[#1C1C1E] p-2.5 pr-5 text-left transition-colors duration-150 active:bg-[#2C2C2E] md:hover:bg-white/[0.08]"
+                  className="flex items-center gap-2.5 rounded-full bg-[#1C1C1E] p-1.5 pr-4 text-left transition-colors duration-150 active:bg-[#2C2C2E] md:gap-4 md:rounded-[22px] md:p-2.5 md:pr-5 md:hover:bg-white/[0.08]"
                 >
-                  <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/[0.08] text-[#F4EEE2]">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[#F4EEE2] md:h-12 md:w-12 md:rounded-2xl">
                     <Icon size={20} />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-[14.5px] font-medium text-[#F0F0F0]">{title}</span>
-                    <span className="block truncate text-[12px] text-[#8A8A8A]">{prompt}</span>
+                    <span className="hidden truncate text-[12px] text-[#8A8A8A] md:block">{prompt}</span>
                   </span>
                 </motion.button>
               ))}
