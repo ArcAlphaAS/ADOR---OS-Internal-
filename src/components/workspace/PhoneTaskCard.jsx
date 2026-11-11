@@ -52,7 +52,7 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
         },
       } : {})}
       className="relative flex items-center gap-3.5 bg-[#1C1C1E] px-4 py-3.5"
-      onClick={() => { if (!dragged.current) onOpen(task) }}
+      onClick={(e) => { if (!dragged.current) onOpen(task, null, e.currentTarget.getBoundingClientRect()) }}
       onTouchStart={(e) => {
         const t = e.touches?.[0]
         if (!t) return

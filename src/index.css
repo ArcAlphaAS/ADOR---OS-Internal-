@@ -34,15 +34,15 @@ body,
     min-width: 0;
   }
   .ador-title {
-    font-size: 34px;
-    line-height: 1.1;
+    font-size: 38px;
+    line-height: 1.08;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #f5f5f5;
   }
   @media (min-width: 768px) {
     .ador-title {
-      font-size: 36px;
+      font-size: 38px;
     }
   }
 }
@@ -815,3 +815,14 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
   html.sheet-open main { transform: scale(0.95); border-radius: 28px; filter: brightness(0.8); }
 }
 @media (prefers-reduced-motion: reduce) { html.sheet-open main { transform: none; } }
+
+/* Teléfono: dentro de paneles y hojas tampoco hay contornos finos (los chips y campos
+   pasan a relleno gris), y los campos de fecha no se salen del borde. */
+@media (max-width: 767px) {
+  .ador-modal-surface [class*='border-white'],
+  .ador-modal-surface input,
+  .ador-modal-surface select,
+  .ador-modal-surface textarea { border-color: transparent !important; }
+  .ador-modal-surface [class*='border-white']:not(.border-l):not(.border-t):not(.border-b):not(.divide-y) { background-color: #2C2C2E; }
+  .ador-modal-surface input[type='date'] { min-width: 0; max-width: 42vw; }
+}

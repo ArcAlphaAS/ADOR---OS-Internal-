@@ -57,8 +57,10 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   const [onlyMine, setOnlyMine] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
   const [panelSection, setPanelSection] = useState(null) // 'comments' = the bubble on a row
-  const openTaskPanel = (t, section = null) => {
+  const [panelOrigin, setPanelOrigin] = useState(null) // posición de la tarjeta tocada (teléfono): el panel crece desde ahí
+  const openTaskPanel = (t, section = null, rect = null) => {
     setPanelSection(section)
+    setPanelOrigin(rect)
     setOpenTaskId(t.id)
   }
   const [showNewProyecto, setShowNewProyecto] = useState(false)
@@ -432,6 +434,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             actorUserId={user?.uid}
             actorName={actorName}
             initialSection={panelSection}
+            originRect={phone ? panelOrigin : null}
             allTasks={tasks}
             siblings={visibleTasks}
             onSwitch={(id) => {

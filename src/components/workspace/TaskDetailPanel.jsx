@@ -93,7 +93,7 @@ const TABS = [
   { id: 'activity', label: 'Actividad' },
 ]
 
-export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, initialSection, allTasks = [], siblings = [], onSwitch, onNavigate }) {
+export default function TaskDetailPanel({ task, workstream, users, userById, actorUserId, actorName, onClose: onCloseRaw, originRect, initialSection, allTasks = [], siblings = [], onSwitch, onNavigate }) {
   const showToast = useToast()
   const descRef = useRef(null)
   const titleRef = useRef(null)
@@ -262,6 +262,13 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
   }
   const setDue = (date) => applyUpdate({ dueDate: date })
 
+  // Teléfono: el panel crece desde la tarjeta que tocaste hasta llenar la pantalla (y se
+  // encoge de vuelta al cerrar). Sin tarjeta de origen, entra desde el lado como siempre.
+  const finalW = Math.min(540, typeof window !== 'undefined' ? window.innerWidth : 540)
+  const origin = originRect && typeof window !== 'undefined'
+    ? { x: originRect.left - (window.innerWidth - finalW), y: originRect.top, scaleX: Math.max(0.2, originRect.width / finalW), scaleY: Math.max(0.05, originRect.height / window.innerHeight) }
+    : null
+
   return createPortal(
     <AnimatePresence>
       <motion.div
@@ -275,13 +282,13 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
       />
       <motion.div
         key="task-panel"
-        initial={{ x: 520, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 520, opacity: 0 }}
-        transition={SHEET}
+        initial={origin ? { ...origin, opacity: 0 } : { x: 520, opacity: 0 }}
+        animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
+        exit={origin ? { ...origin, opacity: 0 } : { x: 520, opacity: 0 }}
+        transition={origin ? { ...SHEET, opacity: { duration: 0.16 } } : SHEET}
         {...swipeToClose('x', onClose)}
         className="fixed right-0 top-0 z-50 h-full w-[540px] max-w-full"
-        style={{ boxShadow: '-40px 0 80px -30px rgba(0,0,0,0.7)' }}
+        style={{ boxShadow: '-40px 0 80px -30px rgba(0,0,0,0.7)', ...(origin ? { transformOrigin: '0 0' } : null) }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto border-l border-white/[0.06]">
