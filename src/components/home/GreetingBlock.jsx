@@ -90,7 +90,7 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
         return (
           <h1 className="tracking-[-0.03em]">
             {lead && (
-              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[27px] font-medium leading-tight tracking-[-0.01em] text-[#9A9AA0] md:text-[28px]">
+              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[32px] font-medium leading-tight tracking-[-0.01em] text-[#9A9AA0] md:text-[34px]">
                 {lead}
               </motion.span>
             )}
@@ -98,8 +98,8 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="block text-[68px] font-bold leading-[1] md:text-[72px]"
-              style={{ backgroundImage: 'linear-gradient(180deg, #FFFFFF 10%, rgba(255,255,255,0.78) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
+              className="block font-bold leading-[1]"
+              style={{ fontSize: `min(88px, ${(88 / Math.max(5, rest.length * 0.6)).toFixed(1)}vw)`, backgroundImage: 'linear-gradient(180deg, #FFFFFF 10%, rgba(255,255,255,0.78) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
             >
               {rest}
             </motion.span>
