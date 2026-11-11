@@ -94,13 +94,13 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
       }
     : {}
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className={`relative overflow-hidden ${touch ? '' : 'rounded-xl'}`}>
     {touch && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
-    <Wrap className={`group/row relative ${touch ? "bg-black" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
+    <Wrap className={`group/row relative ${touch ? "bg-[#1C1C1E]" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
       <button
         type="button"
         onClick={() => { if (!dragged.current) onClick() }}
-        className={`flex w-full items-center rounded-xl text-left transition-colors duration-150 hover:bg-white/[0.04] ${big ? 'gap-4 px-1 py-2.5' : 'gap-2.5 px-2 py-1.5'}`}
+        className={`flex w-full items-center text-left transition-colors duration-150 hover:bg-white/[0.04] ${touch ? 'gap-3.5 px-4 py-3 active:bg-white/[0.05]' : big ? 'rounded-xl gap-4 px-1 py-2.5' : 'rounded-xl gap-2.5 px-2 py-1.5'}`}
         style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
         <span className="flex-shrink-0">{avatar}</span>
@@ -109,12 +109,12 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
             <span className={`truncate ${big ? 'text-[17px]' : 'text-[13.5px]'}`} style={{ color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
               {label}
             </span>
-            <span className={`flex-shrink-0 ${big ? 'text-[13px]' : 'text-[10.5px]'}`} style={{ color: unread ? '#F4EEE2' : '#6E6E6E' }}>
+            <span className={`flex-shrink-0 ${big ? 'text-[13px]' : 'text-[10.5px]'}`} style={{ color: unread ? '#F4EEE2' : '#8E8E93' }}>
               {time}
             </span>
           </span>
           <span className="flex items-center justify-between gap-2">
-            <span className={`truncate ${big ? 'text-[14.5px]' : 'text-[12px]'}`} style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#BBBBBB' : '#7E7E7E' }}>
+            <span className={`truncate ${big ? 'text-[14.5px]' : 'text-[12px]'}`} style={{ color: draftText && !active ? '#F4EEE2' : unread ? '#C7C7CC' : '#8E8E93' }}>
               {draftText && !active ? `Borrador: ${draftText}` : preview ? <PreviewText text={preview} /> : 'Sin mensajes todavía'}
             </span>
             {unread && !active && (
@@ -305,6 +305,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
     )
   }
 
+  // Teléfono: las filas van en una tarjeta agrupada (como Mensajes de iOS), separadas por líneas finas.
+  const listCls = phone ? 'flex flex-col divide-y divide-white/[0.06] overflow-hidden rounded-[20px] bg-[#1C1C1E]' : 'flex flex-col gap-0.5'
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
@@ -358,7 +360,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
       {pinnedItems.length > 0 && (
         <div>
           <SectionHeader label="Fijados" />
-          <div className="flex flex-col gap-0.5">
+          <div className={listCls}>
             {pinnedItems.map((it) => (it.type === 'dm' ? dmRow(it.user) : it.type === 'group' ? groupRow(it.conv) : channelRow(it.conv, isPrivate(it.conv))))}
           </div>
         </div>
@@ -366,7 +368,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
 
       <div>
         <SectionHeader label="Mensajes directos" />
-        <div className="flex flex-col gap-0.5">
+        <div className={listCls}>
           {allOthers.length === 0 && (
             <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#8A8A8A]">
               Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
@@ -378,7 +380,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
 
       <div>
         <SectionHeader label="Grupos" onAdd={onNewGroup} addTitle="Nuevo grupo privado" />
-        <div className="flex flex-col gap-0.5">
+        <div className={listCls}>
           {visibleGroups.map(groupRow)}
           {groups.length === 0 && !searching && (
             <button type="button" onClick={onNewGroup} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#858585] transition-colors hover:bg-white/[0.04] hover:text-[#F5F5F5]">
