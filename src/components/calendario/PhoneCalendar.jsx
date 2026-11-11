@@ -10,12 +10,12 @@ import { ArrowLeftIcon, ArrowRightIcon } from '../icons'
 // Lo que lo hace apoyar y no solo mostrar: lo pasado se tacha, lo próximo dice
 // "en 1 h 15 min", las tareas se completan desde aquí, y avisa de un hueco libre
 // con la tarea que cabría en él.
-const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-const sameDay = (a, b) => key(a) === key(b)
-const hhmm = (v) => new Date(v).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
+export const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+export const sameDay = (a, b) => key(a) === key(b)
+export const hhmm = (v) => new Date(v).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
 const WD = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
-function untilLabel(ms) {
+export function untilLabel(ms) {
   const min = Math.round(ms / 60000)
   if (min < 60) return `en ${Math.max(1, min)} min`
   const h = Math.floor(min / 60)
@@ -24,7 +24,7 @@ function untilLabel(ms) {
 }
 
 // Huecos entre reuniones de 9:00 a 19:00 (hoy, desde ahora), de ≥ 45 min.
-function freeGap(events, day, now) {
+export function freeGap(events, day, now) {
   const start = new Date(day); start.setHours(9, 0, 0, 0)
   const end = new Date(day); end.setHours(19, 0, 0, 0)
   let cursor = sameDay(day, now) ? new Date(Math.max(start.getTime(), now.getTime())) : start
@@ -37,7 +37,7 @@ function freeGap(events, day, now) {
   return end.getTime() - cursor.getTime() >= 45 * 60000 ? { from: cursor, to: end } : null
 }
 
-const Tag = ({ children, tone }) => (
+export const Tag = ({ children, tone }) => (
   <span className="rounded-md px-2 py-[3px] text-[11px] font-medium" style={{ background: tone === 'task' ? 'rgba(232,193,90,0.16)' : 'rgba(244,238,226,0.12)', color: tone === 'task' ? '#E8C15A' : '#E4DCCB' }}>{children}</span>
 )
 

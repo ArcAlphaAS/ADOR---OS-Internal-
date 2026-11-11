@@ -27,6 +27,7 @@ import { UsersIcon, CalendarIcon, FileIcon, ImageIcon, BookmarkIcon, MessageIcon
 import { notifyFail } from '../../lib/notifyFail'
 import { haptic } from '../../lib/haptics'
 import usePhone from '../../hooks/usePhone'
+import { LeftRail, RightRail } from './CommunityRails'
 
 // Comunidad — the informal side of News (from the user's reference image):
 // a type filter row, a composer that picks a type and can carry photos,
@@ -247,7 +248,7 @@ function Composer({ user, actorName, canOrganize }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] md:pl-[56px] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] md:pl-0 [&::-webkit-scrollbar]:hidden">
         {COMMUNITY_TYPES.filter((t) => t.id !== 'evento' || canOrganize).map((t) => {
           const active = open && type === t.id
           return (
@@ -258,7 +259,7 @@ function Composer({ user, actorName, canOrganize }) {
                 setType(t.id)
                 setOpen(true)
               }}
-              className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] transition-colors"
+              className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12.5px] transition-colors"
               style={{ color: active ? '#E8C15A' : '#AAAAAA', background: active ? 'rgba(232,193,90,0.1)' : 'transparent' }}
             >
               <t.Icon size={15} /> {t.label}
@@ -655,8 +656,10 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
 
   return (
     <ChatPeopleContext.Provider value={{ users, directory, presence: {} }}>
-      <div className="flex flex-col gap-5">
-        <div className={phone ? '-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex gap-1 overflow-x-auto border-b border-white/[0.08] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
+      <div className={phone ? '' : 'grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[240px_minmax(0,1fr)_300px]'}>
+      {!phone && <div className="hidden xl:block"><LeftRail user={user} profile={profile} directory={directory} posts={posts} savedCount={Object.keys(saved).length} filter={filter} onPick={setFilter} /></div>}
+      <div className="flex min-w-0 flex-col gap-5">
+        <div className={phone ? '-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex gap-1 overflow-x-auto border-b border-white/[0.08] xl:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -697,6 +700,8 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
             />
           ))
         )}
+      </div>
+      {!phone && <div className="hidden lg:block"><RightRail posts={posts} onPick={setFilter} onSearch={onSearch} /></div>}
       </div>
       <AnimatePresence>{viewing && <ImageViewer src={viewing.src} rect={viewing.rect} onClose={() => setViewing(null)} />}</AnimatePresence>
     </ChatPeopleContext.Provider>

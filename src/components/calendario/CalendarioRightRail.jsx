@@ -37,7 +37,7 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
   return (
     <div className="ador-glass ador-grain rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] font-semibold capitalize text-[#F5F5F5]">{label}</span>
+        <span className="text-[13px] font-semibold text-[#F5F5F5] first-letter:uppercase">{label}</span>
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => shiftMonth(-1)} className="flex h-6 w-6 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]">
             <ArrowLeftIcon size={12} />

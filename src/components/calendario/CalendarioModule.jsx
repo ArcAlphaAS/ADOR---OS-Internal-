@@ -7,7 +7,8 @@ import { subscribeTasksForUser } from '../../lib/firestore'
 import { CalendarIcon, ArrowRightIcon, ArrowLeftIcon, CloseIcon, PlusIcon } from '../icons'
 import CalendarioGrid from './CalendarioGrid'
 import MonthGrid from './MonthGrid'
-import { MiniMonthCalendar, TodayCard, TasksTodayCard } from './CalendarioRightRail'
+import { MiniMonthCalendar } from './CalendarioRightRail'
+import DayAgenda from './DayAgenda'
 import CalendarioGreeting from './CalendarioGreeting'
 import EventDetailModal from './EventDetailModal'
 import PhoneCalendar from './PhoneCalendar'
@@ -261,7 +262,7 @@ export default function CalendarioModule({ user }) {
     >
       <div className="flex items-start justify-between gap-6">
         <div>
-          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Calendario</span>
+          <span className="block text-[11px] font-medium tracking-[0.04em] text-[#8A8A8A] first-letter:uppercase">{new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           <h1 className="ador-title">Calendario</h1>
           <p className="mt-0.5 text-[13px] text-[#888888]">
             {connectedEmail ? `Reflejo de tu Google Calendar — conectado como ${connectedEmail}` : 'Tu tiempo también es una decisión.'}
@@ -288,16 +289,16 @@ export default function CalendarioModule({ user }) {
       {connected && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button type="button" onClick={goToday} className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[12px] font-medium text-[#F5F5F5] transition-colors duration-150 hover:border-white/[0.2]">
-              Hoy
-            </button>
-            <button type="button" onClick={goPrev} className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+            <button type="button" onClick={goPrev} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
               <ArrowLeftIcon size={13} />
             </button>
-            <button type="button" onClick={goNext} className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+            <button type="button" onClick={goNext} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
               <ArrowRightIcon size={13} />
             </button>
-            <span className="ml-1 text-[14px] font-medium capitalize text-[#F5F5F5]">{rangeLabel(view, anchor)}</span>
+            <span className="mx-2 text-[24px] font-semibold capitalize leading-none tracking-[-0.02em] text-[#F5F5F5]">{rangeLabel(view, anchor)}</span>
+            <button type="button" onClick={goToday} className="rounded-full bg-white/[0.07] px-4 py-2 text-[12.5px] font-medium text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
+              Hoy
+            </button>
           </div>
 
           <div className="flex items-center gap-1">
@@ -325,7 +326,7 @@ export default function CalendarioModule({ user }) {
             <button
               type="button"
               onClick={disconnect}
-              className="ml-2 flex flex-shrink-0 items-center gap-1.5 rounded-full border border-white/[0.1] px-3 py-1.5 text-[11px] text-[#888888] transition-colors duration-150 hover:border-white/[0.2] hover:text-[#F5F5F5]"
+              className="ml-2 flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-[#767676] transition-colors duration-150 hover:text-[#F5F5F5]"
             >
               <CloseIcon size={11} /> Desconectar
             </button>
@@ -362,8 +363,7 @@ export default function CalendarioModule({ user }) {
           </div>
           <div className="flex flex-col gap-4">
             <MiniMonthCalendar anchorDate={anchor} onSelectDay={openDay} />
-            <TodayCard events={events} onOpenDay={openDay} onOpenEvent={setOpenEvent} />
-            <TasksTodayCard tasks={tasks} actorName={actorName} />
+            <DayAgenda uid={user?.uid} anchor={anchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
           </div>
         </div>
       )}

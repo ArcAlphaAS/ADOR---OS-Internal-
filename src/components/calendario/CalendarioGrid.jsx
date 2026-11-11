@@ -56,18 +56,22 @@ function eventsForDay(events, day) {
   return events.filter((e) => new Date(e.start).toDateString() === day.toDateString())
 }
 
-function DayHeader({ day, compact }) {
+function DayHeader({ day, nEvents = 0, nTasks = 0 }) {
   const isToday = day.toDateString() === new Date().toDateString()
   return (
-    <div className="flex flex-col items-center gap-1 border-l border-white/[0.05] py-2 first:border-l-0">
-      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
-        {day.toLocaleDateString('es', { weekday: compact ? undefined : 'short' })}
+    <div className="flex flex-col items-center gap-1 border-l border-white/[0.05] pb-2 pt-3 first:border-l-0">
+      <span className="text-[11px] font-medium text-[#8A8A8A] first-letter:uppercase">
+        {day.toLocaleDateString('es', { weekday: 'short' }).replace('.', '')}
       </span>
       <span
-        className="flex h-7 w-7 items-center justify-center rounded-full text-[13px]"
-        style={{ background: isToday ? '#F5F5F5' : 'transparent', color: isToday ? '#0A0A0A' : '#F5F5F5', fontWeight: isToday ? 600 : 400 }}
+        className="flex h-9 w-9 items-center justify-center rounded-full text-[18px] leading-none"
+        style={{ background: isToday ? '#F5F5F5' : 'transparent', color: isToday ? '#0A0A0A' : '#F5F5F5', fontWeight: isToday ? 600 : 500 }}
       >
         {day.getDate()}
+      </span>
+      <span className="flex h-[5px] gap-[3px]" aria-hidden>
+        {nEvents > 0 && <span className="h-[5px] w-[5px] rounded-full bg-[#F4EEE2]" />}
+        {nTasks > 0 && <span className="h-[5px] w-[5px] rounded-full bg-[#E8C15A]" />}
       </span>
     </div>
   )
@@ -166,7 +170,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       <div className="grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
         <div />
         {days.map((d) => (
-          <DayHeader key={d.toISOString()} day={d} compact={days.length > 1} />
+          <DayHeader key={d.toISOString()} day={d} nEvents={eventsForDay(events, d).length} nTasks={tasksForDay(tasks, d).length} />
         ))}
       </div>
 
@@ -201,12 +205,14 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                   const height = Math.max(((e.endMin - e.startMin) / 60) * ROW_HEIGHT - 2, 18)
                   const width = 100 / e.colCount
                   const color = eventColor(e)
+                  const past = new Date(e.end).getTime() < now.getTime()
+                  const live = new Date(e.start).getTime() <= now.getTime() && !past
                   return (
                     <button
                       key={e.id}
                       type="button"
                       onClick={() => onOpenEvent(e)}
-                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-[10.5px] font-medium leading-tight backdrop-blur-sm transition-colors duration-150 hover:brightness-110"
+                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-[11px] font-medium leading-tight backdrop-blur-sm transition-[filter,transform] duration-150 hover:brightness-125 active:scale-[0.99]"
                       style={{
                         top,
                         height,
@@ -215,6 +221,8 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                         background: `${color}22`,
                         borderLeft: `2.5px solid ${color}`,
                         color,
+                        opacity: past ? 0.5 : 1,
+                        boxShadow: live ? `0 0 0 1px ${color}88` : 'none',
                       }}
                     >
                       <span className="block truncate">{e.title}</span>
