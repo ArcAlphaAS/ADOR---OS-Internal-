@@ -33,7 +33,7 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
   const touch = isTouchLayout()
 
   return (
-    <div className="relative overflow-hidden rounded-[22px]">
+    <div className="ador-card-in relative overflow-hidden rounded-[22px]">
       {touch && (
         <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-5 text-[14px] font-semibold text-[#1C1A16]">
           ✓ {done ? 'Reabrir' : 'Completar'}

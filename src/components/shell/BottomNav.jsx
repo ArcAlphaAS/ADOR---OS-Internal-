@@ -122,7 +122,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
       {createPortal(
         <AnimatePresence>
           {moreOpen && (
-            <motion.div key="more" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[45] bg-black/50 lg:hidden" onClick={() => setMoreOpen(false)}>
+            <motion.div key="more" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[45] bg-black/45 backdrop-blur-[8px] lg:hidden" onClick={() => setMoreOpen(false)}>
               <motion.div
                 initial={{ y: 40 }}
                 animate={{ y: 0 }}
