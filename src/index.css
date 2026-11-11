@@ -284,15 +284,35 @@ input:-webkit-autofill:focus {
 /* Primary call-to-action: a flat white pill with dark text (the app's main
    accent is white/ivory; gold is reserved for what is important). No blur,
    no shadow, no gradient. */
-.ador-btn-primary {
-  background: #f5f5f5;
+/* Botón principal (y todo control sólido claro de la app: enviar, "Abrir", etc.).
+   Marfil cálido con un degradado casi imperceptible, un filo de luz arriba y una
+   sombra corta: se siente como un objeto sobre el negro, no como un rectángulo
+   blanco recortado. Los indicadores de pestaña (.absolute) se quedan planos. */
+.ador-btn-primary,
+[class*="bg-[#F5F5F5]"]:not(.absolute) {
+  background: linear-gradient(180deg, #f7f5f0 0%, #e5e1d7 100%);
   border: 1px solid transparent;
-  color: #0a0a0a;
-  transition: background-color 150ms ease-out, opacity 150ms ease-out;
+  color: #14120e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 18px -8px rgba(0, 0, 0, 0.55);
+  letter-spacing: -0.005em;
+  transition: background 150ms ease-out, box-shadow 150ms ease-out, transform 120ms ease-out, opacity 150ms ease-out;
 }
 
-.ador-btn-primary:hover {
-  background: #ffffff;
+.ador-btn-primary:hover,
+[class*="bg-[#F5F5F5]"]:not(.absolute):hover {
+  background: linear-gradient(180deg, #fbfaf6 0%, #ece8de 100%);
+}
+
+.ador-btn-primary:active,
+[class*="bg-[#F5F5F5]"]:not(.absolute):active {
+  transform: scale(0.97);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 1px rgba(0, 0, 0, 0.4);
 }
 
 .ador-btn-primary:disabled {
