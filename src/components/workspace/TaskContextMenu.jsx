@@ -1,8 +1,9 @@
+import { registerUndo } from '../../lib/undo'
 import { shareLink } from '../../lib/share'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { applyTaskUpdate, createTask, deleteTask, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
+import { applyTaskUpdate, createTask, deleteTask, restoreTask, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
 import { withTimeout, workstreamId as buildWorkstreamId } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { isTouchLayout, SHEET } from '../../lib/motion'
@@ -142,7 +143,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
           <Item label={completed ? 'Reabrir' : 'Marcar como completada'} onClick={run(() => toggleTaskComplete(task, actorName))} />
           <Divider />
           {confirmDelete ? (
-            <Item label="Pulsa otra vez para confirmar" danger onClick={run(() => deleteTask(task.id))} />
+            <Item label="Pulsa otra vez para confirmar" danger onClick={run(() => deleteTask(task.id).then(() => registerUndo('Tarea eliminada', () => restoreTask(task))))} />
           ) : (
             <Item label="Eliminar" danger onClick={() => setConfirmDelete(true)} />
           )}

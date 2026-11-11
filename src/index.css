@@ -907,3 +907,22 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 @keyframes ador-pop-in { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
 .ador-pop-in { animation: ador-pop-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @media (prefers-reduced-motion: reduce) { .ador-pop-in { animation: none; } }
+
+
+/* App instalada en computadora (Chrome/Edge): la barra de título se une con la de ADOR OS. Los
+   botones de la ventana (o los tres puntos de macOS) quedan sobre nuestra barra; se mantiene
+   dentro del área que el sistema deja libre y se puede arrastrar la ventana desde cualquier
+   espacio vacío de ella. */
+@media (display-mode: window-controls-overlay) {
+  .ador-topbar {
+    left: env(titlebar-area-x, 0);
+    right: auto;
+    width: env(titlebar-area-width, 100%);
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .ador-topbar button, .ador-topbar input, .ador-topbar a, .ador-topbar [role='button'] {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}

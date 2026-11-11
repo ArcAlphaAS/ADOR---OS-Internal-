@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import TaskContextMenu from './TaskContextMenu'
 import { motion, useAnimationControls } from 'framer-motion'
 import { isTouchLayout } from '../../lib/motion'
-import { toggleTaskComplete, applyTaskUpdate, deleteTask } from '../../lib/firestore'
+import { toggleTaskComplete, applyTaskUpdate, deleteTask, restoreTask } from '../../lib/firestore'
+import { registerUndo } from '../../lib/undo'
 import { priorityMeta, isOverdue, isDueToday, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import AvatarStack from './AvatarStack'
@@ -36,7 +37,10 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
 
   const complete = () => {
     haptic(done ? 'tap' : 'success') // en el mismo gesto del dedo (iOS lo exige)
-    return withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+    const wasDone = done
+    return withTimeout(toggleTaskComplete(task, actorName))
+      .then(() => registerUndo(wasDone ? 'Tarea reabierta' : 'Tarea completada', () => toggleTaskComplete({ ...task, status: wasDone ? 'por_hacer' : 'completado' }, actorName)))
+      .catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   }
   const touch = isTouchLayout()
   const closeActions = () => {
@@ -54,11 +58,11 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
       )}
       {touch && (
         <div className="absolute inset-y-0 right-0 flex w-[176px]">
-          <button type="button" onClick={() => { haptic(); closeActions(); const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); withTimeout(applyTaskUpdate(task, { dueDate: d }, actorUserId, actorName)).catch((error) => showToast(`No se pudo mover: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF9F0A] text-[13px] font-semibold text-white active:brightness-90">
+          <button type="button" onClick={() => { haptic(); closeActions(); const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); withTimeout(applyTaskUpdate(task, { dueDate: d }, actorUserId, actorName)).then(() => registerUndo('Fecha movida a mañana', () => applyTaskUpdate(task, { dueDate: task.dueDate || null }, actorUserId, actorName))).catch((error) => showToast(`No se pudo mover: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF9F0A] text-[13px] font-semibold text-white active:brightness-90">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
             Mañana
           </button>
-          <button type="button" onClick={() => { if (!confirming) { haptic('heavy'); setConfirming(true); return } haptic('heavy'); deleteTask(task.id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF3B30] text-[13px] font-semibold text-white active:brightness-90">
+          <button type="button" onClick={() => { if (!confirming) { haptic('heavy'); setConfirming(true); return } haptic('heavy'); deleteTask(task.id).then(() => registerUndo('Tarea eliminada', () => restoreTask(task))).catch((error) => showToast(`No se pudo eliminar: ${error.message}`)) }} className="flex flex-1 flex-col items-center justify-center gap-1 bg-[#FF3B30] text-[13px] font-semibold text-white active:brightness-90">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
             {confirming ? '¿Seguro?' : 'Eliminar'}
           </button>

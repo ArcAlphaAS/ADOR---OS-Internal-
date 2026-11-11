@@ -1,3 +1,4 @@
+import { registerUndo } from '../../lib/undo'
 import { DesktopSkeleton } from '../common/CardSkeleton'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
@@ -363,7 +364,7 @@ export default function ClientesModule({ user, focusClientId, onFocusHandled }) 
           onNew={() => setShowNewModal(true)}
           onShowCompleted={() => setView('completados')}
           onShowLost={() => setView('perdidos')}
-          onNextStage={(client, next) => withTimeout(moveClientStage(client, next.id, actorName).then(() => showToast(`Movido a ${next.label}.`))).catch((e) => showToast(`No se pudo mover: ${e.message}`))}
+          onNextStage={(client, next) => withTimeout(moveClientStage(client, next.id, actorName).then(() => registerUndo(`Movido a ${next.label}`, () => moveClientStage({ ...client, stage: next.id }, client.stage, actorName)))).catch((e) => showToast(`No se pudo mover: ${e.message}`))}
         />
       )}
 

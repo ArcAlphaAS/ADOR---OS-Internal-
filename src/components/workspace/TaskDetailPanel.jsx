@@ -1,3 +1,5 @@
+import { registerUndo } from '../../lib/undo'
+import { restoreTask } from '../../lib/firestore'
 import { shareLink } from '../../lib/share'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -254,7 +256,8 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
       setConfirmingDelete(true)
       return
     }
-    deleteTask(task.id)
+    const snapshot = task
+    deleteTask(task.id).then(() => registerUndo('Tarea eliminada', () => restoreTask(snapshot)))
     onCloseRaw()
   }
   const copyLink = () => {

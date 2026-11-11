@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircleIcon, CloseIcon } from '../components/icons'
+import { runUndo } from '../lib/undo'
 
 const ToastContext = createContext(null)
 
@@ -29,6 +30,11 @@ function ToastStack({ toasts, onDismiss }) {
                 <CheckCircleIcon size={18} style={{ color: '#F4EEE2', flexShrink: 0 }} />
               )}
               <span className="text-[13px] text-[#F5F5F5]">{toast.message}</span>
+              {toast.action && (
+                <button type="button" onClick={() => { toast.action.onClick(); onDismiss(toast.id) }} className="flex-shrink-0 rounded-full bg-white/[0.1] px-3 py-1 text-[12.5px] font-semibold text-[#F4EEE2] hover:bg-white/[0.16]">
+                  {toast.action.label}
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Cerrar aviso"
@@ -58,8 +64,8 @@ export function ToastProvider({ children }) {
     (message, opts) => {
       const id = ++idRef.current
       const tone = opts?.tone || (/^(No se pudo|No tienes permiso|Error|Falló|Tardó)/i.test(String(message)) ? 'error' : 'ok')
-      setToasts((prev) => [...prev, { id, message, tone }])
-      setTimeout(() => dismiss(id), tone === 'error' ? 5000 : 3000)
+      setToasts((prev) => [...prev, { id, message, tone, action: opts?.action || null }])
+      setTimeout(() => dismiss(id), tone === 'error' ? 5000 : opts?.action ? 7000 : 3000)
     },
     [dismiss]
   )
@@ -69,6 +75,18 @@ export function ToastProvider({ children }) {
     const onFail = (e) => showToast(e.detail?.message || 'No se pudo completar.', { tone: 'error' })
     window.addEventListener('ador:fail', onFail)
     return () => window.removeEventListener('ador:fail', onFail)
+  }, [showToast])
+
+  // Acciones que se pueden deshacer (lib/undo.js): aviso con botón "Deshacer".
+  useEffect(() => {
+    const onUndoToast = (e) => showToast(e.detail.message, { action: { label: 'Deshacer', onClick: () => runUndo(e.detail.id) } })
+    const onUndone = (e) => showToast(`Deshecho: ${e.detail.message}`)
+    window.addEventListener('ador:undo-toast', onUndoToast)
+    window.addEventListener('ador:undone', onUndone)
+    return () => {
+      window.removeEventListener('ador:undo-toast', onUndoToast)
+      window.removeEventListener('ador:undone', onUndone)
+    }
   }, [showToast])
 
   return (

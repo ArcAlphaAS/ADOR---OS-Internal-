@@ -33,6 +33,10 @@ import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useA11yPolish } from '../../hooks/useA11yPolish'
 import { moduleColor } from '../../lib/moduleColors'
+import CommandPalette from './CommandPalette'
+import ShortcutsHelp from './ShortcutsHelp'
+import { runUndo } from '../../lib/undo'
+import { applyUpdate } from '../../lib/appUpdate'
 import AchievementMoment from './AchievementMoment'
 
 // Every module except Home is its own code-split chunk, downloaded the
@@ -121,6 +125,8 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   usePresenceHeartbeat(user?.uid)
   // Role and which modules this person can open (lib/access.js).
   const access = useAccess(user?.uid)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   useSeasonRuntime()
   useAchievements(user)
   // The daily cleanup lists every conversation's old files/calls, which
@@ -358,6 +364,28 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
     }
   }
 
+  // Atajos de teclado globales (escritorio): ⌘K paleta, ⌘/ ayuda, ⌘Z deshacer, ⌥1–9 ir a un módulo.
+  const navRef = useRef(navigateTo)
+  navRef.current = navigateTo
+  useEffect(() => {
+    const order = ['inicio', 'workspace', 'objetivos', 'clientes', 'finanzas', 'chat', 'calendario', 'conocimiento', 'news']
+    const onKey = (e) => {
+      const mod = e.metaKey || e.ctrlKey
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable
+      if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen((v) => !v); return }
+      if (mod && e.key === '/') { e.preventDefault(); setHelpOpen((v) => !v); return }
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); runUndo(); return }
+      if (e.altKey && !mod && /^Digit[1-9]$/.test(e.code)) {
+        const id = order[Number(e.code.slice(5)) - 1]
+        if (id && access.canSee(id)) { e.preventDefault(); navRef.current(id) }
+        return
+      }
+      if (!typing && !mod && !e.altKey && e.key === '?') setHelpOpen(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [access])
+
   return (
     <div
       className="ador-app-root relative isolate flex h-screen w-screen flex-col overflow-hidden bg-[#000000]"
@@ -414,6 +442,21 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
           something unrelated (a quick note, not a chat action) sits right
           where a Slack-like "new message" button would be expected and
           caused exactly that confusion in testing (see ChatModule.jsx). */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        uid={user?.uid}
+        access={access}
+        onNavigate={(id, focus) => navRef.current(id, focus || null)}
+        onToggleTheme={() => {
+          const next = !document.documentElement.classList.contains('light')
+          document.documentElement.classList.toggle('light', next)
+          try { localStorage.setItem('ador_theme', next ? 'light' : 'dark') } catch { /* sin almacenamiento */ }
+        }}
+        onShowShortcuts={() => setHelpOpen(true)}
+        onReload={() => applyUpdate()}
+      />
+      <ShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       {activeModule !== 'chat' && <GlobalCapture user={user} actorName={actorNameFor(user)} />}
       <AssignmentConfirmGate user={user} actorName={actorNameFor(user)} onNavigate={navigateTo} />
       <IncomingCallGate user={user} />

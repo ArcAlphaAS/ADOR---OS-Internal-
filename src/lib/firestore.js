@@ -324,6 +324,14 @@ export function deleteTaskComment(taskId, commentId) {
   return batch.commit()
 }
 
+// Vuelve a crear una tarea borrada (para "Deshacer"): mismo id, mismos datos. El historial y los
+// comentarios de la tarea no se recuperan.
+export function restoreTask(task) {
+  if (!db) return Promise.resolve()
+  const { id, ...data } = task
+  return setDoc(doc(db, COLLECTIONS.tasks, id), data)
+}
+
 export function deleteTask(taskId) {
   if (!db) return Promise.resolve()
   return deleteDoc(doc(db, COLLECTIONS.tasks, taskId))
