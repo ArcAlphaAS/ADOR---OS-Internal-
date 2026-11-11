@@ -223,6 +223,27 @@ export default function CalendarioModule({ user }) {
     return subscribeTasksForUser(user.uid, setTasks)
   }, [user?.uid])
 
+  // Atajos (escritorio): T hoy · D/S/M/A vista · ← → anterior/siguiente.
+  useEffect(() => {
+    if (phone) return
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const tag = e.target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return
+      const k = e.key.toLowerCase()
+      if (k === 't') setAnchor(new Date())
+      else if (k === 'd') setView('dia')
+      else if (k === 's') setView('semana')
+      else if (k === 'm') setView('mes')
+      else if (k === 'a') setView('agenda')
+      else if (k === 'arrowleft') setAnchor((a) => shiftAnchor(view, a, -1))
+      else if (k === 'arrowright') setAnchor((a) => shiftAnchor(view, a, 1))
+      else return
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [phone, view])
+
   const goToday = () => setAnchor(new Date())
   const goPrev = () => setAnchor((a) => shiftAnchor(view, a, -1))
   const goNext = () => setAnchor((a) => shiftAnchor(view, a, 1))
@@ -296,7 +317,7 @@ export default function CalendarioModule({ user }) {
               <ArrowRightIcon size={13} />
             </button>
             <span className="mx-2 text-[24px] font-semibold capitalize leading-none tracking-[-0.02em] text-[#F5F5F5]">{rangeLabel(view, anchor)}</span>
-            <button type="button" onClick={goToday} className="rounded-full bg-white/[0.07] px-4 py-2 text-[12.5px] font-medium text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
+            <button type="button" title="Ir a hoy (T)" onClick={goToday} className="rounded-full bg-white/[0.07] px-4 py-2 text-[12.5px] font-medium text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
               Hoy
             </button>
           </div>
@@ -307,6 +328,7 @@ export default function CalendarioModule({ user }) {
                 <button
                   key={v.id}
                   type="button"
+                  title={`${v.label} (${{ dia: 'D', semana: 'S', mes: 'M', agenda: 'A' }[v.id]})`}
                   onClick={() => setView(v.id)}
                   className="relative rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-150"
                   style={{ color: view === v.id ? '#0A0A0A' : '#888888' }}
@@ -362,7 +384,7 @@ export default function CalendarioModule({ user }) {
             )}
           </div>
           <div className="flex flex-col gap-4">
-            <MiniMonthCalendar anchorDate={anchor} onSelectDay={openDay} />
+            <MiniMonthCalendar anchorDate={anchor} onSelectDay={openDay} events={events} />
             <DayAgenda uid={user?.uid} anchor={anchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
           </div>
         </div>

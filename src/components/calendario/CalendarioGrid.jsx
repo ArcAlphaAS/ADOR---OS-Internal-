@@ -22,9 +22,7 @@ function minutesSinceMidnight(date) {
 }
 
 function formatHour(h) {
-  if (h === 0) return '12 AM'
-  if (h === 12) return '12 PM'
-  return h < 12 ? `${h} AM` : `${h - 12} PM`
+  return `${String(h).padStart(2, '0')}:00`
 }
 
 // Simple greedy column-packing for overlapping events on the same day —
@@ -81,7 +79,7 @@ function AllDayStrip({ days, events, onOpenEvent }) {
   const allDayByDay = days.map((d) => eventsForDay(events, d).filter((e) => e.allDay))
   if (!allDayByDay.some((list) => list.length > 0)) return null
   return (
-    <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
+    <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))` }}>
       <div />
       {allDayByDay.map((list, i) => (
         <div key={i} className="flex flex-col gap-1 border-l border-white/[0.05] px-1.5 py-1.5 first:border-l-0">
@@ -124,7 +122,7 @@ function TasksStrip({ days, tasks, actorName }) {
   }
 
   return (
-    <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
+    <div className="grid border-b border-white/[0.06]" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))` }}>
       <div className="flex items-center justify-end pr-2 text-[9px] text-[#8A8A8A]">Tareas</div>
       {byDay.map((list, i) => (
         <div key={i} className="flex flex-col gap-1 border-l border-white/[0.05] px-1.5 py-1.5 first:border-l-0">
@@ -167,7 +165,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
 
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-      <div className="grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)` }}>
+      <div className="grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))` }}>
         <div />
         {days.map((d) => (
           <DayHeader key={d.toISOString()} day={d} nEvents={eventsForDay(events, d).length} nTasks={tasksForDay(tasks, d).length} />
@@ -178,7 +176,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       <TasksStrip days={days} tasks={tasks} actorName={actorName} />
 
       <div ref={containerRef} className="max-h-[640px] overflow-y-auto">
-        <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, 1fr)`, height: HOURS.length * ROW_HEIGHT }}>
+        <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
             {HOURS.map((h) => (
@@ -195,7 +193,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
               <div
                 key={day.toISOString()}
                 className="relative border-l border-white/[0.05]"
-                style={{ background: isToday ? 'rgba(244,238,226,0.035)' : 'transparent' }}
+                style={{ background: isToday ? 'rgba(244,238,226,0.045)' : [0, 6].includes(day.getDay()) ? 'rgba(0,0,0,0.18)' : 'transparent' }}
               >
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />
@@ -212,23 +210,23 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                       key={e.id}
                       type="button"
                       onClick={() => onOpenEvent(e)}
-                      className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-[11px] font-medium leading-tight backdrop-blur-sm transition-[filter,transform] duration-150 hover:brightness-125 active:scale-[0.99]"
+                      className="absolute overflow-hidden rounded-[10px] px-2.5 py-1.5 text-left text-[11.5px] font-medium leading-tight transition-[filter,transform] duration-150 hover:brightness-125 active:scale-[0.99]"
                       style={{
                         top,
                         height,
                         left: `${e.col * width}%`,
                         width: `calc(${width}% - 2px)`,
-                        background: `${color}22`,
-                        borderLeft: `2.5px solid ${color}`,
-                        color,
-                        opacity: past ? 0.5 : 1,
-                        boxShadow: live ? `0 0 0 1px ${color}88` : 'none',
+                        background: `${color}2E`,
+                        borderLeft: `3px solid ${color}`,
+                        color: '#F5F5F5',
+                        opacity: past ? 0.62 : 1,
+                        boxShadow: live ? `0 0 0 1px ${color}AA, 0 4px 14px -6px ${color}88` : 'none',
                       }}
                     >
                       <span className="block truncate">{e.title}</span>
                       {height > 32 && (
-                        <span className="block truncate text-[9.5px] text-[#CCCCCC] opacity-80">
-                          {new Date(e.start).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
+                        <span className="block truncate text-[10.5px] tabular-nums text-[#B5B5B5]">
+                          {new Date(e.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – {new Date(e.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </span>
                       )}
                     </button>
@@ -241,12 +239,11 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
           {showNowLine && (
             <div className="pointer-events-none absolute flex items-center" style={{ top: nowTop, left: 0, right: 0 }}>
               <span
-                className="z-10 flex-shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold text-white"
-                style={{ width: GUTTER_WIDTH - 6, textAlign: 'right', background: 'transparent', color: '#EF5350' }}
+                className="z-10 ml-1 flex-shrink-0 rounded-md bg-[#EF5350] px-1.5 py-[2px] text-center text-[10px] font-semibold tabular-nums text-white"
+                style={{ width: GUTTER_WIDTH - 10 }}
               >
-                {now.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })}
+                {now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}
               </span>
-              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#EF5350]" style={{ marginLeft: -1 }} />
               <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, #EF5350, rgba(239,83,80,0.15))' }} />
             </div>
           )}

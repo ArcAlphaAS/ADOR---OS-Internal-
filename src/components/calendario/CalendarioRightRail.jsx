@@ -22,7 +22,8 @@ function buildMonthCells(monthDate) {
 // MiniCalendar (HoyRightRail.jsx): this is Calendario's own page, where a
 // full month makes sense as an at-a-glance nav aid, not a competing widget
 // crammed next to a daily task list.
-export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
+export function MiniMonthCalendar({ anchorDate, onSelectDay, events = [] }) {
+  const busy = new Set(events.map((e) => e.start && new Date(e.start).toDateString()))
   const [monthDate, setMonthDate] = useState(new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1))
   const today = new Date()
   const cells = buildMonthCells(monthDate)
@@ -62,18 +63,19 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay }) {
               key={i}
               type="button"
               onClick={() => onSelectDay(day)}
-              className="flex items-center justify-center py-0.5"
+              className="relative flex items-center justify-center py-0.5"
             >
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
                 style={{
                   background: isToday ? '#F5F5F5' : isSelected ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: '#F5F5F5',
+                  color: isToday ? '#0A0A0A' : '#F5F5F5',
                   fontWeight: isToday ? 600 : 400,
                 }}
               >
                 {day.getDate()}
               </span>
+              {busy.has(day.toDateString()) && !isToday && <span className="absolute -bottom-0.5 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-[#F4EEE2]/70" />}
             </button>
           )
         })}
