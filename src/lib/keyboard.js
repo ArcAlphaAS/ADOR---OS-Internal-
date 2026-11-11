@@ -16,7 +16,8 @@ function installIosGap() {
     const portrait = window.innerHeight >= window.innerWidth
     const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)
     const gap = Math.round(screenH - window.innerHeight)
-    root.style.setProperty('--ios-gap', gap > 12 && gap < 140 ? `${gap}px` : '0px')
+    root.style.setProperty('--ios-gap', '0px') // desactivado: empujaba la barra fuera de la pantalla
+    void gap
   }
   measure()
   window.addEventListener('resize', measure)

@@ -226,6 +226,19 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
         {lastSignIn && <p className="mt-5 text-center text-[12px] text-[#636366]">Última conexión: {lastSignIn}</p>}
         {/* Para saber si tienes lo último: la hora en que se publicó la versión que estás usando. */}
         <p className="mt-1 text-center text-[12px] text-[#636366]">Versión: {typeof __BUILD_ID__ !== 'undefined' ? new Date(Number(__BUILD_ID__)).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : 'desarrollo'}</p>
+        <p className="mt-0.5 text-center text-[11px] text-[#636366]">{(() => {
+          try {
+            const probe = document.createElement('div')
+            probe.style.cssText = 'position:fixed;left:0;top:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden'
+            document.body.appendChild(probe)
+            const inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0
+            probe.remove()
+            const vv = window.visualViewport
+            return `Pantalla ${window.screen.width}×${window.screen.height} · ventana ${window.innerWidth}×${window.innerHeight} · visible ${Math.round(vv?.height || 0)} · margen inferior ${inset} · ${window.navigator.standalone ? 'app instalada' : 'Safari'}`
+          } catch {
+            return ''
+          }
+        })()}</p>
       </div>
 
       <AnimatePresence>
