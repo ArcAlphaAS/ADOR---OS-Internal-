@@ -246,3 +246,36 @@ export async function uploadBackupToDrive(uid, fileName, jsonText) {
     body,
   })
 }
+
+// ---- Subir un archivo del computador a Drive (arrastrar y soltar) ----
+// El archivo va a la carpeta de ADOR si hay una elegida; ADOR OS solo guarda el enlace.
+export const MAX_DRIVE_UPLOAD = 25 * 1024 * 1024
+
+export async function uploadFileToDrive(uid, file) {
+  if (file.size > MAX_DRIVE_UPLOAD) throw new Error(`«${file.name}» pesa más de 25 MB. Súbelo directo a Drive y pega el enlace.`)
+  const token = await getDriveToken(uid)
+  const company = await getDriveFolder().catch(() => null)
+  const metadata = { name: file.name, ...(company?.fileId ? { parents: [company.fileId] } : {}) }
+  const boundary = `ador-${Date.now().toString(36)}`
+  const body = new Blob([
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`,
+    file,
+    `\r\n--${boundary}--`,
+  ])
+  const res = await driveFetch(token, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,webViewLink&supportsAllDrives=true', {
+    method: 'POST',
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  })
+  return { name: res.name, url: res.webViewLink, kind: driveFileKind(res.mimeType || file.type) }
+}
+
+// Dirección para incrustar un archivo de Drive (PDF, Docs, Sheets, Slides) sin salir de ADOR OS.
+export function drivePreviewUrl(url = '') {
+  const m = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/) || url.match(/drive\.google\.com\/open\?id=([\w-]+)/)
+  if (m) return `https://drive.google.com/file/d/${m[1]}/preview`
+  const d = url.match(/docs\.google\.com\/(document|spreadsheets|presentation)\/d\/([\w-]+)/)
+  if (d) return `https://docs.google.com/${d[1]}/d/${d[2]}/preview`
+  return null
+}

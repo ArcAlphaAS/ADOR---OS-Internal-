@@ -17,7 +17,9 @@ import {
   setKnowledgePinned,
   subscribeUserProfile,
 } from '../../lib/firestore'
-import { extractHeadings } from '../../lib/knowledge'
+import { extractHeadings, buildFileContent } from '../../lib/knowledge'
+import { uploadFileToDrive, drivePreviewUrl } from '../../lib/googleDrive'
+import { auth } from '../../firebase'
 import { pushRecentDoc, readRecentDocs } from '../../lib/recentDocs'
 import { SERIF } from '../news/NewsLayout'
 import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown, parseAttachments, searchSnippet, staleMonths } from '../../lib/knowledge'
@@ -111,6 +113,18 @@ function StaleChip({ doc }) {
   return <span className="ml-2 rounded-md bg-[#FFC107]/10 px-1.5 py-px text-[10.5px] text-[#E8C15A]" title="Hace tiempo que nadie lo revisa">Revisar · {m} meses</span>
 }
 
+// Archivo de Drive visto dentro de ADOR OS (el PDF no se guarda aquí, solo se incrusta).
+function FilePreview({ url, height = 520 }) {
+  const src = drivePreviewUrl(url)
+  if (!src) return null
+  return (
+    <div className="overflow-hidden rounded-2xl bg-black/40 ring-1 ring-white/[0.08]">
+      <iframe title="Vista previa" src={src} className="block w-full" style={{ height }} allow="autoplay" />
+      <p className="px-4 py-2 text-[11.5px] text-[#767676]">¿No se ve? Abre el archivo en Drive — la vista previa necesita que hayas iniciado sesión en Google en este navegador.</p>
+    </div>
+  )
+}
+
 // Space = vista rápida de un documento sin abrirlo (como Quick Look).
 function QuickLook({ doc, index, onClose, onOpen }) {
   const { files, note } = parseAttachments(doc.content || '')
@@ -121,9 +135,10 @@ function QuickLook({ doc, index, onClose, onOpen }) {
   }, [doc, onClose, onOpen])
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-6" onClick={onClose}>
-      <div className="ador-modal-surface w-full max-w-[520px] rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="ador-modal-surface max-h-[92vh] w-full max-w-[640px] overflow-y-auto rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
         <p className="text-[11.5px] text-[#8A8A8A]">{categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}</p>
         <h3 className="mt-1 text-[22px] leading-tight text-[#F5F5F5]" style={SERIF}>{doc.title}</h3>
+        {files[0] && drivePreviewUrl(files[0].url) && <div className="mt-4"><FilePreview url={files[0].url} height={380} /></div>}
         {files.map((f, i) => (
           <a key={i} href={f.url} target="_blank" rel="noreferrer" className="mt-4 flex items-center gap-3 rounded-2xl bg-white/[0.06] px-4 py-3 text-[13px] text-[#F5F5F5]">
             <span className="rounded-md bg-white/[0.1] px-2 py-0.5 text-[10.5px] font-medium uppercase">{f.kind}</span>
@@ -202,7 +217,7 @@ function CountPill({ n }) {
   return n > 0 ? <span className="flex-shrink-0 rounded-md bg-white/[0.08] px-1.5 py-0.5 text-[11px] leading-none text-[#B5B5B5]">{n}</span> : null
 }
 
-function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, onSelectTag, tagList, total, isAdminUser, onCreateSection }) {
+function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSelectAll, onSelectCategory, onSelectSubcategory, onSelectTag, tagList, total, isAdminUser, onCreateSection, dnd, dropKey }) {
   const [view, setView] = useState(filter.type === 'tag' ? 'tags' : 'folders')
   useEffect(() => { if (filter.type === 'tag') setView('tags') }, [filter])
   // Como Notas o Finder: las carpetas empiezan cerradas y solo se abre la que estás usando.
@@ -276,7 +291,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
           const isCollapsed = !open.has(cat.id)
           return (
             <div key={cat.id}>
-              <div className="flex items-center rounded-[10px] transition-colors duration-150 hover:bg-white/[0.05]" style={{ color: catActive ? '#FFFFFF' : '#D0D0D0', background: catActive ? 'rgba(255,255,255,0.1)' : undefined }}>
+              <div {...(dnd ? dnd(`c:${cat.id}`, cat.subcategories[0]?.id) : {})} className="flex items-center rounded-[10px] transition-colors duration-150 hover:bg-white/[0.05]" style={{ color: catActive ? '#FFFFFF' : '#D0D0D0', background: dropKey === `c:${cat.id}` ? 'rgba(244,238,226,0.22)' : catActive ? 'rgba(255,255,255,0.1)' : undefined }}>
                 <button
                   type="button"
                   onClick={() => toggleCollapsed(cat.id)}
@@ -304,9 +319,10 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
                       <button
                         key={sub.id}
                         type="button"
+                        {...(dnd ? dnd(`s:${sub.id}`, sub.id) : {})}
                         onClick={() => onSelectSubcategory(sub.id)}
                         className="relative ml-4 flex items-center justify-between gap-2 rounded-[9px] py-1.5 pl-2.5 pr-2 text-left text-[12.5px] transition-colors duration-150 hover:bg-white/[0.05]"
-                        style={{ color: subActive ? '#FFFFFF' : '#A0A0A5', background: subActive ? 'rgba(255,255,255,0.1)' : 'transparent' }}
+                        style={{ color: subActive ? '#FFFFFF' : '#A0A0A5', background: dropKey === `s:${sub.id}` ? 'rgba(244,238,226,0.22)' : subActive ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                       >
                         <span aria-hidden className="absolute -left-4 top-0 w-px bg-white/[0.12]" style={{ height: lastSub ? '50%' : '100%' }} />
                         <span aria-hidden className="absolute -left-4 top-1/2 h-px w-3.5 bg-white/[0.12]" />
@@ -342,7 +358,7 @@ function KnowledgeTree({ tree, search, onSearch, counts, subCounts, filter, onSe
 // Neutral, corporate tints — muted, never saturated — assigned by position
 // so a new category always gets one.
 
-function TypeCards({ tree, counts, onSelect, docs }) {
+function TypeCards({ tree, counts, onSelect, docs, dnd, dropKey }) {
   return (
     <div>
       <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Carpetas</p>
@@ -355,8 +371,10 @@ function TypeCards({ tree, counts, onSelect, docs }) {
             <button
               key={cat.id}
               type="button"
+              {...(dnd ? dnd(`c:${cat.id}`, cat.subcategories[0]?.id) : {})}
               onClick={() => onSelect(cat.id)}
               className="group flex flex-col items-start gap-4 rounded-3xl bg-white/[0.04] p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
+              style={dropKey === `c:${cat.id}` ? { background: 'rgba(244,238,226,0.16)', boxShadow: '0 0 0 1.5px rgba(244,238,226,0.55)' } : undefined}
             >
               <FolderIllustration id={cat.id} size={96} tint={tint} />
               <span className="min-w-0">
@@ -472,6 +490,8 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
             <div
               key={doc.id}
               data-doc-id={doc.id}
+              draggable={isAdminUser}
+              onDragStart={(e) => { e.dataTransfer.setData('application/x-ador-doc', doc.id); e.dataTransfer.effectAllowed = 'move' }}
               tabIndex={0}
               onClick={() => onOpen(doc)}
               className="grid min-w-[640px] cursor-pointer outline-none focus-visible:bg-white/[0.06] grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
@@ -577,6 +597,7 @@ function HistorialSection({ docId }) {
 
 function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePin }) {
   const [tocOpen, setTocOpen] = useState(false)
+  const [previewing, setPreviewing] = useState(null)
   const { files, note } = parseAttachments(doc.content || '')
   const headings = extractHeadings(note).filter((h) => h.level <= 2)
   const jump = (id) => {
@@ -642,14 +663,20 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
         {files.length > 0 && (
           <div className="mt-7 flex flex-col gap-3">
             {files.map((f, i) => (
-              <a key={i} href={f.url} target="_blank" rel="noreferrer" className="group flex items-center gap-4 rounded-2xl bg-white/[0.05] p-4 transition-colors hover:bg-white/[0.08]">
+              <div key={i} className="flex flex-col gap-3">
+              <a href={f.url} target="_blank" rel="noreferrer" className="group flex items-center gap-4 rounded-2xl bg-white/[0.05] p-4 transition-colors hover:bg-white/[0.08]">
                 <span className="flex h-14 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[11px] font-semibold uppercase tracking-wide text-[#E4E4E4]">{f.kind.slice(0, 4)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-medium text-[#F5F5F5]">{f.name}</span>
                   <span className="block text-[12.5px] text-[#8A8A8A]">{f.kind} · se abre en Google Drive</span>
                 </span>
+                {drivePreviewUrl(f.url) && (
+                  <button type="button" onClick={(e) => { e.preventDefault(); setPreviewing(previewing === i ? null : i) }} className="rounded-full bg-white/[0.1] px-4 py-2 text-[13px] font-medium text-[#F5F5F5] hover:bg-white/[0.16]">{previewing === i ? 'Ocultar' : 'Ver aquí'}</button>
+                )}
                 <span className="rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#111]">Abrir</span>
               </a>
+              {previewing === i && <FilePreview url={f.url} />}
+              </div>
             ))}
           </div>
         )}
@@ -800,6 +827,72 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
     setShowAll(false)
   }
 
+  // ---- Arrastrar y soltar: archivos del computador → Drive → documento nuevo;
+  // documentos de la tabla → otra carpeta. El archivo vive en Drive, aquí solo el enlace.
+  const [dropKey, setDropKey] = useState(null)
+  const [draft, setDraft] = useState(null)
+  const uploadAndGet = async (list) => {
+    const out = []
+    for (const f of list) {
+      showToast(`Subiendo «${f.name}» a Drive…`)
+      out.push(await uploadFileToDrive(auth?.currentUser?.uid, f))
+    }
+    return out
+  }
+  const handleFiles = async (fileList, subId) => {
+    const list = [...fileList]
+    if (!list.length) return
+    try {
+      const files = await uploadAndGet(list)
+      if (subId) {
+        for (const f of files) {
+          await withTimeout(createKnowledgeDoc({ title: f.name.replace(/\.[a-z0-9]{2,5}$/i, ''), subcategory: subId, content: buildFileContent([f], ''), tags: [] }, actorName))
+        }
+        showToast(files.length === 1 ? `«${files[0].name}» se guardó en ${subcategoryLabel(index, subId)}.` : `${files.length} archivos guardados en ${subcategoryLabel(index, subId)}.`)
+      } else {
+        const sub = filter.type === 'subcategory' ? filter.id : filter.type === 'category' ? index.tree.find((c) => c.id === filter.id)?.subcategories[0]?.id : index.tree[0].subcategories[0].id
+        setDraft({ title: files[0].name.replace(/\.[a-z0-9]{2,5}$/i, ''), subcategory: sub, content: buildFileContent(files, ''), tags: [] })
+        setOpenDocId(null)
+        setEditing('new')
+      }
+    } catch (error) {
+      showToast(error.message)
+    }
+  }
+  const moveDoc = (docId, subId) => {
+    const d = docs.find((x) => x.id === docId)
+    if (!d || d.subcategory === subId) return
+    withTimeout(updateKnowledgeDoc(docId, { subcategory: subId }, actorName, d))
+      .then(() => showToast(`«${d.title}» ahora está en ${subcategoryLabel(index, subId)}.`))
+      .catch((error) => showToast(`No se pudo mover: ${error.message}`))
+  }
+  const dndTypes = (e) => [...(e.dataTransfer?.types || [])]
+  const dnd = (key, subId) => ({
+    onDragOver: (e) => {
+      const t = dndTypes(e)
+      if (!t.includes('Files') && !t.includes('application/x-ador-doc')) return
+      e.preventDefault()
+      e.stopPropagation()
+      if (dropKey !== key) setDropKey(key)
+    },
+    onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropKey((k) => (k === key ? null : k)) },
+    onDrop: (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDropKey(null)
+      const id = e.dataTransfer.getData('application/x-ador-doc')
+      if (id) moveDoc(id, subId)
+      else if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files, subId)
+    },
+  })
+  const pageDnd = isAdminUser && !editing && !openDoc
+    ? {
+        onDragOver: (e) => { if (dndTypes(e).includes('Files')) { e.preventDefault(); if (dropKey !== 'page') setDropKey('page') } },
+        onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropKey((k) => (k === 'page' ? null : k)) },
+        onDrop: (e) => { if (e.dataTransfer.files?.length) { e.preventDefault(); setDropKey(null); handleFiles(e.dataTransfer.files, null) } },
+      }
+    : {}
+
   const [docOrigin, setDocOrigin] = useState(null)
   const growRef = useGrowFrom(docOrigin)
   const handleOpen = (doc, rect) => {
@@ -900,7 +993,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           onSelectCategory={selectCategory}
           onSelectSubcategory={selectSubcategory}
           onOpen={handleOpen}
-          onNew={() => { setOpenDocId(null); setEditing('new') }}
+          onNew={() => { setDraft(null); setOpenDocId(null); setEditing('new') }}
           ago={timeAgo}
         />}
       </div>
@@ -912,6 +1005,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
       initial={false}
       className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 pb-16 pt-6 md:px-8 lg:flex-row lg:px-12 lg:pt-10"
       {...edgeProps}
+      {...pageDnd}
       onContextMenu={(e) => {
         const id = e.target.closest?.('[data-doc-id]')?.dataset.docId
         const d = id && docs.find((x) => x.id === id)
@@ -933,6 +1027,8 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
         total={docs.length}
         isAdminUser={isAdminUser}
         onCreateSection={handleCreateSection}
+        dnd={isAdminUser ? dnd : null}
+        dropKey={dropKey}
       />}
 
       <div className="min-w-0 flex-1">
@@ -946,6 +1042,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
             <button
               type="button"
               onClick={() => {
+                setDraft(null)
                 setOpenDocId(null)
                 setEditing('new')
               }}
@@ -956,10 +1053,15 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           )}
         </div>
 
+        {dropKey === 'page' && (
+          <div className="pointer-events-none mb-6 flex items-center justify-center rounded-3xl border border-dashed border-[#F4EEE2]/50 bg-[#F4EEE2]/[0.06] px-6 py-10 text-[14px] text-[#F4EEE2]">Suelta el archivo para subirlo a Drive y crear el documento</div>
+        )}
         {editing ? (
           <DocEditor
             tree={index.tree}
-            initial={editing === 'new' ? null : openDoc}
+            initial={editing === 'new' ? draft : openDoc}
+            isNew={editing === 'new'}
+            allTags={tagList.map((t) => t.tag)}
             onSave={editing === 'new' ? handleSaveNew : handleSaveEdit}
             onCancel={() => setEditing(false)}
             saving={saving}
@@ -974,7 +1076,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[1fr_300px]">
             <div className="min-w-0">
               {filter.type === 'all' && !q && <PinnedAndRecent pinned={pinnedDocs} recent={recentDocs} index={index} onOpen={handleOpen} />}
-              {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} docs={docs} />}
+              {filter.type === 'all' && !q && <TypeCards tree={index.tree} counts={catCounts} onSelect={selectCategory} docs={docs} dnd={isAdminUser ? dnd : null} dropKey={dropKey} />}
               <DocsTable
                 index={index}
                 title={tableTitle}

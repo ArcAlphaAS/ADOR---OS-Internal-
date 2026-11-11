@@ -9,11 +9,11 @@ import { FOLDER_TINTS } from './FolderIllustration'
 // and editing an existing one; the parent decides create vs. update. `tree`
 // is the live, sections-merged tree from ConocimientoModule (not imported
 // statically), so admin-added sections show up here immediately too.
-export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
+export default function DocEditor({ tree, initial, onSave, onCancel, saving, isNew = false, allTags = [] }) {
   const [title, setTitle] = useState(initial?.title || '')
   const [subcategory, setSubcategory] = useState(initial?.subcategory || tree[0].subcategories[0].id)
   const parsed = parseAttachments(initial?.content || '')
-  const startsAsFiles = !initial || (parsed.files.length > 0 && !/^#/m.test(parsed.note) && parsed.note.length < 600)
+  const startsAsFiles = !initial || isNew || (parsed.files.length > 0 && !/^#/m.test(parsed.note) && parsed.note.length < 600)
   const [mode, setMode] = useState(startsAsFiles ? 'archivo' : 'escribir')
   const [files, setFiles] = useState(parsed.files)
   const [note, setNote] = useState(startsAsFiles ? parsed.note : '')
@@ -73,7 +73,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   return (
     <div className="mx-auto w-full max-w-[1120px] rounded-[28px] bg-[#141414] shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-between px-8 pt-6">
-        <p className="text-[12px] font-medium text-[#8A8A8A]">{initial ? 'Editar documento' : 'Nuevo documento'}</p>
+        <p className="text-[12px] font-medium text-[#8A8A8A]">{initial && !isNew ? 'Editar documento' : 'Nuevo documento'}</p>
         <button type="button" onClick={onCancel} aria-label="Cerrar" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[#B5B5B5] hover:bg-white/[0.12]">
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2 2l8 8M10 2l-8 8" /></svg>
         </button>
@@ -188,6 +188,18 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
               className="min-w-[90px] flex-1 bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none"
             />
           </div>
+          {(() => {
+            const q = tagDraft.trim().replace(/^#/, '').toLowerCase()
+            const sugg = allTags.filter((t) => !tags.some((x) => x.toLowerCase() === t.toLowerCase()) && (!q || t.toLowerCase().includes(q))).slice(0, 8)
+            return sugg.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11.5px] text-[#767676]">Ya usadas:</span>
+                {sugg.map((t) => (
+                  <button key={t} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => addTag(t)} className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[12px] text-[#B5B5B5] hover:bg-white/[0.12] hover:text-[#F5F5F5]">#{t}</button>
+                ))}
+              </div>
+            ) : null
+          })()}
         </div>
         <div className="flex flex-col gap-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Guardar en</p>
