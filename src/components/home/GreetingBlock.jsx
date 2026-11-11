@@ -90,7 +90,7 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
         return (
           <h1 className="tracking-[-0.03em]">
             {lead && (
-              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[40px] font-medium leading-tight tracking-[-0.015em] text-[#9A9AA0] md:text-[42px]">
+              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[42px] font-medium leading-tight tracking-[-0.015em] text-[#9A9AA0] md:text-[42px]">
                 {lead}
               </motion.span>
             )}
