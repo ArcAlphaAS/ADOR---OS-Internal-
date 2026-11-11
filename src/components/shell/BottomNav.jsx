@@ -109,7 +109,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
       {createPortal(
       <nav
         className="ador-bottomnav ador-hide-on-kb fixed inset-x-3 z-[46] flex h-16 items-center rounded-full border border-white/[0.08] bg-[#1C1C1E]/90 px-2 shadow-[0_10px_30px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden"
-        style={{ bottom: 'calc(max(10px, calc(env(safe-area-inset-bottom) - 14px)) - var(--ios-gap, 0px))' }}
+        style={{ bottom: 'calc(max(8px, calc(env(safe-area-inset-bottom) - 22px)) - var(--ios-gap, 0px))' }}
       >
         {primary.map((m) => (
           <Tab key={m.id} {...m} active={activeModule === m.id && !moreOpen} badge={badges[m.id]} onClick={() => go(m.id)} />
@@ -131,7 +131,7 @@ export default function BottomNav({ activeModule, onNavigate, canSee, badges = {
                 {...swipeToClose('y', () => setMoreOpen(false))}
                 onClick={(e) => e.stopPropagation()}
                 className="absolute inset-x-3 mx-auto max-w-[680px]"
-                style={{ bottom: 'calc(max(10px, calc(env(safe-area-inset-bottom) - 14px)) - var(--ios-gap, 0px) + 74px)' }}
+                style={{ bottom: 'calc(max(8px, calc(env(safe-area-inset-bottom) - 22px)) - var(--ios-gap, 0px) + 74px)' }}
               >
                 <div className="ador-modal-surface rounded-[30px] px-3.5 pb-3.5 pt-3">
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
