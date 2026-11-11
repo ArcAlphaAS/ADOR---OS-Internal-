@@ -8,7 +8,7 @@ export const CARD_RADIUS = 'rounded-[24px]'
 
 export default function CardHeader({ label, count, dot, action }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="ador-ch flex items-center gap-2.5">
       <h3 className="text-[13px] font-medium tracking-[0.005em] text-[#A8A8A8]">{label}</h3>
       {count != null && <span className="text-[12px] tabular-nums text-[#8A8A8A]">{count}</span>}
       {dot && <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot, animation: 'ador-pulse 2s ease-in-out infinite' }} />}

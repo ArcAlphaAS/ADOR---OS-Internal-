@@ -40,7 +40,7 @@ export default function PhoneTuDia({ user, nextMeeting, calendarStatus, onNaviga
   const C = 2 * Math.PI * R
 
   return (
-    <div className="rounded-[28px] bg-[#1C1C1E] p-5">
+    <div className="ador-glow rounded-[28px] p-5">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[13px] font-medium text-[#E8C15A]">Tu día</p>

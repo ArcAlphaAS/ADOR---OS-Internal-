@@ -8,6 +8,7 @@ import GreetingBlock from './GreetingBlock'
 import TuDiaCard from './TuDiaCard'
 import PhoneTuDia from './PhoneTuDia'
 import PhoneSocial from './PhoneSocial'
+import AccordionCard from './AccordionCard'
 import usePhone from '../../hooks/usePhone'
 import AttentionCard from './AttentionCard'
 import WeeklySummaryCard from './WeeklySummaryCard'
@@ -98,6 +99,20 @@ export default function HomeScreen({ user, onNavigate }) {
             <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
           </motion.div>
         )}
+        {phone ? (
+          <div className="flex flex-col gap-3">
+            <motion.div variants={itemVariants}>
+              <AccordionCard title="Necesita tu atención" subtitle="Cobros, tareas y alertas" defaultOpen>
+                <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+              </AccordionCard>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <AccordionCard title="Resumen semanal" subtitle="Cómo va la semana">
+                <WeeklySummaryCard />
+              </AccordionCard>
+            </motion.div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
           <motion.div variants={itemVariants} className="h-full lg:col-span-7">
             <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
@@ -106,6 +121,7 @@ export default function HomeScreen({ user, onNavigate }) {
             <WeeklySummaryCard />
           </motion.div>
         </div>
+        )}
       </Zone>
 
       <Zone title="La empresa" foldOnPhone>
