@@ -24,8 +24,35 @@ function installIosGap() {
   window.addEventListener('orientationchange', () => setTimeout(measure, 300))
 }
 
+// iPhone con la app instalada: tras abrir el teclado una vez (por ejemplo al iniciar sesión),
+// iOS puede dejar la ventana más corta para siempre, con una franja muerta abajo, hasta
+// cerrar la app a la fuerza. Se corrige apagando y encendiendo un instante la raíz de la app
+// (iOS vuelve a medir la pantalla). Se recuerda la mayor altura vista como "altura real".
+function installViewportHealing() {
+  const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
+  if (!standalone || !/iP(hone|ad)/.test(navigator.userAgent)) return
+  let maxH = window.innerHeight
+  window.addEventListener('resize', () => { maxH = Math.max(maxH, window.innerHeight) })
+  const heal = () => {
+    if (document.documentElement.classList.contains('kb-open')) return
+    if (maxH - window.innerHeight <= 4) return
+    const app = document.querySelector('.ador-app-root')
+    if (!app) return
+    const scroller = app.querySelector('main')
+    const top = scroller ? scroller.scrollTop : 0
+    app.style.display = 'none'
+    void app.offsetHeight
+    app.style.display = ''
+    if (scroller) scroller.scrollTop = top
+  }
+  document.addEventListener('focusout', () => setTimeout(heal, 140))
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && setTimeout(heal, 200))
+  window.addEventListener('pageshow', () => setTimeout(heal, 200))
+}
+
 export function installKeyboardHandling() {
   installIosGap()
+  installViewportHealing()
   const vv = window.visualViewport
   if (!vv || !window.matchMedia('(pointer: coarse)').matches) return
   const root = document.documentElement
