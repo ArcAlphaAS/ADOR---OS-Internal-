@@ -24,6 +24,7 @@ import { useToast } from '../../hooks/useToast'
 import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
 import ProjectTaskRow from './ProjectTaskRow'
+import PhoneTaskCard from './PhoneTaskCard'
 import { SPRING } from '../../lib/motion'
 import usePhone from '../../hooks/usePhone'
 
@@ -468,7 +469,31 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
 function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, workstreams, onReschedule, onFocus, headerAction, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
+  const phone = usePhone()
   if (tasks.length === 0 && !children) return null
+  // Teléfono: encabezado de sección + tarjetas (las mismas de Lista y Agenda), sin tabla.
+  if (phone) {
+    return (
+      <section className="flex flex-col gap-2.5">
+        <div className="flex min-h-[44px] items-center justify-between gap-2">
+          <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex min-h-[44px] items-center gap-2.5 px-1 text-left">
+            <span className="text-[17px] font-semibold" style={{ color }}>{title}</span>
+            {tasks.length > 0 && <span className="text-[14px] text-[#8E8E93]">{tasks.length}</span>}
+            <ChevronDownIcon size={13} className="text-[#8E8E93]" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }} />
+          </button>
+          {headerAction}
+        </div>
+        {open && (
+          <>
+            {tasks.map((task) => (
+              <PhoneTaskCard key={task.id} task={task} workstream={workstreamById[task.workstreamId]} workstreams={workstreams} userById={userById} actorUserId={actorUserId} actorName={actorName} onOpen={onOpenTask} onReschedule={onReschedule} />
+            ))}
+            {children}
+          </>
+        )}
+      </section>
+    )
+  }
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left">
@@ -775,7 +800,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
         <HechoCard tasks={tasks} userId={userId} userById={userById} workstreamById={workstreamById} onOpenTask={onOpenTask} />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="hidden flex-col gap-4 md:flex">
         <MiniCalendar />
         <ProgressDonut completed={completedToday.length} total={mine.length + completedToday.length} />
         <ObjetivoSemanaCard userId={userId} tasks={tasks} />

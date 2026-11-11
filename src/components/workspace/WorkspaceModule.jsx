@@ -6,6 +6,8 @@ import { computeWorkload, isDueToday, isOverdue, isPendingFor } from '../../lib/
 import { KanbanIcon, ListViewIcon, TimelineIcon, CalendarIcon, GridIcon } from '../icons'
 import WorkspaceSidebar from './WorkspaceSidebar'
 import PhoneAgenda from './PhoneAgenda'
+import PhoneLista from './PhoneLista'
+import PhoneTaskCalendar from './PhoneTaskCalendar'
 import usePhone from '../../hooks/usePhone'
 import { useAccess } from '../../hooks/useAccess'
 import HoyView from './HoyView'
@@ -346,7 +348,9 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             </motion.div>
           ) : view === 'lista' ? (
             <motion.div key="lista" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
-              {onlyMine ? (
+              {phone ? (
+                <PhoneLista workstreams={visibleWorkstreams} tasksByWorkstream={visibleTasksByWorkstream} workstreamById={workstreamById} userById={userById} onOpenTask={openTaskPanel} actorUserId={user?.uid} actorName={actorName} emptyLabel={onlyMine ? 'Personal' : 'General'} sort={sort} groupBy={group} filtersActive={filtersOn} />
+              ) : onlyMine ? (
                 <PersonalOverview
                   user={user}
                   tasks={tasks}
@@ -394,7 +398,11 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             </motion.div>
           ) : view === 'calendario' ? (
             <motion.div key="calendario" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
-              <CalendarView tasks={visibleTasks} onOpenTask={openTaskPanel} actorUserId={user?.uid} actorName={actorName} />
+              {phone ? (
+                <PhoneTaskCalendar tasks={visibleTasks} workstreamById={workstreamById} workstreams={workstreams} userById={userById} actorUserId={user?.uid} actorName={actorName} onOpenTask={openTaskPanel} />
+              ) : (
+                <CalendarView tasks={visibleTasks} onOpenTask={openTaskPanel} actorUserId={user?.uid} actorName={actorName} />
+              )}
             </motion.div>
           ) : (
             <motion.div key="timeline" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
