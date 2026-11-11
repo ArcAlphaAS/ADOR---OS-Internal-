@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { renderMarkdown } from '../../lib/knowledge'
+import { renderMarkdown, parseAttachments, buildFileContent, linkLabel } from '../../lib/knowledge'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
 import { driveFileKind } from '../../lib/googleDrive'
 
@@ -11,21 +11,52 @@ import { driveFileKind } from '../../lib/googleDrive'
 export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
   const [title, setTitle] = useState(initial?.title || '')
   const [subcategory, setSubcategory] = useState(initial?.subcategory || tree[0].subcategories[0].id)
+  const parsed = parseAttachments(initial?.content || '')
+  const startsAsFiles = !initial || (parsed.files.length > 0 && !/^#/m.test(parsed.note) && parsed.note.length < 600)
+  const [mode, setMode] = useState(startsAsFiles ? 'archivo' : 'escribir')
+  const [files, setFiles] = useState(parsed.files)
+  const [note, setNote] = useState(startsAsFiles ? parsed.note : '')
   const [content, setContent] = useState(initial?.content || '')
-  // "Adjuntar de Drive": the file stays in Drive; the document gets a
-  // Markdown link to it, e.g. "📎 [Contrato QANLLA](…) — PDF".
+  const [linkUrl, setLinkUrl] = useState('')
   const drive = useDrivePicker('conocimiento')
+  const switchMode = (m) => {
+    if (m === mode) return
+    if (m === 'escribir') setContent(buildFileContent(files, note))
+    else {
+      const p = parseAttachments(content)
+      setFiles(p.files)
+      setNote(p.note)
+    }
+    setMode(m)
+  }
+  const addFiles = (list) => {
+    setFiles((cur) => [...cur, ...list])
+    if (!title.trim() && list[0]) setTitle(list[0].name.replace(/\.[a-z0-9]{2,5}$/i, ''))
+  }
+  const pickFromDrive = async () => {
+    const picked = await drive.pick({ multiple: true, title: 'Añadir a Conocimiento' })
+    if (picked.length) addFiles(picked.map((f) => ({ name: f.name, url: f.url, kind: driveFileKind(f.mimeType) })))
+  }
+  const addLink = () => {
+    const url = linkUrl.trim()
+    const info = /^https?:\/\//i.test(url) ? linkLabel(url) : null
+    if (!info) return
+    addFiles([{ name: title.trim() || info.host, url, kind: info.kind }])
+    setLinkUrl('')
+  }
+  // Attach from Drive inside the Markdown editor (old flow).
   const attachFromDrive = async () => {
-    const files = await drive.pick({ multiple: true, title: 'Adjuntar al documento' })
-    if (!files.length) return
-    const lines = files.map((f) => `📎 [${f.name.replace(/[[\]]/g, '')}](${f.url}) — ${driveFileKind(f.mimeType)}`).join('\n')
+    const picked = await drive.pick({ multiple: true, title: 'Adjuntar al documento' })
+    if (!picked.length) return
+    const lines = picked.map((f) => `📎 [${f.name.replace(/[[\]]/g, '')}](${f.url}) — ${driveFileKind(f.mimeType)}`).join('\n')
     setContent((c) => `${c.trimEnd()}${c.trim() ? '\n\n' : ''}${lines}\n`)
     setTab('editar')
   }
   const [tab, setTab] = useState('editar')
+  const finalContent = mode === 'archivo' ? buildFileContent(files, note) : content
 
   const activeCategoryId = tree.find((cat) => cat.subcategories.some((s) => s.id === subcategory))?.id || tree[0].id
-  const canSave = title.trim() && content.trim() && !saving
+  const canSave = title.trim() && finalContent.trim() && !saving
 
   return (
     <div className="ador-glass ador-grain flex flex-col gap-4 rounded-2xl p-6">
@@ -76,6 +107,52 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
         </div>
       </div>
 
+      <div className="flex items-center gap-1 self-start rounded-full bg-white/[0.04] p-1">
+        {[['archivo', 'Archivo o enlace'], ['escribir', 'Escribir']].map(([id, label]) => (
+          <button key={id} type="button" onClick={() => switchMode(id)} className="rounded-full px-3.5 py-1 text-[12px] font-medium transition-colors duration-150" style={{ background: mode === id ? 'rgba(255,255,255,0.1)' : 'transparent', color: mode === id ? '#F5F5F5' : '#888888' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'archivo' ? (
+        <div className="flex flex-col gap-3">
+          <button type="button" onClick={pickFromDrive} disabled={drive.busy} className="flex flex-col items-center gap-1 rounded-2xl border border-dashed border-white/[0.16] px-6 py-8 text-center transition-colors hover:border-white/[0.3] hover:bg-white/[0.03] disabled:opacity-50">
+            <span className="text-[14px] font-medium text-[#F5F5F5]">{drive.busy ? 'Abriendo Drive…' : 'Elegir de Google Drive'}</span>
+            <span className="text-[12px] text-[#8A8A8A]">PDF, documentos, hojas o presentaciones. También puedes subir uno nuevo desde ahí.</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLink() } }}
+              placeholder="…o pega un enlace de Google Drive"
+              className="min-w-0 flex-1 rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
+            />
+            <button type="button" onClick={addLink} disabled={!linkUrl.trim()} className="rounded-xl bg-white/[0.08] px-4 py-2.5 text-[13px] text-[#F5F5F5] disabled:opacity-40">Añadir</button>
+          </div>
+          {files.length > 0 && (
+            <ul className="flex flex-col divide-y divide-white/[0.05] overflow-hidden rounded-2xl bg-white/[0.04]">
+              {files.map((f, i) => (
+                <li key={`${f.url}-${i}`} className="flex items-center gap-3 px-4 py-2.5">
+                  <span className="rounded-md bg-white/[0.08] px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-wide text-[#C9C9C9]">{f.kind}</span>
+                  <input value={f.name} onChange={(e) => setFiles((cur) => cur.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="min-w-0 flex-1 bg-transparent text-[13px] text-[#F5F5F5] outline-none" />
+                  <button type="button" onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))} className="text-[12px] text-[#8A8A8A] hover:text-[#EF5350]">Quitar</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Descripción (opcional): de qué trata, cuándo usarlo…"
+            rows={3}
+            className="w-full resize-y rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-3 text-[13.5px] leading-relaxed text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
+          />
+        </div>
+      ) : (
+        <>
       <div className="flex items-center gap-3">
       <div className="flex items-center gap-1 self-start rounded-full bg-white/[0.04] p-1">
         {['editar', 'vista previa'].map((t) => (
@@ -94,8 +171,6 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
           📎 {drive.busy ? 'Abriendo Drive…' : 'Adjuntar de Google Drive'}
         </button>
       </div>
-      {drive.prompt}
-
       {tab === 'editar' ? (
         <textarea
           value={content}
@@ -110,6 +185,10 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
         </div>
       )}
 
+        </>
+      )}
+      {drive.prompt}
+
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-[13px] text-[#888888] hover:text-[#F5F5F5]">
           Cancelar
@@ -117,7 +196,7 @@ export default function DocEditor({ tree, initial, onSave, onCancel, saving }) {
         <button
           type="button"
           disabled={!canSave}
-          onClick={() => onSave({ title: title.trim(), subcategory, content })}
+          onClick={() => onSave({ title: title.trim(), subcategory, content: finalContent })}
           className="ador-btn-primary rounded-lg px-4 py-2 text-[13px] font-medium disabled:opacity-50"
         >
           {saving ? 'Guardando...' : 'Guardar'}

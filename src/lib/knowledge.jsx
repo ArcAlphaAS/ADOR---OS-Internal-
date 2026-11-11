@@ -285,3 +285,55 @@ export function renderMarkdown(source) {
 
   return <div className="ador-wrap flex flex-col gap-3">{blocks}</div>
 }
+
+// ---- Files and links inside a document ----
+// Documents are mostly Drive files and links, so each is stored as one line
+// of the Markdown content: "📎 [name](url) — kind". These helpers read and
+// write those lines so the rest of the text stays an ordinary description.
+const FILE_LINE = /^📎 \[(.+?)\]\((\S+?)\)(?: — (.+))?$/
+
+export function parseAttachments(content = '') {
+  const files = []
+  const rest = []
+  for (const line of content.split('\n')) {
+    const m = line.trim().match(FILE_LINE)
+    if (m) files.push({ name: m[1], url: m[2], kind: m[3] || 'Enlace' })
+    else rest.push(line)
+  }
+  return { files, note: rest.join('\n').trim() }
+}
+
+export function buildFileContent(files, note) {
+  const lines = files.map((f) => `📎 [${f.name.replace(/[[\]]/g, '')}](${f.url}) — ${f.kind || 'Enlace'}`).join('\n')
+  return [lines, note?.trim()].filter(Boolean).join('\n\n')
+}
+
+export function linkLabel(url) {
+  try {
+    const u = new URL(url)
+    if (/docs\.google\.com\/document/.test(url)) return { kind: 'Documento', host: 'Google Docs' }
+    if (/docs\.google\.com\/spreadsheets/.test(url)) return { kind: 'Hoja de cálculo', host: 'Google Sheets' }
+    if (/docs\.google\.com\/presentation/.test(url)) return { kind: 'Presentación', host: 'Google Slides' }
+    if (/drive\.google\.com/.test(url)) return { kind: 'Drive', host: 'Google Drive' }
+    return { kind: 'Enlace', host: u.hostname.replace(/^www\./, '') }
+  } catch {
+    return null
+  }
+}
+
+// A short piece of text around the first match, for search results.
+export function searchSnippet(doc, q) {
+  if (!q) return null
+  const plain = (doc.content || '').replace(/📎 \[(.+?)\]\(\S+?\)( — [^\n]*)?/g, '$1').replace(/[#*`>_]/g, ' ').replace(/\s+/g, ' ')
+  const i = plain.toLowerCase().indexOf(q)
+  if (i < 0) return null
+  const start = Math.max(0, i - 40)
+  return { before: (start > 0 ? '…' : '') + plain.slice(start, i), match: plain.slice(i, i + q.length), after: plain.slice(i + q.length, i + q.length + 90) }
+}
+
+// How old an edit is, to flag documents nobody has looked at in a while.
+export function staleMonths(ts) {
+  const ms = ts?.toMillis ? ts.toMillis() : ts?.seconds ? ts.seconds * 1000 : null
+  if (!ms) return 0
+  return Math.floor((Date.now() - ms) / (30 * 86400000))
+}

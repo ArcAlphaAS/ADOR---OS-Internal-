@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import ContextMenu from '../common/ContextMenu'
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
 import { useContextMenu } from '../../hooks/useContextMenu'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   subscribeKnowledgeDocs,
@@ -19,7 +20,7 @@ import {
 import { extractHeadings } from '../../lib/knowledge'
 import { pushRecentDoc, readRecentDocs } from '../../lib/recentDocs'
 import { SERIF } from '../news/NewsLayout'
-import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown } from '../../lib/knowledge'
+import { BASE_CATEGORY_TREE, mergeSections, buildKnowledgeIndex, subcategoryMeta, subcategoryLabel, categoryLabelOf, subcategoryCounts, categoryCounts, renderMarkdown, parseAttachments, searchSnippet, staleMonths } from '../../lib/knowledge'
 import { isAdmin } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -94,7 +95,48 @@ function timeAgo(ts) {
 }
 
 function docPreview(doc) {
-  return doc.content?.replace(/[#*`>_-]/g, '').trim().slice(0, 90) || ''
+  return parseAttachments(doc.content || '').note.replace(/[#*`>_-]/g, '').trim().slice(0, 90)
+}
+
+// Chip with the file type ("PDF") when the document is a file or a link.
+function KindChip({ doc }) {
+  const f = parseAttachments(doc.content || '').files
+  if (!f.length) return null
+  return <span className="mr-2 inline-block rounded-md bg-white/[0.08] px-1.5 py-px align-middle text-[10px] font-medium uppercase tracking-wide text-[#C9C9C9]">{f[0].kind}{f.length > 1 ? ` +${f.length - 1}` : ''}</span>
+}
+
+function StaleChip({ doc }) {
+  const m = staleMonths(doc.updatedAt || doc.createdAt)
+  if (m < 6) return null
+  return <span className="ml-2 rounded-md bg-[#FFC107]/10 px-1.5 py-px text-[10.5px] text-[#E8C15A]" title="Hace tiempo que nadie lo revisa">Revisar · {m} meses</span>
+}
+
+// Space = vista rápida de un documento sin abrirlo (como Quick Look).
+function QuickLook({ doc, index, onClose, onOpen }) {
+  const { files, note } = parseAttachments(doc.content || '')
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape' || e.key === ' ') { e.preventDefault(); onClose() } else if (e.key === 'Enter') onOpen(doc) }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [doc, onClose, onOpen])
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-6" onClick={onClose}>
+      <div className="ador-modal-surface w-full max-w-[520px] rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
+        <p className="text-[11.5px] text-[#8A8A8A]">{categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}</p>
+        <h3 className="mt-1 text-[22px] leading-tight text-[#F5F5F5]" style={SERIF}>{doc.title}</h3>
+        {files.map((f, i) => (
+          <a key={i} href={f.url} target="_blank" rel="noreferrer" className="mt-4 flex items-center gap-3 rounded-2xl bg-white/[0.06] px-4 py-3 text-[13px] text-[#F5F5F5]">
+            <span className="rounded-md bg-white/[0.1] px-2 py-0.5 text-[10.5px] font-medium uppercase">{f.kind}</span>
+            <span className="min-w-0 flex-1 truncate">{f.name}</span>
+            <span className="text-[#8A8A8A]">↗</span>
+          </a>
+        ))}
+        {note && <p className="ador-wrap mt-4 line-clamp-6 text-[13.5px] leading-relaxed text-[#B5B5B5]">{note.replace(/[#*`>_]/g, '')}</p>}
+        <p className="mt-5 text-[11.5px] text-[#767676]">Enter abre el documento · Espacio o Esc cierra</p>
+      </div>
+    </div>,
+    document.body
+  )
 }
 
 // Inline "+ Nueva sección" row — a text input that appears in place of the
@@ -272,7 +314,7 @@ const FOLDER_TINTS = ['#7B8CA8', '#A39382', '#7E9A8D', '#8F8BA3', '#9A8A8A', '#7
 function TypeCards({ tree, counts, onSelect, docs }) {
   return (
     <div>
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Tipos de conocimiento</p>
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Carpetas</p>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tree.map((cat, i) => {
           const tint = FOLDER_TINTS[i % FOLDER_TINTS.length]
@@ -283,11 +325,11 @@ function TypeCards({ tree, counts, onSelect, docs }) {
               key={cat.id}
               type="button"
               onClick={() => onSelect(cat.id)}
-              className="group flex flex-col items-start gap-3 rounded-2xl bg-white/[0.04] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
+              className="group flex flex-col items-start gap-4 rounded-3xl bg-white/[0.04] p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
             >
-              <FolderIllustration id={cat.id} size={56} tint={tint} />
+              <FolderIllustration id={cat.id} size={96} tint={tint} />
               <span className="min-w-0">
-                <span className="block text-[14px] font-medium text-[#F5F5F5]">{cat.label}</span>
+                <span className="block text-[15.5px] font-medium text-[#F5F5F5]">{cat.label}</span>
                 <span className="block text-[11.5px] text-[#8A8A8A]">{n === 0 ? 'Vacía' : n === 1 ? '1 documento' : `${n} documentos`}</span>
                 {last && <span className="mt-0.5 block truncate text-[11px] text-[#767676]">Última: {last.title}</span>}
               </span>
@@ -352,14 +394,30 @@ function DocRowMenu({ doc, onEdit, onDelete }) {
   )
 }
 
-function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAdminUser, onEdit, onDelete }) {
+function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAdminUser, onEdit, onDelete, query }) {
+  const [look, setLook] = useState(null)
+  const onKeys = (e) => {
+    const row = e.target.closest?.('[data-doc-id]')
+    if (!row || e.target.closest('button,input')) return
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const rows = [...e.currentTarget.querySelectorAll('[data-doc-id]')]
+      rows[rows.indexOf(row) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      onOpen(docs.find((d) => d.id === row.dataset.docId), row.getBoundingClientRect())
+    } else if (e.key === ' ') {
+      e.preventDefault()
+      setLook(docs.find((d) => d.id === row.dataset.docId))
+    }
+  }
   if (docs.length === 0) {
     return (
       <div className="ador-glass ador-grain mt-6 flex flex-col items-center gap-2 rounded-2xl px-6 py-14 text-center">
         <BookIcon size={20} className="text-[#333333]" />
         <p className="text-[14px] font-medium text-[#888888]">Nada por aquí todavía</p>
         <p className="text-[13px] text-[#8A8A8A]">
-          {isAdminUser ? 'Usa "+ Nuevo documento" para empezar a construir el conocimiento de ADOR.' : 'Un administrador todavía no ha añadido documentos.'}
+          {isAdminUser ? 'Usa "+ Nuevo documento" para subir un PDF o añadir un enlace de Google Drive.' : 'Un administrador todavía no ha añadido documentos.'}
         </p>
       </div>
     )
@@ -376,17 +434,22 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
             </span>
           ))}
         </div>
-        <div className="flex flex-col divide-y divide-white/[0.04]">
-          {docs.map((doc) => (
+        <div className="flex flex-col divide-y divide-white/[0.04]" onKeyDown={onKeys}>
+          {docs.map((doc) => {
+            const snip = searchSnippet(doc, query)
+            return (
             <div
               key={doc.id}
               data-doc-id={doc.id}
+              tabIndex={0}
               onClick={() => onOpen(doc)}
-              className="grid min-w-[640px] cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
+              className="grid min-w-[640px] cursor-pointer outline-none focus-visible:bg-white/[0.06] grid-cols-[1.6fr_1fr_1fr_1fr_32px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-white/[0.03]"
             >
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-[#F5F5F5]">{doc.title}</p>
-                {docPreview(doc) && <p className="truncate text-[11.5px] text-[#8A8A8A]">{docPreview(doc)}</p>}
+                <p className="truncate text-[13px] font-medium text-[#F5F5F5]"><KindChip doc={doc} />{doc.title}<StaleChip doc={doc} /></p>
+                {snip ? (
+                  <p className="truncate text-[11.5px] text-[#8A8A8A]">{snip.before}<mark className="rounded bg-[#E8C15A]/25 px-0.5 text-[#F5F5F5]">{snip.match}</mark>{snip.after}</p>
+                ) : docPreview(doc) && <p className="truncate text-[11.5px] text-[#8A8A8A]">{docPreview(doc)}</p>}
               </div>
               <span className="truncate text-[12px] text-[#F4EEE2]">
                 {categoryLabelOf(index, doc.subcategory)} · {subcategoryLabel(index, doc.subcategory)}
@@ -404,9 +467,11 @@ function DocsTable({ index, title, docs, total, showAll, onShowAll, onOpen, isAd
                 <span />
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
+      {look && <QuickLook doc={look} index={index} onClose={() => setLook(null)} onOpen={(d) => { setLook(null); onOpen(d) }} />}
       {!showAll && total > docs.length && (
         <button type="button" onClick={onShowAll} className="mt-3 flex items-center gap-1.5 text-[12.5px] text-[#F4EEE2] hover:text-white">
           Ver todos los documentos →
@@ -481,7 +546,8 @@ function HistorialSection({ docId }) {
 
 function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePin }) {
   const [tocOpen, setTocOpen] = useState(false)
-  const headings = extractHeadings(doc.content).filter((h) => h.level <= 2)
+  const { files, note } = parseAttachments(doc.content || '')
+  const headings = extractHeadings(note).filter((h) => h.level <= 2)
   const jump = (id) => {
     setTocOpen(false)
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -518,7 +584,7 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
           <p className="min-w-0 text-[13.5px] leading-snug text-[#A8A8A8]">
             <span className="font-medium text-[#F5F5F5]">{doc.updatedBy ? 'Editado por' : 'Creado por'} {editor}</span>
             <span className="block text-[12.5px] text-[#8A8A8A]">
-              {timeAgo(doc.updatedAt || doc.createdAt)}
+              {timeAgo(doc.updatedAt || doc.createdAt)}<StaleChip doc={doc} />
               {doc.updatedBy && doc.createdBy && doc.createdBy !== doc.updatedBy ? ` · creado por ${doc.createdBy}` : ''}
             </span>
           </p>
@@ -542,9 +608,25 @@ function DocView({ index, doc, isAdminUser, onBack, onEdit, onDelete, onTogglePi
           </div>
         )}
 
-        <div className="ador-wrap mt-7 flex flex-col gap-4 text-[16px] leading-[1.75] md:text-[16.5px]">
-          {renderMarkdown(doc.content) || <p className="text-[14px] text-[#8A8A8A]">Este documento no tiene contenido todavía.</p>}
-        </div>
+        {files.length > 0 && (
+          <div className="mt-7 flex flex-col gap-3">
+            {files.map((f, i) => (
+              <a key={i} href={f.url} target="_blank" rel="noreferrer" className="group flex items-center gap-4 rounded-2xl bg-white/[0.05] p-4 transition-colors hover:bg-white/[0.08]">
+                <span className="flex h-14 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[11px] font-semibold uppercase tracking-wide text-[#E4E4E4]">{f.kind.slice(0, 4)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-medium text-[#F5F5F5]">{f.name}</span>
+                  <span className="block text-[12.5px] text-[#8A8A8A]">{f.kind} · se abre en Google Drive</span>
+                </span>
+                <span className="rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[#111]">Abrir</span>
+              </a>
+            ))}
+          </div>
+        )}
+        {(note || files.length === 0) && (
+          <div className="ador-wrap mt-7 flex flex-col gap-4 text-[16px] leading-[1.75] md:text-[16.5px]">
+            {renderMarkdown(note) || <p className="text-[14px] text-[#8A8A8A]">Este documento no tiene contenido todavía.</p>}
+          </div>
+        )}
 
         <div className="mt-12 border-t border-white/[0.07] pt-6">
           <HistorialSection docId={doc.id} />
@@ -862,6 +944,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
                   setEditing(true)
                 }}
                 onDelete={handleDelete}
+                query={q}
               />
             </div>
             <div className="flex flex-col gap-4">
