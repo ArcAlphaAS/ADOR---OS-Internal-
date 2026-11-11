@@ -12,6 +12,7 @@ import { subscribeMyPresence, setDoNotDisturb, subscribeUsers, dmIdFor } from '.
 import { presenceOf, userLabel } from '../../lib/chat'
 import { isAdmin as isAdminProfile } from '../../lib/permissions'
 import { withTimeout } from '../../lib/workspace'
+import { applyUpdate } from '../../lib/appUpdate'
 
 // Perfil en el teléfono: una pantalla completa que entra desde la derecha, no
 // el menú desplegable de la computadora. Tarjeta de tu cuenta arriba, una
@@ -268,7 +269,7 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
             <p className="mb-2 mt-4 px-3 text-[13px] font-medium text-[#8E8E93]">Otras cosas</p>
             <Group>
               <Row icon={I.spark} label="Conoce ADOR OS" hint="El repaso por cada módulo" onClick={() => { setSheet(null); onShowOnboarding() }} />
-              <Row icon={I.download} label="Actualizar ADOR OS" hint="Recarga la app si algo no se ve bien" onClick={() => window.location.reload()} />
+              <Row icon={I.download} label="Actualizar ADOR OS" hint="Recarga la app si algo no se ve bien" onClick={() => applyUpdate()} />
             </Group>
           </MiniSheet>
         )}

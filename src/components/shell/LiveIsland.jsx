@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useLiveStatus } from '../../lib/liveStatus'
 import { useAppUpdate } from '../../hooks/useAppUpdate'
 import { SPRING } from '../../lib/motion'
+import { applyUpdate } from '../../lib/appUpdate'
 
 // La "isla" de la esquina: una píldora negra pequeña que solo existe mientras
 // pasa algo y cambia de forma según qué. Sustituye a los avisos sueltos de
@@ -66,7 +67,7 @@ export default function LiveIsland() {
 
   const content = {
     offline: { icon: <span className="h-2 w-2 rounded-full bg-[#8E8E93]" />, text: 'Sin conexión', title: 'Lo que envíes saldrá al volver la señal' },
-    update: { icon: <span className="h-2 w-2 rounded-full bg-[#4CAF50]" />, text: 'Nueva versión · Actualizar', light: true, title: 'Hay una nueva versión de ADOR OS', action: () => window.location.reload() },
+    update: { icon: <span className="h-2 w-2 rounded-full bg-[#4CAF50]" />, text: 'Nueva versión · Actualizar', light: true, title: 'Hay una nueva versión de ADOR OS', action: () => applyUpdate() },
     thinking: { icon: <Dots3 />, text: null, title: 'ADOR IA está pensando' },
     saving: { icon: <Dots6 />, text: null, title: 'Guardando…' },
     back: { icon: <span className="h-2 w-2 rounded-full bg-[#4CAF50]" />, text: 'Conectado', title: 'Enviando lo pendiente' },

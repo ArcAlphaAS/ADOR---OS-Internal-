@@ -7,6 +7,7 @@ import { presenceOf, userLabel } from '../../lib/chat'
 import { isAdmin as isAdminProfile } from '../../lib/permissions'
 import PersonAvatar from '../chat/PersonAvatar'
 import { notifyFail } from '../../lib/notifyFail'
+import { applyUpdate } from '../../lib/appUpdate'
 
 const sv = (d) => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 const ICON = {
@@ -100,7 +101,7 @@ function StatusAndHelp({ user, onClose, onSelect, onNavigate }) {
               <PersonAvatar uid={a.id} name={userLabel(a)} size={22} />{userLabel(a)}
             </button>
           ))}
-          <button type="button" onClick={() => window.location.reload()} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">Actualizar ADOR OS</button>
+          <button type="button" onClick={() => applyUpdate()} className="rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#C9C9C9] hover:bg-white/[0.07]">Actualizar ADOR OS</button>
         </div>
       )}
     </div>

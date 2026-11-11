@@ -24,10 +24,12 @@ export function useAppUpdate() {
     check()
     const t = setInterval(check, CHECK_MS)
     document.addEventListener('visibilitychange', check)
+    window.addEventListener('pageshow', check)
     return () => {
       stopped = true
       clearInterval(t)
       document.removeEventListener('visibilitychange', check)
+      window.removeEventListener('pageshow', check)
     }
   }, [])
   return available
