@@ -529,8 +529,8 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="ador-glass flex items-center gap-1 rounded-full p-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="ador-glass flex max-w-full items-center gap-1 self-start overflow-x-auto rounded-full p-1 [scrollbar-width:none] sm:self-auto [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -553,14 +553,14 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
         </div>
 
         {tab === 'personas' && (
-          <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2">
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5 sm:py-2">
             <SearchIcon size={14} className="text-[#8A8A8A]" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar persona..."
-              className="w-[200px] bg-transparent text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
+              className="min-w-0 flex-1 bg-transparent text-[16px] sm:w-[200px] sm:flex-none sm:text-[12.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none"
             />
           </div>
         )}

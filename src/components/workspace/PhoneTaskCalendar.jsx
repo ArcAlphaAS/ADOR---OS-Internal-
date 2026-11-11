@@ -6,6 +6,7 @@ import PhoneTaskCard from './PhoneTaskCard'
 // Arrastrar entre celdas no existe en una pantalla táctil; para cambiar el día de
 // una tarea se abre su panel (Fecha límite) o se mantiene pulsada la tarjeta.
 const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1)
 const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 export default function PhoneTaskCalendar({ tasks, workstreamById, workstreams, userById, actorUserId, actorName, onOpenTask }) {
@@ -49,7 +50,7 @@ export default function PhoneTaskCalendar({ tasks, workstreamById, workstreams, 
           <button type="button" aria-label="Mes anterior" onClick={() => go(-1)} className="flex h-11 w-11 items-center justify-center rounded-full text-[#F4EEE2] active:bg-white/[0.08]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
           </button>
-          <button type="button" onClick={() => { setMonth(new Date(now.getFullYear(), now.getMonth(), 1)); setSelected(todayKey) }} className="text-[16px] font-semibold capitalize text-[#F5F5F5]">{label}</button>
+          <button type="button" onClick={() => { setMonth(new Date(now.getFullYear(), now.getMonth(), 1)); setSelected(todayKey) }} className="text-[16px] font-semibold text-[#F5F5F5]">{cap(label)}</button>
           <button type="button" aria-label="Mes siguiente" onClick={() => go(1)} className="flex h-11 w-11 items-center justify-center rounded-full text-[#F4EEE2] active:bg-white/[0.08]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
           </button>
@@ -84,8 +85,8 @@ export default function PhoneTaskCalendar({ tasks, workstreamById, workstreams, 
       </div>
 
       <section className="flex flex-col gap-2.5">
-        <h2 className="px-1 text-[15px] font-semibold capitalize text-[#F5F5F5]">
-          {selLabel} <span className="font-normal text-[#8A8A8A]">{dayTasks.length || ''}</span>
+        <h2 className="px-1 text-[15px] font-semibold text-[#F5F5F5]">
+          {cap(selLabel)} <span className="font-normal text-[#8A8A8A]">{dayTasks.length || ''}</span>
         </h2>
         {dayTasks.length ? dayTasks.map(card) : <p className="rounded-[20px] bg-[#1C1C1E] px-5 py-6 text-center text-[14px] text-[#8E8E93]">Nada con fecha límite este día.</p>}
       </section>
