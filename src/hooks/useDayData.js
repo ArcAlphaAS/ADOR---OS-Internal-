@@ -12,8 +12,9 @@ export function useDayData(uid) {
   const [tasks, setTasks] = useState([])
   const [clients, setClients] = useState([])
   const [proyectos, setProyectos] = useState([])
+  const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => (uid ? subscribeTasksForUser(uid, setTasks) : undefined), [uid])
+  useEffect(() => (uid ? subscribeTasksForUser(uid, (t) => { setTasks(t); setLoaded(true) }) : undefined), [uid])
   useEffect(() => subscribeClients(setClients), [])
   useEffect(() => subscribeProyectosInternos(setProyectos), [])
 
@@ -41,6 +42,7 @@ export function useDayData(uid) {
   }
 
   return {
+    loaded,
     focus,
     upNext,
     workstreamName,

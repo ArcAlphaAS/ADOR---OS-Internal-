@@ -26,7 +26,7 @@ function Folder({ label, count, onClick }) {
 
 function DocCard({ index, doc, ago, onOpen }) {
   return (
-    <button type="button" onClick={() => onOpen(doc)} className="flex w-full items-center gap-3 rounded-[22px] bg-[#1C1C1E] px-5 py-4 text-left">
+    <button type="button" onClick={(e) => onOpen(doc, e.currentTarget.getBoundingClientRect())} className="flex w-full items-center gap-3 rounded-[22px] bg-[#1C1C1E] px-5 py-4 text-left">
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[16px] font-medium text-[#F5F5F5]">{doc.title}</span>
         <span className="mt-0.5 block truncate text-[13px] text-[#8E8E93]">

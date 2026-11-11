@@ -36,6 +36,16 @@ export default function PhoneTuDia({ user, nextMeeting, calendarStatus, onNaviga
   const focus = day.focus
   const open = (t) => onNavigate?.('workspace', { type: 'task', id: t.id })
   const complete = (t) => withTimeout(toggleTaskComplete(t, actor)).catch((e) => showToast(`No se pudo actualizar: ${e.message}`))
+  if (!day.loaded) {
+    return (
+      <div className="rounded-[28px] bg-[#1C1C1E] p-5" aria-busy="true" aria-label="Cargando tu día">
+        <span className="ador-skeleton block h-[14px] w-[22%] rounded-full" />
+        <span className="ador-skeleton mt-3 block h-[26px] w-[78%] rounded-full" />
+        <span className="ador-skeleton mt-3 block h-[14px] w-[44%] rounded-full" />
+        <span className="ador-skeleton mt-6 block h-[46px] w-full rounded-full" />
+      </div>
+    )
+  }
   const R = 21
   const C = 2 * Math.PI * R
 

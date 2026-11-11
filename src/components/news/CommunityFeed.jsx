@@ -1,3 +1,4 @@
+import { useGrowFrom } from '../../hooks/useGrowFrom'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -294,7 +295,7 @@ function Composer({ user, actorName, canOrganize }) {
 function Photos({ images, onOpen }) {
   if (!images?.length) return null
   const img = (src, i, cls) => (
-    <button key={i} type="button" onClick={() => onOpen(src)} className={`overflow-hidden rounded-2xl ${cls}`}>
+    <button key={i} type="button" onClick={(e) => onOpen(src, e.currentTarget.getBoundingClientRect())} className={`overflow-hidden rounded-2xl ${cls}`}>
       <img src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
     </button>
   )
@@ -610,7 +611,8 @@ function useMemoPeople() {
   return useContext(ChatPeopleContext)
 }
 
-function ImageViewer({ src, onClose }) {
+function ImageViewer({ src, rect, onClose }) {
+  const growRef = useGrowFrom(rect)
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -618,7 +620,7 @@ function ImageViewer({ src, onClose }) {
   }, [onClose])
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
-      <img src={src} alt="" className="max-h-full max-w-full rounded-2xl object-contain" />
+      <img ref={growRef} src={src} alt="" className="max-h-full max-w-full rounded-2xl object-contain" />
     </motion.div>,
     document.body
   )
@@ -679,7 +681,7 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
           </div>
         ) : (
           visible.map((post, index) => phone ? (
-            <PhonePost key={post.id} index={index} post={post} user={user} actorName={actorName} saved={Boolean(saved[post.id])} isAdminUser={isAdminUser} canDelete={isAdminUser || post.authorUid === user?.uid} onDelete={handleDelete} onOpenImage={setViewing} onTag={onSearch} />
+            <PhonePost key={post.id} index={index} post={post} user={user} actorName={actorName} saved={Boolean(saved[post.id])} isAdminUser={isAdminUser} canDelete={isAdminUser || post.authorUid === user?.uid} onDelete={handleDelete} onOpenImage={(src, rect) => setViewing({ src, rect })} onTag={onSearch} />
           ) : (
             <PostCard
               key={post.id}
@@ -690,13 +692,13 @@ export default function CommunityFeed({ user, posts, isAdminUser, profile, query
               isAdminUser={isAdminUser}
               canDelete={isAdminUser || post.authorUid === user?.uid}
               onDelete={handleDelete}
-              onOpenImage={setViewing}
+              onOpenImage={(src, rect) => setViewing({ src, rect })}
               onTag={onSearch}
             />
           ))
         )}
       </div>
-      <AnimatePresence>{viewing && <ImageViewer src={viewing} onClose={() => setViewing(null)} />}</AnimatePresence>
+      <AnimatePresence>{viewing && <ImageViewer src={viewing.src} rect={viewing.rect} onClose={() => setViewing(null)} />}</AnimatePresence>
     </ChatPeopleContext.Provider>
   )
 }

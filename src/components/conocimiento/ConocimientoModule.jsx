@@ -1,3 +1,4 @@
+import { useGrowFrom } from '../../hooks/useGrowFrom'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import ContextMenu from '../common/ContextMenu'
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
@@ -648,13 +649,17 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
     setShowAll(false)
   }
 
-  const handleOpen = (doc) => {
+  const [docOrigin, setDocOrigin] = useState(null)
+  const growRef = useGrowFrom(docOrigin)
+  const handleOpen = (doc, rect) => {
+    setDocOrigin(rect || null)
     pushRecentDoc(doc.id)
     setRecentIds(readRecentDocs())
     setOpenDocId(doc.id)
     setEditing(false)
   }
   const handleBack = () => {
+    setDocOrigin(null)
     setOpenDocId(null)
     setEditing(false)
   }
@@ -808,7 +813,7 @@ export default function ConocimientoModule({ user, focusDocId, onFocusHandled })
           />
         ) : openDoc ? (
           <AnimatePresence mode="wait">
-            <motion.div key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
+            <motion.div ref={growRef} key={openDoc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
               <DocView index={index} doc={openDoc} isAdminUser={isAdminUser} onBack={handleBack} onEdit={() => setEditing(true)} onDelete={handleDelete} onTogglePin={togglePin} />
             </motion.div>
           </AnimatePresence>
