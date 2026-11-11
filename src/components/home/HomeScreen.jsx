@@ -79,49 +79,57 @@ export default function HomeScreen({ user, onNavigate }) {
       </motion.div>
 
       <Zone title="Hoy">
-        <motion.div variants={itemVariants}>
-          {phone ? (
-            <PhoneTuDia user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
-          ) : (
-            <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
-          )}
-        </motion.div>
-        <motion.div variants={itemVariants} className="empty:hidden">
-          <CierraTuDiaCard user={user} />
-        </motion.div>
-        <HomePeople>
-          <motion.div variants={itemVariants} className="empty:hidden">
-            <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
-          </motion.div>
-        </HomePeople>
-        {phone && (
-          <motion.div variants={itemVariants} className="empty:hidden">
-            <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
-          </motion.div>
-        )}
-        {phone ? (
-          <div className="flex flex-col gap-3">
+        {/* Escritorio: lo principal a la izquierda y, a su lado, lo que pide atención; así todo
+            queda a la vista sin bajar. En teléfono es una sola columna. */}
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
             <motion.div variants={itemVariants}>
-              <AccordionCard title="Necesita tu atención" subtitle="Cobros, tareas y alertas" defaultOpen>
-                <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
-              </AccordionCard>
+              {phone ? (
+                <PhoneTuDia user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+              ) : (
+                <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+              )}
             </motion.div>
-            <motion.div variants={itemVariants}>
-              <AccordionCard title="Resumen semanal" subtitle="Cómo va la semana">
-                <WeeklySummaryCard />
-              </AccordionCard>
+            <motion.div variants={itemVariants} className="empty:hidden">
+              <CierraTuDiaCard user={user} />
             </motion.div>
+            <HomePeople>
+              <motion.div variants={itemVariants} className="empty:hidden">
+                <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
+              </motion.div>
+            </HomePeople>
+            {phone && (
+              <motion.div variants={itemVariants} className="empty:hidden">
+                <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
+              </motion.div>
+            )}
           </div>
-        ) : (
-        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
-          <motion.div variants={itemVariants} className="h-full lg:col-span-7">
-            <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
-          </motion.div>
-          <motion.div variants={itemVariants} className="h-full lg:col-span-5">
-            <WeeklySummaryCard />
-          </motion.div>
+          <div className="flex min-w-0 flex-col gap-3 lg:col-span-4 lg:gap-5">
+            {phone ? (
+              <>
+                <motion.div variants={itemVariants}>
+                  <AccordionCard title="Necesita tu atención" subtitle="Cobros, tareas y alertas" defaultOpen>
+                    <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+                  </AccordionCard>
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <AccordionCard title="Resumen semanal" subtitle="Cómo va la semana">
+                    <WeeklySummaryCard />
+                  </AccordionCard>
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <motion.div variants={itemVariants}>
+                  <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <WeeklySummaryCard />
+                </motion.div>
+              </>
+            )}
+          </div>
         </div>
-        )}
       </Zone>
 
       <Zone title="La empresa" foldOnPhone>

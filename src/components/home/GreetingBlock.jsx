@@ -80,7 +80,8 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
   const badge = seasonsOff ? null : seasonBadge(now)
 
   return (
-    <div>
+    <div className="lg:flex lg:items-end lg:justify-between lg:gap-10">
+      <div className="min-w-0">
       {(() => {
         // "Buenas noches," pequeño y suave arriba; el nombre grande y brillante abajo.
         const full = getGreeting(now.getHours(), name)
@@ -88,9 +89,9 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
         const lead = cut > -1 ? full.slice(0, cut + 1) : ''
         const rest = cut > -1 ? full.slice(cut + 1).trim() : full
         return (
-          <h1 className="tracking-[-0.03em]">
+          <h1 className="tracking-[-0.03em] lg:leading-none">
             {lead && (
-              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[42px] font-medium leading-tight tracking-[-0.015em] text-[#9A9AA0] md:text-[42px]">
+              <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="block text-[42px] font-medium leading-tight tracking-[-0.015em] text-[#9A9AA0] md:text-[42px] lg:mr-4 lg:inline lg:text-[50px] lg:leading-none">
                 {lead}
               </motion.span>
             )}
@@ -98,16 +99,18 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="block font-bold leading-[1.04]"
-              style={{ paddingBottom: '0.24em', marginBottom: '-0.12em', fontSize: `min(88px, ${(88 / Math.max(5, rest.length * 0.6)).toFixed(1)}vw)`, backgroundImage: 'linear-gradient(180deg, #FFFFFF 10%, rgba(255,255,255,0.78) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
+              className="block text-[length:var(--fs)] font-bold leading-[1.04] lg:inline lg:text-[56px]"
+              style={{ paddingBottom: '0.24em', marginBottom: '-0.12em', '--fs': `min(88px, ${(88 / Math.max(5, rest.length * 0.6)).toFixed(1)}vw)`, backgroundImage: 'linear-gradient(180deg, #FFFFFF 10%, rgba(255,255,255,0.78) 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
             >
               {rest}
             </motion.span>
           </h1>
         )
       })()}
-      <div className="mt-2 flex items-center gap-2.5">
-        <p className="text-[14px] font-light text-[#888888]">{formatDate(now)}</p>
+      </div>
+      <div className="lg:flex-shrink-0 lg:pb-3 lg:text-right">
+      <div className="mt-2 flex items-center gap-2.5 lg:mt-0 lg:justify-end">
+        <p className="text-[14px] font-light text-[#888888] lg:text-[15px]">{formatDate(now)}</p>
         {badge && (
           <span
             title={badge.label}
@@ -122,7 +125,8 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#8A8A8A]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#8A8A8A] lg:text-[14px]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
+      </div>
     </div>
   )
 }
