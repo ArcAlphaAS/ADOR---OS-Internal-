@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { eventColor } from '../../lib/googleCalendar'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
@@ -12,10 +13,71 @@ import { CheckCircleIcon } from '../icons'
 // proportional, matching how every real calendar app draws time.
 
 const ROW_HEIGHT = 56
-const START_HOUR = 0
-const END_HOUR = 24
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
 const GUTTER_WIDTH = 56
+// Rango visible por defecto: la jornada (7:00–22:00). Se amplía solo si hay algo fuera,
+// y "24 h" muestra el día completo.
+const DEFAULT_START = 7
+const DEFAULT_END = 22
+const hhmm24 = (v) => new Date(v).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+// Huecos libres de ≥ 90 min entre 9:00 y 19:00 (desde ahora si es hoy), solo en días que ya
+// tienen reuniones con hora: un día vacío entero no necesita decir "libre".
+function freeGapsOf(timedEvents, day, now) {
+  if (timedEvents.length === 0) return []
+  const dayStart = new Date(day); dayStart.setHours(9, 0, 0, 0)
+  const dayEnd = new Date(day); dayEnd.setHours(19, 0, 0, 0)
+  const isToday = day.toDateString() === now.toDateString()
+  if (dayEnd < now) return []
+  let cursor = isToday ? new Date(Math.max(dayStart.getTime(), now.getTime())) : dayStart
+  const busy = timedEvents.map((e) => [new Date(e.start).getTime(), new Date(e.end).getTime()]).sort((a, b) => a[0] - b[0])
+  const gaps = []
+  for (const [st, en] of busy) {
+    if (en <= cursor.getTime()) continue
+    if (st - cursor.getTime() >= 90 * 60000) gaps.push([cursor, new Date(st)])
+    cursor = new Date(Math.max(cursor.getTime(), en))
+  }
+  if (dayEnd.getTime() - cursor.getTime() >= 90 * 60000) gaps.push([cursor, dayEnd])
+  return gaps
+}
+
+// Vista previa al pasar el cursor sobre un evento: lo esencial sin abrir nada.
+function EventHoverCard({ hover, onEnter, onLeave, onOpen }) {
+  const { event: e, rect } = hover
+  const color = eventColor(e)
+  const W = 300
+  const left = Math.min(Math.max(12, rect.right + 10 + W > window.innerWidth ? rect.left - W - 10 : rect.right + 10), window.innerWidth - W - 12)
+  const top = Math.min(Math.max(12, rect.top), window.innerHeight - 260)
+  const guests = (e.attendees || []).filter((a) => !a.self)
+  const joinable = e.meetLink && new Date(e.end).getTime() > Date.now()
+  return createPortal(
+    <div onMouseEnter={onEnter} onMouseLeave={onLeave} className="fixed z-[70]" style={{ left, top, width: W }}>
+      <div className="ador-modal-surface rounded-2xl p-4 shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
+        <div className="flex items-start gap-2.5">
+          <span className="mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: color }} />
+          <div className="min-w-0">
+            <p className="text-[14.5px] font-semibold leading-snug text-[#F5F5F5]">{e.title}</p>
+            <p className="mt-0.5 text-[12.5px] tabular-nums text-[#9A9A9A]">
+              {new Date(e.start).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} · {e.allDay ? 'Todo el día' : `${hhmm24(e.start)} – ${hhmm24(e.end)}`}
+            </p>
+          </div>
+        </div>
+        {e.location && <p className="mt-2.5 truncate text-[12.5px] text-[#B5B5B5]">📍 {e.location}</p>}
+        {guests.length > 0 && (
+          <p className="mt-2 text-[12.5px] leading-snug text-[#B5B5B5]">
+            👥 {guests.slice(0, 4).map((g) => g.name.split(' ')[0]).join(', ')}{guests.length > 4 ? ` y ${guests.length - 4} más` : ''}
+          </p>
+        )}
+        <div className="mt-3.5 flex gap-2">
+          {joinable && (
+            <a href={e.meetLink} target="_blank" rel="noreferrer" className="ador-btn-primary flex-1 rounded-full py-2 text-center text-[12.5px] font-semibold">Unirse a Meet</a>
+          )}
+          <button type="button" onClick={onOpen} className="flex-1 rounded-full bg-white/[0.08] py-2 text-[12.5px] font-medium text-[#F5F5F5] hover:bg-white/[0.14]">Ver detalle</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
 
 function minutesSinceMidnight(date) {
   return date.getHours() * 60 + date.getMinutes()
@@ -146,7 +208,26 @@ function TasksStrip({ days, tasks, actorName }) {
 export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent }) {
   const now = new Date()
   const showNowLine = days.some((d) => d.toDateString() === now.toDateString())
-  const nowTop = (minutesSinceMidnight(now) / 60) * ROW_HEIGHT
+  const [full, setFull] = useState(false)
+  const timedAll = days.flatMap((d) => eventsForDay(events, d).filter((e) => !e.allDay && e.end))
+  const earliest = timedAll.reduce((m, e) => Math.min(m, new Date(e.start).getHours()), 24)
+  const latest = timedAll.reduce((m, e) => Math.max(m, new Date(e.end).getHours() + (new Date(e.end).getMinutes() ? 1 : 0)), 0)
+  const START_HOUR = full ? 0 : Math.min(DEFAULT_START, earliest)
+  const END_HOUR = full ? 24 : Math.max(DEFAULT_END, Math.min(24, latest))
+  const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
+  const nowTop = ((minutesSinceMidnight(now) - START_HOUR * 60) / 60) * ROW_HEIGHT
+
+  const [hover, setHover] = useState(null)
+  const hoverTimer = useRef(null)
+  const showHover = (event, el) => {
+    clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => setHover({ event, rect: el.getBoundingClientRect() }), 350)
+  }
+  const hideHover = () => {
+    clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => setHover(null), 160)
+  }
+  useEffect(() => () => clearTimeout(hoverTimer.current), [])
 
   const internalRef = useRef(null)
   const containerRef = scrollRef || internalRef
@@ -158,15 +239,19 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
   // for a range that doesn't include today (e.g. paging to a future week).
   useEffect(() => {
     if (!containerRef.current) return
-    const target = showNowLine ? Math.max(nowTop - ROW_HEIGHT * 2, 0) : 8 * ROW_HEIGHT
+    const target = showNowLine ? Math.max(nowTop - ROW_HEIGHT * 2, 0) : Math.max((8 - START_HOUR) * ROW_HEIGHT, 0)
     containerRef.current.scrollTop = target
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daysKey])
+  }, [daysKey, full])
 
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
       <div className="grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))` }}>
-        <div />
+        <div className="flex items-end justify-center pb-3">
+          <button type="button" onClick={() => setFull((v) => !v)} title={full ? 'Mostrar solo la jornada (7–22 h)' : 'Mostrar las 24 horas'} className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[#8A8A8A] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]">
+            {full ? 'Jornada' : '24 h'}
+          </button>
+        </div>
         {days.map((d) => (
           <DayHeader key={d.toISOString()} day={d} nEvents={eventsForDay(events, d).length} nTasks={tasksForDay(tasks, d).length} />
         ))}
@@ -187,7 +272,9 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
           </div>
 
           {days.map((day) => {
-            const placed = layoutDay(eventsForDay(events, day))
+            const dayEvents = eventsForDay(events, day)
+            const placed = layoutDay(dayEvents)
+            const gaps = freeGapsOf(dayEvents.filter((e) => !e.allDay && e.end), day, now)
             const isToday = day.toDateString() === now.toDateString()
             return (
               <div
@@ -198,6 +285,17 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />
                 ))}
+                {gaps.map(([gs, ge], gi) => {
+                  const gTop = ((minutesSinceMidnight(gs) - START_HOUR * 60) / 60) * ROW_HEIGHT
+                  const gH = ((ge - gs) / 3600000) * ROW_HEIGHT
+                  if (gTop + gH < 0 || gTop > HOURS.length * ROW_HEIGHT) return null
+                  const hrs = Math.round(((ge - gs) / 3600000) * 2) / 2
+                  return (
+                    <div key={gi} className="pointer-events-none absolute inset-x-1 rounded-xl border border-dashed border-[#8FD19A]/25 bg-[#8FD19A]/[0.04]" style={{ top: gTop + 2, height: Math.max(gH - 4, 12) }}>
+                      <span className="absolute left-2 top-1 text-[10px] font-medium text-[#8FD19A]/80">Libre · {hrs} h</span>
+                    </div>
+                  )
+                })}
                 {placed.map((e) => {
                   const top = ((e.startMin - START_HOUR * 60) / 60) * ROW_HEIGHT
                   const height = Math.max(((e.endMin - e.startMin) / 60) * ROW_HEIGHT - 2, 18)
@@ -209,7 +307,9 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                     <button
                       key={e.id}
                       type="button"
-                      onClick={() => onOpenEvent(e)}
+                      onClick={() => { setHover(null); onOpenEvent(e) }}
+                      onMouseEnter={(ev) => showHover(e, ev.currentTarget)}
+                      onMouseLeave={hideHover}
                       className="absolute overflow-hidden rounded-[10px] px-2.5 py-1.5 text-left text-[11.5px] font-medium leading-tight transition-[filter,transform] duration-150 hover:brightness-125 active:scale-[0.99]"
                       style={{
                         top,
@@ -249,6 +349,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
           )}
         </div>
       </div>
+      {hover && <EventHoverCard hover={hover} onEnter={() => clearTimeout(hoverTimer.current)} onLeave={hideHover} onOpen={() => { const ev = hover.event; setHover(null); onOpenEvent(ev) }} />}
     </div>
   )
 }

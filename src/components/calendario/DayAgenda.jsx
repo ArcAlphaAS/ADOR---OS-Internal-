@@ -50,7 +50,7 @@ export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpe
             const startsIn = new Date(e.start).getTime() - nowMs
             return (
               <li key={e.id}>
-                <button type="button" onClick={() => onOpenEvent(e)} className="flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-white/[0.04]" style={{ opacity: past ? 0.5 : 1 }}>
+                <div role="button" tabIndex={0} onClick={() => onOpenEvent(e)} onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e) }} className="flex w-full cursor-pointer items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-white/[0.04]" style={{ opacity: past ? 0.5 : 1 }}>
                   <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(e) }} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-[#F5F5F5]" style={{ textDecoration: past ? 'line-through' : 'none' }}>{e.title}</span>
@@ -58,11 +58,14 @@ export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpe
                       {e.allDay ? 'Todo el día' : `${hhmm(e.start)} – ${hhmm(e.end)}`}{e.location ? ` · ${e.location}` : ''}
                     </span>
                   </span>
-                  <span className="flex-shrink-0 text-right">
+                  <span className="flex flex-shrink-0 flex-col items-end gap-1 text-right">
+                    {e.meetLink && !past && (
+                      <a href={e.meetLink} target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()} className="ador-btn-primary rounded-full px-3 py-1 text-[11.5px] font-semibold">Unirse</a>
+                    )}
                     {live && <span className="text-[11.5px] font-medium text-[#E8C15A]">Ahora</span>}
                     {!live && !past && !e.allDay && startsIn > 0 && startsIn < 6 * 3600000 && <span className="text-[11.5px] font-medium text-[#F4EEE2]">{untilLabel(startsIn)}</span>}
                   </span>
-                </button>
+                </div>
               </li>
             )
           })}
