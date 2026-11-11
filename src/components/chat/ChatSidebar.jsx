@@ -79,6 +79,7 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
 function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview, time, onClick, avatar, label, pinned, onTogglePin, dragProps }) {
   const touch = big && isTouchLayout()
   const dragged = useRef(false)
+  const [swiping, setSwiping] = useState(false)
   const Wrap = touch ? motion.div : 'div'
   const swipe = touch
     ? {
@@ -86,21 +87,21 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
         dragConstraints: { left: 0, right: 0 },
         dragElastic: { left: 0.05, right: 0.6 },
         dragSnapToOrigin: true,
-        onDragStart: () => { dragged.current = true },
+        onDragStart: () => { dragged.current = true; setSwiping(true) },
         onDragEnd: (_e, info) => {
-          setTimeout(() => { dragged.current = false }, 80)
+          setTimeout(() => { dragged.current = false; setSwiping(false) }, 80)
           if (info.offset.x > 100 || info.velocity.x > 650) onTogglePin?.()
         },
       }
     : {}
   return (
-    <div className={`relative overflow-hidden ${touch ? '' : 'rounded-xl'}`}>
-    {touch && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
-    <Wrap className={`group/row relative ${touch ? "bg-[#1C1C1E]" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
+    <div className="relative overflow-hidden rounded-xl">
+    {touch && swiping && <div className="absolute inset-0 flex items-center gap-2 bg-[#F4EEE2] px-4 text-[13.5px] font-semibold text-[#1C1A16]"><PinIcon size={14} /> {pinned ? 'Quitar de fijados' : 'Fijar arriba'}</div>}
+    <Wrap className={`group/row relative ${touch && swiping ? "bg-black" : ""}`} {...dragProps} {...swipe} {...(ctx ? { onContextMenu: ctx.onContextMenu } : {})}>
       <button
         type="button"
         onClick={() => { if (!dragged.current) onClick() }}
-        className={`flex w-full items-center text-left transition-colors duration-150 hover:bg-white/[0.04] ${touch ? 'gap-3.5 px-4 py-3 active:bg-white/[0.05]' : big ? 'rounded-xl gap-4 px-1 py-2.5' : 'rounded-xl gap-2.5 px-2 py-1.5'}`}
+        className={`flex w-full items-center text-left transition-colors duration-150 hover:bg-white/[0.04] ${big ? 'rounded-xl gap-4 px-1 py-2.5' : 'rounded-xl gap-2.5 px-2 py-1.5'}`}
         style={{ background: active ? 'rgba(244,238,226,0.1)' : undefined }}
       >
         <span className="flex-shrink-0">{avatar}</span>
@@ -305,8 +306,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
     )
   }
 
-  // Teléfono: las filas van en una tarjeta agrupada (como Mensajes de iOS), separadas por líneas finas.
-  const listCls = phone ? 'flex flex-col divide-y divide-white/[0.06] overflow-hidden rounded-[20px] bg-[#1C1C1E]' : 'flex flex-col gap-0.5'
+  const listCls = 'flex flex-col gap-0.5'
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
   return (
