@@ -62,14 +62,16 @@ function appendCapped(prev, message) {
   return { messages: next.slice(next.length - MAX_MESSAGES), trimmed: true }
 }
 
-function MessageBubble({ role, content, action, status, actorId, onConfirm, onCancel }) {
+function MessageBubble({ role, content, action, status, actorId, onConfirm, onCancel, plain = false }) {
   const isUser = role === 'user'
   const card = action ? describeAction(action, actorId) : null
+  const flat = plain && !isUser // escritorio: la respuesta va como texto, sin burbuja
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {flat && <span className="mt-0.5"><Orb size={28} /></span>}
       <div
-        className="ador-msg-in max-w-[86%] rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:max-w-[80%] md:text-[14px]"
-        style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: isUser ? '#2C2C2E' : '#1C1C1E' }}
+        className={flat ? 'ador-msg-in min-w-0 max-w-[88%] py-0.5 text-[15px] leading-[1.65]' : 'ador-msg-in max-w-[86%] rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:max-w-[80%] md:text-[14px]'}
+        style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: flat ? 'transparent' : isUser ? '#2C2C2E' : '#1C1C1E' }}
       >
         {content}
         {card && (
@@ -96,6 +98,42 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// Escritorio: campo grande que crece, Enter envía y Mayús+Enter hace salto de línea.
+function DesktopComposer({ value, onChange, onSend, busy, autoFocus }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`
+  }, [value])
+  useEffect(() => { if (autoFocus) ref.current?.focus() }, [autoFocus])
+  return (
+    <div className="flex w-full items-end gap-3 rounded-[26px] bg-[#1C1C1E] py-3 pl-5 pr-3 ring-1 ring-white/[0.08] transition-shadow focus-within:ring-white/[0.22]">
+      <textarea
+        ref={ref}
+        rows={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); onSend() }
+        }}
+        placeholder="Pregunta algo o escribe una orden…"
+        className="max-h-[180px] min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[15px] leading-[1.5] text-[#F5F5F5] placeholder:text-[#767676] outline-none"
+      />
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={!value.trim() || busy}
+        aria-label="Enviar"
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A] transition-opacity disabled:opacity-25"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+      </button>
     </div>
   )
 }
@@ -192,6 +230,70 @@ export default function AdorIAModule({ user, onNavigate }) {
     } catch {
       setStatus(index, 'error')
     }
+  }
+
+  if (!phone) {
+    const reset = () => { setMessages([]); lastTopicRef.current = null; setTrimmedOnce(false) }
+    const name = firstName(user)
+    return (
+      <motion.div initial={false} className="mx-auto flex h-full w-full max-w-[920px] flex-col px-10 pb-8 pt-8">
+        {messages.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center pb-10 text-center">
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 18 }}>
+              <ParticleCore size={150} />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-6">
+              <h1 className="text-[48px] leading-[1.08] tracking-[-0.02em]" style={SERIF}>
+                <span className="text-[#F5F5F5]">Hola</span>
+                {name && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {name}</span>}
+              </h1>
+              <h2 className="mt-1 text-[48px] leading-[1.08] tracking-[-0.02em] text-[#F5F5F5]" style={SERIF}>¿En qué te ayudo hoy?</h2>
+              <p className="mx-auto mt-4 max-w-[480px] text-[14px] leading-relaxed text-[#8A8A8A]">Respondo con los datos reales de la empresa y ejecuto órdenes sencillas. Antes de cambiar algo, siempre te pido confirmación.</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }} className="mt-9 w-full max-w-[680px]">
+              <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} busy={sending} autoFocus />
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {STARTERS.map(({ Icon, title, prompt }) => (
+                  <button key={title} type="button" onClick={() => send(prompt)} className="flex items-center gap-2 rounded-full bg-white/[0.05] px-4 py-2 text-[13px] text-[#D0D0D0] transition-colors hover:bg-white/[0.1] hover:text-[#F5F5F5]">
+                    <Icon size={14} className="text-[#F4EEE2]" /> {title}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-5 text-[11.5px] text-[#767676]">Enter envía · Mayús + Enter hace un salto de línea</p>
+            </motion.div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-3 pb-4">
+              <div className="flex items-center gap-2.5">
+                <Orb size={28} />
+                <h1 className="text-[17px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
+              </div>
+              <button type="button" onClick={reset} className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-4 py-2 text-[12.5px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/[0.12]">
+                <PlusIcon size={12} /> Nueva conversación
+              </button>
+            </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto">
+              <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 pb-6">
+                {trimmedOnce && <p className="text-center text-[11px] text-[#8A8A8A]">Mostrando los últimos {MAX_MESSAGES} mensajes — la conversación sigue igual, solo se liberó espacio.</p>}
+                {messages.map((m, i) => (
+                  <MessageBubble key={i} plain role={m.role} content={m.content} action={m.action} status={m.status} actorId={user?.uid} onConfirm={() => confirm(i)} onCancel={() => setStatus(i, 'cancelled')} />
+                ))}
+                {sending && (
+                  <div className="flex items-center gap-3">
+                    <ParticleCore size={34} busy />
+                    <span className="ador-shimmer-text text-[14px] font-medium">Pensando…</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mx-auto w-full max-w-[740px] pt-3">
+              <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} busy={sending} autoFocus />
+            </div>
+          </>
+        )}
+      </motion.div>
+    )
   }
 
   return (
