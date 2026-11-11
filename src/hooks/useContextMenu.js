@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { haptic } from '../lib/haptics'
 
 // Estado de un menú de clic derecho + el gesto equivalente en el teléfono
 // (mantener presionado ~0,5 s). Uso:
@@ -20,7 +21,7 @@ export function useContextMenu() {
       if (!t) return
       clearTimeout(timer.current)
       timer.current = setTimeout(() => {
-        navigator.vibrate?.(10)
+        haptic()
         setMenu({ x: t.clientX, y: t.clientY, payload })
       }, 520)
     },

@@ -10,6 +10,7 @@ import usePhone from '../../hooks/usePhone'
 import { createPortal } from 'react-dom'
 import { driveFileKind } from '../../lib/googleDrive'
 import { fetchLinkPreview, firstPreviewableUrl } from '../../lib/linkPreview'
+import { haptic } from '../../lib/haptics'
 
 // One message in a conversation: its bubble, attachments (image, voice,
 // call card, Drive document), reactions, receipts, thread summary and the
@@ -639,7 +640,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
     swipeRef.current = { x: t?.clientX, y: t?.clientY, locked: false }
     press.current = { x: t?.clientX, y: t?.clientY, timer: setTimeout(() => {
       press.current = null
-      navigator.vibrate?.(10)
+      haptic()
       setSheet(true)
     }, 420) }
   }
@@ -667,7 +668,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       const now = Date.now()
       if (now - lastTap.current < 320) {
         lastTap.current = 0
-        navigator.vibrate?.(12)
+        haptic('heavy')
         setHeart(true)
         setTimeout(() => setHeart(false), 700)
         if (!(message.reactions?.['❤️'] || []).includes(currentUid)) onReact('❤️', false)
@@ -676,7 +677,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
     const s = swipeRef.current
     swipeRef.current = null
     if (s?.locked && swipe >= 56 && onReply) {
-      navigator.vibrate?.(10)
+      haptic()
       onReply()
     }
     setSwipe(0)

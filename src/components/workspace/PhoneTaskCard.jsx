@@ -6,6 +6,7 @@ import { toggleTaskComplete } from '../../lib/firestore'
 import { priorityMeta, isOverdue, isDueToday, withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import AvatarStack from './AvatarStack'
+import { haptic } from '../../lib/haptics'
 
 // Una tarea en el teléfono: una tarjeta, no una fila de tabla. Círculo para
 // completar, el título grande, debajo el proyecto y cuándo vence (en rojo si ya
@@ -57,7 +58,7 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
         clearTimeout(press.current)
         press.current = setTimeout(() => {
           dragged.current = true
-          navigator.vibrate?.(12)
+          haptic('heavy')
           setMenu({ x: t.clientX, y: t.clientY })
           setTimeout(() => { dragged.current = false }, 400)
         }, 480)

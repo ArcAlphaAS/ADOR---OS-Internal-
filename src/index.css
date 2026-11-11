@@ -576,6 +576,13 @@ html.light .ador-grain::after { opacity: 0.015; }
   [data-keep-scroll], .overflow-x-auto { scrollbar-width: none; }
   [data-keep-scroll]::-webkit-scrollbar, .overflow-x-auto::-webkit-scrollbar { display: none; width: 0; height: 0; }
   .h-screen { height: var(--app-h, 100dvh); }
+  /* La app ocupa TODA la pantalla del teléfono, también la franja de abajo (la de la
+     barra de inicio): en iPhone instalado, visualViewport/100dvh pueden quedar
+     más cortos que la pantalla y dejaban un rectángulo negro sin usar. Fijar la raíz
+     a los cuatro bordes la estira hasta el borde real. Con el teclado abierto manda
+     la altura visible (lib/keyboard.js). */
+  .ador-app-root.h-screen { position: fixed; inset: 0; width: 100%; height: auto; }
+  html.kb-open .ador-app-root.h-screen { bottom: auto; top: var(--app-top, 0px); height: var(--app-h, 100%) !important; }
 }
 
 /* Nada se arrastra de lado en el teléfono: ningún contenedor con scroll vertical

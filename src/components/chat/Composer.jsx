@@ -8,6 +8,7 @@ import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, ClockIc
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
+import { haptic } from '../../lib/haptics'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
 // in their own chatBlobs doc, so each can use most of that on its own.
@@ -310,6 +311,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   const submit = () => {
     if (!text.trim() && !pendingImage) return
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
+    haptic()
     onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions, important: important || undefined })
     reset()
   }
