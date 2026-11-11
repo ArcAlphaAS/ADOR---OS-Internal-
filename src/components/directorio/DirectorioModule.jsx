@@ -15,7 +15,8 @@ import {
   subscribeUserProfile,
   subscribeUsers,
 } from '../../lib/firestore'
-import { statusMeta, groupByArea, areaCounts, isDirectorioAdmin } from '../../lib/directorio'
+import { statusMeta, groupByArea, areaCounts, isDirectorioAdmin, STATUSES, missingFields, upcomingDates, dayMonthLabel, buildReportTree } from '../../lib/directorio'
+import { dmIdFor } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import PersonCard from './PersonCard'
 import PersonDetailPanel from './PersonDetailPanel'
@@ -163,9 +164,20 @@ function EquipoRow({ person, onOpen, onEdit, onDelete, isAdmin, areaOptions = []
 function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelete, isAdmin }) {
   const phone = usePhone()
   const q = search.trim().toLowerCase()
-  const filtered = q
-    ? people.filter((p) => `${p.name} ${p.role} ${p.area}`.toLowerCase().includes(q))
-    : people
+  const [fArea, setFArea] = useState('')
+  const [fLoc, setFLoc] = useState('')
+  const [fStatus, setFStatus] = useState('')
+  const [equipoView, setEquipoView] = useState('tabla')
+  const filtered = people.filter((p) =>
+    (!q || `${p.name} ${p.role} ${p.area}`.toLowerCase().includes(q)) &&
+    (!fArea || (p.isDirectivo ? 'Dirección' : p.area || 'General') === fArea) &&
+    (!fLoc || p.location === fLoc) &&
+    (!fStatus || p.status === fStatus)
+  )
+  const filtersOn = Boolean(fArea || fLoc || fStatus)
+  const areaChoices = [...new Set(people.map((p) => (p.isDirectivo ? 'Dirección' : p.area || 'General')))].sort()
+  const locChoices = [...new Set(people.map((p) => p.location).filter(Boolean))].sort()
+  const incomplete = isAdmin ? people.filter((p) => missingFields(p).length > 0) : []
   const areaOptions = [...new Set(people.map((p) => p.area).filter(Boolean))]
   const roleOptions = [...new Set(people.map((p) => p.role).filter(Boolean))]
   const directivos = filtered.filter((p) => p.isDirectivo)
@@ -183,8 +195,47 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
     )
   }
 
+  const selectCls = 'rounded-full bg-white/[0.06] px-3.5 py-1.5 text-[12.5px] text-[#D0D0D0] outline-none transition-colors hover:bg-white/[0.1] focus:bg-white/[0.1]'
   return (
     <div className="flex flex-col gap-8">
+      {!phone && (
+        <div className="-mb-2 flex flex-wrap items-center gap-2">
+          <select value={fArea} onChange={(e) => setFArea(e.target.value)} className={selectCls}>
+            <option value="">Todas las áreas</option>
+            {areaChoices.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+          {locChoices.length > 0 && (
+            <select value={fLoc} onChange={(e) => setFLoc(e.target.value)} className={selectCls}>
+              <option value="">Toda ubicación</option>
+              {locChoices.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          )}
+          <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className={selectCls}>
+            <option value="">Todo estado</option>
+            {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
+          </select>
+          {filtersOn && <button type="button" onClick={() => { setFArea(''); setFLoc(''); setFStatus('') }} className="rounded-full px-3 py-1.5 text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">Limpiar</button>}
+          <div className="ml-auto flex items-center gap-1 rounded-full bg-white/[0.06] p-1">
+            {[['tabla', 'Tabla'], ['tarjetas', 'Tarjetas']].map(([id, label]) => (
+              <button key={id} type="button" onClick={() => setEquipoView(id)} className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors" style={{ background: equipoView === id ? '#F5F5F5' : 'transparent', color: equipoView === id ? '#0A0A0A' : '#888888' }}>{label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {incomplete.length > 0 && !filtersOn && !q && (
+        <div className="rounded-2xl bg-[#E8C15A]/[0.07] px-5 py-4 ring-1 ring-[#E8C15A]/20">
+          <p className="text-[13px] font-medium text-[#E8C15A]">{incomplete.length === 1 ? '1 ficha incompleta' : `${incomplete.length} fichas incompletas`}</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {incomplete.slice(0, 6).map((p) => (
+              <button key={p.id} type="button" onClick={() => onEdit(p)} className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[12px] text-[#D0D0D0] hover:bg-white/[0.12]">
+                {p.name.split(' ')[0]} <span className="text-[#8A8A8A]">· falta {missingFields(p).join(', ')}</span>
+              </button>
+            ))}
+            {incomplete.length > 6 && <span className="self-center text-[12px] text-[#8A8A8A]">y {incomplete.length - 6} más</span>}
+          </div>
+        </div>
+      )}
+      {filtersOn && filtered.length === 0 && <p className="px-2 py-10 text-center text-[13px] text-[#8A8A8A]">Nadie coincide con esos filtros.</p>}
       <datalist id="dir-role-opts">{roleOptions.map((o) => <option key={o} value={o} />)}</datalist>
       <datalist id="dir-area-opts">{areaOptions.map((o) => <option key={o} value={o} />)}</datalist>
       {directivos.length > 0 && (
@@ -232,6 +283,12 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
                 )
               })}
             </div>
+          ) : equipoView === 'tarjetas' ? (
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {equipo.map((p) => (
+                <PersonCard key={p.id} person={p} selected={selectedPersonId === p.id} onClick={(e) => onOpen(p, e?.currentTarget?.getBoundingClientRect?.())} />
+              ))}
+            </div>
           ) : (
           <div className="ador-glass ador-grain mt-4 overflow-x-auto rounded-2xl px-3 py-2">
             <div className="grid min-w-[720px] grid-cols-[1.4fr_1fr_1fr_1fr_1fr_32px] gap-3 border-b border-white/[0.06] px-2 pb-2 pt-1">
@@ -254,7 +311,59 @@ function PersonasTab({ people, search, onOpen, selectedPersonId, onEdit, onDelet
   )
 }
 
+// Una persona y, debajo, quienes reportan a ella, unidas por líneas finas.
+function OrgNode({ person, kids, depth = 0 }) {
+  const team = kids.get(person.id) || []
+  return (
+    <div className="flex flex-col items-center">
+      <div className="ador-glass flex items-center gap-2.5 rounded-2xl py-2 pl-2 pr-4">
+        <Avatar photoURL={person.photoDataUrl} displayName={person.name} size={depth === 0 ? 40 : 30} />
+        <div>
+          <p className="text-[12.5px] font-semibold leading-tight text-[#F5F5F5]">{person.name}</p>
+          <p className="text-[10.5px] leading-tight text-[#8A8A8A]">{person.role}</p>
+        </div>
+      </div>
+      {team.length > 0 && (
+        <>
+          <div className="h-5 w-px bg-white/[0.14]" />
+          <div className="flex items-start justify-center gap-5">
+            {team.map((c, i) => (
+              <div key={c.id} className="relative flex flex-col items-center pt-5">
+                <span className="absolute top-0 h-5 w-px bg-white/[0.14]" />
+                {team.length > 1 && <span className="absolute top-0 h-px bg-white/[0.14]" style={{ left: i === 0 ? '50%' : 0, right: i === team.length - 1 ? '50%' : 0 }} />}
+                <OrgNode person={c} kids={kids} depth={depth + 1} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function OrganigramaTab({ people }) {
+  const tree = buildReportTree(people)
+  if (tree) {
+    return (
+      <div className="flex flex-col items-center gap-10 overflow-x-auto py-4">
+        <div className="flex items-start justify-center gap-10">
+          {tree.roots.map((r) => <OrgNode key={r.id} person={r} kids={tree.kids} />)}
+        </div>
+        {tree.loose.length > 0 && (
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Sin línea de reporte asignada</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {tree.loose.map((p) => (
+                <span key={p.id} className="ador-glass flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[12px] text-[#D0D0D0]">
+                  <Avatar photoURL={p.photoDataUrl} displayName={p.name} size={22} /> {p.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
   const directivos = people.filter((p) => p.isDirectivo)
   const areas = groupByArea(people.filter((p) => !p.isDirectivo))
 
@@ -441,8 +550,25 @@ function RolesTab({ people }) {
 
 function DefaultSidebar({ people, teams }) {
   const counts = areaCounts(people)
+  const soon = upcomingDates(people, 30).slice(0, 4)
   return (
     <div className="flex flex-col gap-4">
+      {soon.length > 0 && (
+        <div className="ador-glass rounded-2xl p-4">
+          <p className="mb-2.5 text-[13px] font-semibold text-[#F5F5F5]">Próximamente</p>
+          <div className="flex flex-col gap-2.5">
+            {soon.map((u) => (
+              <div key={`${u.person.id}-${u.kind}`} className="flex items-center gap-2.5">
+                <Avatar photoURL={u.person.photoDataUrl} displayName={u.person.name} size={28} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12.5px] text-[#F5F5F5]">{u.person.name.split(' ')[0]} · {u.kind === 'cumpleaños' ? '🎂 cumpleaños' : `✨ ${u.years} ${u.years === 1 ? 'año' : 'años'} en ADOR`}</p>
+                  <p className="text-[11px] text-[#8A8A8A]">{u.days === 0 ? 'Hoy' : u.days === 1 ? 'Mañana' : dayMonthLabel(u.date)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="ador-grain relative overflow-hidden rounded-2xl p-6" style={{ background: 'linear-gradient(160deg, #14181F 0%, #000000 100%)' }}>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Nuestra gente</p>
         <p className="mt-3 text-[21px] font-semibold leading-tight text-[#F5F5F5]">Personas que construyen lo extraordinario.</p>
@@ -493,7 +619,7 @@ function DefaultSidebar({ people, teams }) {
 }
 
 // `focus` (top-bar search): {type:'person', id} opens that person's panel.
-export default function DirectorioModule({ user, focus, onFocusHandled }) {
+export default function DirectorioModule({ user, focus, onFocusHandled, onNavigate }) {
   const [rawPeople, setPeople] = useState([])
   const [teams, setTeams] = useState([])
   const [users, setUsers] = useState([])
@@ -508,7 +634,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
     const account = users.find((u) => u.id === p.linkedUserId)
     const noAccess = users.length > 0 && !account
     const invited = Boolean(account?.pendingFirstLogin)
-    const base = { ...p, ...(noAccess ? { noAccess } : {}), ...(invited ? { invited: true } : {}) }
+    const base = { ...p, ...(account?.birthday ? { birthday: account.birthday } : {}), ...(noAccess ? { noAccess } : {}), ...(invited ? { invited: true } : {}) }
     if (p.photoDataUrl) return base
     return account?.photoDataUrl ? { ...base, photoDataUrl: account.photoDataUrl, photoFromAccount: true } : base
   })
@@ -520,6 +646,10 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
   const showToast = useToast()
   const actorName = actorNameFor(user)
   const isAdmin = isDirectorioAdmin(profile)
+  const messageSelected = () => {
+    const them = selectedPerson?.linkedUserId
+    if (them && user?.uid && onNavigate) onNavigate('chat', { type: 'chat', convType: 'dm', convId: dmIdFor(user.uid, them), participantUids: [user.uid, them] })
+  }
 
   const [peopleLoaded, setPeopleLoaded] = useState(false)
   useEffect(() => subscribeDirectoryPeople((p) => { setPeople(p); setPeopleLoaded(true) }), [])
@@ -658,6 +788,8 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
             <PersonDetailPanel
               person={selectedPerson}
               onClose={() => setSelectedPersonId(null)}
+              people={people}
+              onMessage={messageSelected}
               onEdit={isAdmin ? () => setModalPerson(selectedPerson) : null}
             />
           ) : (
@@ -688,7 +820,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled }) {
                   data-keep-scroll
                 >
                   <div className="mx-auto mb-2 h-[5px] w-10 rounded-full bg-white/25" />
-                  <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPersonId(null)} onEdit={isAdmin ? () => setModalPerson(selectedPerson) : null} />
+                  <PersonDetailPanel person={selectedPerson} people={people} onMessage={messageSelected} onClose={() => setSelectedPersonId(null)} onEdit={isAdmin ? () => setModalPerson(selectedPerson) : null} />
                 </motion.div>
               </>
             )

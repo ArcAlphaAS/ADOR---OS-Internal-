@@ -347,7 +347,7 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
       case 'calendario':
         return <CalendarioModule user={user} />
       case 'directorio':
-        return <DirectorioModule user={user} focus={focus?.type === 'person' ? focus : null} onFocusHandled={() => setFocus(null)} />
+        return <DirectorioModule user={user} onNavigate={navigateTo} focus={focus?.type === 'person' ? focus : null} onFocusHandled={() => setFocus(null)} />
       case 'conocimiento':
         return (
           <ConocimientoModule

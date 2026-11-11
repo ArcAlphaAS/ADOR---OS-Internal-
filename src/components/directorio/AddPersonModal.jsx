@@ -50,6 +50,8 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
   const [about, setAbout] = useState(person?.about || '')
   const [tags, setTags] = useState((person?.tags || []).join(', '))
   const [isDirectivo, setIsDirectivo] = useState(person?.isDirectivo || false)
+  const [startDate, setStartDate] = useState(person?.startDate || '')
+  const [reportsTo, setReportsTo] = useState(person?.reportsTo || '')
   const [photoDataUrl, setPhotoDataUrl] = useState(person?.photoFromAccount ? null : person?.photoDataUrl || null)
   const [linkedUserId, setLinkedUserId] = useState(person?.linkedUserId || '')
   const [saving, setSaving] = useState(false)
@@ -128,6 +130,8 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
       about: about.trim(),
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       isDirectivo,
+      startDate: startDate || null,
+      reportsTo: reportsTo || null,
       photoDataUrl: photoDataUrl || null,
       linkedUserId: linkId || null,
     }
@@ -332,6 +336,21 @@ export default function AddPersonModal({ person, users = [], people = [], actorN
                   <div>
                     <label className={labelClass} style={labelStyle}>Zona horaria</label>
                     <input type="text" value={timezone} onChange={(e) => setTimezone(e.target.value)} className={inputClass} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass} style={labelStyle}>Reporta a</label>
+                    <select value={reportsTo} onChange={(e) => setReportsTo(e.target.value)} className={inputClass}>
+                      <option value="">— Nadie —</option>
+                      {people.filter((p) => p.id !== person?.id).map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass} style={labelStyle}>Se unió a ADOR</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
                   </div>
                 </div>
                 <div>

@@ -1,42 +1,63 @@
 import { isDueToday } from '../../lib/workspace'
+import { eventColor } from '../../lib/googleCalendar'
+import { hhmm, untilLabel } from './PhoneCalendar'
 
-// A landing greeting for Calendario, iOS-Home-Screen-widget-ish — per
-// direct reference image. Deliberately real, no fabricated pieces: the
-// reference's weather ("6° Krakow") and mood pills ("Great/Typical/Good")
-// have no data source anywhere in this app (no weather API, no health/
-// sleep integration), so both were dropped rather than faked — same rule
-// already applied when the Día view's energy curve was scoped down to a
-// clearly-labeled generic pattern. Everything shown here is a real count.
+// Saludo de Calendario: a la izquierda quién eres y cómo viene el día, con lo siguiente
+// que te toca; a la derecha tres cifras reales (eventos, reuniones, tareas). Nada inventado:
+// el clima y los estados de ánimo de la referencia original no tienen de dónde salir aquí.
 
 function getGreeting(hour, name) {
-  if (hour >= 6 && hour < 12) return `Buenos días, ${name}.`
-  if (hour >= 12 && hour < 19) return `Buenas tardes, ${name}.`
-  return `Buenas noches, ${name}.`
+  if (hour >= 6 && hour < 12) return `Buenos días, ${name}`
+  if (hour >= 12 && hour < 19) return `Buenas tardes, ${name}`
+  return `Buenas noches, ${name}`
+}
+
+function Stat({ n, label }) {
+  return (
+    <div className="flex min-w-[72px] flex-col items-center px-5">
+      <span className="text-[30px] font-light leading-none tabular-nums tracking-[-0.02em] text-[#F5F5F5]">{n}</span>
+      <span className="mt-1.5 text-[11.5px] text-[#8A8A8A]">{label}</span>
+    </div>
+  )
 }
 
 export default function CalendarioGreeting({ user, events, tasks }) {
   const name = (user?.displayName || user?.email?.split('@')[0] || 'ahí').trim().split(' ')[0]
-  const hour = new Date().getHours()
+  const now = new Date()
+  const nowMs = now.getTime()
 
-  const today = new Date()
-  const todaysEvents = events.filter((e) => new Date(e.start).toDateString() === today.toDateString())
+  const todaysEvents = events.filter((e) => new Date(e.start).toDateString() === now.toDateString())
   const meetingCount = todaysEvents.filter((e) => e.isMeeting).length
   const taskCount = tasks.filter((t) => t.status !== 'completado' && isDueToday(t)).length
 
-  const parts = []
-  if (todaysEvents.length > 0) parts.push(`${todaysEvents.length} evento${todaysEvents.length === 1 ? '' : 's'}`)
-  if (meetingCount > 0) parts.push(`${meetingCount} reunión${meetingCount === 1 ? '' : 'es'}`)
-  if (taskCount > 0) parts.push(`${taskCount} tarea${taskCount === 1 ? '' : 's'}`)
+  const timed = todaysEvents.filter((e) => !e.allDay && e.end).sort((a, b) => new Date(a.start) - new Date(b.start))
+  const live = timed.find((e) => new Date(e.start).getTime() <= nowMs && new Date(e.end).getTime() > nowMs)
+  const next = live || timed.find((e) => new Date(e.start).getTime() > nowMs)
 
   return (
-    <div
-      className="ador-glass ador-grain overflow-hidden rounded-[20px] px-5 py-4"
-      style={{ backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(244,238,226,0.12) 0%, transparent 60%)' }}
-    >
-      <p className="text-[19px] font-semibold tracking-[-0.01em] text-[#F5F5F5]">{getGreeting(hour, name)}</p>
-      <p className="mt-0.5 text-[13px] text-[#888888]">
-        {parts.length === 0 ? 'Nada agendado por ahora — día libre.' : <>Tienes {parts.join(', ')} hoy.</>}
-      </p>
+    <div className="ador-glass flex flex-wrap items-center justify-between gap-x-10 gap-y-5 rounded-[22px] px-7 py-5">
+      <div className="min-w-0">
+        <p className="text-[22px] font-semibold tracking-[-0.015em] text-[#F5F5F5]">{getGreeting(now.getHours(), name)}</p>
+        {next ? (
+          <p className="mt-1.5 flex min-w-0 items-center gap-2 text-[13.5px] text-[#9A9A9A]">
+            <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(next) }} />
+            <span className="flex-shrink-0 font-medium" style={{ color: live ? '#E8C15A' : '#F4EEE2' }}>
+              {live ? 'Ahora' : untilLabel(new Date(next.start).getTime() - nowMs).replace(/^en /, 'En ')}
+            </span>
+            <span className="truncate text-[#D0D0D0]">{next.title}</span>
+            <span className="flex-shrink-0 tabular-nums">· {hhmm(next.start)}</span>
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[13.5px] text-[#9A9A9A]">
+            {todaysEvents.length === 0 && taskCount === 0 ? 'Nada agendado por ahora — día libre.' : 'Ya no te quedan reuniones hoy.'}
+          </p>
+        )}
+      </div>
+      <div className="flex items-center divide-x divide-white/[0.08]">
+        <Stat n={todaysEvents.length} label={todaysEvents.length === 1 ? 'Evento' : 'Eventos'} />
+        <Stat n={meetingCount} label={meetingCount === 1 ? 'Reunión' : 'Reuniones'} />
+        <Stat n={taskCount} label={taskCount === 1 ? 'Tarea' : 'Tareas'} />
+      </div>
     </div>
   )
 }
