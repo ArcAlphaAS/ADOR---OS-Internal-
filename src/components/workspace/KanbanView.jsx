@@ -33,7 +33,7 @@ function TaskCard({ task, workstream, workstreams = [], userById, onOpen, resolv
         const targetStatus = resolveDropColumn(info.point.x, info.point.y)
         if (targetStatus && targetStatus !== task.status) applyTaskUpdate(task, { status: targetStatus }, actorUserId, actorName)
       }}
-      onClick={() => onOpen(task)}
+      onClick={(e) => onOpen(task, null, e.currentTarget.getBoundingClientRect())}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })

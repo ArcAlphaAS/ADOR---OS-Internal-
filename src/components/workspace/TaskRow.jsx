@@ -34,6 +34,7 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
   return (
     <div>
     <div
+      data-task-row=""
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -78,7 +79,7 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
               transition={{ type: 'spring', stiffness: 500, damping: 22 }}
               className="flex items-center justify-center"
             >
-              <CheckCircleIcon size={18} />
+              <CheckCircleIcon size={18} className="ador-check-draw" />
             </motion.span>
           ) : (
             <motion.span

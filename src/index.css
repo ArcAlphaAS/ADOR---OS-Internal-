@@ -352,10 +352,10 @@ input:-webkit-autofill:focus {
    module goes display:none → block, which restarts this). A short, soft rise
    and fade on an already-rendered page: cheap, never a rebuild. */
 @keyframes ador-module-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translate(var(--mod-dx, 0px), 6px); }
 }
 .ador-module-in {
-  animation: ador-module-in 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: ador-module-in 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .ador-module-in { animation: none; }
@@ -926,3 +926,10 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
     app-region: no-drag;
   }
 }
+
+
+/* Completar: el círculo y la marca se dibujan con el trazo, no aparecen de golpe. */
+@keyframes ador-draw { to { stroke-dashoffset: 0; } }
+.ador-check-draw circle { stroke-dasharray: 54; stroke-dashoffset: 54; animation: ador-draw 0.38s ease-out forwards; }
+.ador-check-draw path { stroke-dasharray: 18; stroke-dashoffset: 18; animation: ador-draw 0.26s 0.24s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) { .ador-check-draw circle, .ador-check-draw path { animation: none; stroke-dashoffset: 0; } }

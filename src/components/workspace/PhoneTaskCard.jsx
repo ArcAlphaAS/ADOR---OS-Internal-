@@ -124,7 +124,7 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
         className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] text-[13px] font-bold text-[#0A0A0A]"
         style={{ borderColor: done ? '#F4EEE2' : overdue ? '#D98A86' : 'rgba(255,255,255,0.32)', background: done ? '#F4EEE2' : 'transparent' }}
       >
-        {done ? '✓' : ''}
+        {done ? <svg className="ador-check-draw" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg> : ''}
       </motion.button>
 
       <span className="min-w-0 flex-1">

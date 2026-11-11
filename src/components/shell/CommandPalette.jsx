@@ -1,3 +1,4 @@
+import { soundsOn, setSoundsOn } from '../../lib/sounds'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -33,6 +34,7 @@ export default function CommandPalette({ open, onClose, uid, access, onNavigate,
     }))
     const actions = [
       { key: 'theme', group: 'Acciones', label: 'Cambiar entre tema claro y oscuro', run: onToggleTheme },
+      { key: 'sounds', group: 'Acciones', label: soundsOn() ? 'Apagar sonidos' : 'Activar sonidos', run: () => setSoundsOn(!soundsOn()) },
       { key: 'shortcuts', group: 'Acciones', label: 'Ver atajos de teclado', hint: '⌘/', run: onShowShortcuts },
       { key: 'reload', group: 'Acciones', label: 'Actualizar ADOR OS', run: onReload },
     ]

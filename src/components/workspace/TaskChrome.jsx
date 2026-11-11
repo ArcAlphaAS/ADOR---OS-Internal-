@@ -42,7 +42,7 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
       </button>
 
       <span
-        onClick={() => onOpen(task)}
+        onClick={(e) => onOpen(task, null, (e.currentTarget.closest('[data-task-row]') || e.currentTarget).getBoundingClientRect())}
         className="min-w-0 cursor-pointer truncate text-[14px] font-medium text-[#F5F5F5] hover:underline"
         style={{ opacity: completed ? 0.5 : 1, textDecoration: completed ? 'line-through' : 'none' }}
       >

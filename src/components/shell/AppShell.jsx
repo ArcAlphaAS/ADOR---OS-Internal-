@@ -32,7 +32,7 @@ import LiveIsland from './LiveIsland'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useA11yPolish } from '../../hooks/useA11yPolish'
-import { moduleColor } from '../../lib/moduleColors'
+import { moduleColor, MODULE_ORDER } from '../../lib/moduleColors'
 import CommandPalette from './CommandPalette'
 import ShortcutsHelp from './ShortcutsHelp'
 import { runUndo } from '../../lib/undo'
@@ -230,6 +230,9 @@ export default function AppShell({ user, onSignOut, onUpdateDisplayName, onReset
   const navigateTo = (moduleId, focusTarget = null) => {
     if (mainRef.current) scrollPos.current[activeModule] = mainRef.current.scrollTop
     const apply = () => {
+      // La pantalla nueva entra desde el lado que le corresponde según su lugar en el orden.
+      const dir = MODULE_ORDER.indexOf(moduleId) >= MODULE_ORDER.indexOf(activeModule) ? 1 : -1
+      document.documentElement.style.setProperty('--mod-dx', `${dir * 26}px`)
       setActiveModule(moduleId)
       setFocus(focusTarget)
     }

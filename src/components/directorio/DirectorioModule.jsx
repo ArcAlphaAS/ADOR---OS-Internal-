@@ -1,3 +1,4 @@
+import AnimatedNumber from '../common/AnimatedNumber'
 import { useEdgeSwipeBack } from '../../hooks/useEdgeSwipeBack'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -47,7 +48,7 @@ function StatCard({ Icon, value, label }) {
         <Icon size={16} />
       </span>
       <div>
-        <p className="text-[17px] font-semibold text-[#F5F5F5]">{value}</p>
+        <p className="text-[17px] font-semibold text-[#F5F5F5]">{typeof value === 'number' ? <AnimatedNumber value={value} /> : value}</p>
         <p className="text-[11px] text-[#8A8A8A]">{label}</p>
       </div>
     </div>

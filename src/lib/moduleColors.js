@@ -19,4 +19,5 @@ export const MODULE_LABELS = {
   inicio: 'Inicio', workspace: 'Workspace', chat: 'Comunicación', clientes: 'Clientes', objetivos: 'Objetivos', finanzas: 'Finanzas',
   calendario: 'Calendario', conocimiento: 'Conocimiento', news: 'News', directorio: 'Directorio', 'ador-ia': 'ADOR IA', admin: 'Administración',
 }
+export const MODULE_ORDER = ['inicio', 'workspace', 'objetivos', 'clientes', 'finanzas', 'chat', 'calendario', 'conocimiento', 'news', 'directorio', 'ador-ia', 'admin']
 export const moduleColor = (id) => MODULE_COLORS[id] || '#F4EEE2'

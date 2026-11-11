@@ -1,3 +1,4 @@
+import { playSound } from '../../lib/sounds'
 import { useEffect, useRef, useState } from 'react'
 import { mentionQueryAt, EMOJIS, FORMATS, scheduleOptions, formatReminderTime, MAX_POLL_OPTIONS } from '../../lib/chat'
 import { getDraft, setDraft } from '../../lib/chatDrafts'
@@ -312,6 +313,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
     if (!text.trim() && !pendingImage) return
     const finalMentions = mentions.filter((m) => text.includes(`@${m.name}`))
     haptic()
+    playSound('send')
     onSend({ text: text.trim(), image: pendingImage || undefined, mentions: finalMentions, important: important || undefined })
     reset()
   }

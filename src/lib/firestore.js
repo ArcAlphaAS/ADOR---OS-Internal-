@@ -1,3 +1,4 @@
+import { playSound } from './sounds'
 import {
   getFirestore,
   initializeFirestore,
@@ -233,7 +234,7 @@ async function spawnRecurringTask(task, actorName) {
 
 export function toggleTaskComplete(task, actorName) {
   const completing = task.status !== 'completado'
-  if (completing) haptic('success')
+  if (completing) { haptic('success'); playSound('done') }
   return updateTask(task.id, {
     status: completing ? 'completado' : 'por_hacer',
     completedAt: completing ? serverTimestamp() : null,
@@ -409,7 +410,7 @@ function notifyDateChanges(task, data, changes, actorUserId, actorName) {
 
 export function applyTaskUpdate(task, data, actorUserId, actorName) {
   const patch = { ...data }
-  if (data.status === 'completado' && task.status !== 'completado') haptic('success')
+  if (data.status === 'completado' && task.status !== 'completado') { haptic('success'); playSound('done') }
   if ('status' in data) patch.completedAt = data.status === 'completado' ? serverTimestamp() : null
   if ('assignedTo' in data) {
     const prevAssigned = task.assignedTo || []

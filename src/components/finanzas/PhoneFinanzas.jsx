@@ -66,9 +66,9 @@ export default function PhoneFinanzas({ data, onIngreso, onGasto, onOpenPorCobra
       </Card>
 
       <div className="flex gap-2.5">
-        <Tile label="Ingresos" value={currencyPEN.format(data.ingresosDelMes)} delta={data.ingresosDeltaPct} />
-        <Tile label="Gastos" value={currencyPEN.format(data.gastosDelMes)} delta={data.gastosDeltaPct} invert />
-        <Tile label="Resultado" value={currencyPEN.format(data.utilidadNeta)} delta={data.resultDeltaPct} />
+        <Tile label="Ingresos" value={<AnimatedNumber value={data.ingresosDelMes} format={(n) => currencyPEN.format(n)} />} delta={data.ingresosDeltaPct} />
+        <Tile label="Gastos" value={<AnimatedNumber value={data.gastosDelMes} format={(n) => currencyPEN.format(n)} />} delta={data.gastosDeltaPct} invert />
+        <Tile label="Resultado" value={<AnimatedNumber value={data.utilidadNeta} format={(n) => currencyPEN.format(n)} />} delta={data.resultDeltaPct} />
       </div>
 
       <Card>
@@ -92,7 +92,7 @@ export default function PhoneFinanzas({ data, onIngreso, onGasto, onOpenPorCobra
       <div className="grid grid-cols-2 gap-2.5">
         <Card onClick={onOpenPorCobrar}>
           <span className="text-[13.5px] text-[#8E8E93]">Por cobrar</span>
-          <p className="mt-2 text-[24px] font-semibold tabular-nums text-[#F5F5F5]">{currencyPEN.format(data.totalPorCobrar)}</p>
+          <p className="mt-2 text-[24px] font-semibold tabular-nums text-[#F5F5F5]"><AnimatedNumber value={data.totalPorCobrar} format={(n) => currencyPEN.format(n)} /></p>
           <p className="mt-1 text-[13px]" style={{ color: data.porCobrarClientCount === 0 ? GREEN : AMBER }}>
             {data.porCobrarClientCount === 0 ? 'Al día' : `${data.porCobrarClientCount} cliente${data.porCobrarClientCount === 1 ? '' : 's'}`}
           </p>

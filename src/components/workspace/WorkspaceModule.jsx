@@ -436,7 +436,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             actorUserId={user?.uid}
             actorName={actorName}
             initialSection={panelSection}
-            originRect={phone ? panelOrigin : null}
+            originRect={panelOrigin}
             allTasks={tasks}
             siblings={visibleTasks}
             onSwitch={(id) => {

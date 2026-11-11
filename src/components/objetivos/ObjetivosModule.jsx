@@ -1,3 +1,4 @@
+import AnimatedNumber from '../common/AnimatedNumber'
 import { PageSkeleton } from '../common/CardSkeleton'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -82,7 +83,7 @@ function SummaryStrip({ items }) {
             {it.icon}
           </span>
           <div className="min-w-0">
-            <p className="text-[22px] font-semibold leading-none tabular-nums text-[#F5F5F5]">{it.value}</p>
+            <p className="text-[22px] font-semibold leading-none tabular-nums text-[#F5F5F5]">{typeof it.value === 'number' ? <AnimatedNumber value={it.value} /> : it.value}</p>
             <p className="mt-1 text-[12.5px] leading-tight text-[#8A8A8A]">{it.label}</p>
           </div>
         </div>

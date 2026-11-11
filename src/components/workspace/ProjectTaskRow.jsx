@@ -45,6 +45,7 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
   return (
     <div>
     <div
+      data-task-row=""
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
