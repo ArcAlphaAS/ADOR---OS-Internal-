@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { motion } from 'framer-motion'
 import { eventColor } from '../../lib/googleCalendar'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
@@ -205,7 +206,9 @@ function TasksStrip({ days, tasks, actorName }) {
   )
 }
 
-export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent, canWrite = false, onCreateRange, onMoveEvent }) {
+export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent, canWrite = false, onCreateRange, onMoveEvent, onContextEvent, onContextSlot }) {
+  const [, setTick] = useState(0)
+  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 30000); return () => clearInterval(t) }, [])
   const now = new Date()
   const showNowLine = days.some((d) => d.toDateString() === now.toDateString())
   const [full, setFull] = useState(false)
@@ -288,8 +291,13 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
   // for a range that doesn't include today (e.g. paging to a future week).
   useEffect(() => {
     if (!containerRef.current) return
-    const target = showNowLine ? Math.max(nowTop - ROW_HEIGHT * 2, 0) : Math.max((8 - START_HOUR) * ROW_HEIGHT, 0)
-    containerRef.current.scrollTop = target
+    // Abre mostrando "ahora" (centrado un poco más arriba de la mitad) y llega con un
+    // deslizamiento suave desde un poco antes, no con un salto.
+    const el = containerRef.current
+    const target = Math.max((showNowLine ? nowTop : (8 - START_HOUR) * ROW_HEIGHT) - el.clientHeight * 0.4, 0)
+    el.scrollTop = Math.max(target - 140, 0)
+    const t = setTimeout(() => el.scrollTo({ top: target, behavior: 'smooth' }), 80)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daysKey, full])
 
@@ -309,7 +317,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       <AllDayStrip days={days} events={events} onOpenEvent={onOpenEvent} />
       <TasksStrip days={days} tasks={tasks} actorName={actorName} />
 
-      <div ref={containerRef} className="max-h-[640px] overflow-y-auto" style={drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : undefined}>
+      <div ref={containerRef} className="overflow-y-auto" style={{ maxHeight: 'clamp(380px, calc(100vh - 340px), 780px)', ...(drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : {}) }}>
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
@@ -329,6 +337,12 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
               <div
                 key={day.toISOString()}
                 data-day={day.toDateString()}
+                onContextMenu={(ev) => {
+                  if (ev.target.closest('[data-event]') || !onContextSlot) return
+                  ev.preventDefault()
+                  const m = Math.max(0, Math.round(minuteAt(ev.currentTarget, ev.clientY) / 30) * 30)
+                  onContextSlot(atMinute(day.toDateString(), m), ev.clientX, ev.clientY)
+                }}
                 onPointerDown={(ev) => {
                   if (ev.target.closest('[data-event]')) return
                   const col = ev.currentTarget
@@ -360,11 +374,16 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                   const past = new Date(e.end).getTime() < now.getTime()
                   const live = new Date(e.start).getTime() <= now.getTime() && !past
                   return (
-                    <button
+                    <motion.button
                       key={e.id}
                       type="button"
                       data-event
+                      initial={{ opacity: 0, scale: 0.94, y: 4 }}
+                      animate={{ opacity: drag?.event?.id === e.id ? 0.3 : past ? 0.62 : 1, scale: 1, y: 0 }}
+                      whileHover={{ y: -1 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 32, delay: Math.min(placed.indexOf(e) * 0.025, 0.2) }}
                       onClick={() => { if (justDragged.current) return; setHover(null); onOpenEvent(e) }}
+                      onContextMenu={(ev) => { if (!onContextEvent) return; ev.preventDefault(); ev.stopPropagation(); setHover(null); clearTimeout(hoverTimer.current); onContextEvent(e, ev.clientX, ev.clientY) }}
                       onPointerDown={(ev) => {
                         if (!e.canEdit) return
                         setHover(null)
@@ -383,7 +402,6 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                         background: `${color}2E`,
                         borderLeft: `3px solid ${color}`,
                         color: '#F5F5F5',
-                        opacity: drag?.event?.id === e.id ? 0.3 : past ? 0.62 : 1,
                         cursor: canWrite && e.canEdit ? 'grab' : 'pointer',
                         boxShadow: live ? `0 0 0 1px ${color}AA, 0 4px 14px -6px ${color}88` : 'none',
                       }}
@@ -404,7 +422,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                           {new Date(e.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – {new Date(e.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </span>
                       )}
-                    </button>
+                    </motion.button>
                   )
                 })}
                 {drag && drag.dayKey === day.toDateString() && (
@@ -418,7 +436,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
           })}
 
           {showNowLine && (
-            <div className="pointer-events-none absolute flex items-center" style={{ top: nowTop, left: 0, right: 0 }}>
+            <div className="pointer-events-none absolute flex items-center" style={{ top: nowTop, left: 0, right: 0, transition: 'top 700ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
               <span
                 className="z-10 ml-1 flex-shrink-0 rounded-md bg-[#EF5350] px-1.5 py-[2px] text-center text-[10px] font-semibold tabular-nums text-white"
                 style={{ width: GUTTER_WIDTH - 10 }}

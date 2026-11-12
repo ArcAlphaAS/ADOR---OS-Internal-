@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { withTimeout, isPendingFor } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -9,7 +10,7 @@ import { key, sameDay, hhmm, untilLabel, freeGap, Tag } from './PhoneCalendar'
 // Google y tus tareas con fecha en una sola lista, lo pasado tachado, lo próximo con
 // "en 1 h 15 min", y un aviso de hueco libre con la tarea que cabría — pero en la
 // columna derecha, junto a la cuadrícula.
-export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpenEvent }) {
+export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpenEvent, onContextEvent }) {
   const showToast = useToast()
   const [now] = useState(() => new Date())
   const nowMs = Date.now()
@@ -43,14 +44,14 @@ export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpe
         <p className="px-5 pb-6 pt-1 text-[13px] text-[#8A8A8A]">Nada este día.</p>
       ) : (
         <ul className="divide-y divide-white/[0.06] border-t border-white/[0.06]">
-          {dayEvents.map((e) => {
+          {dayEvents.map((e, ei) => {
             const end = e.end ? new Date(e.end).getTime() : 0
             const past = !e.allDay && end && end <= nowMs
             const live = !e.allDay && new Date(e.start).getTime() <= nowMs && end > nowMs
             const startsIn = new Date(e.start).getTime() - nowMs
             return (
-              <li key={e.id}>
-                <div role="button" tabIndex={0} onClick={() => onOpenEvent(e)} onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e) }} className="flex w-full cursor-pointer items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-white/[0.04]" style={{ opacity: past ? 0.5 : 1 }}>
+              <motion.li key={`${key(anchor)}-${e.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 34, delay: ei * 0.045 }}>
+                <div role="button" tabIndex={0} onContextMenu={(ev) => { if (!onContextEvent) return; ev.preventDefault(); onContextEvent(e, ev.clientX, ev.clientY) }} onClick={() => onOpenEvent(e)} onKeyDown={(ev) => { if (ev.key === 'Enter') onOpenEvent(e) }} className="flex w-full cursor-pointer items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-white/[0.04]" style={{ opacity: past ? 0.5 : 1 }}>
                   <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" style={{ background: eventColor(e) }} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-[#F5F5F5]" style={{ textDecoration: past ? 'line-through' : 'none' }}>{e.title}</span>
@@ -66,19 +67,19 @@ export default function DayAgenda({ uid, anchor, events, tasks, actorName, onOpe
                     {!live && !past && !e.allDay && startsIn > 0 && startsIn < 6 * 3600000 && <span className="text-[11.5px] font-medium text-[#F4EEE2]">{untilLabel(startsIn)}</span>}
                   </span>
                 </div>
-              </li>
+              </motion.li>
             )
           })}
-          {dayTasks.map((t) => {
+          {dayTasks.map((t, ti) => {
             const done = t.status === 'completado'
             return (
-              <li key={t.id} className="flex items-center gap-3 px-5 py-3.5">
+              <motion.li key={`${key(anchor)}-${t.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 34, delay: (dayEvents.length + ti) * 0.045 }} className="flex items-center gap-3 px-5 py-3.5">
                 <button type="button" aria-label="Completar tarea" onClick={() => complete(t)} className="flex h-[20px] w-[20px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] text-[10px] font-bold text-[#0A0A0A]" style={{ borderColor: done ? '#F4EEE2' : 'rgba(255,255,255,0.32)', background: done ? '#F4EEE2' : 'transparent' }}>{done ? '✓' : ''}</button>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] text-[#F5F5F5]" style={{ textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.5 : 1 }}>{t.title}</span>
                 </span>
                 <Tag tone="task">Tarea</Tag>
-              </li>
+              </motion.li>
             )
           })}
         </ul>

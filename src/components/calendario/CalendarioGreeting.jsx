@@ -1,6 +1,7 @@
 import { isDueToday } from '../../lib/workspace'
 import { eventColor } from '../../lib/googleCalendar'
 import { hhmm, untilLabel } from './PhoneCalendar'
+import AnimatedNumber from '../common/AnimatedNumber'
 
 // Saludo de Calendario: a la izquierda quién eres y cómo viene el día, con lo siguiente
 // que te toca; a la derecha tres cifras reales (eventos, reuniones, tareas). Nada inventado:
@@ -15,7 +16,7 @@ function getGreeting(hour, name) {
 function Stat({ n, label }) {
   return (
     <div className="flex min-w-[72px] flex-col items-center px-5">
-      <span className="text-[30px] font-light leading-none tabular-nums tracking-[-0.02em] text-[#F5F5F5]">{n}</span>
+      <span className="text-[30px] font-light leading-none tabular-nums tracking-[-0.02em] text-[#F5F5F5]"><AnimatedNumber value={n} duration={600} /></span>
       <span className="mt-1.5 text-[11.5px] text-[#8A8A8A]">{label}</span>
     </div>
   )

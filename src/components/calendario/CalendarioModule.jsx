@@ -17,6 +17,7 @@ import DayAgenda from './DayAgenda'
 import CalendarioGreeting from './CalendarioGreeting'
 import EventDetailModal from './EventDetailModal'
 import EventEditorModal from './EventEditorModal'
+import ContextMenu from '../common/ContextMenu'
 import PhoneCalendar from './PhoneCalendar'
 import usePhone from '../../hooks/usePhone'
 
@@ -238,6 +239,11 @@ export default function CalendarioModule({ user }) {
   const [needPermission, setNeedPermission] = useState(false)
   const [quick, setQuick] = useState('')
   const quickRef = useRef(null)
+  const [ctx, setCtx] = useState(null) // { x, y, kind: 'event'|'slot', event?, date? }
+  const [loadedOnce, setLoadedOnce] = useState(false)
+  // Dirección del movimiento al paginar: 1 = hacia adelante, -1 = atrás, 0 = cambio de vista (solo funde).
+  const dirRef = useRef(1)
+  const prevNav = useRef({ t: null, view: null })
   const [view, setView] = useState('semana')
   const [anchor, setAnchor] = useState(new Date())
   const [tasks, setTasks] = useState([])
@@ -281,6 +287,14 @@ export default function CalendarioModule({ user }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [phone, view, canWrite])
+
+  useEffect(() => { if (status === 'ready') setLoadedOnce(true) }, [status])
+  {
+    const t = anchor.getTime()
+    if (prevNav.current.view !== null && prevNav.current.view !== view) dirRef.current = 0
+    else if (prevNav.current.t !== null && prevNav.current.t !== t) dirRef.current = t > prevNav.current.t ? 1 : -1
+    prevNav.current = { t, view }
+  }
 
   const goToday = () => setAnchor(new Date())
   const goPrev = () => setAnchor((a) => shiftAnchor(view, a, -1))
@@ -370,6 +384,39 @@ export default function CalendarioModule({ user }) {
     openCreate({ title: r.title, start: r.start, end: r.end, guests: r.guests, meet: r.meet })
   }
 
+  const onContextEvent = (event, x, y) => setCtx({ x, y, kind: 'event', event })
+  const onContextSlot = (date, x, y) => setCtx({ x, y, kind: 'slot', date })
+  const copyText = (t, ok) => navigator.clipboard?.writeText(t).then(() => showToast(ok)).catch(() => showToast('No se pudo copiar.', { tone: 'error' }))
+  const ctxItems = () => {
+    if (!ctx) return []
+    if (ctx.kind === 'event') {
+      const e = ctx.event
+      const past = !e.allDay && new Date(e.end).getTime() < Date.now()
+      return [
+        { label: 'Abrir detalle', onClick: () => setOpenEvent(e) },
+        e.canEdit && { label: 'Editar…', onClick: () => openEdit(e) },
+        { label: 'Duplicar', onClick: () => openCreate({ title: e.title, allDay: e.allDay, start: new Date(e.start), end: e.allDay ? new Date(new Date(e.end).getTime() - 86400000) : new Date(e.end), location: e.location || '', description: e.description || '', colorId: e.colorId || '' }) },
+        { divider: true },
+        e.meetLink && !past && { label: 'Unirse a Meet', onClick: () => window.open(e.meetLink, '_blank', 'noopener') },
+        e.meetLink && { label: 'Copiar enlace de Meet', onClick: () => copyText(e.meetLink, 'Enlace de Meet copiado.') },
+        e.htmlLink && { label: 'Copiar enlace del evento', onClick: () => copyText(e.htmlLink, 'Enlace del evento copiado.') },
+        e.htmlLink && { label: 'Abrir en Google Calendar', onClick: () => window.open(e.htmlLink, '_blank', 'noopener') },
+        e.canEdit && { divider: true },
+        e.canEdit && { label: 'Eliminar…', danger: true, onClick: () => openEdit(e) },
+      ]
+    }
+    const d = ctx.date
+    const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    return [
+      { label: `Nuevo evento a las ${hm}`, onClick: () => openCreate({ start: d, end: new Date(d.getTime() + 3600000) }) },
+      { label: 'Nuevo evento de todo el día', onClick: () => openCreate({ allDay: true, start: day, end: day }) },
+      { divider: true },
+      { label: 'Ver este día', onClick: () => openDay(day) },
+      { label: 'Ir a hoy', onClick: () => setAnchor(new Date()) },
+    ]
+  }
+
   const connected = status === 'ready' || status === 'loading'
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = startOfWeek(anchor)
@@ -428,10 +475,10 @@ export default function CalendarioModule({ user }) {
       {connected && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button type="button" onClick={goPrev} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
+            <button type="button" onClick={goPrev} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-[background-color,transform] duration-150 hover:bg-white/[0.13] active:scale-90">
               <ArrowLeftIcon size={13} />
             </button>
-            <button type="button" onClick={goNext} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-colors duration-150 hover:bg-white/[0.13]">
+            <button type="button" onClick={goNext} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] transition-[background-color,transform] duration-150 hover:bg-white/[0.13] active:scale-90">
               <ArrowRightIcon size={13} />
             </button>
             <span className="mx-2 text-[24px] font-semibold capitalize leading-none tracking-[-0.02em] text-[#F5F5F5]">{rangeLabel(view, anchor)}</span>
@@ -500,28 +547,44 @@ export default function CalendarioModule({ user }) {
         <ConnectCTA onConnect={() => refresh(rangeFor(view, anchor))} headline="No se pudo cargar tu calendario" sublabel={error || 'Intenta de nuevo en un momento.'} />
       ) : (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
-          <div className="min-w-0">
-            {status === 'loading' ? (
+          <div className="relative min-w-0">
+            <AnimatePresence mode="popLayout" initial={false} custom={dirRef.current}>
+              <motion.div
+                key={`${view}-${view === 'semana' ? startOfWeek(anchor).toDateString() : view === 'mes' ? `${anchor.getFullYear()}-${anchor.getMonth()}` : view === 'dia' ? anchor.toDateString() : 'agenda'}`}
+                custom={dirRef.current}
+                variants={{
+                  enter: (d) => ({ opacity: 0, x: d * 44, scale: d === 0 ? 0.985 : 1 }),
+                  center: { opacity: status === 'loading' ? 0.6 : 1, x: 0, scale: 1, transition: { type: 'spring', stiffness: 360, damping: 36 } },
+                  exit: (d) => ({ opacity: 0, x: d * -44, scale: d === 0 ? 0.985 : 1, transition: { duration: 0.16, ease: 'easeIn' } }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+              >
+            {status === 'loading' && !loadedOnce ? (
               <Skeleton />
             ) : view === 'semana' ? (
-              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} />
+              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} />
             ) : view === 'dia' ? (
-              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} />
+              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} />
             ) : view === 'mes' ? (
               <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={openDay} onOpenEvent={setOpenEvent} />
             ) : (
               <AgendaView events={events} onOpenEvent={setOpenEvent} />
             )}
+              </motion.div>
+            </AnimatePresence>
           </div>
           <div className="flex flex-col gap-4">
             <MiniMonthCalendar anchorDate={anchor} onSelectDay={openDay} events={events} />
-            <DayAgenda uid={user?.uid} anchor={anchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} />
+            <DayAgenda uid={user?.uid} anchor={anchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onContextEvent={onContextEvent} />
           </div>
         </div>
       )}
 
       <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
       <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
+      {ctx && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.kind === 'event' ? ctx.event.title : 'Este horario'} subtitle={ctx.kind === 'event' ? (ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`) : ctx.date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} onClose={() => setCtx(null)} items={ctxItems()} />}
       <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
     </motion.div>
   )

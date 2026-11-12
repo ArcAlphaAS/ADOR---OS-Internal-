@@ -65,10 +65,11 @@ export function MiniMonthCalendar({ anchorDate, onSelectDay, events = [] }) {
               onClick={() => onSelectDay(day)}
               className="relative flex items-center justify-center py-0.5"
             >
+              {isSelected && !isToday && <motion.span layoutId="mini-day-sel" className="absolute h-6 w-6 rounded-full bg-white/[0.14]" transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
               <span
-                className="flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
+                className="relative flex h-6 w-6 items-center justify-center rounded-full text-[11px]"
                 style={{
-                  background: isToday ? '#F5F5F5' : isSelected ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  background: isToday ? '#F5F5F5' : 'transparent',
                   color: isToday ? '#0A0A0A' : '#F5F5F5',
                   fontWeight: isToday ? 600 : 400,
                 }}
