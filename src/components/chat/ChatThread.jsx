@@ -9,6 +9,9 @@ function dayKey(ts) {
 }
 
 function dayLabel(ts) {
+  // Un mensaje recién enviado aún no tiene la hora del servidor (null): cuenta como de hoy.
+  // Sin esta guarda, enviar un mensaje tumbaba toda la sección de Comunicación.
+  if (!ts?.toDate) return 'Hoy'
   const date = ts.toDate()
   const today = new Date()
   const yesterday = new Date(today)
