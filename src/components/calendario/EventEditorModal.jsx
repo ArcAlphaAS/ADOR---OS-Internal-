@@ -9,7 +9,7 @@ import { CloseIcon } from '../icons'
 import { SHEET } from '../../lib/motion'
 import GuestPicker from './GuestPicker'
 import GuestSheet from './GuestSheet'
-import WhereSection, { modeFromEvent, discordChannelOf, locationFor } from './WhereSection'
+import WhereSection, { modeFromEvent, discordChannelOf, locationFor, rememberedPlaces, savePlace } from './WhereSection'
 import PersonAvatar from '../chat/PersonAvatar'
 import usePhone from '../../hooks/usePhone'
 import { subscribeUsers, subscribeDirectoryPeople } from '../../lib/firestore'
@@ -79,6 +79,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   const loc0 = (src.location || '').trim()
   const mode0 = modeFromEvent(src, Boolean(src.meet))
   const [mode, setMode] = useState(mode0)
+  const [places] = useState(() => rememberedPlaces(events))
   const [place, setPlace] = useState(mode0 === 'presencial' || mode0 === 'enlace' ? loc0 : '')
   const [channel, setChannel] = useState(mode0 === 'discord' ? discordChannelOf(loc0) : '')
   const [description, setDescription] = useState(src.description || '')
@@ -157,6 +158,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
     }
     const self = (src.attendees || []).filter((a) => a.self).map((a) => ({ email: a.email, self: true, responseStatus: a.status }))
     const attendees = allGuests.length || self.length ? [...self, ...allGuests] : undefined
+    if (mode === 'presencial') savePlace(place)
     onSave({
       title: title.trim(), allDay, start, end, location: locationFor({ mode, place, channel, fallback: src.location }), description: description.trim(),
       colorId: colorId || null,
@@ -312,7 +314,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                   <div>
                     <p className="mb-3 px-1 text-[15px] text-[#8E8E93]">¿Cómo se reúnen?</p>
                     <div className={`${card} p-4`}>
-                      <WhereSection phone mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} />
+                      <WhereSection phone mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} suggestions={places} />
                     </div>
                   </div>
 
@@ -486,7 +488,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
           {/* ¿Cómo se reúnen? */}
           <section className="mt-7">
             <p className={label}>{allDay ? '¿Cómo se reúnen?' : '4 · ¿Cómo se reúnen?'}</p>
-            <WhereSection mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} />
+            <WhereSection mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} suggestions={places} />
           </section>
 
           {/* Detalles */}

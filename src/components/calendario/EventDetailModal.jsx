@@ -115,7 +115,13 @@ export default function EventDetailModal({ event, uid, onClose, onEdit, onRespon
               {event.location && (
                 <p className="flex items-start gap-3 text-[14px] text-[#E4E4E4]">
                   <span className="mt-0.5 text-[#8E8E93]">{sv(<><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></>)}</span>
-                  <span className="min-w-0 [overflow-wrap:anywhere]">{event.location}</span>
+                  {(() => {
+                    const loc = event.location
+                    const href = /^https?:\/\//i.test(loc) ? loc : /^discord\b/i.test(loc) ? null : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`
+                    return href
+                      ? <a href={href} target="_blank" rel="noreferrer" className="min-w-0 [overflow-wrap:anywhere] underline-offset-2 hover:underline">{loc}</a>
+                      : <span className="min-w-0 [overflow-wrap:anywhere]">{loc}</span>
+                  })()}
                 </p>
               )}
               {event.description && <p className={`whitespace-pre-wrap [overflow-wrap:anywhere] text-[13.5px] leading-relaxed text-[#B8B8B8] ${event.location ? 'mt-3 border-t border-white/[0.07] pt-3' : ''}`}>{event.description}</p>}
