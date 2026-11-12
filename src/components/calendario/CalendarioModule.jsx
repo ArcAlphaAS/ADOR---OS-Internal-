@@ -407,16 +407,9 @@ export default function CalendarioModule({ user }) {
         e.canEdit && { label: 'Eliminar…', danger: true, onClick: () => openEdit(e) },
       ]
     }
+    // Clic derecho en un hueco: solo crear un evento a esa hora.
     const d = ctx.date
-    const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-    return [
-      { label: `Nuevo evento a las ${hm}`, onClick: () => openCreate({ start: d, end: new Date(d.getTime() + 3600000) }) },
-      { label: 'Nuevo evento de todo el día', onClick: () => openCreate({ allDay: true, start: day, end: day }) },
-      { divider: true },
-      { label: 'Ver este día', onClick: () => openDay(day) },
-      { label: 'Ir a hoy', onClick: () => setAnchor(new Date()) },
-    ]
+    return [{ label: 'Crear nuevo evento', onClick: () => openCreate({ start: d, end: new Date(d.getTime() + 3600000) }) }]
   }
 
   const connected = status === 'ready' || status === 'loading'
@@ -448,11 +441,12 @@ export default function CalendarioModule({ user }) {
             <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={(d) => { setAnchor(d); setView('semana'); setPhoneMonth(false) }} onOpenEvent={setOpenEvent} />
           </div>
         ) : (
-          <PhoneCalendar uid={user?.uid} anchor={anchor} setAnchor={setAnchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onMonth={() => { setView('mes'); setPhoneMonth(true) }} />
+          <PhoneCalendar uid={user?.uid} anchor={anchor} setAnchor={setAnchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onLongPressEvent={onContextEvent} onMonth={() => { setView('mes'); setPhoneMonth(true) }} />
         )}
         <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
         <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} events={events} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
         <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
+        {ctx && ctx.kind === 'event' && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.event.title} subtitle={ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`} onClose={() => setCtx(null)} items={ctxItems()} />}
       </div>
     )
   }
@@ -580,9 +574,9 @@ export default function CalendarioModule({ user }) {
             {status === 'loading' && !loadedOnce ? (
               <Skeleton />
             ) : view === 'semana' ? (
-              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} />
+              <CalendarioGrid days={weekDays} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} onDropTask={(task, d) => openCreate({ title: task.title, start: d, end: new Date(d.getTime() + 3600000) })} />
             ) : view === 'dia' ? (
-              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} />
+              <CalendarioGrid days={[anchor]} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} canWrite={canWrite} onCreateRange={(st, en) => openCreate({ start: st, end: en })} onMoveEvent={moveEvent} onNeedPermission={() => setNeedPermission(true)} onContextEvent={onContextEvent} onContextSlot={onContextSlot} onDropTask={(task, d) => openCreate({ title: task.title, start: d, end: new Date(d.getTime() + 3600000) })} />
             ) : view === 'mes' ? (
               <MonthGrid monthDate={anchor} events={events} tasks={tasks} onSelectDay={openDay} onOpenEvent={setOpenEvent} />
             ) : (
@@ -600,7 +594,7 @@ export default function CalendarioModule({ user }) {
 
       <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
       <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} events={events} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
-      {ctx && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.kind === 'event' ? ctx.event.title : 'Este horario'} subtitle={ctx.kind === 'event' ? (ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`) : ctx.date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} onClose={() => setCtx(null)} items={ctxItems()} />}
+      {ctx && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.kind === 'event' ? ctx.event.title : 'Nuevo evento'} subtitle={ctx.kind === 'event' ? (ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`) : `${ctx.date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} · ${ctx.date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`} onClose={() => setCtx(null)} items={ctxItems()} />}
       <AnimatePresence>
         {confirmDisconnect && (
           <ConfirmDialog

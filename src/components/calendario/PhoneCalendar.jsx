@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { haptic } from '../../lib/haptics'
 import { motion } from 'framer-motion'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { withTimeout, isPendingFor } from '../../lib/workspace'
@@ -42,8 +43,23 @@ export const Tag = ({ children, tone }) => (
   <span className="rounded-md px-2 py-[3px] text-[11px] font-medium" style={{ background: tone === 'task' ? 'rgba(232,193,90,0.16)' : 'rgba(244,238,226,0.12)', color: tone === 'task' ? '#E8C15A' : '#E4DCCB' }}>{children}</span>
 )
 
-export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, actorName, onOpenEvent, onMonth }) {
+export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, actorName, onOpenEvent, onLongPressEvent, onMonth }) {
   const showToast = useToast()
+  // Mantener pulsado un evento abre su menú (editar, duplicar, eliminar…), como el clic derecho en escritorio.
+  const pressTimer = useRef(null)
+  const pressed = useRef(false)
+  const press = (ev) => ({
+    onTouchStart: (t) => {
+      pressed.current = false
+      const { clientX: x, clientY: y } = t.touches[0]
+      clearTimeout(pressTimer.current)
+      pressTimer.current = setTimeout(() => { pressed.current = true; haptic('tap'); onLongPressEvent?.(ev, x, y) }, 480)
+    },
+    onTouchMove: () => clearTimeout(pressTimer.current),
+    onTouchEnd: () => clearTimeout(pressTimer.current),
+    onContextMenu: (e) => e.preventDefault(),
+    onClick: () => { if (pressed.current) { pressed.current = false; return } onOpenEvent(ev) },
+  })
   const [now] = useState(() => new Date())
   const [mode, setMode] = useState('dia') // 'dia' | 'semana'
   const monday = new Date(anchor)
@@ -110,7 +126,7 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
       </div>
 
       {mode === 'semana' ? (
-        <WeekAgenda days={days} eventsOn={eventsOn} tasksOn={tasksOn} now={now} nowMs={nowMs} complete={complete} onOpenEvent={onOpenEvent} onPickDay={(d) => { setAnchor(d); setMode('dia') }} />
+        <WeekAgenda press={press} days={days} eventsOn={eventsOn} tasksOn={tasksOn} now={now} nowMs={nowMs} complete={complete} onOpenEvent={onOpenEvent} onPickDay={(d) => { setAnchor(d); setMode('dia') }} />
       ) : (
       <>
       {suggestion && (
@@ -145,7 +161,7 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
               const startsIn = new Date(e.start).getTime() - nowMs
               return (
                 <li key={e.id}>
-                  <button type="button" onClick={() => onOpenEvent(e)} className="flex w-full items-start gap-3 px-5 py-4 text-left" style={{ opacity: past ? 0.5 : 1 }}>
+                  <button type="button" {...press(e)} className="flex w-full items-start gap-3 px-5 py-4 text-left" style={{ opacity: past ? 0.5 : 1 }}>
                     <span className="min-w-0 flex-1">
                       <Tag>{e.isMeeting ? 'Reunión' : 'Evento'}</Tag>
                       <span className="mt-1.5 block truncate text-[16px] font-medium text-[#F5F5F5]" style={{ textDecoration: past ? 'line-through' : 'none' }}>{e.title}</span>
@@ -184,7 +200,7 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
 
 // Toda la semana en una lista vertical, agrupada por día (como la vista de lista de iOS):
 // cada día con su fecha, y los días sin nada se juntan en una línea para no estirar la pantalla.
-function WeekAgenda({ days, eventsOn, tasksOn, now, nowMs, complete, onOpenEvent, onPickDay }) {
+function WeekAgenda({ press, days, eventsOn, tasksOn, now, nowMs, complete, onPickDay }) {
   const groups = days.map((d) => ({
     d,
     events: eventsOn(d).sort((a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || new Date(a.start) - new Date(b.start)),
@@ -210,7 +226,7 @@ function WeekAgenda({ days, eventsOn, tasksOn, now, nowMs, complete, onOpenEvent
                 const past = !e.allDay && end && end <= nowMs
                 return (
                   <li key={e.id}>
-                    <button type="button" onClick={() => onOpenEvent(e)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left" style={{ opacity: past ? 0.5 : 1 }}>
+                    <button type="button" {...press(e)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left" style={{ opacity: past ? 0.5 : 1 }}>
                       <span className="w-[74px] flex-shrink-0 text-[13px] tabular-nums text-[#A8A8AD]">{e.allDay ? 'Todo el día' : hhmm(e.start)}</span>
                       <span className="min-w-0 flex-1 truncate text-[15px] text-[#F5F5F5]" style={{ textDecoration: past ? 'line-through' : 'none' }}>{e.title}</span>
                       {e.isMeeting && <Tag>Reunión</Tag>}

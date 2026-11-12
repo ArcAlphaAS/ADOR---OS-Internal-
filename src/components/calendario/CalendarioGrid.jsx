@@ -175,7 +175,7 @@ function tasksForDay(tasks, day) {
 // shown instead as a compact strip, honest about being "due this day," not
 // "at this hour." Visually distinct from Google events (dashed border,
 // checkbox) so it never reads as a real calendar entry.
-function TasksStrip({ days, tasks, actorName }) {
+function TasksStrip({ days, tasks, actorName, canDrag, onDragTask }) {
   const showToast = useToast()
   const byDay = days.map((d) => tasksForDay(tasks, d))
   if (!byDay.some((list) => list.length > 0)) return null
@@ -194,7 +194,11 @@ function TasksStrip({ days, tasks, actorName }) {
               key={t.id}
               type="button"
               onClick={() => toggle(t)}
-              className="flex w-full items-center gap-1 truncate rounded-md border border-dashed border-white/[0.18] px-1.5 py-0.5 text-left text-[10px] font-medium text-[#CCCCCC] transition-colors duration-150 hover:border-white/[0.3]"
+              draggable={canDrag}
+              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', t.title); onDragTask?.(t) }}
+              onDragEnd={() => onDragTask?.(null)}
+              title={canDrag ? 'Arrástrala a una hora para crear un bloque de tiempo' : undefined}
+              className="flex w-full cursor-default items-center gap-1 truncate rounded-md border border-dashed border-white/[0.18] px-1.5 py-0.5 text-left text-[10px] font-medium text-[#CCCCCC] transition-colors duration-150 hover:border-white/[0.3]"
             >
               <CheckCircleIcon size={9} className="flex-shrink-0 text-[#8A8A8A]" />
               <span className="truncate">{t.title}</span>
@@ -206,7 +210,9 @@ function TasksStrip({ days, tasks, actorName }) {
   )
 }
 
-export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent, canWrite = false, onCreateRange, onMoveEvent, onContextEvent, onContextSlot }) {
+export default function CalendarioGrid({ days, events, scrollRef, tasks = [], actorName, onOpenEvent, canWrite = false, onCreateRange, onMoveEvent, onContextEvent, onContextSlot, onDropTask }) {
+  const [dragTask, setDragTask] = useState(null)
+  const [dropAt, setDropAt] = useState(null) // { dayKey, min } mientras arrastras una tarea sobre el día
   const [, setTick] = useState(0)
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 30000); return () => clearInterval(t) }, [])
   const now = new Date()
@@ -336,9 +342,9 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       </div>
 
       <AllDayStrip days={days} events={events} onOpenEvent={onOpenEvent} />
-      <TasksStrip days={days} tasks={tasks} actorName={actorName} />
+      <TasksStrip days={days} tasks={tasks} actorName={actorName} canDrag={canWrite && Boolean(onDropTask)} onDragTask={setDragTask} />
 
-      <div ref={containerRef} className="overflow-y-auto" style={{ maxHeight: maxH ? `${maxH}px` : 'clamp(380px, calc(100vh - 340px), 780px)', ...(drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : {}) }}>
+      <div ref={containerRef} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropAt(null) }} className="overflow-y-auto" style={{ maxHeight: maxH ? `${maxH}px` : 'clamp(380px, calc(100vh - 340px), 780px)', ...(drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : {}) }}>
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
@@ -364,6 +370,21 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                   const m = Math.max(0, Math.round(minuteAt(ev.currentTarget, ev.clientY) / 30) * 30)
                   onContextSlot(atMinute(day.toDateString(), m), ev.clientX, ev.clientY)
                 }}
+                onDragOver={(ev) => {
+                  if (!dragTask) return
+                  ev.preventDefault()
+                  ev.dataTransfer.dropEffect = 'copy'
+                  const m = Math.max(0, Math.min(snap(minuteAt(ev.currentTarget, ev.clientY) - 7.5), 23 * 60 + 45))
+                  setDropAt((cur) => (cur && cur.dayKey === day.toDateString() && cur.min === m ? cur : { dayKey: day.toDateString(), min: m }))
+                }}
+                onDrop={(ev) => {
+                  if (!dragTask) return
+                  ev.preventDefault()
+                  const m = Math.max(0, Math.min(snap(minuteAt(ev.currentTarget, ev.clientY) - 7.5), 23 * 60 + 45))
+                  const t = dragTask
+                  setDragTask(null); setDropAt(null)
+                  onDropTask?.(t, atMinute(day.toDateString(), m))
+                }}
                 onPointerDown={(ev) => {
                   if (ev.target.closest('[data-event]')) return
                   const col = ev.currentTarget
@@ -376,6 +397,11 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
                 {HOURS.map((h) => (
                   <div key={h} className="absolute w-full border-t border-white/[0.04]" style={{ top: (h - START_HOUR) * ROW_HEIGHT }} />
                 ))}
+                {dragTask && dropAt && dropAt.dayKey === day.toDateString() && (
+                  <div className="pointer-events-none absolute inset-x-1 z-20 rounded-lg border border-dashed border-[#F4EEE2]/70 bg-[#F4EEE2]/15 px-2 py-1 text-[11px] font-medium text-[#F4EEE2]" style={{ top: ((dropAt.min - START_HOUR * 60) / 60) * ROW_HEIGHT, height: ROW_HEIGHT }}>
+                    {dragTask.title} · {String(Math.floor(dropAt.min / 60)).padStart(2, '0')}:{String(dropAt.min % 60).padStart(2, '0')}
+                  </div>
+                )}
                 {gaps.map(([gs, ge], gi) => {
                   const gTop = ((minutesSinceMidnight(gs) - START_HOUR * 60) / 60) * ROW_HEIGHT
                   const gH = ((ge - gs) / 3600000) * ROW_HEIGHT
