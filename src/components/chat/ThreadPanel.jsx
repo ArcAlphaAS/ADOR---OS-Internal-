@@ -35,6 +35,8 @@ export default function ThreadPanel({
   onError,
   onRemind,
   onCreateTask,
+  onCreateEvent,
+  onOpenEvent,
   onOpenTask,
   onOpenEntity,
 }) {
@@ -84,6 +86,8 @@ export default function ThreadPanel({
     onOpenImage,
     onRemind: onRemind ? (at) => onRemind(m, at) : null,
     onCreateTask: onCreateTask ? () => onCreateTask(m) : null,
+    onCreateEvent: onCreateEvent ? () => onCreateEvent(m) : null,
+    onOpenEvent,
     onOpenTask,
     onOpenEntity,
   })

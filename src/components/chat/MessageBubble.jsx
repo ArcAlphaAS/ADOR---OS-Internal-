@@ -621,7 +621,7 @@ function ActionIcon({ title, onClick, children, danger, active }) {
 // Hover reveals the message's actions — react, save, and (your own) edit
 // and delete. All inline in the row, never a floating menu, so nothing
 // needs portaling. Call cards and media can be deleted but not edited.
-export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids, album }) {
+export function MessageBubble({ message, mine, groupStart = true, groupEnd = true, showAvatar = false, currentUid, saved, userName, userPhoto, receipt, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinned, onTogglePin, onRemind, onCreateTask, onCreateEvent, onOpenEvent, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids, album }) {
   const phone = usePhone()
   const [editing, setEditing] = useState(false)
   const [ctx, setCtx] = useState(null) // desktop right-click position
@@ -745,6 +745,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
     onTogglePin && { label: pinned ? 'Desfijar' : 'Fijar', onClick: onTogglePin },
     onRemind && { label: 'Recordármelo…', remind: true },
     onCreateTask && !message.task && { label: 'Crear tarea', onClick: onCreateTask },
+    onCreateEvent && !message.event && !message.call && { label: 'Crear evento', onClick: onCreateEvent },
     mine && hasText && !message.call && { label: 'Editar', onClick: () => setEditing(true) },
     mine && { label: 'Eliminar', delete: true, onClick: onDelete },
   ].filter(Boolean)
@@ -777,6 +778,13 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
             !message.task &&
             menuButton('Crear tarea', () => {
               onCreateTask()
+              setMenu(null)
+            })}
+          {onCreateEvent &&
+            !message.event &&
+            !message.call &&
+            menuButton('Crear evento', () => {
+              onCreateEvent()
               setMenu(null)
             })}
         </>
@@ -832,8 +840,8 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
       <ActionIcon title={saved ? 'Quitar de guardados' : 'Guardar mensaje'} onClick={onToggleSave} active={saved}>
         <BookmarkIcon size={13} filled={saved} />
       </ActionIcon>
-      {(onForward || onTogglePin || onRemind || onCreateTask) && (
-        <ActionIcon title="Más: reenviar, fijar, recordármelo, crear tarea" onClick={() => setMenu('more')}>
+      {(onForward || onTogglePin || onRemind || onCreateTask || onCreateEvent) && (
+        <ActionIcon title="Más: reenviar, fijar, recordármelo, crear tarea o evento" onClick={() => setMenu('more')}>
           <span className="text-[15px] leading-none">⋯</span>
         </ActionIcon>
       )}
@@ -991,6 +999,16 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
               title="Abrir en Workspace"
             >
               ✓ Tarea: <span className="max-w-[200px] truncate">{message.task.title}</span>
+            </button>
+          )}
+          {message.event && (
+            <button
+              type="button"
+              onClick={() => onOpenEvent?.(message.event)}
+              className="flex items-center gap-1.5 rounded-full border border-[#F4EEE2]/25 bg-[#F4EEE2]/[0.07] px-2.5 py-1 text-[11px] text-[#E9E1D0] hover:border-[#F4EEE2]/50"
+              title="Abrir en Calendario"
+            >
+              📅 Evento: <span className="max-w-[200px] truncate">{message.event.title}</span>{message.event.when ? <span className="text-[#A8A290]"> · {message.event.when}</span> : null}
             </button>
           )}
           {message.important && <ImportantFooter message={message} mine={mine} currentUid={currentUid} audienceUids={audienceUids} userName={userName} onAck={onAck} />}

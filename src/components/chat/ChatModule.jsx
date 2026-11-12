@@ -29,6 +29,7 @@ import {
   markManyChatRead,
   setMessagePinned,
   linkTaskToMessage,
+  linkEventToMessage,
   createChatReminder,
   deleteChatReminder,
   createTask,
@@ -76,6 +77,7 @@ import ProfilePanel from './ProfilePanel'
 import ThreadPanel from './ThreadPanel'
 import { useGoogleMeet } from '../../hooks/useGoogleMeet'
 import TaskFromMessageModal from './TaskFromMessageModal'
+import EventFromMessage from './EventFromMessage'
 import ForwardModal from './ForwardModal'
 import { ChatPeopleContext } from './PersonAvatar'
 import { useChatData } from '../../hooks/useChatData'
@@ -121,6 +123,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   const [, setTick] = useState(0)
   const [callBusy, setCallBusy] = useState(null)
   const [taskDraft, setTaskDraft] = useState(null) // { message, parentId }
+  const [eventDraft, setEventDraft] = useState(null) // { message, parentId }
   const [pinsOpen, setPinsOpen] = useState(false)
   const [messageSearch, setMessageSearch] = useState('')
   // "Responder citando": the message being replied to (a quoteOf() snapshot).
@@ -542,6 +545,16 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
     }
   }
 
+  const confirmEvent = async (created) => {
+    const { message, parentId } = eventDraft
+    try {
+      await withTimeout(linkEventToMessage(convType, selectedConversationId, message.id, created, parentId))
+    } catch (error) {
+      fail('anotar el evento en el mensaje')(error)
+    }
+  }
+  const openEvent = () => onNavigate?.('calendario', null)
+
   const openTask = (taskId) => onNavigate?.('workspace', { type: 'task', id: taskId })
   const openEntity = (a) => {
     if (a.entityType === 'task') openTask(a.id)
@@ -870,6 +883,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               onTogglePin={handleTogglePin}
               onRemind={(m, at) => handleRemind(m, at)}
               onCreateTask={(m) => setTaskDraft({ message: m, parentId: null })}
+              onCreateEvent={(m) => setEventDraft({ message: m, parentId: null })}
+              onOpenEvent={openEvent}
               onOpenTask={openTask}
               onOpenEntity={openEntity}
               onEdit={handleEditMessage}
@@ -989,6 +1004,16 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         )}
       </div>
 
+      {eventDraft && (
+        <EventFromMessage
+          message={eventDraft.message}
+          conversationLabel={convType === 'dm' ? `tu chat con ${userLabel(dmUser)}` : labelFor(convType, selectedConversationId, null)}
+          uid={user.uid}
+          onClose={() => setEventDraft(null)}
+          onCreated={confirmEvent}
+        />
+      )}
+
       {taskDraft && (
         <TaskFromMessageModal
           message={taskDraft.message}
@@ -1054,6 +1079,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           onRead={() => markReadIfVisible(`thread_${panel.parentId}`)}
           onRemind={(m, at) => handleRemind(m, at, m.id === panel.parentId ? null : panel.parentId)}
           onCreateTask={(m) => setTaskDraft({ message: m, parentId: m.id === panel.parentId ? null : panel.parentId })}
+          onCreateEvent={(m) => setEventDraft({ message: m, parentId: m.id === panel.parentId ? null : panel.parentId })}
+          onOpenEvent={openEvent}
           onOpenTask={openTask}
           onOpenEntity={openEntity}
           onError={showToast}

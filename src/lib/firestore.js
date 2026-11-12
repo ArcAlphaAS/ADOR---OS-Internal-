@@ -2191,6 +2191,13 @@ export function linkTaskToMessage(convType, convId, messageId, task, parentId) {
   return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { task })
 }
 
+// Mensaje → evento: se anota en el mensaje el evento creado (como la tarea), para mostrar el chip
+// "📅 Evento" y evitar crearlo dos veces.
+export function linkEventToMessage(convType, convId, messageId, event, parentId) {
+  if (!db) return Promise.reject(new Error('Firestore no configurado'))
+  return updateDoc(doc(messagesCol(convType, convId, parentId), messageId), { event })
+}
+
 // "Recuérdamelo": one doc per reminder, only its owner reads it. Delivery
 // is client-side — ReminderGate (mounted app-wide) fires a card + OS
 // notification when `remindAt` passes while ADOR OS is open, and the bell
