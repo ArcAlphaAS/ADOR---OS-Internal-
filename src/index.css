@@ -815,6 +815,17 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 }
 
 
+/* Título de la vista dentro de una sección (Mis tareas, Proyectos Colaborativos…): más chico que
+   el de la página (.ador-title = el nombre de la sección) pero claramente un título. */
+.ador-subtitle {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #F5F5F5;
+}
+@media (min-width: 768px) { .ador-subtitle { font-size: 26px; } }
+
 /* Un punto del color de la sección junto al título (--mod lo pone AppShell). */
 [data-mod] .ador-title::before {
   content: '';

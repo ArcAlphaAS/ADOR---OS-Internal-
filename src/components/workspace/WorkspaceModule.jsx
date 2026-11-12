@@ -200,7 +200,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             sitting right above it. Every other view still uses it. */}
         {phone ? (
           <div className="mb-5 flex flex-col gap-3.5">
-            {view !== 'hoy' && <h1 className="ador-title">Workspace</h1>}
+            <h1 className="ador-title">Workspace</h1>
             {/* Las vistas como filas de chips con su nombre (sin iconos sueltos que adivinar). */}
             <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none]">
               <div className="flex gap-2">
@@ -238,40 +238,15 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
             )}
           </div>
         ) : (
-        <div className={`mb-6 flex flex-wrap items-center gap-3 ${view === 'hoy' ? 'justify-end' : 'justify-between'}`}>
-          {/* Phones: the side filter column is hidden, so the same choice
-              (Personal / Grupo / one workstream) is a compact select here. */}
-          {view !== 'hoy' && (
-            <select
-              value={onlyMine ? '__mine' : selectedWorkstreamId || '__all'}
-              onChange={(e) => {
-                const v = e.target.value
-                if (v === '__mine') {
-                  if (!onlyMine) toggleOnlyMine()
-                } else selectWorkstream(v === '__all' ? null : v)
-              }}
-              className="w-full rounded-xl border border-white/[0.1] bg-[#141414] px-3 py-2 text-[13px] text-[#DDDDDD] outline-none md:hidden"
-            >
-              <option value="__mine">Personal — lo mío</option>
-              <option value="__all">Grupo — todo el equipo</option>
-              {workstreams.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {view !== 'hoy' && (
-            <div>
-              <h1 className="ador-title">{title}</h1>
-              <p className="text-[13px] text-[#888888]">{subtitle}</p>
-            </div>
-          )}
+        <div className="mb-6 flex flex-col gap-4">
+          {/* Siempre el mismo orden: el nombre de la sección, debajo el selector de vistas y,
+              debajo, el título de la vista que estás viendo (Mis tareas, Proyectos…). */}
+          <h1 className="ador-title">Workspace</h1>
           {/* A real iOS segmented control slides its selection background
               between segments rather than just recoloring each one —
               Motion's layoutId does exactly that: the same element "moves"
               from the old active button to the new one with a spring. */}
-          <div className="ador-glass flex items-center gap-1 rounded-full p-1">
+          <div className="ador-glass flex w-fit items-center gap-1 rounded-full p-1">
             {VIEWS.map((v) => (
               <button
                 key={v.id}
@@ -303,6 +278,34 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
               </button>
             ))}
           </div>
+          {/* Phones: the side filter column is hidden, so the same choice
+              (Personal / Grupo / one workstream) is a compact select here. */}
+          {view !== 'hoy' && (
+            <select
+              value={onlyMine ? '__mine' : selectedWorkstreamId || '__all'}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === '__mine') {
+                  if (!onlyMine) toggleOnlyMine()
+                } else selectWorkstream(v === '__all' ? null : v)
+              }}
+              className="w-full rounded-xl border border-white/[0.1] bg-[#141414] px-3 py-2 text-[13px] text-[#DDDDDD] outline-none md:hidden"
+            >
+              <option value="__mine">Personal — lo mío</option>
+              <option value="__all">Grupo — todo el equipo</option>
+              {workstreams.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {view !== 'hoy' && (
+            <div>
+              <h2 className="ador-subtitle">{title}</h2>
+              <p className="mt-0.5 text-[13px] text-[#888888]">{subtitle}</p>
+            </div>
+          )}
         </div>
         )}
 
