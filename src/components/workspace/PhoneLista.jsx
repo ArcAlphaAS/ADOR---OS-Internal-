@@ -73,7 +73,7 @@ function Group({ group, workstreams, userById, actorUserId, actorName, onOpenTas
   const open = group.tasks.filter((t) => t.status !== 'completado')
   const done = group.tasks.filter((t) => t.status === 'completado')
   const virtual = group.kind === 'virtual'
-  const accent = virtual ? group.accent : group.kind === 'intervencion' ? '#0A84FF' : '#FF9F0A'
+  const accent = virtual ? group.accent : group.kind === 'intervencion' ? '#8FA3BF' : '#C4A484'
   const health = workstreamHealth(group.tasks)
   const pct = group.tasks.length ? Math.round((done.length / group.tasks.length) * 100) : 0
   const card = (t) => (

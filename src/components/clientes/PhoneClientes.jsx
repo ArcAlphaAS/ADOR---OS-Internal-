@@ -24,7 +24,7 @@ function ClientRow({ client, assignee, onOpen, onNextStage }) {
   const idx = STAGES.findIndex((s) => s.id === client.stage)
   const next = idx >= 0 ? STAGES[idx + 1] : null
   return (
-    <SwipeRow className="rounded-[24px]" actions={next ? [{ label: next.label.length > 11 ? 'Etapa →' : `${next.label} →`, color: '#0A84FF', onClick: () => onNextStage(client, next) }] : []}>
+    <SwipeRow className="rounded-[24px]" actions={next ? [{ label: next.label.length > 11 ? 'Etapa →' : `${next.label} →`, color: '#5B7599', onClick: () => onNextStage(client, next) }] : []}>
     <button type="button" onClick={() => onOpen(client)} className="flex w-full items-start gap-3.5 rounded-[24px] bg-[#1C1C1E] p-4 text-left active:bg-[#242426]">
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">

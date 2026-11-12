@@ -1,18 +1,20 @@
-// Un color por sección, en pequeño (como los iconos de los ajustes de iOS): el punto
-// junto al título, los iconos de "Más", la barra de avance de Workspace. Todo lo demás
-// se queda neutro (negro, gris y marfil).
+// Un tono por sección, en pequeño: el punto junto al título, los iconos de "Más", la barra
+// de avance de Workspace. Son tonos apagados y de la misma intensidad (nada de colores de
+// sistema brillantes): sobre el negro y el marfil de ADOR se leen como un matiz, no como
+// una etiqueta. El dorado se reserva a lo importante, por eso ninguna sección lo usa.
+// Para dejarlas todas neutras basta poner '#F4EEE2' en cada una.
 export const MODULE_COLORS = {
   inicio: '#F4EEE2',
-  workspace: '#0A84FF',
-  chat: '#BF5AF2',
-  clientes: '#FF9F0A',
-  objetivos: '#FF453A',
-  finanzas: '#30D158',
-  calendario: '#FF375F',
-  conocimiento: '#64D2FF',
-  news: '#FFD60A',
-  directorio: '#5E5CE6',
-  'ador-ia': '#BF5AF2',
+  workspace: '#8FA3BF',
+  chat: '#A99BC2',
+  clientes: '#C4A484',
+  objetivos: '#C79088',
+  finanzas: '#88AD92',
+  calendario: '#C79AA8',
+  conocimiento: '#86AEB8',
+  news: '#B9B08E',
+  directorio: '#929AC4',
+  'ador-ia': '#B7A4CC',
   admin: '#8E8E93',
 }
 export const MODULE_LABELS = {

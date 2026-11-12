@@ -66,7 +66,7 @@ export function VisibilityToggle({ value, onChange }) {
 
 function Switch({ on, onChange, label }) {
   return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className="relative h-[28px] w-[48px] flex-shrink-0 rounded-full" style={{ background: on ? '#34C759' : 'rgba(255,255,255,0.18)' }}>
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className="relative h-[28px] w-[48px] flex-shrink-0 rounded-full" style={{ background: on ? '#4CAF50' : 'rgba(255,255,255,0.18)' }}>
       <span className="absolute top-[2px] h-[24px] w-[24px] rounded-full bg-white shadow transition-all duration-200" style={{ left: on ? 22 : 2 }} />
     </button>
   )

@@ -125,10 +125,10 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
   return (
     <SwipeRow
       background="#000"
-      rightAction={onTogglePin ? { label: pinned ? 'Quitar de fijados' : 'Fijar arriba', color: '#FF9F0A', onClick: onTogglePin } : null}
+      rightAction={onTogglePin ? { label: pinned ? 'Quitar de fijados' : 'Fijar arriba', color: '#FFC107', onClick: onTogglePin } : null}
       actions={[
         ...(onToggleMute ? [{ label: muted ? 'Activar' : 'Silenciar', color: '#636366', onClick: onToggleMute }] : []),
-        ...(onTogglePin ? [{ label: pinned ? 'Soltar' : 'Fijar', color: '#FF9F0A', onClick: onTogglePin }] : []),
+        ...(onTogglePin ? [{ label: pinned ? 'Soltar' : 'Fijar', color: '#FFC107', onClick: onTogglePin }] : []),
       ]}
     >
       {row}

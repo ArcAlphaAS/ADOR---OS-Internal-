@@ -60,7 +60,7 @@ export default function PhoneTuDia({ user, nextMeeting, calendarStatus, onNaviga
           <span className="relative flex h-[52px] w-[52px] items-center justify-center">
             <svg width="52" height="52" viewBox="0 0 52 52" className="absolute inset-0 -rotate-90" aria-hidden>
               <circle cx="26" cy="26" r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-              <circle cx="26" cy="26" r={R} fill="none" stroke={pct >= 100 ? '#FFD60A' : '#30D158'} strokeWidth="4" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.22,1,0.36,1)' }} />
+              <circle cx="26" cy="26" r={R} fill="none" stroke={pct >= 100 ? '#E8C15A' : '#F4EEE2'} strokeWidth="4" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.22,1,0.36,1)' }} />
             </svg>
             <span className="text-[12.5px] font-semibold tabular-nums text-[#F5F5F5]">{pct}%</span>
           </span>
