@@ -221,7 +221,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
         <motion.div className="absolute inset-0 bg-black/55 backdrop-blur-[10px]" style={{ opacity: sheet.backdrop }} />
         <div className="absolute inset-x-0 bottom-0">
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={SHEET} onClick={(e) => e.stopPropagation()}>
-            <motion.div ref={sheet.sheetRef} style={{ y: sheet.y }}>
+            <motion.div ref={sheet.sheetRef} data-sheet-managed style={{ y: sheet.y }}>
               <form onSubmit={submit} className="ador-modal-surface flex flex-col overflow-hidden" style={{ padding: 0, height: '94dvh', maxHeight: '94dvh', borderRadius: '30px 30px 0 0' }}>
                 <div className="flex-shrink-0">
                   <div className="mx-auto mt-2 h-[5px] w-10 rounded-full bg-white/[0.22]" />

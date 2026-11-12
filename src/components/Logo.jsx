@@ -4,7 +4,7 @@
 // render. `size` maps to height, same contract callers already relied on.
 export default function Logo({ size = 28, className = '' }) {
   return (
-    <img
+    <img decoding="async"
       src="/logo-wordmark.svg"
       alt="ADOR"
       className={`select-none ${className}`}

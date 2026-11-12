@@ -115,7 +115,7 @@ export default function Sidebar({ activeModule, onNavigate, badges = {}, canSee 
         className="ador-glass ador-grain flex flex-col items-center gap-2 rounded-full px-2.5 py-4"
         style={{ boxShadow: '0 20px 40px -16px rgba(0,0,0,0.5)' }}
       >
-        <img src="/logo.svg" alt="ADOR" style={{ height: 28 }} className="mb-1" />
+        <img decoding="async" src="/logo.svg" alt="ADOR" style={{ height: 28 }} className="mb-1" />
 
         {NAV_ITEMS.filter((item) => canSee(item.id)).map((item) => (
           <NavButton

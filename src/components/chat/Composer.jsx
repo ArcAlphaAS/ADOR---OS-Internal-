@@ -659,7 +659,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
 
       {pendingImage && (
         <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-2 pr-3">
-          <img src={pendingImage.thumbUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+          <img decoding="async" src={pendingImage.thumbUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12.5px] text-[#DDDDDD]">{pendingImage.name}</p>
             <p className="text-[11px] text-[#8A8A8A]">Archivo de conversación · se borra a los 90 días — lo importante, súbelo a Drive</p>

@@ -32,7 +32,7 @@ export const coverImageStyle = (post) => ({
 export function Cover({ post, className = '', zoom = false }) {
   if (post.coverImageUrl) {
     const img = (
-      <img
+      <img decoding="async"
         src={post.coverImageUrl}
         alt=""
         loading="lazy"

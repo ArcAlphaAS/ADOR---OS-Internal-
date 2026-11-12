@@ -87,7 +87,7 @@ export default function EventDetailModal({ event, uid, onClose, onEdit, onRespon
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-[10px]" style={{ opacity: sheet.backdrop }} />
       <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="relative">
-        <motion.div ref={sheet.sheetRef} style={{ y: sheet.y }}>
+        <motion.div ref={sheet.sheetRef} data-sheet-managed style={{ y: sheet.y }}>
         <div ref={sheet.scrollRef} className="ador-modal-surface ador-grain w-[440px] max-w-[92vw] rounded-[28px] p-7">
           <div className="flex items-start gap-3">
             <span className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: color }} />

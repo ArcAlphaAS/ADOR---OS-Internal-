@@ -32,6 +32,8 @@ import LiveIsland from './LiveIsland'
 import { useSeasonRuntime } from '../../hooks/useSeasons'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useA11yPolish } from '../../hooks/useA11yPolish'
+import { useGlobalSheetDrag } from '../../hooks/useGlobalSheetDrag'
+import usePhoneMq from '../../hooks/usePhone'
 import { moduleColor, MODULE_ORDER } from '../../lib/moduleColors'
 import CommandPalette from './CommandPalette'
 import ShortcutsHelp from './ShortcutsHelp'
@@ -102,6 +104,8 @@ const MODULE_LABELS = {
 
 export default function AppShell({ user, onSignOut, onUpdateDisplayName, onResetPassword }) {
   useA11yPolish()
+  // Un solo gesto para cerrar cualquier ventana-hoja del celular arrastrándola hacia abajo.
+  useGlobalSheetDrag(usePhoneMq())
   // Coming back from Google's consent screen: reopen the module that
   // started the connection (OAuth `state`), so its hook finishes it.
   // Opened from a tapped notification (/?open=chat&…, lib/push.js): start

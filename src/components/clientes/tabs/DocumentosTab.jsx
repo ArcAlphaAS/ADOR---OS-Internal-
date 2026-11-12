@@ -60,7 +60,7 @@ export default function DocumentosTab({ client, actorName }) {
                 {...(open ? { href: docItem.url, target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className={`group flex items-center gap-3 py-3 ${open ? 'rounded-lg px-1 hover:bg-white/[0.03]' : ''}`}
               >
-                {docItem.iconUrl ? <img src={docItem.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={18} style={{ color: '#888888' }} />}
+                {docItem.iconUrl ? <img decoding="async" src={docItem.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={18} style={{ color: '#888888' }} />}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13px] text-[#F5F5F5]">{docItem.name}</div>
                   <div className="text-[11px] text-[#8A8A8A]">

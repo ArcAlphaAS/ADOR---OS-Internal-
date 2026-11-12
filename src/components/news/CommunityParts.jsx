@@ -259,7 +259,7 @@ export function ResourceCard({ resource }) {
   return (
     <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 py-3 transition-colors hover:border-white/[0.2]">
       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">
-        {resource.iconUrl ? <img src={resource.iconUrl} alt="" className="h-5 w-5" /> : <FileIcon size={18} />}
+        {resource.iconUrl ? <img decoding="async" src={resource.iconUrl} alt="" className="h-5 w-5" /> : <FileIcon size={18} />}
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[14px] font-medium text-[#F5F5F5]">{resource.name || host}</span>

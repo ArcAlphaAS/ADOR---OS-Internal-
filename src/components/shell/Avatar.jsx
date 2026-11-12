@@ -5,7 +5,7 @@ import { avatarGradient } from '../../lib/avatarColor'
 export default function Avatar({ photoURL, displayName, email, size = 32 }) {
   if (photoURL) {
     return (
-      <img
+      <img decoding="async"
         src={photoURL}
         alt=""
         referrerPolicy="no-referrer"

@@ -98,7 +98,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
               empty="Las imágenes que se envíen aquí aparecerán en esta lista."
               render={(f) => (
                 <button key={f.id} type="button" onClick={() => onOpenImage(f.attachment)} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-left hover:bg-white/[0.04]">
-                  <img src={f.src} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
+                  <img decoding="async" src={f.src} alt="" className="h-9 w-9 flex-shrink-0 rounded-md object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-[12.5px] text-[#DDDDDD]">{f.name}</span>
                     <span className="block text-[11px] text-[#8A8A8A]">Archivo de conversación · {shortDate(f.createdAt)}</span>

@@ -38,7 +38,7 @@ export default function PersonAvatar({ uid, name, size = 28, showPresence = fals
   return (
     <span className="relative inline-flex flex-shrink-0" title={dot ? `${label} · ${dot.label}` : undefined}>
       {photo ? (
-        <img src={photo} alt="" referrerPolicy="no-referrer" className="rounded-full object-cover" style={{ width: size, height: size }} />
+        <img decoding="async" src={photo} alt="" referrerPolicy="no-referrer" className="rounded-full object-cover" style={{ width: size, height: size }} />
       ) : (
         <span
           className="flex items-center justify-center rounded-full font-medium"

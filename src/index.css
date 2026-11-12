@@ -497,6 +497,7 @@ html.light video {
 /* Inicio: las tarjetas de segundo nivel son más discretas (sin vidrio ni
    sombra) para que "Tu día" y "Necesita tu atención" manden. */
 .ador-home .ador-quiet {
+  will-change: auto;
   background: rgba(255, 255, 255, 0.018);
   border-color: rgba(255, 255, 255, 0.06);
   backdrop-filter: none;
@@ -545,7 +546,7 @@ html.light .ador-grain::after { opacity: 0.015; }
    el ancho y en gris plano. Solo toca modales a pantalla completa con el
    contenido centrado; los paneles laterales no se ven afectados. */
 @media (max-width: 767px) {
-  .fixed.inset-0.items-center.justify-center:has(.ador-modal-surface) { align-items: flex-end; }
+  .fixed.inset-0.items-center.justify-center:has(.ador-modal-surface) { align-items: flex-end; padding: 0 !important; }
   .fixed.inset-0.items-center.justify-center .ador-modal-surface {
     width: 100vw;
     max-width: 100vw;
@@ -555,6 +556,7 @@ html.light .ador-grain::after { opacity: 0.015; }
     background: #1c1c1e;
     border: none;
     padding: 28px 20px calc(env(safe-area-inset-bottom) + 20px);
+    will-change: auto;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow: none;
@@ -681,6 +683,7 @@ html.light .ador-grain::after { opacity: 0.015; }
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
+  will-change: auto; /* sin desenfoque no hace falta una capa de GPU por tarjeta */
 }
 .ador-glass.ador-card-hover:not(.ador-card-attention):not(.ador-card-urgent):not(.ador-quiet):hover {
   background: #232326;

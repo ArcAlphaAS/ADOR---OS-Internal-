@@ -143,7 +143,7 @@ function DriveFileCard({ attachment }) {
       className="flex w-[280px] items-center gap-3 rounded-xl border border-white/[0.1] bg-white/[0.04] px-3.5 py-3 transition-colors duration-150 hover:border-white/[0.2]"
     >
       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(244,238,226,0.1)', color: '#F4EEE2' }}>
-        {attachment.iconUrl ? <img src={attachment.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={16} />}
+        {attachment.iconUrl ? <img decoding="async" src={attachment.iconUrl} alt="" className="h-4 w-4" /> : <FileIcon size={16} />}
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[12.5px] font-medium text-[#F5F5F5]">{attachment.name}</span>
@@ -196,7 +196,7 @@ function ImageAttachment({ attachment, onOpen }) {
   const src = attachment.thumbUrl || attachment.dataUrl
   return (
     <button type="button" onClick={() => onOpen(attachment)} className="block text-left">
-      <img src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[320px] max-w-[min(72vw,300px)] rounded-xl border border-white/[0.08] object-cover max-md:rounded-[18px] max-md:border-0" />
+      <img decoding="async" src={src} alt={attachment.name || 'Imagen'} loading="lazy" className="max-h-[320px] max-w-[min(72vw,300px)] rounded-xl border border-white/[0.08] object-cover max-md:rounded-[18px] max-md:border-0" />
       <span className="mt-1 block px-1 text-[11px] text-[#8A8A8A] max-md:hidden">Archivo de conversación · {attachment.name}</span>
     </button>
   )
@@ -216,7 +216,7 @@ function ImageAlbum({ attachments, onOpen }) {
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label={`Ver ${n} fotos`} className="relative block h-[214px] w-[270px] max-w-full text-left">
         {cards.map(({ a, x, y, r, z }, i) => (
-          <img
+          <img decoding="async"
             key={i}
             src={src(a)}
             alt=""
@@ -241,7 +241,7 @@ function ImageAlbum({ attachments, onOpen }) {
             <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-1.5 overflow-y-auto px-3 pb-8" onClick={(e) => e.stopPropagation()}>
               {attachments.map((a, i) => (
                 <button key={i} type="button" onClick={() => onOpen(a)} className="aspect-square overflow-hidden rounded-xl">
-                  <img src={src(a)} alt={a.name || 'Foto'} loading="lazy" className="h-full w-full object-cover" />
+                  <img decoding="async" src={src(a)} alt={a.name || 'Foto'} loading="lazy" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -937,7 +937,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           {album?.length > 1 ? <ImageAlbum attachments={album.map((m) => m.attachment)} onOpen={onOpenImage} /> : message.attachment?.kind === 'image' && <ImageAttachment attachment={message.attachment} onOpen={onOpenImage} />}
           {message.attachment?.kind === 'voice' && <VoiceNote attachment={message.attachment} mine={mine} />}
           {message.attachment?.kind === 'drive' && <DriveFileCard attachment={message.attachment} />}
-          {message.attachment?.kind === 'gif' && <img src={message.attachment.url} alt={message.attachment.title || 'GIF'} loading="lazy" className="max-h-[240px] max-w-[260px] rounded-2xl" />}
+          {message.attachment?.kind === 'gif' && <img decoding="async" src={message.attachment.url} alt={message.attachment.title || 'GIF'} loading="lazy" className="max-h-[240px] max-w-[260px] rounded-2xl" />}
           {message.attachment?.kind === 'entity' && <EntityCard attachment={message.attachment} onOpen={onOpenEntity} />}
           {showBubble && emojiOnly && (
             <div className="select-text px-1 py-0.5 text-[46px] leading-none" title={message.important ? 'Mensaje importante' : undefined}>
@@ -1077,7 +1077,7 @@ function LinkPreviewCard({ url }) {
   if (!p || (!p.title && !p.image)) return null
   return (
     <a href={p.url} target="_blank" rel="noreferrer" className="mt-1.5 flex w-full max-w-[340px] overflow-hidden rounded-[18px] bg-white/[0.06] text-left">
-      {p.image && <img src={p.image} alt="" loading="lazy" className="h-[84px] w-[84px] flex-shrink-0 object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
+      {p.image && <img decoding="async" src={p.image} alt="" loading="lazy" className="h-[84px] w-[84px] flex-shrink-0 object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
       <span className="min-w-0 px-3 py-2.5">
         <span className="block text-[11.5px] text-[#8E8E93]">{p.site || p.host}</span>
         {p.title && <span className="line-clamp-2 text-[13.5px] font-medium leading-snug text-[#F0F0F0]">{p.title}</span>}

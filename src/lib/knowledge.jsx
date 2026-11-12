@@ -215,7 +215,7 @@ export function renderMarkdown(source) {
     // An image on its own line: ![texto](url) — used by News' editor.
     const image = line.trim().match(/^!\[(.*?)\]\((\S+?)\)$/)
     if (image) {
-      blocks.push(<img key={key++} src={image[2]} alt={image[1]} loading="lazy" className="my-1 w-full rounded-2xl border border-white/[0.06] object-cover" />)
+      blocks.push(<img decoding="async" key={key++} src={image[2]} alt={image[1]} loading="lazy" className="my-1 w-full rounded-2xl border border-white/[0.06] object-cover" />)
       i++
       continue
     }

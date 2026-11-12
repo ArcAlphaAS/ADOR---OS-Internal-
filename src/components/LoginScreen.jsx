@@ -96,7 +96,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error,
               </svg>
             </button>
           )}
-          <img src="/logo-horizontal.svg" alt="ADOR" style={{ height: 26, width: "auto" }} />
+          <img decoding="async" src="/logo-horizontal.svg" alt="ADOR" style={{ height: 26, width: "auto" }} />
         </div>
         <span className="hidden text-[13px] text-[#8A8A8A] sm:block">Acceso por invitación</span>
       </div>
@@ -107,7 +107,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error,
             {...rise(0.05)}
             className="mb-[22px] flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.09] bg-[#0F0F0F]"
           >
-            <img src="/logo.svg" alt="ADOR" width={22} height={20} style={{ height: 20, width: 22 }} />
+            <img decoding="async" src="/logo.svg" alt="ADOR" width={22} height={20} style={{ height: 20, width: 22 }} />
           </motion.div>
           <motion.h1 {...rise(0.12)} className="text-[26px] font-semibold tracking-[-0.03em] text-[#FAFAFA]">
             Bienvenido de nuevo

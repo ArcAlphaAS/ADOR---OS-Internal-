@@ -97,7 +97,7 @@ export default function PhotoCropper({ file, aspect = 1, round = false, outWidth
               onWheel={(e) => changeZoom(zoom - e.deltaY * 0.002)}
             >
               {img ? (
-                <img
+                <img decoding="async"
                   src={img.src}
                   alt=""
                   draggable={false}

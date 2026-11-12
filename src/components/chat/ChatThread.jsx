@@ -367,7 +367,7 @@ export function ImageLightbox({ attachment, onClose }) {
   return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center gap-3 bg-black/85 p-10" onClick={onClose}>
       {src ? (
-        <img src={src} alt={attachment.name} className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+        <img decoding="async" src={src} alt={attachment.name} className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
       ) : (
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
       )}

@@ -145,7 +145,7 @@ export default function TaskComments({ task, users, userById, actorUserId, actor
                     </button>
                   ) : (
                     <a key={f.fileId || f.url} href={f.url} target="_blank" rel="noreferrer" className="mt-1.5 flex max-w-[300px] items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 transition-colors hover:bg-white/[0.06]">
-                      {f.iconUrl ? <img src={f.iconUrl} alt="" className="h-4 w-4" /> : <PaperclipIcon size={14} />}
+                      {f.iconUrl ? <img decoding="async" src={f.iconUrl} alt="" className="h-4 w-4" /> : <PaperclipIcon size={14} />}
                       <span className="min-w-0 truncate text-[12px] text-[#F0F0F0]">{f.name}</span>
                       <span className="ml-auto flex-shrink-0 text-[10.5px] text-[#B8860B]">Drive ↗</span>
                     </a>

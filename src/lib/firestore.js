@@ -26,6 +26,7 @@ import {
   writeBatch,
   arrayUnion,
   arrayRemove,
+  queryEqual,
 } from 'firebase/firestore'
 import { app, isFirebaseConfigured } from '../firebase'
 import { describeTaskChange, advanceByRecurrence, recurrenceMeta, layerWeekSpan, LAYERS } from './workspace'
@@ -113,24 +114,62 @@ export const db = isFirebaseConfigured ? createDb() : null
 // of null. Without it, opening a conversation (which writes
 // chatLastRead = serverTimestamp()) briefly made it look never-read, so the
 // Inbox count flashed "1" and went away.
+// Suscripciones compartidas: varias tarjetas o módulos que piden la MISMA consulta (tareas, clientes,
+// personas…) comparten un solo oyente. Cada nuevo suscriptor recibe al instante lo último que se
+// sabe (sin el parpadeo de "cargando" al volver a una pantalla), los documentos se procesan una vez
+// por cambio en vez de una por cada tarjeta, y el oyente sigue vivo unos segundos tras el último
+// que se va, para que cambiar de sección y volver sea inmediato. Cada suscriptor recibe su propia
+// copia de la lista (así ordenarla no afecta a los demás).
+const SHARED_LINGER_MS = 8000
+const sharedSubs = []
+
+export function clearSharedSubscriptions() {
+  for (const e of sharedSubs.splice(0)) {
+    clearTimeout(e.timer)
+    try { e.unsub?.() } catch { /* ya cerrado */ }
+  }
+}
+
 function subscribeToCollection(collectionName, constraints, onData) {
   if (!db) return () => {}
   const ref = collection(db, collectionName)
   const q = constraints.length ? query(ref, ...constraints) : ref
-  let received = false
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      received = true
-      onData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) })))
-    },
-    (error) => {
-      console.error(`Firestore subscription to "${collectionName}" failed:`, error.message)
-      // Si la lectura falla antes de recibir nada, se entrega una lista vacía: así los esqueletos de
-      // carga terminan en un estado vacío en vez de quedarse brillando para siempre.
-      if (!received) onData([])
-    }
-  )
+
+  let entry = sharedSubs.find((e) => !e.dead && e.name === collectionName && queryEqual(e.q, q))
+  if (!entry) {
+    entry = { name: collectionName, q, listeners: new Set(), last: null, has: false, dead: false, unsub: null, timer: null }
+    const mine = entry
+    mine.unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        mine.has = true
+        mine.last = snapshot.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }))
+        mine.listeners.forEach((fn) => fn(mine.last.slice()))
+      },
+      (error) => {
+        console.error(`Firestore subscription to "${collectionName}" failed:`, error.message)
+        // Si la lectura falla, se entrega una lista vacía (los esqueletos terminan en un estado vacío) y la
+        // suscripción se marca como caída: la próxima persona que la pida volverá a intentarlo.
+        mine.dead = true
+        if (!mine.has) { mine.has = true; mine.last = []; mine.listeners.forEach((fn) => fn([])) }
+      }
+    )
+    sharedSubs.push(mine)
+  }
+  const e = entry
+  clearTimeout(e.timer)
+  e.listeners.add(onData)
+  if (e.has) onData(e.last.slice())
+  return () => {
+    e.listeners.delete(onData)
+    if (e.listeners.size) return
+    e.timer = setTimeout(() => {
+      if (e.listeners.size) return
+      try { e.unsub?.() } catch { /* ya cerrado */ }
+      const i = sharedSubs.indexOf(e)
+      if (i >= 0) sharedSubs.splice(i, 1)
+    }, SHARED_LINGER_MS)
+  }
 }
 
 export function subscribeClients(onData) {

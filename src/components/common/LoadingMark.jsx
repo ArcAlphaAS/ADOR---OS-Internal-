@@ -20,7 +20,7 @@ export default function LoadingMark({ label = 'Cargando', size = 60, full = fals
           className="flex items-center justify-center rounded-full bg-black ring-1 ring-white/[0.1]"
           style={{ width: size, height: size, animation: 'ador-pulse 2.4s ease-in-out infinite' }}
         >
-          <img src="/logo.svg" alt="" width={size * 0.46} height={size * 0.46} draggable={false} />
+          <img decoding="async" src="/logo.svg" alt="" width={size * 0.46} height={size * 0.46} draggable={false} />
         </span>
       </div>
       {label && <span className="text-[13px] tracking-[0.04em] text-[#8A8A8A]">{label}</span>}

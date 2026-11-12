@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '../firebase'
 import { forgetThisDevice } from '../lib/push'
+import { clearSharedSubscriptions } from '../lib/firestore'
 
 const NOT_CONFIGURED = new Error('Firebase no está configurado. Agrega tus credenciales en .env')
 
@@ -43,6 +44,7 @@ export function useAuth() {
     return forgetThisDevice()
       .catch(() => {})
       .then(() => firebaseSignOut(auth))
+      .then(() => clearSharedSubscriptions())
   }, [])
 
   // Firebase mutates auth.currentUser in place on updateProfile, but React

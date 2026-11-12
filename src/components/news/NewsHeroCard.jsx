@@ -29,7 +29,7 @@ export default function NewsHeroCard({ post, onOpen }) {
     >
       {/* Background: real image, or a dark gradient stand-in */}
       {hasImage ? (
-        <img
+        <img decoding="async"
           src={post.coverImageUrl}
           alt=""
           style={coverImageStyle(post)}

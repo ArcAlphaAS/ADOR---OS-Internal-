@@ -237,7 +237,7 @@ function Composer({ user, actorName, canOrganize }) {
             <div className="mt-2 flex gap-2">
               {images.map((src, i) => (
                 <span key={i} className="relative h-20 w-24 overflow-hidden rounded-xl">
-                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <img decoding="async" src={src} alt="" className="h-full w-full object-cover" />
                   <button type="button" onClick={() => setImages((cur) => cur.filter((_, j) => j !== i))} className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white" aria-label="Quitar foto">
                     <CloseIcon size={8} />
                   </button>
@@ -297,7 +297,7 @@ function Photos({ images, onOpen }) {
   if (!images?.length) return null
   const img = (src, i, cls) => (
     <button key={i} type="button" onClick={(e) => onOpen(src, e.currentTarget.getBoundingClientRect())} className={`overflow-hidden rounded-2xl ${cls}`}>
-      <img src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
+      <img decoding="async" src={src} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
     </button>
   )
   if (images.length === 1) return <div className="h-[220px] md:h-[300px]">{img(images[0], 0, 'block h-full w-full')}</div>
@@ -621,7 +621,7 @@ function ImageViewer({ src, rect, onClose }) {
   }, [onClose])
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
-      <img ref={growRef} src={src} alt="" className="max-h-full max-w-full rounded-2xl object-contain" />
+      <img decoding="async" ref={growRef} src={src} alt="" className="max-h-full max-w-full rounded-2xl object-contain" />
     </motion.div>,
     document.body
   )

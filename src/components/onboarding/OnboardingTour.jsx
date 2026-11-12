@@ -176,7 +176,7 @@ export default function OnboardingTour({ onFinish }) {
                 <span className="h-2 w-2 rounded-full bg-white/[0.12]" />
                 <span className="h-2 w-2 rounded-full bg-white/[0.12]" />
               </div>
-              <img src={slide.image} alt={`Vista de ${slide.title}`} className="block w-full" />
+              <img decoding="async" src={slide.image} alt={`Vista de ${slide.title}`} className="block w-full" />
             </div>
           ) : (
             <div

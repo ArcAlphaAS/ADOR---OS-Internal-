@@ -348,7 +348,7 @@ export function FilesView({ files, onOpen, onOpenImage }) {
               {media.map((f) =>
                 f.kind === 'image' ? (
                   <button key={f.id} type="button" onClick={() => onOpenImage(f)} className="group text-left">
-                    <img src={f.thumbUrl} alt={f.name} loading="lazy" className="aspect-square w-full rounded-xl border border-white/[0.08] object-cover transition-opacity group-hover:opacity-80" />
+                    <img decoding="async" src={f.thumbUrl} alt={f.name} loading="lazy" className="aspect-square w-full rounded-xl border border-white/[0.08] object-cover transition-opacity group-hover:opacity-80" />
                     <span className="mt-1 block truncate px-0.5 text-[11px] text-[#858585]">{f.conversationLabel}</span>
                   </button>
                 ) : (

@@ -42,7 +42,7 @@ export default function GifPicker({ onPick, onClose }) {
         {!error && items?.length === 0 && <p className="col-span-3 px-2 py-6 text-center text-[13px] text-[#8E8E93]">Sin resultados.</p>}
         {items?.map((g) => (
           <button key={g.id} type="button" onClick={() => onPick(g)} className="aspect-square overflow-hidden rounded-xl bg-white/[0.05]">
-            <img src={g.preview} alt={g.title} loading="lazy" className="h-full w-full object-cover" />
+            <img decoding="async" src={g.preview} alt={g.title} loading="lazy" className="h-full w-full object-cover" />
           </button>
         ))}
       </div>
