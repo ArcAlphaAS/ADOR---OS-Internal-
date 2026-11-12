@@ -234,6 +234,8 @@ export async function fetchEvents(accessToken, { timeMin, timeMax }) {
     canEdit: e.organizer?.self !== false || Boolean(e.guestsCanModify),
     organizerName: e.organizer?.displayName || e.organizer?.email || null,
     recurring: Boolean(e.recurringEventId),
+    // Aviso antes del evento: minutos (popup), null = sin aviso, 'default' = el predeterminado de Google.
+    reminderMin: !e.reminders || e.reminders.useDefault ? 'default' : (e.reminders?.overrides || []).find((o) => o.method === 'popup')?.minutes ?? null,
   }))
 }
 
@@ -257,7 +259,7 @@ async function writeCalendarApi(method, path, accessToken, body) {
 const TZ = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 // Datos del formulario → cuerpo de la API. `start`/`end` son Date (o 'YYYY-MM-DD' si allDay).
-export function buildEventBody({ title, allDay, start, end, location, description, guests, meet, colorId }) {
+export function buildEventBody({ title, allDay, start, end, location, description, guests, meet, colorId, reminderMin }) {
   const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const body = {
     summary: title,
@@ -274,6 +276,9 @@ export function buildEventBody({ title, allDay, start, end, location, descriptio
     body.end = { dateTime: end.toISOString(), timeZone: TZ() }
   }
   if (guests) body.attendees = guests
+  // Google manda este aviso a su app y a sus notificaciones aunque ADOR OS esté cerrado.
+  if (typeof reminderMin === 'number') body.reminders = { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMin }] }
+  else if (reminderMin === null) body.reminders = { useDefault: false, overrides: [] }
   if (meet) body.conferenceData = { createRequest: { requestId: `ador-${Date.now().toString(36)}`, conferenceSolutionKey: { type: 'hangoutsMeet' } } }
   return body
 }

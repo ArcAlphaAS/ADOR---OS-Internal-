@@ -45,6 +45,7 @@ export const Tag = ({ children, tone }) => (
 export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, actorName, onOpenEvent, onMonth }) {
   const showToast = useToast()
   const [now] = useState(() => new Date())
+  const [mode, setMode] = useState('dia') // 'dia' | 'semana'
   const monday = new Date(anchor)
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d })
@@ -99,6 +100,19 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
         {!isToday && <button type="button" onClick={() => setAnchor(new Date())} className="rounded-full bg-[#1C1C1E] px-3 py-1 text-[12.5px] font-medium text-[#F4EEE2]">Ir a hoy</button>}
       </div>
 
+      <div className="mx-auto flex rounded-full bg-[#1C1C1E] p-1">
+        {[['dia', 'Día'], ['semana', 'Semana']].map(([id, l]) => (
+          <button key={id} type="button" onClick={() => setMode(id)} className="relative rounded-full px-6 py-1.5 text-[13.5px] font-medium transition-colors" style={{ color: mode === id ? '#0A0A0A' : '#A8A8AD' }}>
+            {mode === id && <motion.span layoutId="phone-cal-mode" className="absolute inset-0 rounded-full bg-[#F5F5F5]" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />}
+            <span className="relative">{l}</span>
+          </button>
+        ))}
+      </div>
+
+      {mode === 'semana' ? (
+        <WeekAgenda days={days} eventsOn={eventsOn} tasksOn={tasksOn} now={now} nowMs={nowMs} complete={complete} onOpenEvent={onOpenEvent} onPickDay={(d) => { setAnchor(d); setMode('dia') }} />
+      ) : (
+      <>
       {suggestion && (
         <div className="rounded-[22px] bg-[#1C1C1E] px-5 py-4">
           <p className="text-[13px] text-[#8E8E93]">Hueco libre · {hhmm(gap.from)} – {hhmm(gap.to)}</p>
@@ -162,6 +176,65 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
         )}
       </motion.div>
       <p className="-mt-2 text-center text-[11.5px] text-[#6E6E73]">Desliza para cambiar de día</p>
+      </>
+      )}
+    </div>
+  )
+}
+
+// Toda la semana en una lista vertical, agrupada por día (como la vista de lista de iOS):
+// cada día con su fecha, y los días sin nada se juntan en una línea para no estirar la pantalla.
+function WeekAgenda({ days, eventsOn, tasksOn, now, nowMs, complete, onOpenEvent, onPickDay }) {
+  const groups = days.map((d) => ({
+    d,
+    events: eventsOn(d).sort((a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || new Date(a.start) - new Date(b.start)),
+    tasks: tasksOn(d),
+  }))
+  const filled = groups.filter((g) => g.events.length || g.tasks.length)
+  const empty = groups.filter((g) => !g.events.length && !g.tasks.length)
+  const label = (d) => d.toLocaleDateString('es', { weekday: 'long', day: 'numeric' }).replace(/^./, (c) => c.toUpperCase())
+  return (
+    <div className="flex flex-col gap-4">
+      {filled.length === 0 && <p className="rounded-[26px] bg-[#1C1C1E] px-5 py-8 text-center text-[14px] text-[#8E8E93]">Semana libre. Toca + para crear un evento.</p>}
+      {filled.map(({ d, events, tasks }) => {
+        const today = sameDay(d, now)
+        return (
+          <section key={key(d)}>
+            <button type="button" onClick={() => onPickDay(d)} className="mb-2 flex w-full items-baseline justify-between px-1 text-left">
+              <span className="text-[15px] font-semibold" style={{ color: today ? '#F4EEE2' : '#F5F5F5' }}>{today ? 'Hoy · ' : ''}{label(d)}</span>
+              <span className="text-[12.5px] text-[#8E8E93]">{events.length + tasks.length} {events.length + tasks.length === 1 ? 'cosa' : 'cosas'}</span>
+            </button>
+            <ul className="divide-y divide-white/[0.07] overflow-hidden rounded-[22px] bg-[#1C1C1E]">
+              {events.map((e) => {
+                const end = e.end ? new Date(e.end).getTime() : 0
+                const past = !e.allDay && end && end <= nowMs
+                return (
+                  <li key={e.id}>
+                    <button type="button" onClick={() => onOpenEvent(e)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left" style={{ opacity: past ? 0.5 : 1 }}>
+                      <span className="w-[74px] flex-shrink-0 text-[13px] tabular-nums text-[#A8A8AD]">{e.allDay ? 'Todo el día' : hhmm(e.start)}</span>
+                      <span className="min-w-0 flex-1 truncate text-[15px] text-[#F5F5F5]" style={{ textDecoration: past ? 'line-through' : 'none' }}>{e.title}</span>
+                      {e.isMeeting && <Tag>Reunión</Tag>}
+                    </button>
+                  </li>
+                )
+              })}
+              {tasks.map((t) => {
+                const done = t.status === 'completado'
+                return (
+                  <li key={t.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <button type="button" aria-label="Completar tarea" onClick={() => complete(t)} className="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] text-[11px] font-bold text-[#0A0A0A]" style={{ borderColor: done ? '#F4EEE2' : 'rgba(255,255,255,0.32)', background: done ? '#F4EEE2' : 'transparent' }}>{done ? '✓' : ''}</button>
+                    <span className="min-w-0 flex-1 truncate text-[15px] text-[#F5F5F5]" style={{ textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.5 : 1 }}>{t.title}</span>
+                    <Tag tone="task">Tarea</Tag>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )
+      })}
+      {empty.length > 0 && filled.length > 0 && (
+        <p className="px-1 text-center text-[12.5px] text-[#6E6E73]">Sin nada: {empty.map((g) => g.d.toLocaleDateString('es', { weekday: 'short', day: 'numeric' }).replace('.', '')).join(' · ')}</p>
+      )}
     </div>
   )
 }

@@ -20,6 +20,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const SLOTS = Array.from({ length: 36 }, (_, i) => `${pad(6 + Math.floor(i / 2))}:${i % 2 ? '30' : '00'}`) // 06:00 – 23:30
 const DAY_CHIPS = 5
+const REMINDERS = [[null, 'Sin aviso'], [0, 'Al empezar'], [5, '5 min'], [10, '10 min'], [30, '30 min'], [60, '1 h'], [1440, '1 día']]
 const fmt12 = (t) => { const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}` }
 
 function Switch({ on }) {
@@ -79,6 +80,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [exact, setExact] = useState(false)
+  const [reminder, setReminder] = useState(isEdit ? (src.reminderMin === undefined ? 'default' : src.reminderMin) : 10)
   const guestInput = useRef(null)
   const slotsRef = useRef(null)
   const [people, setPeople] = useState([])
@@ -146,6 +148,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
     onSave({
       title: title.trim(), allDay, start, end, location: location.trim(), description: description.trim(),
       colorId: colorId || null,
+      reminderMin: reminder === 'default' ? undefined : reminder,
       guests: attendees,
       meet: meet && !src.meetLink,
       notify: allGuests.length > 0 && notify,
@@ -309,6 +312,19 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
               <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
               <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción: notas, agenda, enlaces…" className="min-w-0 flex-1 resize-none bg-transparent text-[14px] leading-snug text-[#F5F5F5] placeholder:text-[#767676] outline-none" />
             </label>
+            <div className={detail}>
+              <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 0 0 4 0" /></svg>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] text-[#F5F5F5]">Avisarme antes</p>
+                <div className="ador-noscroll mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+                  {reminder === 'default' && <span className="flex-shrink-0 rounded-full bg-[rgba(244,238,226,0.16)] px-3 py-1 text-[12.5px] text-[#F4EEE2]">Predeterminado</span>}
+                  {REMINDERS.map(([m, l]) => (
+                    <button key={String(m)} type="button" onClick={() => setReminder(m)} className="flex-shrink-0 rounded-full px-3 py-1 text-[12.5px] transition-colors" style={reminder === m ? { background: 'rgba(244,238,226,0.16)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.055)', color: '#B8B8B8' }}>{l}</button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11.5px] leading-snug text-[#767676]">Te llega como notificación de Google Calendar, también con ADOR OS cerrado.</p>
+              </div>
+            </div>
           </section>
 
           {/* Ajustes */}
@@ -332,7 +348,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
               />
               <Tile
                 icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 8l9 6 9-6" /></svg>}
-                title="Avisar por correo"
+                title="Invitar por correo"
                 hint={guests.length || guestDraft.trim() ? 'Les llega la invitación' : 'Añade personas primero'}
                 on={notify}
                 onToggle={() => setNotify((v) => !v)}
