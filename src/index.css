@@ -1023,3 +1023,7 @@ html.light [class*="shadow-[0_"],
 html.light [class*="shadow-[0px"] {
   box-shadow: 0 18px 44px -14px rgba(255, 255, 255, 0.55), 0 2px 10px rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
 }
+
+/* Lista que se desplaza sin barra visible (la pista de que hay más la da un degradado). */
+.ador-noscroll { scrollbar-width: none; }
+.ador-noscroll::-webkit-scrollbar { display: none; }

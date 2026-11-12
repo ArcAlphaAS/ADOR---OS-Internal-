@@ -215,39 +215,41 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
 
           {!allDay && (
             <section className="mt-6">
-              <div className="mb-2 flex items-baseline justify-between">
-                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">2 · Hora de inicio</p>
-                {startClash && <p className="text-[11.5px] text-[#E8C15A]">Cruza con «{startClash.title}»</p>}
+              <div className="mb-2.5 flex items-baseline justify-between">
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">2 · Hora</p>
+                <p className="text-[13px] tabular-nums text-[#E4E4E4]">{fmt12(startTime)} <span className="text-[#767676]">→</span> {fmt12(endTime)}</p>
               </div>
-              <div ref={slotsRef} className="relative grid max-h-[178px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
-                {SLOTS.map((t) => {
-                  const sel = t === startTime
-                  const busyWith = !sel && clash(t)
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      data-selected={sel}
-                      onClick={() => changeStart(t)}
-                      title={busyWith ? `Ocupado: ${busyWith.title}` : undefined}
-                      className="flex items-center justify-between gap-2 rounded-full py-2 pl-3.5 pr-2.5 text-[13px] tabular-nums transition-colors"
-                      style={sel ? { background: '#F5F5F5', color: '#0A0A0A', fontWeight: 600 } : { background: 'rgba(255,255,255,0.06)', color: busyWith ? '#767676' : '#D8D8D8' }}
-                    >
-                      <span>{fmt12(t)}</span>
-                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: sel ? '#C9A24B' : 'transparent', boxShadow: sel ? 'none' : `inset 0 0 0 1.5px ${busyWith ? 'rgba(232,193,90,0.7)' : 'rgba(255,255,255,0.2)'}` }} />
-                    </button>
-                  )
-                })}
+              <div className="relative">
+                <div ref={slotsRef} className="ador-noscroll grid max-h-[168px] grid-cols-3 gap-2 overflow-y-auto pb-6">
+                  {SLOTS.map((t) => {
+                    const sel = t === startTime
+                    const busyWith = !sel && clash(t)
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        data-selected={sel}
+                        onClick={() => changeStart(t)}
+                        title={busyWith ? `Ocupado: ${busyWith.title}` : undefined}
+                        className="relative rounded-full py-2.5 text-center text-[13.5px] tabular-nums transition-colors"
+                        style={sel ? { background: '#F5F5F5', color: '#0A0A0A', fontWeight: 600 } : { background: 'rgba(255,255,255,0.055)', color: busyWith ? '#6E6E6E' : '#D8D8D8' }}
+                      >
+                        {fmt12(t)}
+                        {busyWith && <span className="absolute right-3.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#E8C15A]" />}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-[#141414] to-transparent" />
               </div>
+              {startClash && <p className="mt-1 text-[12px] text-[#E8C15A]">Cruza con «{startClash.title}»</p>}
 
-              <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-[12.5px] text-[#8A8A8A]">Dura</span>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 {[[30, '30 min'], [45, '45 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, l]) => (
-                  <button key={m} type="button" onClick={() => quick(m)} className="rounded-full px-3 py-1 text-[12px] transition-colors" style={durMin === m ? { background: 'rgba(244,238,226,0.16)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.06)', color: '#B8B8B8' }}>{l}</button>
+                  <button key={m} type="button" onClick={() => quick(m)} className="rounded-full px-3.5 py-1.5 text-[12.5px] transition-colors" style={durMin === m ? { background: 'rgba(244,238,226,0.16)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.055)', color: '#B8B8B8' }}>{l}</button>
                 ))}
-                <span className="ml-auto text-[12.5px] tabular-nums text-[#A8A8A8]">{startTime} – {endTime}</span>
-                <button type="button" onClick={() => setExact((v) => !v)} className="text-[12px] text-[#8A8A8A] underline-offset-2 hover:text-[#F5F5F5] hover:underline">{exact ? 'Ocultar' : 'Hora exacta'}</button>
               </div>
+              <button type="button" onClick={() => setExact((v) => !v)} className="mt-3 text-[12px] text-[#8A8A8A] underline-offset-2 hover:text-[#F5F5F5] hover:underline">{exact ? 'Ocultar hora exacta' : 'Poner una hora exacta'}</button>
               {exact && (
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div><label className={label}>Inicio</label><input type="time" value={startTime} onChange={(e) => changeStart(e.target.value)} className={field} /></div>
