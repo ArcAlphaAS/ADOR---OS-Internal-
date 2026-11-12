@@ -151,14 +151,14 @@ export default function HomeScreen({ user, onNavigate }) {
 
       <Zone title="El equipo">
         <HomePeople>
-          <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
-            <motion.div variants={itemVariants} className="h-full lg:col-span-5">
+          <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[5fr_4fr_3fr] lg:gap-5 lg:[&:has(>div:nth-child(2):empty)]:grid-cols-[6fr_5fr]">
+            <motion.div variants={itemVariants} className="h-full">
               <TeamPulseCard user={user} />
             </motion.div>
-            <motion.div variants={itemVariants} className="h-full empty:hidden lg:col-span-4">
+            <motion.div variants={itemVariants} className="h-full empty:hidden">
               <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
             </motion.div>
-            <motion.div variants={itemVariants} className="h-full lg:col-span-3">
+            <motion.div variants={itemVariants} className="h-full">
               <CommunityCard user={user} onNavigate={onNavigate} />
             </motion.div>
           </div>

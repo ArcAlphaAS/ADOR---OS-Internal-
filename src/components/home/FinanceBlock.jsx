@@ -58,9 +58,15 @@ export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct
       <CardHeader label="Resumen financiero" dot="#F4EEE2" action="→" />
 
       {!hasData ? (
-        <div className="flex flex-col items-center gap-4 py-10">
-          <div className="ador-skeleton h-[2px] w-2/3 rounded-full" />
-          <p className="text-[14px] font-light text-[#8A8A8A]">Sin datos financieros aún</p>
+        <div className="flex flex-1 items-center gap-4 py-6">
+          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-[#F4EEE2]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l5-5 4 4 8-9M15 7h5v5" /></svg>
+          </span>
+          <div className="min-w-0">
+            <p className="text-[15px] font-light text-[#E4E4E4]">Aún no hay ingresos registrados</p>
+            <p className="mt-0.5 text-[12.5px] text-[#8A8A8A]">Cuando entre el primero, verás aquí el mes y su tendencia.</p>
+            <span className="mt-2 inline-block text-[12.5px] font-medium text-[#F4EEE2]">Ir a Finanzas →</span>
+          </div>
         </div>
       ) : (
         <>

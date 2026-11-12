@@ -33,10 +33,12 @@ export default function InterventionsBlock({ interventions = [] }) {
       <CardHeader label="Intervenciones activas" count={interventions.length > 0 ? interventions.length : null} />
 
       {interventions.length === 0 ? (
-        <div className="flex flex-col items-center gap-1.5 py-6">
-          <ParticleLogo size={96} />
-          <p className="mt-2 text-[14px] text-[#D4D4D4]">Aún no hay intervenciones activas</p>
-          <p className="text-[12.5px] text-[#8A8A8A]">Aparecen aquí cuando un SPC pasa a Intervención.</p>
+        <div className="flex items-center gap-5 py-5">
+          <div className="flex-shrink-0"><ParticleLogo size={84} /></div>
+          <div className="min-w-0">
+            <p className="text-[15px] font-light text-[#E4E4E4]">Aún no hay intervenciones activas</p>
+            <p className="mt-0.5 text-[12.5px] leading-snug text-[#8A8A8A]">Aparecen aquí solas cuando un SPC pasa a Intervención Activa en Clientes.</p>
+          </div>
         </div>
       ) : (
         <div className="ador-stagger mt-3 divide-y divide-white/[0.06]">
