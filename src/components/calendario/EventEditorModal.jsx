@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { GOOGLE_EVENT_COLORS } from '../../lib/googleCalendar'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 import { CloseIcon } from '../icons'
+import GuestPicker from './GuestPicker'
+import { subscribeUsers, subscribeDirectoryPeople } from '../../lib/firestore'
 
 // Crear o editar un evento de tu Google Calendar. Mismo patrón de portal + envoltorio con
 // transform separado del vidrio que el resto de modales (CLAUDE.md §11). Nada se manda a
@@ -40,6 +42,27 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
   const [notify, setNotify] = useState(true)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [people, setPeople] = useState([])
+  const [users, setUsers] = useState([])
+  const [directory, setDirectory] = useState([])
+  useEffect(() => subscribeUsers(setUsers), [])
+  useEffect(() => subscribeDirectoryPeople(setDirectory), [])
+  // La gente de la organización: cuentas con acceso, enriquecidas con su ficha de Directorio.
+  useEffect(() => {
+    const out = {}
+    for (const u of users) {
+      const email = (u.email || '').toLowerCase()
+      if (!email) continue
+      const d = directory.find((x) => x.linkedUserId === u.id)
+      out[email] = { email, name: d?.name || u.displayName || email.split('@')[0], photo: d?.photoDataUrl || u.photoDataUrl || null, role: d?.role || '', area: d?.area || '' }
+    }
+    for (const d of directory) {
+      const email = (d.email || '').toLowerCase()
+      if (email && !out[email]) out[email] = { email, name: d.name, photo: d.photoDataUrl || null, role: d.role || '', area: d.area || '' }
+    }
+    const selfEmails = new Set((src.attendees || []).filter((a) => a.self).map((a) => (a.email || '').toLowerCase()))
+    setPeople(Object.values(out).filter((p) => !selfEmails.has(p.email)).sort((a, b) => a.name.localeCompare(b.name, 'es')))
+  }, [users, directory])
 
   const addGuests = (raw) => {
     const emails = raw.split(/[\s,;]+/).map((x) => x.trim().toLowerCase()).filter(Boolean)
@@ -64,7 +87,7 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
     let allGuests = guests
     if (pending) {
       const extra = pending.split(/[\s,;]+/).filter(Boolean)
-      if (extra.some((x) => !EMAIL_RE.test(x))) return setError(`«${extra.find((x) => !EMAIL_RE.test(x))}» no parece un correo.`)
+      if (extra.some((x) => !EMAIL_RE.test(x))) return setError(`Elige a «${extra.find((x) => !EMAIL_RE.test(x))}» de la lista o escribe un correo completo.`)
       allGuests = [...guests, ...extra.filter((x) => !guests.some((g) => g.email === x.toLowerCase())).map((email) => ({ email: email.toLowerCase() }))]
     }
     let start, end
@@ -127,22 +150,17 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
 
             <div>
               <label className={label}>Invitados</label>
-              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-2.5 py-2">
-                {guests.map((g) => (
-                  <span key={g.email} className="flex items-center gap-1 rounded-md bg-white/[0.1] px-2 py-0.5 text-[12px] text-[#E4E4E4]">
-                    {g.email}
-                    <button type="button" aria-label={`Quitar ${g.email}`} onClick={() => setGuests((cur) => cur.filter((x) => x.email !== g.email))} className="text-[#8A8A8A] hover:text-[#F5F5F5]">×</button>
-                  </span>
-                ))}
-                <input
-                  value={guestDraft}
-                  onChange={(e) => { const v = e.target.value; if (/[\s,;]$/.test(v)) addGuests(v); else setGuestDraft(v) }}
-                  onBlur={() => guestDraft.trim() && addGuests(guestDraft)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addGuests(guestDraft) } else if (e.key === 'Backspace' && !guestDraft && guests.length) setGuests((g) => g.slice(0, -1)) }}
-                  placeholder={guests.length ? '' : 'correo@ejemplo.com'}
-                  className="min-w-[140px] flex-1 bg-transparent py-0.5 text-[13px] text-[#F5F5F5] placeholder:text-[#767676] outline-none"
-                />
-              </div>
+              <GuestPicker
+                guests={guests}
+                people={people}
+                draft={guestDraft}
+                setDraft={setGuestDraft}
+                onAdd={(email) => setGuests((cur) => (cur.some((g) => g.email === email) ? cur : [...cur, { email }]))}
+                onAddRaw={addGuests}
+                onRemove={(email) => setGuests((cur) => cur.filter((x) => x.email !== email))}
+                onRemoveLast={() => setGuests((g) => g.slice(0, -1))}
+                hasError={Boolean(error) && /correo|lista/.test(error)}
+              />
               {(guests.length > 0 || guestDraft.trim()) && (
                 <label className="mt-2 flex cursor-pointer items-center gap-2 text-[12.5px] text-[#B5B5B5]">
                   <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="h-3.5 w-3.5 accent-[#F4EEE2]" /> Enviarles la invitación por correo
