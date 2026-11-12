@@ -58,6 +58,7 @@ import {
   notifyLevel,
 } from '../../lib/chat'
 import { deliverMessage } from '../../lib/chatSend'
+import { beginWrite, endWrite } from '../../lib/liveStatus'
 import ChatContextRail from './ChatContextRail'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -372,8 +373,11 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         const mentioned = new Set((draft.mentions || []).map((m) => m.uid))
         followers = [...new Set([parent?.authorUid, ...(parent?.replyUids || [])])].filter((uid) => uid && uid !== user.uid && !mentioned.has(uid))
       }
-      const { pointer, snippet } = await withTimeout(
-        deliverMessage({
+      // Sin tope duro de 8 s: el mensaje ya se ve en pantalla (◷) y Firestore lo entrega en cuanto
+      // hay red. Solo se avisa, sin dar por fallido, si tarda; un rechazo real sí sale como error.
+      beginWrite()
+      const slowNote = setTimeout(() => showToast('Tu mensaje sigue en camino — parece que la conexión va lenta.'), 10000)
+      const sending = deliverMessage({
           convType,
           convId: selectedConversationId,
           dmParticipants: convType === 'dm' ? dmParticipantsWith(selected.id) : undefined,
@@ -386,7 +390,14 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
           audienceUids: conversationAudience,
           threadFollowers: followers,
         })
-      )
+      sending.then(endWrite, endWrite)
+      let result
+      try {
+        result = await sending
+      } finally {
+        clearTimeout(slowNote)
+      }
+      const { pointer, snippet } = result
       if (followers.length) createMentions(followers.map((uid) => ({ uid })), { ...pointer, kind: 'reply', text: snippet }, user.uid, actorName).catch(() => {})
       if (parentId) setTyping(`${selectedConversationId}_thread_${parentId}`, user.uid, actorName, false).catch(() => {})
       else setTyping(selectedConversationId, user.uid, actorName, false).catch(() => {})

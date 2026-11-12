@@ -12,6 +12,7 @@ import { setThinking } from '../../lib/liveStatus'
 import { haptic } from '../../lib/haptics'
 import usePhone from '../../hooks/usePhone'
 import ParticleCore from './ParticleCore'
+import { listConversations, loadConversation, saveConversation, renameConversation, deleteConversation, togglePinConversation, clearHistory } from '../../lib/adorIAHistory'
 
 // The four starting points on the empty screen: a short title and the full
 // question each one sends.
@@ -49,17 +50,63 @@ function appendCapped(prev, message) {
   return { messages: next.slice(next.length - MAX_MESSAGES), trimmed: true }
 }
 
-function MessageBubble({ role, content, action, status, actorId, onConfirm, onCancel, plain = false }) {
+// Órdenes rápidas al escribir "/" (solo atajos de frases que el motor ya entiende).
+const SLASH = [
+  { cmd: '/resumen', hint: 'Cómo está todo', text: '¿Cómo estamos?', send: true },
+  { cmd: '/prioridades', hint: 'Qué atender primero', text: '¿Qué debería priorizar?', send: true },
+  { cmd: '/ingresos', hint: 'Ingresos del mes', text: '¿Cómo vamos este mes en ingresos?', send: true },
+  { cmd: '/objetivos', hint: 'Objetivos en riesgo', text: '¿Qué objetivo necesita atención?', send: true },
+  { cmd: '/equipo', hint: 'Carga del equipo', text: '¿Quién tiene más carga esta semana?', send: true },
+  { cmd: '/tarea', hint: 'Crear una tarea', text: 'Crea una tarea para mí: ', send: false },
+  { cmd: '/decisión', hint: 'Registrar una decisión', text: 'Registra la decisión: ', send: false },
+]
+
+// Sugerencias de seguimiento bajo la última respuesta, según el tema de que se habló.
+const FOLLOW_UPS = {
+  finanzas: ['¿Por qué?', '¿Qué debería priorizar?', '¿Cómo estamos en general?'],
+  objetivos: ['¿Por qué?', '¿Quién tiene más carga esta semana?', '¿Qué debería priorizar?'],
+  workspace: ['¿Por qué?', '¿Cómo vamos este mes en ingresos?', '¿Qué objetivo necesita atención?'],
+  clientes: ['¿Por qué?', '¿Cómo vamos este mes en ingresos?', '¿Qué debería priorizar?'],
+  overview: ['¿Por qué?', '¿Qué debería priorizar?', '¿Cómo vamos este mes en ingresos?'],
+  priority: ['¿Por qué?', '¿Qué objetivo necesita atención?', '¿Quién tiene más carga esta semana?'],
+}
+const chipsFor = (topic) => FOLLOW_UPS[topic] || ['¿Cómo estamos?', '¿Qué debería priorizar?', '¿Qué objetivo necesita atención?']
+
+// Texto que aparece de a poco, como una respuesta que se va escribiendo. Solo la respuesta
+// nueva; el historial se muestra completo. Sin animación si el sistema pide menos movimiento.
+function Reveal({ text, onTick, onDone }) {
+  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const [n, setN] = useState(reduce ? text.length : 0)
+  useEffect(() => {
+    if (n >= text.length) { onDone?.(); return }
+    const t = setTimeout(() => { setN((v) => Math.min(text.length, v + 4)); onTick?.() }, 14)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [n, text])
+  return text.slice(0, n)
+}
+
+const IconBtn = ({ label, onClick, children }) => (
+  <button type="button" title={label} aria-label={label} onClick={onClick} className="flex h-7 w-7 items-center justify-center rounded-lg text-[#767676] transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]">{children}</button>
+)
+const svg = (d) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+
+function MessageBubble({ role, content, action, status, actorId, onConfirm, onCancel, plain = false, revealing = false, onTick, onDone, onCopy, onRegenerate, onEdit, chips, onChip }) {
   const isUser = role === 'user'
   const card = action ? describeAction(action, actorId) : null
   const flat = plain && !isUser // escritorio: la respuesta va como texto, sin burbuja
+  const desktop = plain
   return (
-    <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`group/msg flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {desktop && isUser && onEdit && (
+        <span className="mt-1 opacity-0 transition-opacity group-hover/msg:opacity-100"><IconBtn label="Editar y reenviar" onClick={onEdit}>{svg(<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z" />)}</IconBtn></span>
+      )}
+      <div className={flat ? 'min-w-0 max-w-[88%]' : 'min-w-0 max-w-[86%] md:max-w-[80%]'}>
       <div
-        className={flat ? 'ador-msg-in min-w-0 max-w-[88%] py-0.5 text-[15px] leading-[1.65]' : 'ador-msg-in max-w-[86%] rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:max-w-[80%] md:text-[14px]'}
+        className={flat ? 'ador-msg-in min-w-0 py-0.5 text-[15px] leading-[1.65]' : 'ador-msg-in rounded-[22px] px-4 py-2.5 text-[15.5px] leading-[1.4] md:text-[14px]'}
         style={{ color: '#F5F5F5', whiteSpace: 'pre-wrap', background: flat ? 'transparent' : isUser ? '#2C2C2E' : '#1C1C1E' }}
       >
-        {content}
+        {flat && revealing ? <Reveal text={content} onTick={onTick} onDone={onDone} /> : content}
         {card && (
           <div className="mt-3 rounded-2xl bg-white/[0.07] p-3.5" style={{ whiteSpace: 'normal' }}>
             <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#E8C15A]">{card.heading}</p>
@@ -84,13 +131,33 @@ function MessageBubble({ role, content, action, status, actorId, onConfirm, onCa
           </div>
         )}
       </div>
+      {flat && !revealing && (onCopy || onRegenerate) && (
+        <div className="mt-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100">
+          {onCopy && <IconBtn label="Copiar" onClick={onCopy}>{svg(<><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></>)}</IconBtn>}
+          {onRegenerate && <IconBtn label="Responder de nuevo" onClick={onRegenerate}>{svg(<><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 5v6h-6" /></>)}</IconBtn>}
+        </div>
+      )}
+      {flat && !revealing && chips && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {chips.map((c) => (
+            <button key={c} type="button" onClick={() => onChip(c)} className="rounded-full bg-white/[0.06] px-3.5 py-1.5 text-[12.5px] text-[#C9C9C9] transition-colors hover:bg-white/[0.12] hover:text-[#F5F5F5]">{c}</button>
+          ))}
+        </div>
+      )}
+      </div>
     </div>
   )
 }
 
 // Escritorio: campo grande que crece, Enter envía y Mayús+Enter hace salto de línea.
-function DesktopComposer({ value, onChange, onSend, busy, autoFocus }) {
+function DesktopComposer({ value, onChange, onSend, onSendText, onRecall, busy, autoFocus }) {
   const ref = useRef(null)
+  const [pick, setPick] = useState(0)
+  const slash = value.startsWith('/') && !value.includes(' ') ? SLASH.filter((c) => c.cmd.startsWith(value.toLowerCase())) : []
+  useEffect(() => setPick(0), [value])
+  const choose = (c) => {
+    if (c.send) { onChange(''); onSendText(c.text) } else onChange(c.text)
+  }
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -99,6 +166,17 @@ function DesktopComposer({ value, onChange, onSend, busy, autoFocus }) {
   }, [value])
   useEffect(() => { if (autoFocus) ref.current?.focus() }, [autoFocus])
   return (
+    <div className="relative w-full">
+      {slash.length > 0 && (
+        <div className="absolute inset-x-0 bottom-[calc(100%+8px)] z-10 overflow-hidden rounded-2xl bg-[#1C1C1E] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.1]">
+          {slash.map((c, i) => (
+            <button key={c.cmd} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(c)} onMouseEnter={() => setPick(i)} className="flex w-full items-center justify-between rounded-xl px-3.5 py-2 text-left" style={{ background: i === pick ? 'rgba(255,255,255,0.09)' : 'transparent' }}>
+              <span className="text-[13.5px] font-medium text-[#F5F5F5]">{c.cmd}</span>
+              <span className="text-[12.5px] text-[#8A8A8A]">{c.hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
     <div className="flex w-full items-end gap-3 rounded-[26px] bg-[#1C1C1E] py-3 pl-5 pr-3 ring-1 ring-white/[0.08] transition-shadow focus-within:ring-white/[0.22]">
       <textarea
         ref={ref}
@@ -106,9 +184,16 @@ function DesktopComposer({ value, onChange, onSend, busy, autoFocus }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
+          if (slash.length) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); setPick((p) => (p + 1) % slash.length); return }
+            if (e.key === 'ArrowUp') { e.preventDefault(); setPick((p) => (p - 1 + slash.length) % slash.length); return }
+            if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); choose(slash[pick]); return }
+            if (e.key === 'Escape') { onChange(''); return }
+          }
+          if (e.key === 'ArrowUp' && !value && onRecall) { e.preventDefault(); onRecall(); return }
           if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); onSend() }
         }}
-        placeholder="Pregunta algo o escribe una orden…"
+        placeholder="Pregunta algo, escribe una orden o usa /  para atajos…"
         className="max-h-[180px] min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[15px] leading-[1.5] text-[#F5F5F5] placeholder:text-[#767676] outline-none"
       />
       <button
@@ -120,6 +205,7 @@ function DesktopComposer({ value, onChange, onSend, busy, autoFocus }) {
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
       </button>
+    </div>
     </div>
   )
 }
@@ -140,6 +226,44 @@ export default function AdorIAModule({ user, onNavigate }) {
     return () => document.documentElement.classList.remove('ador-chat-open')
   }, [phone])
   const lastTopicRef = useRef(null)
+
+  // ---- Historial (solo en este navegador, ver lib/adorIAHistory.js) ----
+  const uid = user?.uid
+  const [convId, setConvId] = useState(null)
+  const [history, setHistory] = useState(() => listConversations(uid))
+  const [sidebarOpen, setSidebarOpen] = useState(() => { try { return localStorage.getItem('ador_ia_sidebar') !== '0' } catch { return true } })
+  const [historyQuery, setHistoryQuery] = useState('')
+  const [renaming, setRenaming] = useState(null) // { id, value }
+  const [confirmDel, setConfirmDel] = useState(null)
+  const skipSave = useRef(false)
+  const toggleSidebar = () => setSidebarOpen((v) => { try { localStorage.setItem('ador_ia_sidebar', v ? '0' : '1') } catch { /* nada */ } return !v })
+
+  useEffect(() => {
+    if (sending || messages.length === 0) return
+    if (skipSave.current) { skipSave.current = false; return }
+    let id = convId
+    if (!id) { id = `c${Date.now().toString(36)}`; setConvId(id) }
+    const t = setTimeout(() => { saveConversation(uid, id, messages); setHistory(listConversations(uid)) }, 350)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, sending])
+
+  const topicOf = (list) => [...list].reverse().find((m) => m.role === 'assistant' && m.topic)?.topic || null
+  const newChat = () => { setMessages([]); setConvId(null); lastTopicRef.current = null; setTrimmedOnce(false); setInput('') }
+  const openConv = (id) => {
+    const loaded = loadConversation(uid, id)
+    skipSave.current = true
+    setMessages(loaded)
+    setConvId(id)
+    lastTopicRef.current = topicOf(loaded)
+    setTrimmedOnce(false)
+  }
+  const removeConv = (id) => {
+    deleteConversation(uid, id)
+    setHistory(listConversations(uid))
+    if (id === convId) newChat()
+    setConfirmDel(null)
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -172,9 +296,10 @@ export default function AdorIAModule({ user, onNavigate }) {
     if (action?.type === 'clarify') assistant = { role: 'assistant', content: action.message }
     else if (action) assistant = { role: 'assistant', content: 'Esto entendí — dime si lo hago:', action, status: 'pending' }
     else {
-      const reply = answerLocally(trimmed, context.data, firstName(user), lastTopicRef.current)
+      const prevTopic = lastTopicRef.current
+      const reply = answerLocally(trimmed, context.data, firstName(user), prevTopic)
       lastTopicRef.current = reply.topic
-      assistant = { role: 'assistant', content: reply.text }
+      assistant = { role: 'assistant', content: reply.text, topic: reply.topic || 'fallback', prevTopic, fresh: true }
     }
     setMessages((prev) => {
       const { messages: next, trimmed: didTrim } = appendCapped(prev, assistant)
@@ -218,63 +343,185 @@ export default function AdorIAModule({ user, onNavigate }) {
     }
   }
 
+  const regenerate = (index) => {
+    const a = messages[index]
+    const q = messages[index - 1]
+    if (!a || a.topic === undefined || q?.role !== 'user') return
+    const reply = answerLocally(q.content, context.data, firstName(user), a.prevTopic ?? null)
+    lastTopicRef.current = reply.topic
+    setMessages((prev) => prev.map((m, i) => (i === index ? { role: 'assistant', content: reply.text, topic: reply.topic || 'fallback', prevTopic: a.prevTopic, fresh: true } : m)))
+  }
+  const editFrom = (index) => {
+    const m = messages[index]
+    if (!m) return
+    const rest = messages.slice(0, index)
+    setMessages(rest)
+    lastTopicRef.current = topicOf(rest)
+    setInput(m.content)
+  }
+  const copyText = (t) => navigator.clipboard?.writeText(t).catch(() => {})
+  const recallLast = () => { const last = [...messages].reverse().find((m) => m.role === 'user'); if (last) setInput(last.content) }
+  const scrollDown = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
+
   if (!phone) {
-    const reset = () => { setMessages([]); lastTopicRef.current = null; setTrimmedOnce(false) }
+    const reset = newChat
     const name = firstName(user)
+    // Historial agrupado por antigüedad (solo títulos; cada conversación se lee al abrirla).
+    const q = historyQuery.trim().toLowerCase()
+    const shown = history.filter((c) => !q || c.title.toLowerCase().includes(q))
+    const startToday = new Date(); startToday.setHours(0, 0, 0, 0)
+    const bucketOf = (c) => {
+      if (c.pinned) return 'Fijadas'
+      const d = startToday.getTime() - c.updatedAt
+      return d <= 0 ? 'Hoy' : d <= 86400000 ? 'Ayer' : d <= 7 * 86400000 ? 'Esta semana' : 'Anteriores'
+    }
+    const groups = ['Fijadas', 'Hoy', 'Ayer', 'Esta semana', 'Anteriores'].map((g) => [g, shown.filter((c) => bucketOf(c) === g)]).filter(([, l]) => l.length)
+    const lastIdx = messages.length - 1
+
     return (
-      <motion.div initial={false} className="mx-auto flex h-full w-full max-w-[920px] flex-col px-10 pb-8 pt-8">
-        {messages.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center pb-10 text-center">
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 18 }}>
-              <ParticleCore size={150} />
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-6">
-              <h1 className="text-[48px] leading-[1.08] tracking-[-0.02em]" style={SERIF}>
-                <span className="text-[#F5F5F5]">Hola</span>
-                {name && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {name}</span>}
-              </h1>
-              <h2 className="mt-1 text-[48px] leading-[1.08] tracking-[-0.02em] text-[#F5F5F5]" style={SERIF}>¿En qué te ayudo hoy?</h2>
-              <p className="mx-auto mt-4 max-w-[480px] text-[14px] leading-relaxed text-[#8A8A8A]">Respondo con los datos reales de la empresa y ejecuto órdenes sencillas. Antes de cambiar algo, siempre te pido confirmación.</p>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }} className="mt-9 w-full max-w-[680px]">
-              <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} busy={sending} autoFocus />
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {STARTERS.map(({ Icon, title, prompt }) => (
-                  <button key={title} type="button" onClick={() => send(prompt)} className="flex items-center gap-2 rounded-full bg-white/[0.05] px-4 py-2 text-[13px] text-[#D0D0D0] transition-colors hover:bg-white/[0.1] hover:text-[#F5F5F5]">
-                    <Icon size={14} className="text-[#F4EEE2]" /> {title}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-5 text-[11.5px] text-[#767676]">Enter envía · Mayús + Enter hace un salto de línea</p>
-            </motion.div>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between gap-3 pb-4">
-              <h1 className="text-[17px] font-semibold tracking-tight text-[#F5F5F5]">ADOR IA</h1>
-              <button type="button" onClick={reset} className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-4 py-2 text-[12.5px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/[0.12]">
-                <PlusIcon size={12} /> Nueva conversación
-              </button>
+      <motion.div initial={false} className="flex h-full w-full">
+        {sidebarOpen && (
+          <aside className="flex w-[268px] flex-shrink-0 flex-col gap-3 pb-8 pl-8 pr-2 pt-8">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-[#F5F5F5]">Historial</span>
+              <IconBtn label="Ocultar historial" onClick={toggleSidebar}>{svg(<><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M9.5 4.5v15" /></>)}</IconBtn>
             </div>
-            <div ref={scrollRef} className="flex-1 overflow-y-auto">
-              <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 pb-6">
-                {trimmedOnce && <p className="text-center text-[11px] text-[#8A8A8A]">Mostrando los últimos {MAX_MESSAGES} mensajes — la conversación sigue igual, solo se liberó espacio.</p>}
-                {messages.map((m, i) => (
-                  <MessageBubble key={i} plain role={m.role} content={m.content} action={m.action} status={m.status} actorId={user?.uid} onConfirm={() => confirm(i)} onCancel={() => setStatus(i, 'cancelled')} />
-                ))}
-                {sending && (
-                  <div className="flex items-center gap-3">
-                    <ParticleCore size={34} busy />
-                    <span className="ador-shimmer-text text-[14px] font-medium">Pensando…</span>
+            <button type="button" onClick={newChat} className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-3.5 py-2.5 text-[13px] font-medium text-[#F5F5F5] transition-colors hover:bg-white/[0.12]">
+              <PlusIcon size={13} /> Nueva conversación
+            </button>
+            {history.length > 4 && (
+              <input value={historyQuery} onChange={(e) => setHistoryQuery(e.target.value)} placeholder="Buscar…" className="rounded-xl bg-white/[0.05] px-3.5 py-2 text-[12.5px] text-[#F5F5F5] placeholder:text-[#767676] outline-none focus:bg-white/[0.08]" />
+            )}
+            <div className="-mr-2 flex-1 overflow-y-auto pr-2">
+              {history.length === 0 ? (
+                <p className="px-1 pt-2 text-[12.5px] leading-relaxed text-[#767676]">Tus conversaciones aparecerán aquí. Se guardan solo en este navegador.</p>
+              ) : shown.length === 0 ? (
+                <p className="px-1 pt-2 text-[12.5px] text-[#767676]">Nada coincide.</p>
+              ) : (
+                groups.map(([g, list]) => (
+                  <div key={g} className="mb-3">
+                    <p className="px-2 pb-1 text-[11px] font-medium text-[#767676]">{g}</p>
+                    {list.map((c) => (
+                      <div key={c.id} className="group/row relative">
+                        {renaming?.id === c.id ? (
+                          <input
+                            autoFocus
+                            value={renaming.value}
+                            onChange={(e) => setRenaming({ id: c.id, value: e.target.value })}
+                            onBlur={() => { renameConversation(uid, c.id, renaming.value); setHistory(listConversations(uid)); setRenaming(null) }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') setRenaming(null) }}
+                            className="w-full rounded-lg bg-white/[0.1] px-2.5 py-1.5 text-[13px] text-[#F5F5F5] outline-none ring-1 ring-white/[0.2]"
+                          />
+                        ) : (
+                          <button type="button" onClick={() => openConv(c.id)} className="block w-full truncate rounded-lg px-2.5 py-2 pr-[72px] text-left text-[13px] transition-colors" style={{ background: c.id === convId ? 'rgba(255,255,255,0.09)' : 'transparent', color: c.id === convId ? '#F5F5F5' : '#B5B5B5' }}>
+                            {c.pinned && <span className="mr-1 text-[#E8C15A]">•</span>}{c.title}
+                          </button>
+                        )}
+                        {renaming?.id !== c.id && (
+                          <span className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center opacity-0 transition-opacity group-hover/row:opacity-100">
+                            <IconBtn label={c.pinned ? 'Desfijar' : 'Fijar'} onClick={() => { togglePinConversation(uid, c.id); setHistory(listConversations(uid)) }}>{svg(<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6Z" />)}</IconBtn>
+                            <IconBtn label="Renombrar" onClick={() => setRenaming({ id: c.id, value: c.title })}>{svg(<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z" />)}</IconBtn>
+                            <IconBtn label={confirmDel === c.id ? 'Pulsa otra vez para borrar' : 'Borrar'} onClick={() => (confirmDel === c.id ? removeConv(c.id) : setConfirmDel(c.id))}>
+                              <span style={{ color: confirmDel === c.id ? '#EF5350' : undefined }}>{svg(<path d="M5 7h14M10 11v6M14 11v6M7 7l1 12h8l1-12M9 7V4h6v3" />)}</span>
+                            </IconBtn>
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                ))
+              )}
             </div>
-            <div className="mx-auto w-full max-w-[740px] pt-3">
-              <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} busy={sending} autoFocus />
-            </div>
-          </>
+            {history.length > 0 && (
+              <button type="button" onClick={() => { if (confirmDel === 'all') { clearHistory(uid); setHistory([]); newChat(); setConfirmDel(null) } else setConfirmDel('all') }} className="self-start px-1 text-[11.5px] transition-colors hover:text-[#EF5350]" style={{ color: confirmDel === 'all' ? '#EF5350' : '#767676' }}>
+                {confirmDel === 'all' ? 'Pulsa otra vez para borrar todo' : 'Borrar todo el historial'}
+              </button>
+            )}
+          </aside>
         )}
+
+        <div className="relative mx-auto flex h-full min-w-0 max-w-[940px] flex-1 flex-col px-10 pb-8 pt-8">
+          {!sidebarOpen && (
+            <div className="absolute left-3 top-8 z-10 flex flex-col gap-1">
+              <IconBtn label="Mostrar historial" onClick={toggleSidebar}>{svg(<><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M9.5 4.5v15" /></>)}</IconBtn>
+              <IconBtn label="Nueva conversación" onClick={newChat}>{svg(<path d="M12 5v14M5 12h14" />)}</IconBtn>
+            </div>
+          )}
+          {messages.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center pb-10 text-center">
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 18 }}>
+                <ParticleCore size={150} />
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} className="mt-6">
+                <h1 className="text-[48px] leading-[1.08] tracking-[-0.02em]" style={SERIF}>
+                  <span className="text-[#F5F5F5]">Hola</span>
+                  {name && <span className="bg-gradient-to-r from-[#BDBDBD] to-[#5A5A5A] bg-clip-text text-transparent">, {name}</span>}
+                </h1>
+                <h2 className="mt-1 text-[48px] leading-[1.08] tracking-[-0.02em] text-[#F5F5F5]" style={SERIF}>¿En qué te ayudo hoy?</h2>
+                <p className="mx-auto mt-4 max-w-[480px] text-[14px] leading-relaxed text-[#8A8A8A]">Respondo con los datos reales de la empresa y ejecuto órdenes sencillas. Antes de cambiar algo, siempre te pido confirmación.</p>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }} className="mt-9 w-full max-w-[680px]">
+                <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} onSendText={send} busy={sending} autoFocus />
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {STARTERS.map(({ Icon, title, prompt }) => (
+                    <button key={title} type="button" onClick={() => send(prompt)} className="flex items-center gap-2 rounded-full bg-white/[0.05] px-4 py-2 text-[13px] text-[#D0D0D0] transition-colors hover:bg-white/[0.1] hover:text-[#F5F5F5]">
+                      <Icon size={14} className="text-[#F4EEE2]" /> {title}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-5 text-[11.5px] text-[#767676]">Enter envía · Mayús + Enter salto de línea · «/» atajos · ↑ recupera tu último mensaje</p>
+              </motion.div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 pb-4" style={{ paddingLeft: sidebarOpen ? 0 : 36 }}>
+                <h1 className="min-w-0 truncate text-[16px] font-semibold tracking-tight text-[#F5F5F5]">{history.find((c) => c.id === convId)?.title || 'Nueva conversación'}</h1>
+                <button type="button" onClick={newChat} className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-white/[0.06] px-4 py-2 text-[12.5px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/[0.12]">
+                  <PlusIcon size={12} /> Nueva
+                </button>
+              </div>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto">
+                <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 pb-6">
+                  {trimmedOnce && <p className="text-center text-[11px] text-[#8A8A8A]">Mostrando los últimos {MAX_MESSAGES} mensajes — la conversación sigue igual, solo se liberó espacio.</p>}
+                  {messages.map((m, i) => {
+                    const isAssistantAnswer = m.role === 'assistant' && m.topic !== undefined
+                    const last = i === lastIdx
+                    return (
+                      <MessageBubble
+                        key={i}
+                        plain
+                        role={m.role}
+                        content={m.content}
+                        action={m.action}
+                        status={m.status}
+                        actorId={user?.uid}
+                        onConfirm={() => confirm(i)}
+                        onCancel={() => setStatus(i, 'cancelled')}
+                        revealing={Boolean(m.fresh) && last && !sending}
+                        onTick={scrollDown}
+                        onDone={() => setMessages((prev) => prev.map((mm, k) => (k === i && mm.fresh ? { ...mm, fresh: false } : mm)))}
+                        onCopy={m.role === 'assistant' ? () => copyText(m.content) : undefined}
+                        onRegenerate={isAssistantAnswer && last && !sending ? () => regenerate(i) : undefined}
+                        onEdit={m.role === 'user' && !sending ? () => editFrom(i) : undefined}
+                        chips={isAssistantAnswer && last && !sending ? chipsFor(m.topic) : undefined}
+                        onChip={send}
+                      />
+                    )
+                  })}
+                  {sending && (
+                    <div className="flex items-center gap-3">
+                      <ParticleCore size={34} busy />
+                      <span className="ador-shimmer-text text-[14px] font-medium">Pensando…</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mx-auto w-full max-w-[740px] pt-3">
+                <DesktopComposer value={input} onChange={setInput} onSend={() => send(input)} onSendText={send} onRecall={recallLast} busy={sending} autoFocus />
+              </div>
+            </>
+          )}
+        </div>
       </motion.div>
     )
   }

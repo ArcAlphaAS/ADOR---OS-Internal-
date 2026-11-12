@@ -1990,14 +1990,13 @@ export function subscribeChannelMessages(channelId, onData) {
 // markChatRead()/`chatLastRead` below.
 export function sendChannelMessage(channelId, payload, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
-  return addDoc(collection(db, COLLECTIONS.chatChannels, channelId, 'messages'), {
-    ...messageFields(payload),
-    authorUid: uid,
-    authorName: name,
-    createdAt: serverTimestamp(),
-  }).then((ref) =>
-    updateDoc(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp(), lastMessage: previewOf(payload, uid, name), messageCount: increment(1) }).then(() => ref)
-  )
+  // Un solo lote: el mensaje aparece en pantalla al instante (Firestore lo aplica en local)
+  // y viaja al servidor en un único viaje, junto con la vista previa de la conversación.
+  const ref = doc(collection(db, COLLECTIONS.chatChannels, channelId, 'messages'))
+  const batch = writeBatch(db)
+  batch.set(ref, { ...messageFields(payload), authorUid: uid, authorName: name, createdAt: serverTimestamp() })
+  batch.update(doc(db, COLLECTIONS.chatChannels, channelId), { lastMessageAt: serverTimestamp(), lastMessage: previewOf(payload, uid, name), messageCount: increment(1) })
+  return batch.commit().then(() => ref)
 }
 
 export function updateChannelMessage(channelId, messageId, text) {
@@ -2041,7 +2040,11 @@ export function subscribeDmMessages(dmId, onData) {
 // present on this doc from the original merge-on-first-message write.
 export function sendDmMessage(dmId, participants, payload, uid, name) {
   if (!db) return Promise.reject(new Error('Firestore no configurado'))
-  return setDoc(
+  // Antes era "primero la ficha del DM, y SOLO cuando el servidor la confirmaba, el mensaje":
+  // con conexión lenta el mensaje ni aparecía. Ahora es un solo lote atómico, visible al instante.
+  const ref = doc(collection(db, COLLECTIONS.chatDms, dmId, 'messages'))
+  const batch = writeBatch(db)
+  batch.set(
     doc(db, COLLECTIONS.chatDms, dmId),
     {
       participantUids: participants.map((p) => p.uid),
@@ -2051,14 +2054,9 @@ export function sendDmMessage(dmId, participants, payload, uid, name) {
       messageCount: increment(1),
     },
     { merge: true }
-  ).then(() =>
-    addDoc(collection(db, COLLECTIONS.chatDms, dmId, 'messages'), {
-      ...messageFields(payload),
-      authorUid: uid,
-      authorName: name,
-      createdAt: serverTimestamp(),
-    })
   )
+  batch.set(ref, { ...messageFields(payload), authorUid: uid, authorName: name, createdAt: serverTimestamp() })
+  return batch.commit().then(() => ref)
 }
 
 export function updateDmMessage(dmId, messageId, text) {
