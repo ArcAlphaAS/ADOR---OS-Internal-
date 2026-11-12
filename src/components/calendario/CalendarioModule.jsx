@@ -17,6 +17,7 @@ import DayAgenda from './DayAgenda'
 import CalendarioGreeting from './CalendarioGreeting'
 import EventDetailModal from './EventDetailModal'
 import EventEditorModal from './EventEditorModal'
+import ConfirmDialog from '../common/ConfirmDialog'
 import ContextMenu from '../common/ContextMenu'
 import PhoneCalendar from './PhoneCalendar'
 import usePhone from '../../hooks/usePhone'
@@ -237,6 +238,7 @@ export default function CalendarioModule({ user }) {
   const [editor, setEditor] = useState(null) // { event } | { draft }
   const [saving, setSaving] = useState(false)
   const [needPermission, setNeedPermission] = useState(false)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
   const [quick, setQuick] = useState('')
   const quickRef = useRef(null)
   const [ctx, setCtx] = useState(null) // { x, y, kind: 'event'|'slot', event?, date? }
@@ -538,7 +540,7 @@ export default function CalendarioModule({ user }) {
             </div>
             <button
               type="button"
-              onClick={disconnect}
+              onClick={() => setConfirmDisconnect(true)}
               className="ml-2 flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-[#767676] transition-colors duration-150 hover:text-[#F5F5F5]"
             >
               <CloseIcon size={11} /> Desconectar
@@ -599,6 +601,17 @@ export default function CalendarioModule({ user }) {
       <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
       <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} events={events} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.kind === 'event' ? ctx.event.title : 'Este horario'} subtitle={ctx.kind === 'event' ? (ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`) : ctx.date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} onClose={() => setCtx(null)} items={ctxItems()} />}
+      <AnimatePresence>
+        {confirmDisconnect && (
+          <ConfirmDialog
+            title="¿Desconectar Google Calendar?"
+            description="Dejarás de ver tus eventos aquí y no podrás crear ni editar desde ADOR OS. Tus eventos en Google no se borran, y puedes volver a conectar cuando quieras."
+            confirmLabel="Desconectar"
+            onConfirm={disconnect}
+            onClose={() => setConfirmDisconnect(false)}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
     </motion.div>
   )
