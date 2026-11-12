@@ -36,7 +36,7 @@ function actorNameFor(user) {
 // feedback that a separate personal-notebook tab felt redundant with a
 // personal-today tab; there's only one "your day" screen now.
 const VIEWS = [
-  { id: 'hoy', label: 'Hoy', Icon: CalendarIcon },
+  { id: 'hoy', label: 'Mis tareas', Icon: CalendarIcon },
   { id: 'lista', label: 'Lista', Icon: ListViewIcon },
   { id: 'kanban', label: 'Kanban', Icon: KanbanIcon },
   { id: 'timeline', label: 'Timeline', Icon: TimelineIcon },

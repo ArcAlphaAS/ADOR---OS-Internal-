@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos, subscribeTaskViewers, pingTaskViewing, clearTaskViewing } from '../../lib/firestore'
-import { STATUSES, PRIORITIES, RECURRENCES, statusMeta } from '../../lib/workspace'
+import { STATUSES, PRIORITIES, RECURRENCES, statusMeta, REMIND_OPTIONS, remindDate, remindLabel } from '../../lib/workspace'
 import TaskComments from './TaskComments'
 import { SubtasksBlock } from './TaskChrome'
 import { AssigneeCell } from './TaskCells'
 import Avatar from '../shell/Avatar'
 import { quarterKey } from '../../lib/finance'
-import { CloseIcon, CheckCircleIcon, FlagIcon, UsersIcon, CalendarIcon, TimelineIcon, TargetIcon, ClockIcon, LockIcon, MoreIcon, ChevronDownIcon } from '../icons'
+import { CloseIcon, CheckCircleIcon, FlagIcon, UsersIcon, CalendarIcon, TimelineIcon, TargetIcon, ClockIcon, LockIcon, MoreIcon, ChevronDownIcon, BellIcon } from '../icons'
 import { SHEET, swipeToClose } from '../../lib/motion'
 import { useToast } from '../../hooks/useToast'
 
@@ -465,6 +465,20 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                         </button>
                       )}
                     </div>
+                  </div>
+                </Prop>
+                <Prop icon={BellIcon} label="Recordarme" hint="No cambia cuándo vence: solo cuándo vuelve a salir en «Para retomar» de Mis tareas y en la campana.">
+                  <div className="flex flex-wrap items-center gap-1 px-1">
+                    {task.remindAt && <span className="mr-1 text-[12px] font-medium text-[#E8C15A]">{remindLabel(task)}</span>}
+                    {REMIND_OPTIONS.map((o) => (
+                      <button key={o.days} type="button" onClick={() => applyUpdate({ remindAt: remindDate(o.days) })} className="rounded-full border border-white/[0.1] px-2 py-0.5 text-[11px] text-[#999999] transition-colors hover:border-white/[0.25] hover:text-[#F5F5F5]">
+                        {o.label}
+                      </button>
+                    ))}
+                    <input type="date" value={task.remindAt?.toDate ? task.remindAt.toDate().toISOString().slice(0, 10) : ''} onChange={(e) => applyUpdate({ remindAt: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={dateClass} aria-label="Fecha del recordatorio" />
+                    {task.remindAt && (
+                      <button type="button" onClick={() => applyUpdate({ remindAt: null })} className="px-1.5 text-[11px] text-[#8A8A8A] hover:text-[#EF5350]">Quitar</button>
+                    )}
                   </div>
                 </Prop>
                 <Prop icon={TimelineIcon} label="Timeline" hint="Es el tramo de trabajo: se dibuja como barra en la vista Timeline.">

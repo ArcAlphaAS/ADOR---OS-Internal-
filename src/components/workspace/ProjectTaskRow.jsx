@@ -18,7 +18,7 @@ import { CheckCircleIcon, PlayIcon } from '../icons'
 // leaving the pick entirely automatic); everything else is identical
 // between the two callers on purpose, per direct request that Hoy/
 // Personal/Grupo all read as the same kind of table.
-export default function ProjectTaskRow({ task, workstream, workstreams = [], userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus }) {
+export default function ProjectTaskRow({ task, workstream, workstreams = [], userById, users, onOpen, actorUserId, actorName, onReschedule, onFocus, chip }) {
   const completed = task.status === 'completado'
   const phone = usePhone()
   const showToast = useToast()
@@ -40,7 +40,7 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
     }
   }
 
-  if (phone) return <PhoneTaskCard workstreams={workstreams} actorUserId={actorUserId} task={task} workstream={workstream} userById={userById} actorName={actorName} onOpen={onOpen} onReschedule={onReschedule} />
+  if (phone) return <PhoneTaskCard workstreams={workstreams} actorUserId={actorUserId} task={task} workstream={workstream} userById={userById} actorName={actorName} onOpen={onOpen} onReschedule={onReschedule} chip={chip} />
 
   return (
     <div>
@@ -90,6 +90,17 @@ export default function ProjectTaskRow({ task, workstream, workstreams = [], use
             style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
           >
             → Hoy
+          </button>
+        )}
+        {chip && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); chip.onClick(task) }}
+            title={chip.title}
+            className="flex-shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors duration-150 hover:bg-white/10"
+            style={{ borderColor: 'rgba(232,193,90,0.5)', color: '#E8C15A' }}
+          >
+            {chip.label}
           </button>
         )}
         {onFocus && !completed && (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeTasksForUser, subscribeClients, subscribeProyectosInternos } from '../lib/firestore'
-import { isOverdue, isDueToday, isPendingFor, workstreamId } from '../lib/workspace'
+import { isOverdue, isDueToday, isPendingFor, isReminderDue, remindLabel, workstreamId } from '../lib/workspace'
 
 // Overdue / due-today tasks assigned to the signed-in user, surfaced in the
 // top bar bell — same pattern as useClientNotifications' "sin contacto +7
@@ -40,8 +40,16 @@ export function useTaskNotifications(userId) {
     })
     .sort((a, b) => b.days - a.days)
 
-  return flagged.map((t) => ({
-    text: `${t.title}${t.workstreamName ? ` — ${t.workstreamName}` : ''}`,
-    time: t.overdue ? `${t.days}d atrasada` : 'vence hoy',
-  }))
+  // Recordatorios que ya les toca ("recuérdamela en 3 días") y que no están ya atrasadas / para hoy.
+  const reminders = tasks
+    .filter((t) => !isPendingFor(t, userId) && isReminderDue(t) && !isOverdue(t) && !isDueToday(t))
+    .map((t) => ({ text: `🔔 ${t.title}${workstreamNameById[t.workstreamId] ? ` — ${workstreamNameById[t.workstreamId]}` : ''}`, time: `recordatorio · ${remindLabel(t)}` }))
+
+  return [
+    ...flagged.map((t) => ({
+      text: `${t.title}${t.workstreamName ? ` — ${t.workstreamName}` : ''}`,
+      time: t.overdue ? `${t.days}d atrasada` : 'vence hoy',
+    })),
+    ...reminders,
+  ]
 }

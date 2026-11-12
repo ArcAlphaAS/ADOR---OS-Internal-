@@ -75,6 +75,7 @@ export function describeTaskChange(data) {
   if ('startDate' in data || 'dueDate' in data || 'endDate' in data) return 'Fechas actualizadas'
   if ('workstreamId' in data) return 'Proyecto actualizado'
   if ('blockedBy' in data) return 'Dependencias actualizadas'
+  if ('remindAt' in data) return data.remindAt ? 'Recordatorio programado' : 'Recordatorio quitado'
   if ('recurrence' in data) return data.recurrence ? `Repetición → ${recurrenceMeta(data.recurrence).label}` : 'Repetición quitada'
   if ('description' in data) return 'Descripción actualizada'
   if ('title' in data) return 'Título actualizado'
@@ -134,6 +135,43 @@ export function workstreamHealth(tasks) {
 export function isOverdue(task) {
   const due = task.dueDate?.toDate?.()
   return Boolean(due && task.status !== 'completado' && due < new Date())
+}
+
+// ---- Recordatorios ("recuérdamela en 3 días") ----
+// `remindAt` es independiente de la fecha límite: no cambia cuándo vence, solo cuándo la tarea
+// vuelve a salir en "Para retomar" de Mis tareas y en la campana.
+export const REMIND_OPTIONS = [
+  { days: 1, label: 'Mañana' },
+  { days: 3, label: 'En 3 días' },
+  { days: 7, label: 'En 1 semana' },
+]
+export function remindDate(days) {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + days)
+  return d
+}
+export function isReminderDue(task) {
+  const r = task.remindAt?.toDate?.()
+  if (!r || task.status === 'completado') return false
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+  return r <= end
+}
+export function remindLabel(task) {
+  const r = task.remindAt?.toDate?.()
+  return r ? r.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' }) : ''
+}
+
+// Dónde cae una tarea con fecha futura (la que ya venció o vence hoy tiene su propia sección).
+export function dueBucket(task) {
+  const due = task.dueDate?.toDate?.()
+  if (!due) return 'sin'
+  const start = new Date(); start.setHours(0, 0, 0, 0)
+  const days = Math.round((new Date(due.getFullYear(), due.getMonth(), due.getDate()) - start) / 86400000)
+  if (days <= 1) return 'manana'
+  if (days <= 7) return 'proximos'
+  return 'despues'
 }
 
 export function isDueToday(task) {

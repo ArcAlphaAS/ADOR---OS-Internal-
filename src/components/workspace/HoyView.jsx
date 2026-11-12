@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   isOverdue,
   isDueToday,
+  isReminderDue,
+  dueBucket,
   isCompletedToday,
   isPendingFor,
   withTimeout,
@@ -19,7 +21,7 @@ import {
 import { CATEGORIES, suggestCategory } from '../../lib/notes'
 import { createNote, updateNote, deleteNote, createTask, applyTaskUpdate, toggleTaskComplete, findOrCreateGeneralProyecto, subscribeObjetivos } from '../../lib/firestore'
 import AvatarStack from './AvatarStack'
-import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon } from '../icons'
+import { CloseIcon, CheckCircleIcon, CalendarIcon, ListViewIcon, ChevronDownIcon, FlagIcon, PlayIcon, BellIcon } from '../icons'
 import { useToast } from '../../hooks/useToast'
 import { PillCell, DueDateCell, TimelineCell, AssigneeCell, WorkstreamCell } from './TaskCells'
 import { MiniCalendar, ProgressDonut, ObjetivoSemanaCard, QuickActionsCard } from './HoyRightRail'
@@ -189,8 +191,8 @@ function HoyHeader({ total, completedCount, overdueCount }) {
   return (
     <div className="flex items-start justify-between gap-6">
       <div>
-        <h1 className="ador-title">Hoy</h1>
-        <p className="mt-0.5 text-[13px] capitalize text-[#888888]">{dateLabel}</p>
+        <h1 className="ador-title">Mis tareas</h1>
+        <p className="mt-0.5 text-[13px] capitalize text-[#888888]">Hoy · {dateLabel}</p>
         <p className="mt-2 text-[12px] text-[#8A8A8A]">
           {total} tarea{total === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}
           <span style={{ color: statusColor }}>{statusLabel}.</span>
@@ -467,7 +469,7 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
 // Collapsible — a small chevron next to the count, matching the reference's
 // "click the header to fold a group" behavior. Defaults open; state is
 // local and doesn't persist, same as Lista's/Kanban's own transient UI state.
-function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, workstreams, onReschedule, onFocus, headerAction, children, defaultOpen = true }) {
+function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId, userById, users, workstreamById, workstreams, onReschedule, onFocus, chip, headerAction, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   const phone = usePhone()
   if (tasks.length === 0 && !children) return null
@@ -486,7 +488,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
         {open && (
           <>
             {tasks.map((task) => (
-              <PhoneTaskCard key={task.id} task={task} workstream={workstreamById[task.workstreamId]} workstreams={workstreams} userById={userById} actorUserId={actorUserId} actorName={actorName} onOpen={onOpenTask} onReschedule={onReschedule} />
+              <PhoneTaskCard key={task.id} task={task} workstream={workstreamById[task.workstreamId]} workstreams={workstreams} userById={userById} actorUserId={actorUserId} actorName={actorName} onOpen={onOpenTask} onReschedule={onReschedule} chip={chip} />
             ))}
             {children}
           </>
@@ -533,6 +535,7 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
                   actorName={actorName}
                   onReschedule={onReschedule}
                   onFocus={onFocus}
+                  chip={chip}
                 />
               ))}
             </div>
@@ -643,11 +646,40 @@ function AddPendiente({ actorUserId, actorName, userById, users, workstreams = [
 // below always has something actionable (at minimum, its own "+ Agregar
 // pendiente" row), so the page is never fully dead the way the old
 // Vencidas/Para-hoy-only version could be.
-function NadaUrgente() {
+function NadaUrgente({ upcoming = 0, onSeeUpcoming }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl px-1 py-1">
+    <div className="flex flex-wrap items-center gap-2.5 rounded-xl px-1 py-1">
       <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#4CAF50]" style={{ animation: 'ador-pulse 2.5s ease-in-out infinite' }} />
       <p className="text-[13px] text-[#8A8A8A]">Nada vencido, nada para hoy.</p>
+      {upcoming > 0 && onSeeUpcoming && (
+        <button type="button" onClick={onSeeUpcoming} className="text-[13px] font-medium text-[#F4EEE2] hover:underline">
+          Tienes {upcoming} próxima{upcoming === 1 ? '' : 's'} →
+        </button>
+      )}
+    </div>
+  )
+}
+
+// Filtros de Mis tareas con su cuenta: así se sabe, de un vistazo, cuánto hay en cada tiempo
+// aunque no sea para hoy. Un indicador que se desliza, como el resto de selectores de la app.
+function TimeFilter({ value, onChange, counts }) {
+  const items = [
+    ['todo', 'Todo'],
+    ['hoy', 'Hoy'],
+    ['proximas', 'Próximas'],
+    ['sin', 'Sin fecha'],
+  ]
+  return (
+    <div className="ador-glass flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {items.map(([id, label]) => (
+        <button key={id} type="button" onClick={() => onChange(id)} className="relative flex-shrink-0 rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150" style={{ color: value === id ? '#0A0A0A' : '#888888' }}>
+          {value === id && <motion.div layoutId="hoy-time-filter" className="absolute inset-0 rounded-full" style={{ background: '#F5F5F5' }} transition={{ type: 'spring', stiffness: 500, damping: 34 }} />}
+          <span className="relative flex items-center gap-1.5">
+            {label}
+            {counts[id] > 0 && <span className="text-[11px] opacity-60">{counts[id]}</span>}
+          </span>
+        </button>
+      ))}
     </div>
   )
 }
@@ -663,9 +695,24 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
   // Excludes anything still pending your own confirmation — see
   // lib/workspace.js's isPendingFor. It doesn't count as yours yet.
   const mine = tasks.filter((t) => (t.assignedTo || []).includes(userId) && !isPendingFor(t, userId) && t.status !== 'completado')
+  const [filter, setFilter] = useState('todo')
   const vencidas = mine.filter(isOverdue)
   const hoy = mine.filter((t) => isDueToday(t) && !isOverdue(t))
-  const pendientes = mine.filter((t) => !isOverdue(t) && !isDueToday(t))
+  // "Para retomar": las que pediste que te recordaran y ya les toca (no repite las vencidas ni las de hoy).
+  const retomar = mine.filter((t) => isReminderDue(t) && !isOverdue(t) && !isDueToday(t))
+  const restantes = mine.filter((t) => !isOverdue(t) && !isDueToday(t) && !isReminderDue(t))
+  const manana = restantes.filter((t) => dueBucket(t) === 'manana')
+  const proximos = restantes.filter((t) => dueBucket(t) === 'proximos')
+  const despues = restantes.filter((t) => dueBucket(t) === 'despues')
+  const sinFecha = restantes.filter((t) => dueBucket(t) === 'sin')
+  const pendientes = restantes
+  const counts = {
+    todo: mine.length,
+    hoy: vencidas.length + retomar.length + hoy.length,
+    proximas: manana.length + proximos.length + despues.length,
+    sin: sinFecha.length,
+  }
+  const show = (group) => filter === 'todo' || filter === group
   const completedToday = tasks.filter((t) => (t.assignedTo || []).includes(userId) && isCompletedToday(t))
   const pendingNotes = notes.filter((n) => n.status !== 'archivada')
 
@@ -674,7 +721,7 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
   // naturally drops out of `mine` and this falls back to the automatic pick,
   // no explicit "clear" step needed.
   const manualFocusTask = manualFocusId ? mine.find((t) => t.id === manualFocusId) : null
-  const focusTask = manualFocusTask || pickFocusTask(vencidas, hoy, pendientes)
+  const focusTask = manualFocusTask || pickFocusTask(vencidas, [...hoy, ...retomar], pendientes)
 
   const archiveNote = (id) => updateNote(id, { status: 'archivada' }).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
   const deleteNoteById = (id) => deleteNote(id).catch((error) => showToast(`No se pudo eliminar: ${error.message}`))
@@ -692,7 +739,11 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
     vencidas.forEach((task) => rescheduleToday(task))
   }
 
+  const clearReminder = (task) =>
+    withTimeout(applyTaskUpdate(task, { remindAt: null }, actorUserId, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+
   const focusNewTask = () => {
+    setFilter((f) => (f === 'proximas' || f === 'hoy' ? 'todo' : f))
     setAddingPendiente(true)
     pendientesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
@@ -733,69 +784,126 @@ export default function HoyView({ user, tasks, userId, userById, users, workstre
           )}
         </AnimatePresence>
 
-        {vencidas.length === 0 && hoy.length === 0 && <NadaUrgente />}
+        <TimeFilter value={filter} onChange={setFilter} counts={counts} />
 
-        <Section
-          title="Vencidas"
-          color="#EF5350"
-          Icon={CalendarIcon}
-          tasks={vencidas}
-          onOpenTask={onOpenTask}
-          actorName={actorName}
-          actorUserId={actorUserId}
-          userById={userById}
-          users={users}
-          workstreamById={workstreamById}
-          workstreams={workstreams}
-          onReschedule={rescheduleToday}
-          onFocus={(task) => setManualFocusId(task.id)}
-          headerAction={
-            vencidas.length > 1 && (
-              <button
-                type="button"
-                onClick={rescheduleAllVencidas}
-                className="whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors duration-150 hover:bg-[#EF5350]/10"
-                style={{ borderColor: '#EF5350', color: '#EF5350' }}
-              >
-                Mover todas a hoy
-              </button>
-            )
-          }
-        />
-        <Section
-          title="Para hoy"
-          color="#F4EEE2"
-          Icon={CalendarIcon}
-          tasks={hoy}
-          onOpenTask={onOpenTask}
-          actorName={actorName}
-          actorUserId={actorUserId}
-          userById={userById}
-          users={users}
-          workstreamById={workstreamById}
-          workstreams={workstreams}
-          onFocus={(task) => setManualFocusId(task.id)}
-        />
-        <div ref={pendientesRef}>
+        {(filter === 'todo' || filter === 'hoy') && vencidas.length === 0 && hoy.length === 0 && retomar.length === 0 && (
+          <NadaUrgente upcoming={counts.proximas} onSeeUpcoming={() => setFilter('proximas')} />
+        )}
+
+        {show('hoy') && (
           <Section
-            title="Mis Pendientes"
-            color="#888888"
-            Icon={ListViewIcon}
-            tasks={pendientes}
-            onOpenTask={onOpenTask}
-            actorName={actorName}
-            actorUserId={actorUserId}
-            userById={userById}
-            users={users}
-            workstreamById={workstreamById}
-            workstreams={workstreams}
-            onFocus={(task) => setManualFocusId(task.id)}
-          >
-            <div className="pt-1">
-              <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} workstreams={workstreams} adding={addingPendiente} onOpenChange={setAddingPendiente} />
-            </div>
-          </Section>
-        </div>
+            title="Vencidas"
+            color="#EF5350"
+            Icon={CalendarIcon}
+            tasks={vencidas}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+            onReschedule={rescheduleToday}
+            headerAction={
+              vencidas.length > 1 && (
+                <button
+                  type="button"
+                  onClick={rescheduleAllVencidas}
+                  className="whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors duration-150 hover:bg-[#EF5350]/10"
+                  style={{ borderColor: '#EF5350', color: '#EF5350' }}
+                >
+                  Mover todas a hoy
+                </button>
+              )
+            }
+          />
+        )}
+        {show('hoy') && (
+          <Section
+            title="Para retomar"
+            color="#E8C15A"
+            Icon={BellIcon}
+            tasks={retomar}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+            chip={{ label: '✓ Visto', title: 'Quitar el recordatorio (sigue en tu lista)', onClick: clearReminder }}
+          />
+        )}
+        {show('hoy') && (
+          <Section
+            title="Para hoy"
+            color="#F4EEE2"
+            Icon={CalendarIcon}
+            tasks={hoy}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+          />
+        )}
+        {show('proximas') && <Section title="Mañana" color="#F4EEE2" Icon={CalendarIcon} tasks={manana}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+        />}
+        {show('proximas') && <Section title="Próximos días" color="#B5B5B5" Icon={CalendarIcon} tasks={proximos}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+        />}
+        {show('proximas') && <Section title="Más adelante" color="#888888" Icon={CalendarIcon} tasks={despues} defaultOpen={filter === 'proximas'}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+        />}
+        {(show('sin') || filter === 'todo') && (
+          <div ref={pendientesRef}>
+            <Section
+              title="Sin fecha"
+              color="#888888"
+              Icon={ListViewIcon}
+              tasks={sinFecha}
+          onOpenTask={onOpenTask}
+          actorName={actorName}
+          actorUserId={actorUserId}
+          userById={userById}
+          users={users}
+          workstreamById={workstreamById}
+          workstreams={workstreams}
+          onFocus={(task) => setManualFocusId(task.id)}
+            >
+              <div className="pt-1">
+                <AddPendiente actorUserId={actorUserId} actorName={actorName} userById={userById} users={users} workstreams={workstreams} adding={addingPendiente} onOpenChange={setAddingPendiente} />
+              </div>
+            </Section>
+          </div>
+        )}
 
         <HechoCard tasks={tasks} userId={userId} userById={userById} workstreamById={workstreamById} onOpenTask={onOpenTask} />
       </div>

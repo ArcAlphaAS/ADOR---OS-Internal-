@@ -17,7 +17,7 @@ import { haptic } from '../../lib/haptics'
 // columnas de la tabla (estado, fechas, descripción) viven ahí.
 const fmt = (d) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 
-export default function PhoneTaskCard({ task, workstream, workstreams = [], userById, actorUserId, actorName, onOpen, onReschedule }) {
+export default function PhoneTaskCard({ task, workstream, workstreams = [], userById, actorUserId, actorName, onOpen, onReschedule, chip }) {
   const [menu, setMenu] = useState(null) // mantener pulsado → menú de la tarea (el "clic derecho" del teléfono)
   const press = useRef(null)
   const startPt = useRef(null)
@@ -134,6 +134,9 @@ export default function PhoneTaskCard({ task, workstream, workstreams = [], user
           {dueText && <span className="flex-shrink-0" style={{ color: overdue ? '#D98A86' : isDueToday(task) ? '#F4EEE2' : '#8E8E93' }}>{workstream?.name ? '· ' : ''}{dueText}</span>}
           {subs.length > 0 && <span className="flex-shrink-0">· ☑ {subsDone}/{subs.length}</span>}
         </span>
+        {chip && (
+          <button type="button" onClick={(e) => { e.stopPropagation(); chip.onClick(task) }} className="mt-2 rounded-full bg-[#E8C15A]/15 px-3 py-1 text-[12.5px] font-medium text-[#E8C15A]">{chip.label}</button>
+        )}
         {onReschedule && overdue && (
           <button type="button" onClick={(e) => { e.stopPropagation(); onReschedule(task) }} className="mt-2 rounded-full bg-white/[0.08] px-3 py-1 text-[12.5px] font-medium text-[#F4EEE2]">Mover a hoy</button>
         )}

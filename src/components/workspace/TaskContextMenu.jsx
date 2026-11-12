@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { applyTaskUpdate, createTask, deleteTask, restoreTask, toggleTaskComplete, findOrCreateGeneralProyecto } from '../../lib/firestore'
-import { withTimeout, workstreamId as buildWorkstreamId } from '../../lib/workspace'
+import { withTimeout, workstreamId as buildWorkstreamId, REMIND_OPTIONS, remindDate } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { isTouchLayout, SHEET } from '../../lib/motion'
 import { haptic } from '../../lib/haptics'
@@ -37,6 +37,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
   const ref = useRef(null)
   const [pos, setPos] = useState({ left: x, top: y })
   const [moving, setMoving] = useState(false)
+  const [reminding, setReminding] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   // Tras mantener pulsado en el teléfono, soltar el dedo no debe cerrar el menú al instante.
   const armed = useRef(false)
@@ -56,7 +57,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
       left: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)),
       top: Math.max(8, Math.min(y, window.innerHeight - r.height - 8)),
     })
-  }, [x, y, moving, confirmDelete])
+  }, [x, y, moving, reminding, confirmDelete])
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -98,6 +99,12 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
       actorUserId
     ).then(() => showToast('Tarea duplicada.'))
 
+  const remindIn = async (days) => {
+    const d = days ? remindDate(days) : null
+    await applyTaskUpdate(task, { remindAt: d }, actorUserId, actorName)
+    showToast(d ? `Te lo recordaré el ${d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}.` : 'Recordatorio quitado.')
+  }
+
   const moveTo = async (id) => {
     const target = id || (await findOrCreateGeneralProyecto(actorName).then((pid) => buildWorkstreamId('proyecto', pid)))
     await applyTaskUpdate(task, { workstreamId: target }, actorUserId, actorName)
@@ -131,6 +138,15 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
           <Item label="Abrir tarea" onClick={() => { onClose(); onOpen(task) }} />
           <Item label="Agregar subtarea" onClick={() => { onClose(); onAddSubtask() }} />
           <Item label="Duplicar" onClick={run(duplicate)} />
+          {!completed && <Item label="Recordarme…" hint={reminding ? '▾' : '▸'} onClick={() => setReminding((v) => !v)} />}
+          {reminding && (
+            <div className="mb-1 ml-2 flex flex-col border-l border-white/[0.08] pl-1.5">
+              {REMIND_OPTIONS.map((o) => (
+                <Item key={o.days} label={o.label} onClick={run(() => remindIn(o.days))} />
+              ))}
+              {task.remindAt && <Item label="Quitar recordatorio" onClick={run(() => remindIn(0))} />}
+            </div>
+          )}
           <Item label="Mover a…" hint={moving ? '▾' : '▸'} onClick={() => setMoving((v) => !v)} />
           {moving && (
             <div className="mb-1 ml-2 flex flex-col border-l border-white/[0.08] pl-1.5">
