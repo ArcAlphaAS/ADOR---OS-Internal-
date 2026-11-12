@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { subscribeDecisions } from '../../lib/firestore'
 import RegisterDecisionModal from './RegisterDecisionModal'
+import Panel, { PanelAction, PanelEmpty } from './Panel'
 
 // Moved out of Workspace (2026-09-17) — it was a fixed, always-on side rail
 // there, which meant it permanently ate width from every Workspace view and
@@ -30,45 +31,25 @@ export default function DecisionesCard({ actorName }) {
     .slice(0, 6)
 
   return (
-    <div className="ador-glass ador-grain rounded-2xl px-5 py-5">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Decisiones de Dirección
-          </span>
-          <p className="mt-1 text-[11px] text-[#8A8A8A]">Registro compartido — visible para todo el equipo.</p>
-        </div>
-      </div>
-
+    <Panel title="Decisiones de dirección" subtitle="Registro compartido con todo el equipo" action={<PanelAction onClick={() => setShowRegister(true)}>+ Registrar</PanelAction>}>
       {latest.length === 0 ? (
-        <p className="mt-4 text-[13px] font-light text-[#8A8A8A]">Sin decisiones registradas</p>
+        <PanelEmpty>Aún no hay decisiones registradas.</PanelEmpty>
       ) : (
-        <div className="mt-3 flex flex-col divide-y divide-white/[0.06]">
+        <ul className="-mx-1 flex flex-col divide-y divide-white/[0.07]">
           {latest.map((d) => (
-            <div key={d.id} className="flex flex-col gap-1.5 py-3 first:pt-0">
-              <p className="line-clamp-2 text-[13px] text-[#F5F5F5]">{d.title}</p>
-              {d.linkedName && <span className="text-[11px] text-[#F4EEE2]">{d.linkedName}</span>}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#8A8A8A]">{formatDate(d.decidedAt)}</span>
-                <span className="text-[11px] text-[#8A8A8A]">{d.registeredBy}</span>
-              </div>
-            </div>
+            <li key={d.id} className="px-1 py-3.5 first:pt-0">
+              <p className="line-clamp-2 text-[14.5px] leading-snug text-[#F5F5F5]">{d.title}</p>
+              <p className="mt-1 truncate text-[12.5px] text-[#8E8E93]">
+                {[formatDate(d.decidedAt), d.registeredBy, d.linkedName].filter(Boolean).join(' · ')}
+              </p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-
-      <button
-        type="button"
-        onClick={() => setShowRegister(true)}
-        className="mt-4 w-full rounded-[10px] border py-2.5 text-[13px] font-medium transition-colors duration-150 hover:bg-white/10"
-        style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
-      >
-        + Registrar Decisión
-      </button>
 
       <AnimatePresence>
         {showRegister && <RegisterDecisionModal workstreams={[]} actorName={actorName} onClose={() => setShowRegister(false)} />}
       </AnimatePresence>
-    </div>
+    </Panel>
   )
 }

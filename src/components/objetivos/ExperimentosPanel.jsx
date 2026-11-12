@@ -4,6 +4,7 @@ import { subscribeExperimentos, createExperimento, updateExperimento, deleteExpe
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { CloseIcon } from '../icons'
+import Panel, { PanelAction, PanelEmpty } from './Panel'
 
 function ExperimentRow({ experimento, actorName }) {
   const [editingResult, setEditingResult] = useState(false)
@@ -28,9 +29,9 @@ function ExperimentRow({ experimento, actorName }) {
   const status = EXPERIMENT_STATUSES.find((s) => s.id === experimento.status) || EXPERIMENT_STATUSES[0]
 
   return (
-    <div className="flex flex-col gap-1.5 py-3 first:pt-0">
+    <div className="flex flex-col gap-2 px-1 py-3.5 first:pt-0">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[13px] text-[#F5F5F5]">{experimento.hypothesis}</p>
+        <p className="text-[14.5px] leading-snug text-[#F5F5F5]">{experimento.hypothesis}</p>
         <button
           type="button"
           onClick={remove}
@@ -54,7 +55,7 @@ function ExperimentRow({ experimento, actorName }) {
           />
         </div>
       ) : (
-        experimento.result && <p className="text-[12px] text-[#888888]">→ {experimento.result}</p>
+        experimento.result && <p className="text-[13px] text-[#8E8E93]">→ {experimento.result}</p>
       )}
 
       <div className="flex items-center gap-1.5">
@@ -63,10 +64,10 @@ function ExperimentRow({ experimento, actorName }) {
             key={s.id}
             type="button"
             onClick={() => setStatus(s.id)}
-            className="rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors duration-150"
+            className="rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors duration-150"
             style={{
               background: status.id === s.id ? `${s.color}22` : 'transparent',
-              color: status.id === s.id ? s.color : '#444444',
+              color: status.id === s.id ? s.color : '#6E6E73',
             }}
           >
             {s.label}
@@ -156,39 +157,18 @@ export default function ExperimentosPanel({ objetivos, actorName }) {
   const sorted = [...experimentos].sort((a, b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0))
 
   return (
-    <div className="ador-glass ador-grain rounded-2xl px-5 py-5">
-      <div className="flex items-center justify-between">
-        <span
-          className="font-medium text-[#8A8A8A]"
-          style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}
-        >
-          Experimentos
-        </span>
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: experimentStatusColor('pendiente'), animation: 'ador-pulse 2.4s ease-in-out infinite' }} />
-      </div>
-
-      {adding && <div className="mt-3"><NewExperimentRow objetivos={objetivos} actorName={actorName} onDone={() => setAdding(false)} /></div>}
+    <Panel title="Experimentos" subtitle="Prueba, mide, aprende" action={!adding ? <PanelAction onClick={() => setAdding(true)}>+ Registrar</PanelAction> : null}>
+      {adding && <div className="mb-2"><NewExperimentRow objetivos={objetivos} actorName={actorName} onDone={() => setAdding(false)} /></div>}
 
       {sorted.length === 0 && !adding ? (
-        <p className="mt-4 text-[13px] font-light text-[#8A8A8A]">Sin experimentos registrados — prueba, mide, aprende.</p>
+        <PanelEmpty>Aún no hay experimentos registrados.</PanelEmpty>
       ) : (
-        <div className="mt-1 flex flex-col divide-y divide-white/[0.06]">
+        <div className="-mx-1 flex flex-col divide-y divide-white/[0.07]">
           {sorted.map((e) => (
             <ExperimentRow key={e.id} experimento={e} actorName={actorName} />
           ))}
         </div>
       )}
-
-      {!adding && (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="mt-4 w-full rounded-[10px] border py-2 text-[12px] font-medium transition-colors duration-150 hover:bg-white/10"
-          style={{ borderColor: 'rgba(244,238,226,0.45)', color: '#F4EEE2' }}
-        >
-          + Registrar experimento
-        </button>
-      )}
-    </div>
+    </Panel>
   )
 }

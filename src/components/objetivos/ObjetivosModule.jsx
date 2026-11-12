@@ -13,6 +13,7 @@ import ObjetivoRow from './ObjetivoRow'
 import NewObjetivoModal from './NewObjetivoModal'
 import ExperimentosPanel from './ExperimentosPanel'
 import DecisionesCard from './DecisionesCard'
+import Panel, { PanelAction, PanelEmpty } from './Panel'
 import Avatar from '../shell/Avatar'
 import { SERIF } from '../news/NewsLayout'
 import { TargetIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons'
@@ -134,101 +135,69 @@ const TASK_STATUS = {
   bloqueado: { label: 'Bloqueado', color: '#EF5350' },
 }
 
-function PanelHeader({ icon, title, action }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <p className="flex items-center gap-2.5 text-[15px] font-medium text-[#F5F5F5]">
-        <span className="text-[#AAAAAA]">{icon}</span>
-        {title}
-      </p>
-      {action}
-    </div>
-  )
-}
-
-// Real Workspace tasks linked to this quarter's objetivos.
+// Tareas reales de Workspace vinculadas a los objetivos de este trimestre.
 function IniciativasCard({ tasks, onNavigate }) {
   return (
-    <div className="ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-5">
-      <PanelHeader
-        icon={ICON.tasks}
-        title="Iniciativas vinculadas"
-        action={
-          <button type="button" onClick={() => onNavigate?.('workspace')} className="text-[12.5px] text-[#8A8A8A] hover:text-[#F5F5F5]">
-            Ver en Workspace →
-          </button>
-        }
-      />
+    <Panel title="Iniciativas vinculadas" subtitle={tasks.length ? `${tasks.length} en curso` : null} action={<PanelAction onClick={() => onNavigate?.('workspace')}>Workspace →</PanelAction>} className="h-full">
       {tasks.length === 0 ? (
-        <p className="py-4 text-[13px] leading-relaxed text-[#8A8A8A]">Sin tareas vinculadas. En Workspace, abre una tarea y elige “Objetivo vinculado”.</p>
+        <PanelEmpty>Sin tareas vinculadas. En Workspace, abre una tarea y elige «Objetivo vinculado».</PanelEmpty>
       ) : (
-        <div className="flex flex-col divide-y divide-white/[0.06]">
+        <ul className="-mx-1 flex flex-col divide-y divide-white/[0.07]">
           {tasks.slice(0, 6).map((t) => {
             const st = TASK_STATUS[t.status] || TASK_STATUS.por_hacer
             const due = t.dueDate?.toDate?.()
             return (
-              <div key={t.id} className="flex items-center gap-3 py-3">
-                <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#F4EEE2]" />
+              <li key={t.id} className="flex items-center gap-3 px-1 py-3.5">
+                <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: st.color }} title={st.label} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] text-[#EDEDED]">{t.title}</p>
-                  <p className="truncate text-[12px] text-[#8A8A8A]">
-                    {t.objetivoTitle}
-                    {due ? ` · vence ${due.toLocaleDateString('es', { day: 'numeric', month: 'short' })}` : ''}
-                  </p>
+                  <p className="truncate text-[14.5px] text-[#F5F5F5]">{t.title}</p>
+                  <p className="truncate text-[12.5px] text-[#8E8E93]">{[t.objetivoTitle, due ? `vence ${due.toLocaleDateString('es', { day: 'numeric', month: 'short' })}` : null].filter(Boolean).join(' · ')}</p>
                 </div>
-                <span className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px]" style={{ color: st.color, background: `${st.color}1A` }}>
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.color }} />
-                  {st.label}
-                </span>
                 <span className="flex -space-x-1.5">
                   {t.assignees.slice(0, 2).map((u) => (
-                    <span key={u.id} className="rounded-full ring-2 ring-[#141414]">
-                      <Avatar photoURL={u.photoDataUrl} displayName={u.displayName} email={u.email} size={20} />
+                    <span key={u.id} className="rounded-full ring-2 ring-[#1C1C1E]">
+                      <Avatar photoURL={u.photoDataUrl} displayName={u.displayName} email={u.email} size={22} />
                     </span>
                   ))}
                 </span>
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
-    </div>
+    </Panel>
   )
 }
 
-// The live numbers the objetivos run on, with their target when one exists.
+// Los números en vivo sobre los que corren los objetivos: cuatro mosaicos con la cifra grande y, si hay
+// meta, cuánto de ella llevan.
 function MetricasCard({ liveValues, objetivos, isCurrentQuarter }) {
   const rows = OBJETIVO_METRICS.filter((m) => m.live).map((m) => {
     const goal = objetivos.find((o) => o.type !== 'milestone' && o.metric === m.id && o.targetValue)
     const value = liveValues[m.id] || 0
     const fmt = (v) => (m.unit === 'S/' ? currencyPEN.format(v) : Math.round(v))
     const pct = goal ? Math.min(100, Math.round((value / goal.targetValue) * 100)) : null
-    return { id: m.id, label: m.label, text: goal ? `${fmt(value)} / ${fmt(goal.targetValue)}` : fmt(value), pct }
+    return { id: m.id, label: m.label.replace(' (trimestre)', ''), value: fmt(value), goal: goal ? fmt(goal.targetValue) : null, pct }
   })
   return (
-    <div className="ador-glass ador-grain flex flex-col gap-3 rounded-[22px] p-5">
-      <PanelHeader icon={I(<path d="M5 20V10M12 20V4M19 20v-7" />)} title="Métricas clave" action={<span className="text-[11.5px] text-[#8A8A8A]">{isCurrentQuarter ? 'En vivo' : 'Trimestre actual'}</span>} />
-      <div className="flex flex-col divide-y divide-white/[0.06]">
+    <Panel title="Métricas clave" subtitle={isCurrentQuarter ? 'En vivo' : 'Del trimestre actual'} className="h-full">
+      <div className="grid grid-cols-2 gap-3">
         {rows.map((r) => (
-          <div key={r.id} className="flex flex-col gap-2 py-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-[13.5px] text-[#DDDDDD]">{r.label}</p>
-              <p className="text-[13px] tabular-nums text-[#AAAAAA]">
-                {r.text}
-                {r.pct !== null && <span className="ml-2 font-medium text-[#F5F5F5]">{r.pct}%</span>}
-              </p>
-            </div>
+          <div key={r.id} className="flex min-w-0 flex-col rounded-[18px] bg-white/[0.045] p-4">
+            <p className="truncate text-[12.5px] text-[#8E8E93]">{r.label}</p>
+            <p className="mt-2 truncate text-[26px] font-light leading-none tabular-nums tracking-[-0.02em] text-[#F5F5F5]">{r.value}</p>
             {r.pct !== null ? (
-              <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.08]">
-                <div className="h-full rounded-full" style={{ width: `${r.pct}%`, background: r.pct >= 100 ? '#4CAF50' : '#F4EEE2' }} />
-              </div>
+              <>
+                <div className="mt-3 h-[4px] overflow-hidden rounded-full bg-white/[0.09]"><div className="h-full rounded-full" style={{ width: `${r.pct}%`, background: r.pct >= 100 ? '#7FC98F' : '#F4EEE2' }} /></div>
+                <p className="mt-1.5 text-[11.5px] tabular-nums text-[#8E8E93]">{r.pct}% de {r.goal}</p>
+              </>
             ) : (
-              <p className="text-[11.5px] text-[#6A6A6A]">Sin meta este trimestre</p>
+              <p className="mt-3 text-[11.5px] text-[#6E6E73]">Sin meta</p>
             )}
           </div>
         ))}
       </div>
-    </div>
+    </Panel>
   )
 }
 
@@ -355,7 +324,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2 xl:grid-cols-3">
         <IniciativasCard tasks={openLinkedTasks} onNavigate={onNavigate} />
         <MetricasCard liveValues={liveValueByMetric} objetivos={objetivos} isCurrentQuarter={isCurrentQuarter} />
         <div className="flex flex-col gap-5 lg:col-span-2 xl:col-span-1">
