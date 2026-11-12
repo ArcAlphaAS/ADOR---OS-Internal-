@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, useDragControls } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { useSheetDrag } from '../../hooks/useSheetDrag'
 import { GOOGLE_EVENT_COLORS } from '../../lib/googleCalendar'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 import { CloseIcon } from '../icons'
+import { SHEET } from '../../lib/motion'
 import GuestPicker from './GuestPicker'
 import PersonAvatar from '../chat/PersonAvatar'
 import usePhone from '../../hooks/usePhone'
@@ -55,7 +57,9 @@ function Tile({ icon, title, hint, on, onToggle, disabled, fixed }) {
 export default function EventEditorModal({ event, draft, busy, events = [], onSave, onDelete, onClose }) {
   useEscape(onClose)
   const phone = usePhone()
-  const sheetDrag = useDragControls()
+  const sheet = useSheetDrag(onClose, phone)
+  const [addingGuest, setAddingGuest] = useState(false)
+  const [colorOpen, setColorOpen] = useState(false)
   const isEdit = Boolean(event)
   const src = event || draft || {}
   const start0 = src.start ? new Date(src.start) : new Date()
@@ -186,146 +190,181 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   const detail = 'flex items-start gap-3.5 px-4 py-3.5'
   const iconCls = 'mt-[3px] h-[18px] w-[18px] flex-shrink-0 text-[#8A8A8A]'
 
-  // ---- Teléfono: hoja con el lenguaje de iOS (barra Cancelar · título · Agregar, listas agrupadas
-  // con filas etiqueta–valor, interruptores y los selectores nativos de fecha, hora y alerta).
+  // ---- Teléfono: hoja que sube desde abajo (resorte de iOS) y se cierra arrastrándola desde
+  // cualquier parte. Diseño en tarjetas redondeadas: título y detalles con "+", una fila de
+  // personas con el círculo "Añadir", y baldosas de ajustes que se deslizan de lado.
   if (phone) {
-    const group = 'overflow-hidden rounded-[16px] bg-white/[0.06]'
-    const row = 'relative flex min-h-[48px] items-center gap-3 px-4'
-    const sep = 'border-t border-white/[0.08]'
-    const valuePill = 'relative flex-shrink-0 rounded-[9px] bg-white/[0.1] px-3 py-[7px] text-[15px] tabular-nums text-[#F5F5F5]'
+    const card = 'rounded-[28px] bg-white/[0.06]'
+    const rowCls = 'flex items-center gap-3.5 px-4'
+    const divider = 'border-t border-white/[0.08]'
+    const pill = 'relative flex-shrink-0 rounded-[10px] bg-white/[0.1] px-3 py-[7px] text-[15px] tabular-nums text-[#F5F5F5]'
     const dateText = (v) => parseLocal(v, '00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '')
-    const remLabel = reminder === 'default' ? 'Predeterminada' : (REMINDERS.find(([m]) => m === reminder)?.[1] || '')
-    const remText = reminder === null ? 'Ninguna' : reminder === 0 ? 'Al empezar' : reminder === 'default' ? 'Predeterminada' : `${remLabel} antes`
+    const remText = reminder === null ? 'Ninguna' : reminder === 0 ? 'Al empezar' : reminder === 'default' ? 'Predeterminada' : `${REMINDERS.find(([m]) => m === reminder)?.[1] || ''} antes`
+    const colorHex = colorId ? GOOGLE_EVENT_COLORS[colorId] : '#1E5FAD'
+    const Plus = ({ filled, onClear, onAdd }) => (
+      <button type="button" onClick={filled ? onClear : onAdd} aria-label={filled ? 'Borrar' : 'Añadir'} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#A8A8AD] active:bg-white/[0.08]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ transform: filled ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+    )
+    const showPicker = addingGuest || guestDraft.trim().length > 0
+    const hasGuests = guests.length > 0 || guestDraft.trim()
     return createPortal(
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-[60] flex items-end justify-center bg-black/55 p-0 backdrop-blur-[10px]" onClick={onClose}>
-        <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 380, damping: 40 }} onClick={(e) => e.stopPropagation()} className="w-full" drag="y" dragControls={sheetDrag} dragListener={false} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }} onDragEnd={(_, info) => { if (info.offset.y > 110 || info.velocity.y > 600) onClose() }}>
-          <form onSubmit={submit} className="ador-modal-surface flex flex-col overflow-hidden" style={{ padding: 0, maxHeight: '94dvh', height: '94dvh', borderRadius: '22px 22px 0 0' }}>
-            {/* Barra superior fija */}
-            <div onPointerDown={(e) => sheetDrag.start(e)} className="flex-shrink-0 touch-none select-none">
-              <div className="mx-auto mt-2 h-[5px] w-10 rounded-full bg-white/[0.22]" />
-            <div className="flex items-center justify-between px-4 pb-2 pt-3">
-              <button type="button" onClick={onClose} className="min-w-[78px] text-left text-[17px] text-[#F4EEE2] active:opacity-60">Cancelar</button>
-              <h2 className="text-[17px] font-semibold text-[#F5F5F5]">{isEdit ? 'Editar evento' : 'Nuevo evento'}</h2>
-              <button type="submit" disabled={busy} className="min-w-[78px] text-right text-[17px] font-semibold text-[#F4EEE2] active:opacity-60 disabled:opacity-40">{busy ? '…' : isEdit ? 'Guardar' : 'Agregar'}</button>
-            </div>
-            </div>
-
-            <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+28px)] pt-2" style={{ overscrollBehavior: 'contain' }}>
-              {/* Título y lugar */}
-              <div className={group}>
-                <input autoFocus={!isEdit} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="block w-full bg-transparent px-4 py-3.5 text-[17px] font-medium text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
-                <div className={`${row} ${sep}`}>
-                  <svg className="h-[18px] w-[18px] flex-shrink-0 text-[#8E8E93]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
-                  <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ubicación" className="min-w-0 flex-1 bg-transparent py-3 text-[16px] text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
-                </div>
-              </div>
-
-              {/* Fechas */}
-              <div className={group}>
-                <div className={row}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">Todo el día</span>
-                  <button type="button" role="switch" aria-checked={allDay} onClick={() => setAllDay((v) => !v)}><Switch on={allDay} /></button>
-                </div>
-                <div className={`${row} ${sep}`}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">{allDay ? 'Desde' : 'Empieza'}</span>
-                  <label className={valuePill}>{dateText(date)}<input type="date" value={date} onChange={(e) => { if (!e.target.value) return; setDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} className="absolute inset-0 h-full w-full opacity-0" aria-label="Fecha" /></label>
-                  {!allDay && <label className={valuePill}>{startTime}<input type="time" value={startTime} onChange={(e) => e.target.value && changeStart(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Hora de inicio" /></label>}
-                </div>
-                <div className={`${row} ${sep}`}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">{allDay ? 'Hasta' : 'Termina'}</span>
-                  {allDay
-                    ? <label className={valuePill}>{dateText(endDate)}<input type="date" value={endDate} min={date} onChange={(e) => e.target.value && setEndDate(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Fecha de fin" /></label>
-                    : <label className={valuePill}>{endTime}<input type="time" value={endTime} onChange={(e) => e.target.value && setEndTime(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Hora de fin" /></label>}
-                </div>
-                {!allDay && (
-                  <div className={`${sep} flex gap-2 overflow-x-auto px-4 py-3`} style={{ scrollbarWidth: 'none' }}>
-                    {[[30, '30 min'], [45, '45 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, l]) => (
-                      <button key={m} type="button" onClick={() => quick(m)} className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[14px]" style={durMin === m ? { background: 'rgba(244,238,226,0.18)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.08)', color: '#C9C9C9' }}>{l}</button>
-                    ))}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 z-[60]" onClick={onClose}>
+        <motion.div className="absolute inset-0 bg-black/55 backdrop-blur-[10px]" style={{ opacity: sheet.backdrop }} />
+        <div className="absolute inset-x-0 bottom-0">
+          <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={SHEET} onClick={(e) => e.stopPropagation()}>
+            <motion.div ref={sheet.sheetRef} style={{ y: sheet.y }}>
+              <form onSubmit={submit} className="ador-modal-surface flex flex-col overflow-hidden" style={{ padding: 0, height: '94dvh', maxHeight: '94dvh', borderRadius: '30px 30px 0 0' }}>
+                <div className="flex-shrink-0">
+                  <div className="mx-auto mt-2 h-[5px] w-10 rounded-full bg-white/[0.22]" />
+                  <div className="flex items-center justify-between px-5 pb-3 pt-3">
+                    <button type="button" onClick={onClose} className="min-w-[78px] text-left text-[17px] text-[#F4EEE2] active:opacity-60">Cancelar</button>
+                    <h2 className="text-[17px] font-semibold text-[#F5F5F5]">{isEdit ? 'Editar evento' : 'Nuevo evento'}</h2>
+                    <button type="submit" disabled={busy} className="min-w-[78px] text-right text-[17px] font-semibold text-[#F4EEE2] active:opacity-60 disabled:opacity-40">{busy ? '…' : isEdit ? 'Guardar' : 'Agregar'}</button>
                   </div>
-                )}
-              </div>
-              {startClash && <p className="-mt-3 px-2 text-[13px] text-[#E8C15A]">Cruza con «{startClash.title}».</p>}
-
-              {/* Invitados */}
-              <div className={group}>
-                <div className={row}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">Invitados</span>
-                  <span className="text-[15px] text-[#8E8E93]">{guests.length ? `${guests.length}` : 'Ninguno'}</span>
                 </div>
-                {guests.length > 0 && (
-                  <div className={`${sep} flex gap-4 overflow-x-auto px-4 py-3`} style={{ scrollbarWidth: 'none' }}>
-                    {guests.map((g) => {
-                      const p = people.find((x) => x.email === g.email)
-                      return (
-                        <div key={g.email} className="relative flex w-[60px] flex-shrink-0 flex-col items-center gap-1">
-                          <span className="relative"><PersonAvatar name={p?.name || g.email} photo={p?.photo} size={46} />
-                            <button type="button" aria-label={`Quitar ${g.email}`} onClick={() => setGuests((cur) => cur.filter((x) => x.email !== g.email))} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#3A3A3C] text-[12px] leading-none text-white">×</button>
-                          </span>
-                          <span className="w-full truncate text-center text-[12px] text-[#E4E4E4]">{(p?.name || g.email).split(/[\s@]/)[0]}</span>
+
+                <div ref={sheet.scrollRef} className="flex-1 space-y-6 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-1" style={{ overscrollBehavior: 'contain' }}>
+                  {/* Título y detalles */}
+                  <div className={card}>
+                    <div className={`${rowCls} py-3`}>
+                      <button type="button" onClick={() => setColorOpen((v) => !v)} aria-label="Color del evento" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full active:scale-95" style={{ background: `${colorHex}33`, color: colorHex }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
+                      </button>
+                      <input autoFocus={!isEdit} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título del evento" className="min-w-0 flex-1 bg-transparent py-1 text-[18px] font-medium text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
+                      <Plus filled={Boolean(title)} onClear={() => setTitle('')} onAdd={() => {}} />
+                    </div>
+                    {colorOpen && (
+                      <div className={`${divider} flex items-center gap-2.5 overflow-x-auto px-4 py-3.5`} style={{ scrollbarWidth: 'none' }}>
+                        <button type="button" onClick={() => setColorId('')} aria-label="Color predeterminado" className="h-8 w-8 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD', boxShadow: colorId === '' ? '0 0 0 2px #1C1C1E, 0 0 0 4px #F4EEE2' : 'none' }} />
+                        {Object.entries(GOOGLE_EVENT_COLORS).map(([id, hex]) => (
+                          <button key={id} type="button" onClick={() => setColorId(id)} aria-label={`Color ${id}`} className="h-8 w-8 flex-shrink-0 rounded-full" style={{ background: hex, boxShadow: colorId === id ? '0 0 0 2px #1C1C1E, 0 0 0 4px #F4EEE2' : 'none' }} />
+                        ))}
+                      </div>
+                    )}
+                    <div className={`${rowCls} ${divider} py-3.5`}>
+                      <svg className="h-[18px] w-[18px] flex-shrink-0 text-[#8E8E93]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+                      <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añadir descripción" className="min-w-0 flex-1 bg-transparent py-1 text-[16px] text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
+                      <Plus filled={Boolean(description)} onClear={() => setDescription('')} onAdd={() => {}} />
+                    </div>
+                    <div className={`${rowCls} ${divider} py-3.5`}>
+                      <svg className="h-[18px] w-[18px] flex-shrink-0 text-[#8E8E93]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Añadir lugar" className="min-w-0 flex-1 bg-transparent py-1 text-[16px] text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
+                      <Plus filled={Boolean(location)} onClear={() => setLocation('')} onAdd={() => {}} />
+                    </div>
+                  </div>
+
+                  {/* Cuándo */}
+                  <div className={card}>
+                    <div className={`${rowCls} min-h-[52px]`}>
+                      <span className="flex-1 text-[16px] text-[#F5F5F5]">Todo el día</span>
+                      <button type="button" role="switch" aria-checked={allDay} onClick={() => setAllDay((v) => !v)}><Switch on={allDay} /></button>
+                    </div>
+                    <div className={`${rowCls} ${divider} min-h-[52px]`}>
+                      <span className="flex-1 text-[16px] text-[#F5F5F5]">{allDay ? 'Desde' : 'Empieza'}</span>
+                      <label className={pill}>{dateText(date)}<input type="date" value={date} onChange={(e) => { if (!e.target.value) return; setDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} className="absolute inset-0 h-full w-full opacity-0" aria-label="Fecha" /></label>
+                      {!allDay && <label className={pill}>{startTime}<input type="time" value={startTime} onChange={(e) => e.target.value && changeStart(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Hora de inicio" /></label>}
+                    </div>
+                    <div className={`${rowCls} ${divider} min-h-[52px]`}>
+                      <span className="flex-1 text-[16px] text-[#F5F5F5]">{allDay ? 'Hasta' : 'Termina'}</span>
+                      {allDay
+                        ? <label className={pill}>{dateText(endDate)}<input type="date" value={endDate} min={date} onChange={(e) => e.target.value && setEndDate(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Fecha de fin" /></label>
+                        : <label className={pill}>{endTime}<input type="time" value={endTime} onChange={(e) => e.target.value && setEndTime(e.target.value)} className="absolute inset-0 h-full w-full opacity-0" aria-label="Hora de fin" /></label>}
+                    </div>
+                    {!allDay && (
+                      <div className={`${divider} flex gap-2 overflow-x-auto px-4 py-3.5`} style={{ scrollbarWidth: 'none' }}>
+                        {[[30, '30 min'], [45, '45 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, l]) => (
+                          <button key={m} type="button" onClick={() => quick(m)} className="flex-shrink-0 rounded-full px-4 py-2 text-[14px]" style={durMin === m ? { background: 'rgba(244,238,226,0.18)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.08)', color: '#C9C9C9' }}>{l}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {startClash && <p className="-mt-3 px-3 text-[13px] text-[#E8C15A]">Cruza con «{startClash.title}».</p>}
+
+                  {/* Personas */}
+                  <div>
+                    <div className="flex items-start gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                      <button type="button" onClick={() => { setAddingGuest(true); setTimeout(() => guestInput.current?.focus(), 60) }} className="flex w-[68px] flex-shrink-0 flex-col items-center gap-1.5 active:opacity-70">
+                        <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-white/[0.2] text-[26px] font-light text-[#F5F5F5]">+</span>
+                        <span className="text-[13px] font-medium text-[#F5F5F5]">Añadir</span>
+                        <span className="-mt-1.5 text-[11.5px] text-[#8E8E93]">Invitado</span>
+                      </button>
+                      {guests.map((g) => {
+                        const p = people.find((x) => x.email === g.email)
+                        const first = (p?.name || g.email).split(/[\s@]/)[0]
+                        const ring = { accepted: '#7FC98F', declined: '#EF5350', tentative: '#E8C15A' }[g.responseStatus]
+                        return (
+                          <div key={g.email} className="relative flex w-[68px] flex-shrink-0 flex-col items-center gap-1.5">
+                            <span className="relative rounded-full" style={ring ? { boxShadow: `0 0 0 2px #1C1C1E, 0 0 0 3.5px ${ring}` } : undefined}>
+                              <PersonAvatar name={p?.name || g.email} photo={p?.photo} size={60} />
+                              <button type="button" aria-label={`Quitar ${g.email}`} onClick={() => setGuests((cur) => cur.filter((x) => x.email !== g.email))} className="absolute -right-1.5 -top-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#3A3A3C] text-[13px] leading-none text-white ring-2 ring-[#1C1C1E]">×</button>
+                            </span>
+                            <span className="w-full truncate text-center text-[13px] font-medium text-[#F5F5F5]">{first}</span>
+                            <span className="-mt-1.5 w-full truncate text-center text-[11.5px] text-[#8E8E93]">{p?.role || (p ? 'Equipo' : 'Externo')}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {showPicker && (
+                      <div className="mt-3">
+                        <GuestPicker showChips={false} inputRef={guestInput} guests={guests} people={people} draft={guestDraft} setDraft={setGuestDraft}
+                          onAdd={(email) => setGuests((cur) => (cur.some((g) => g.email === email) ? cur : [...cur, { email }]))}
+                          onAddRaw={addGuests}
+                          onRemove={(email) => setGuests((cur) => cur.filter((x) => x.email !== email))}
+                          onRemoveLast={() => setGuests((g) => g.slice(0, -1))}
+                          hasError={Boolean(error) && /correo|lista/.test(error)} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ajustes */}
+                  <div>
+                    <p className="mb-3 px-1 text-[15px] text-[#8E8E93]">Ajustes</p>
+                    <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+                      <div className="relative flex h-[150px] w-[168px] flex-shrink-0 snap-start flex-col justify-between rounded-[26px] bg-white/[0.06] p-4">
+                        <svg className="text-[#F5F5F5]" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="M16 10.5l5-3v9l-5-3z" /></svg>
+                        <div>
+                          <p className="text-[17px] font-medium leading-tight text-[#F5F5F5]">Videollamada</p>
+                          <p className="mt-0.5 text-[12.5px] leading-snug text-[#8E8E93]">Enlace de Google Meet</p>
+                          <div className="mt-2.5">{src.meetLink ? <span className="text-[13px] text-[#8FD19A]">✓ Ya tiene enlace</span> : <button type="button" role="switch" aria-checked={meet} onClick={() => setMeet((v) => !v)}><Switch on={meet} /></button>}</div>
                         </div>
-                      )
-                    })}
+                      </div>
+                      <div className="relative flex h-[150px] w-[168px] flex-shrink-0 snap-start flex-col justify-between rounded-[26px] bg-white/[0.06] p-4">
+                        <svg className="text-[#F5F5F5]" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 0 0 4 0" /></svg>
+                        <div>
+                          <p className="text-[17px] font-medium leading-tight text-[#F5F5F5]">Alerta</p>
+                          <p className="mt-0.5 text-[12.5px] leading-snug text-[#8E8E93]">{remText}</p>
+                          <p className="mt-2.5 text-[13px] font-medium text-[#F4EEE2]">Cambiar</p>
+                        </div>
+                        <select value={String(reminder)} onChange={(e) => { const v = e.target.value; setReminder(v === 'default' ? 'default' : v === 'null' ? null : Number(v)) }} className="absolute inset-0 h-full w-full rounded-[26px] opacity-0" aria-label="Alerta">
+                          {reminder === 'default' && <option value="default">Predeterminada</option>}
+                          {REMINDERS.map(([m, l]) => <option key={String(m)} value={String(m)}>{m === null ? 'Ninguna' : m === 0 ? 'Al empezar' : `${l} antes`}</option>)}
+                        </select>
+                      </div>
+                      <div className="relative flex h-[150px] w-[168px] flex-shrink-0 snap-start flex-col justify-between rounded-[26px] bg-white/[0.06] p-4" style={{ opacity: hasGuests ? 1 : 0.5 }}>
+                        <svg className="text-[#F5F5F5]" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 8l9 6 9-6" /></svg>
+                        <div>
+                          <p className="text-[17px] font-medium leading-tight text-[#F5F5F5]">Invitar por correo</p>
+                          <p className="mt-0.5 text-[12.5px] leading-snug text-[#8E8E93]">{hasGuests ? 'Les llega la invitación' : 'Añade invitados primero'}</p>
+                          <button type="button" role="switch" aria-checked={notify} disabled={!hasGuests} onClick={() => setNotify((v) => !v)} className="mt-2.5 block"><Switch on={notify && Boolean(hasGuests)} /></button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div className={`${sep} px-3 py-2.5`}>
-                  <GuestPicker showChips={false} inputRef={guestInput} guests={guests} people={people} draft={guestDraft} setDraft={setGuestDraft}
-                    onAdd={(email) => setGuests((cur) => (cur.some((g) => g.email === email) ? cur : [...cur, { email }]))}
-                    onAddRaw={addGuests}
-                    onRemove={(email) => setGuests((cur) => cur.filter((x) => x.email !== email))}
-                    onRemoveLast={() => setGuests((g) => g.slice(0, -1))}
-                    hasError={Boolean(error) && /correo|lista/.test(error)} />
-                </div>
-                {(guests.length > 0 || guestDraft.trim()) && (
-                  <div className={`${row} ${sep}`}>
-                    <span className="flex-1 text-[16px] text-[#F5F5F5]">Enviar invitación por correo</span>
-                    <button type="button" role="switch" aria-checked={notify} onClick={() => setNotify((v) => !v)}><Switch on={notify} /></button>
-                  </div>
-                )}
-              </div>
 
-              {/* Alerta, videollamada y color */}
-              <div className={group}>
-                <div className={row}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">Alerta</span>
-                  <span className="text-[16px] text-[#8E8E93]">{remText}</span>
-                  <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#6E6E73" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l6 6-6 6" /></svg>
-                  <select value={String(reminder)} onChange={(e) => { const v = e.target.value; setReminder(v === 'default' ? 'default' : v === 'null' ? null : Number(v)) }} className="absolute inset-0 h-full w-full opacity-0" aria-label="Alerta">
-                    {reminder === 'default' && <option value="default">Predeterminada</option>}
-                    {REMINDERS.map(([m, l]) => <option key={String(m)} value={String(m)}>{m === null ? 'Ninguna' : m === 0 ? 'Al empezar' : `${l} antes`}</option>)}
-                  </select>
-                </div>
-                <div className={`${row} ${sep}`}>
-                  <span className="flex-1 text-[16px] text-[#F5F5F5]">Videollamada de Google Meet</span>
-                  {src.meetLink ? <span className="text-[15px] text-[#8FD19A]">✓ Lista</span> : <button type="button" role="switch" aria-checked={meet} onClick={() => setMeet((v) => !v)}><Switch on={meet} /></button>}
-                </div>
-                <div className={`${sep} flex items-center gap-2.5 overflow-x-auto px-4 py-3.5`} style={{ scrollbarWidth: 'none' }}>
-                  <span className="mr-1 text-[16px] text-[#F5F5F5]">Color</span>
-                  <button type="button" onClick={() => setColorId('')} aria-label="Color predeterminado" className="h-7 w-7 flex-shrink-0 rounded-full" style={{ background: '#1E5FAD', boxShadow: colorId === '' ? '0 0 0 2px #1C1C1E, 0 0 0 4px #F4EEE2' : 'none' }} />
-                  {Object.entries(GOOGLE_EVENT_COLORS).map(([id, hex]) => (
-                    <button key={id} type="button" onClick={() => setColorId(id)} aria-label={`Color ${id}`} className="h-7 w-7 flex-shrink-0 rounded-full" style={{ background: hex, boxShadow: colorId === id ? '0 0 0 2px #1C1C1E, 0 0 0 4px #F4EEE2' : 'none' }} />
-                  ))}
-                </div>
-              </div>
+                  {isEdit && src.recurring && <p className="px-3 text-[13px] text-[#8E8E93]">Este evento se repite: los cambios se aplican solo a esta fecha.</p>}
+                  {error && <p className="px-3 text-[14px] text-[#FF8A85]">{error}</p>}
 
-              {/* Notas */}
-              <div className={group}>
-                <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Notas" className="block w-full resize-none bg-transparent px-4 py-3.5 text-[16px] leading-snug text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
-              </div>
-
-              {isEdit && src.recurring && <p className="px-2 text-[13px] text-[#8E8E93]">Este evento se repite: los cambios se aplican solo a esta fecha.</p>}
-              {error && <p className="px-2 text-[14px] text-[#FF8A85]">{error}</p>}
-
-              {isEdit && (
-                <div className={group}>
-                  <button type="button" onClick={() => (confirmDelete ? onDelete(event) : setConfirmDelete(true))} className="block w-full py-3.5 text-center text-[17px] text-[#FF453A] active:bg-white/[0.06]">
-                    {confirmDelete ? 'Toca otra vez para eliminar' : 'Eliminar evento'}
-                  </button>
+                  {isEdit && (
+                    <button type="button" onClick={() => (confirmDelete ? onDelete(event) : setConfirmDelete(true))} className={`block w-full ${card} py-4 text-center text-[17px] text-[#FF453A] active:bg-white/[0.1]`}>
+                      {confirmDelete ? 'Toca otra vez para eliminar' : 'Eliminar evento'}
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          </form>
-        </motion.div>
+              </form>
+            </motion.div>
+          </motion.div>
+        </div>
       </motion.div>,
       document.body
     )
