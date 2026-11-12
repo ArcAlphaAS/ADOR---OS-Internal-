@@ -6,6 +6,7 @@ import { LockIcon, GlobeIcon } from '../icons'
 import PersonAvatar from './PersonAvatar'
 import { SPRING, SHEET, swipeToClose } from '../../lib/motion'
 import usePhone from '../../hooks/usePhone'
+import { useSheetDrag } from '../../hooks/useSheetDrag'
 
 const labelClass = 'mb-1.5 block font-medium text-[#8A8A8A]'
 const labelStyle = { fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }
@@ -80,6 +81,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
   const [members, setMembers] = useState([])
   const [saving, setSaving] = useState(false)
   const phone = usePhone()
+  const sheet = useSheetDrag(onClose, phone)
 
   const normalized = normalizeChannelName(name)
   const duplicate = !isGroup && existingNames.includes(normalized)
@@ -112,13 +114,19 @@ export default function NewConversationModal({ kind, users, currentUid, existing
   if (phone) {
     const needMembers = isGroup || visibility === 'private'
     return createPortal(
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50 flex items-end bg-black/55 backdrop-blur-[6px]" onClick={onClose}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+        <motion.div className="absolute inset-0 bg-black/55 backdrop-blur-[6px]" style={{ opacity: sheet.backdrop }} />
         <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
+          exit={{ y: '100%' }}
           transition={SHEET}
           onClick={(e) => e.stopPropagation()}
-          {...swipeToClose('y', onClose)}
+          className="relative w-full"
+        >
+        <motion.div
+          ref={(el) => { sheet.sheetRef.current = el; sheet.scrollRef.current = el }}
+          style={{ y: sheet.y, overscrollBehavior: 'contain' }}
           className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-3"
         >
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
@@ -201,6 +209,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
           <button type="button" disabled={!canSave || saving} onClick={save} className="ador-btn-primary mt-7 w-full rounded-full py-4 text-[16px] font-semibold disabled:opacity-40">
             {saving ? 'Creando…' : isGroup ? 'Crear grupo' : 'Crear canal'}
           </button>
+        </motion.div>
         </motion.div>
       </motion.div>,
       document.body

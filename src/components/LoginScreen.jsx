@@ -96,11 +96,7 @@ export default function LoginScreen({ onSubmit, onForgotPassword, onBack, error,
               </svg>
             </button>
           )}
-          <img src="/logo.svg" alt="" width={22} height={20} style={{ height: 20, width: 22 }} />
-          <div className="flex items-baseline gap-[5px]">
-            <Logo size={13} />
-            <span className="text-[13px] font-medium text-[#9A9A9A]">OS</span>
-          </div>
+          <img src="/logo-horizontal.svg" alt="ADOR" style={{ height: 26, width: "auto" }} />
         </div>
         <span className="hidden text-[13px] text-[#8A8A8A] sm:block">Acceso por invitación</span>
       </div>

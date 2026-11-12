@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SHEET, swipeToClose } from '../../lib/motion'
+import { useSheetDrag } from '../../hooks/useSheetDrag'
 import { pushStatus, enablePush, canInstallApp, onInstallAvailability, installApp } from '../../lib/push'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { useToast } from '../../hooks/useToast'
@@ -79,12 +80,20 @@ function ThemeSegment() {
 }
 
 function MiniSheet({ title, onClose, children }) {
+  const sheet = useSheetDrag(onClose)
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[95] flex items-end bg-black/60" onClick={onClose}>
-      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={SHEET} {...swipeToClose('y', onClose)} onClick={(e) => e.stopPropagation()} className="max-h-[80dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pt-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
-        <h2 className="mb-3 text-[19px] font-semibold text-[#F5F5F5]">{title}</h2>
-        {children}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[95] flex items-end" onClick={onClose}>
+      <motion.div className="absolute inset-0 bg-black/60" style={{ opacity: sheet.backdrop }} />
+      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={SHEET} onClick={(e) => e.stopPropagation()} className="relative w-full">
+        <motion.div
+          ref={(el) => { sheet.sheetRef.current = el; sheet.scrollRef.current = el }}
+          className="max-h-[80dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pt-3"
+          style={{ y: sheet.y, paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)', overscrollBehavior: 'contain' }}
+        >
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
+          <h2 className="mb-3 text-[19px] font-semibold text-[#F5F5F5]">{title}</h2>
+          {children}
+        </motion.div>
       </motion.div>
     </motion.div>
   )
