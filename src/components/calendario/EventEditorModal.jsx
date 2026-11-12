@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSheetDrag } from '../../hooks/useSheetDrag'
 import { GOOGLE_EVENT_COLORS } from '../../lib/googleCalendar'
 import { SPRING } from '../../lib/motion'
@@ -8,6 +8,7 @@ import { useEscape } from '../../hooks/useEscape'
 import { CloseIcon } from '../icons'
 import { SHEET } from '../../lib/motion'
 import GuestPicker from './GuestPicker'
+import GuestSheet from './GuestSheet'
 import PersonAvatar from '../chat/PersonAvatar'
 import usePhone from '../../hooks/usePhone'
 import { subscribeUsers, subscribeDirectoryPeople } from '../../lib/firestore'
@@ -58,7 +59,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   useEscape(onClose)
   const phone = usePhone()
   const sheet = useSheetDrag(onClose, phone)
-  const [addingGuest, setAddingGuest] = useState(false)
+  const [guestSheet, setGuestSheet] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
   const isEdit = Boolean(event)
   const src = event || draft || {}
@@ -206,9 +207,10 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ transform: filled ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}><path d="M12 5v14M5 12h14" /></svg>
       </button>
     )
-    const showPicker = addingGuest || guestDraft.trim().length > 0
     const hasGuests = guests.length > 0 || guestDraft.trim()
-    return createPortal(
+    return (
+      <>
+      {createPortal(
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 z-[60]" onClick={onClose}>
         <motion.div className="absolute inset-0 bg-black/55 backdrop-blur-[10px]" style={{ opacity: sheet.backdrop }} />
         <div className="absolute inset-x-0 bottom-0">
@@ -284,7 +286,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                   {/* Personas */}
                   <div>
                     <div className="flex items-start gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                      <button type="button" onClick={() => { setAddingGuest(true); setTimeout(() => guestInput.current?.focus(), 60) }} className="flex w-[68px] flex-shrink-0 flex-col items-center gap-1.5 active:opacity-70">
+                      <button type="button" onClick={() => setGuestSheet(true)} className="flex w-[68px] flex-shrink-0 flex-col items-center gap-1.5 active:opacity-70">
                         <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-white/[0.2] text-[26px] font-light text-[#F5F5F5]">+</span>
                         <span className="text-[13px] font-medium text-[#F5F5F5]">Añadir</span>
                         <span className="-mt-1.5 text-[11.5px] text-[#8E8E93]">Invitado</span>
@@ -305,16 +307,6 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                         )
                       })}
                     </div>
-                    {showPicker && (
-                      <div className="mt-3">
-                        <GuestPicker showChips={false} inputRef={guestInput} guests={guests} people={people} draft={guestDraft} setDraft={setGuestDraft}
-                          onAdd={(email) => setGuests((cur) => (cur.some((g) => g.email === email) ? cur : [...cur, { email }]))}
-                          onAddRaw={addGuests}
-                          onRemove={(email) => setGuests((cur) => cur.filter((x) => x.email !== email))}
-                          onRemoveLast={() => setGuests((g) => g.slice(0, -1))}
-                          hasError={Boolean(error) && /correo|lista/.test(error)} />
-                      </div>
-                    )}
                   </div>
 
                   {/* Ajustes */}
@@ -367,6 +359,9 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
         </div>
       </motion.div>,
       document.body
+      )}
+      <AnimatePresence>{guestSheet && <GuestSheet guests={guests} setGuests={setGuests} people={people} onClose={() => setGuestSheet(false)} />}</AnimatePresence>
+      </>
     )
   }
 
