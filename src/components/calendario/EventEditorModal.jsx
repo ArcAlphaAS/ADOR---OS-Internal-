@@ -181,7 +181,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   const iconCls = 'mt-[3px] h-[18px] w-[18px] flex-shrink-0 text-[#8A8A8A]'
 
   return createPortal(
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6 backdrop-blur-[10px]" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-0 backdrop-blur-[10px] md:p-6" onClick={onClose}>
       <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="w-full max-w-[580px]">
         <form onSubmit={submit} className="ador-modal-surface ador-grain max-h-[90vh] overflow-y-auto rounded-[30px] p-7 sm:p-8">
           <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                 <p className="text-[13px] tabular-nums text-[#E4E4E4]">{fmt12(startTime)} <span className="text-[#767676]">→</span> {fmt12(endTime)}</p>
               </div>
               <div className="relative">
-                <div ref={slotsRef} className="ador-noscroll grid max-h-[168px] grid-cols-3 gap-2 overflow-y-auto pb-6">
+                <div ref={slotsRef} className="ador-noscroll grid max-h-[168px] grid-cols-3 gap-2 overflow-y-auto pb-6" style={{ WebkitMaskImage: 'linear-gradient(to bottom, #000 78%, transparent)', maskImage: 'linear-gradient(to bottom, #000 78%, transparent)' }}>
                   {SLOTS.map((t) => {
                     const sel = t === startTime
                     const busyWith = !sel && clash(t)
@@ -240,7 +240,6 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                     )
                   })}
                 </div>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-[#141414] to-transparent" />
               </div>
               {startClash && <p className="mt-1 text-[12px] text-[#E8C15A]">Cruza con «{startClash.title}»</p>}
 

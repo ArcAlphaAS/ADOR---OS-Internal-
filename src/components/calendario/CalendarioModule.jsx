@@ -209,7 +209,7 @@ function actorNameFor(user) {
 
 function PermissionPrompt({ onConnect, onClose }) {
   return createPortal(
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6 backdrop-blur-[10px]" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-0 md:p-6 backdrop-blur-[10px]" onClick={onClose}>
       <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="w-full max-w-[420px]">
         <div className="ador-modal-surface ador-grain rounded-[28px] p-7">
           <h2 className="text-[17px] font-semibold text-[#F5F5F5]">Permiso para crear y editar</h2>
@@ -425,9 +425,21 @@ export default function CalendarioModule({ user }) {
   })
 
   if (phone && (status === 'ready' || status === 'loading')) {
+    // Hora de partida al crear desde el teléfono: la próxima hora redonda si el día elegido es hoy, si no las 9:00.
+    const createOnDay = () => {
+      const base = new Date(anchor)
+      const isToday = base.toDateString() === new Date().toDateString()
+      const start = isToday ? nextRoundHour() : new Date(base.getFullYear(), base.getMonth(), base.getDate(), 9, 0, 0, 0)
+      openCreate({ start, end: new Date(start.getTime() + 3600000) })
+    }
     return (
       <div className="mx-auto w-full max-w-[640px] px-4 pb-16 pt-6">
-        <h1 className="ador-title mb-5">Calendario</h1>
+        <div className="mb-5 flex items-center justify-between">
+          <h1 className="ador-title">Calendario</h1>
+          <button type="button" onClick={createOnDay} aria-label="Nuevo evento" className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A] active:scale-95">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          </button>
+        </div>
         {phoneMonth ? (
           <div className="flex flex-col gap-4">
             <button type="button" onClick={() => setPhoneMonth(false)} className="self-start rounded-full bg-[#1C1C1E] px-4 py-2 text-[13.5px] text-[#F5F5F5]">← Volver a la semana</button>
@@ -436,7 +448,9 @@ export default function CalendarioModule({ user }) {
         ) : (
           <PhoneCalendar uid={user?.uid} anchor={anchor} setAnchor={setAnchor} events={events} tasks={tasks} actorName={actorName} onOpenEvent={setOpenEvent} onMonth={() => { setView('mes'); setPhoneMonth(true) }} />
         )}
-        <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} />}</AnimatePresence>
+        <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
+        <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} events={events} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
+        <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
       </div>
     )
   }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { toggleTaskComplete } from '../../lib/firestore'
 import { withTimeout, isPendingFor } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -93,7 +94,10 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
         })}
       </div>
 
-      <p className="text-center text-[15px] font-medium text-[#8E8E93]">{isToday ? 'Hoy' : anchor.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+      <div className="flex items-center justify-center gap-3">
+        <p className="text-center text-[15px] font-medium text-[#8E8E93]">{isToday ? 'Hoy' : anchor.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        {!isToday && <button type="button" onClick={() => setAnchor(new Date())} className="rounded-full bg-[#1C1C1E] px-3 py-1 text-[12.5px] font-medium text-[#F4EEE2]">Ir a hoy</button>}
+      </div>
 
       {suggestion && (
         <div className="rounded-[22px] bg-[#1C1C1E] px-5 py-4">
@@ -102,9 +106,22 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[26px] bg-[#1C1C1E]">
+      <motion.div
+        key={key(anchor)}
+        initial={{ opacity: 0, x: 18 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.22}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -70 || info.velocity.x < -450) setAnchor((a) => { const d = new Date(a); d.setDate(d.getDate() + 1); return d })
+          else if (info.offset.x > 70 || info.velocity.x > 450) setAnchor((a) => { const d = new Date(a); d.setDate(d.getDate() - 1); return d })
+        }}
+        className="overflow-hidden rounded-[26px] bg-[#1C1C1E]"
+      >
         {dayEvents.length === 0 && dayTasks.length === 0 ? (
-          <p className="px-5 py-8 text-center text-[14px] text-[#8E8E93]">Nada este día.</p>
+          <p className="px-5 py-10 text-center text-[14px] text-[#8E8E93]">Nada este día. Toca <span className="text-[#F5F5F5]">+</span> para crear un evento.</p>
         ) : (
           <ul className="divide-y divide-white/[0.07]">
             {dayEvents.map((e) => {
@@ -143,7 +160,8 @@ export default function PhoneCalendar({ uid, anchor, setAnchor, events, tasks, a
             })}
           </ul>
         )}
-      </div>
+      </motion.div>
+      <p className="-mt-2 text-center text-[11.5px] text-[#6E6E73]">Desliza para cambiar de día</p>
     </div>
   )
 }
