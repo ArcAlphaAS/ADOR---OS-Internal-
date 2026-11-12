@@ -60,8 +60,7 @@ export function MiniCalendar() {
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[12px]"
                 style={{
                   background: isToday ? '#F5F5F5' : 'transparent',
-                  color: isToday ? '#0A0A0A' : undefined,
-                  color: isToday ? '#F5F5F5' : '#888888',
+                  color: isToday ? '#0A0A0A' : '#888888',
                   fontWeight: isToday ? 600 : 400,
                 }}
               >
