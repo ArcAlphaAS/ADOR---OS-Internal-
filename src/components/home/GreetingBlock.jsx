@@ -10,6 +10,14 @@ function getGreeting(hour, name) {
   return `Buenas noches, ${name}.`
 }
 
+// Semana ISO del año (lunes a domingo), para dar contexto de en qué punto del año estamos.
+function weekOfYear(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  return Math.ceil(((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7)
+}
+
 function formatDate(date) {
   const text = date.toLocaleDateString('es', {
     weekday: 'long',
@@ -108,13 +116,27 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
         )
       })()}
       </div>
-      <div className="lg:flex-shrink-0 lg:pb-3 lg:text-right">
-      <div className="mt-2 flex items-center gap-2.5 lg:mt-0 lg:justify-end">
-        <p className="text-[14px] font-light text-[#B0B0B0] lg:text-[15px]">{formatDate(now)}</p>
+      <div className="mt-3 lg:mt-0 lg:flex-shrink-0 lg:pb-2 lg:text-right">
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="text-[11.5px] font-medium uppercase tracking-[0.18em] text-[#8A8A8A]"
+        >
+          {now.toLocaleDateString('es', { weekday: 'long' })} · Semana {weekOfYear(now)} · T{Math.floor(now.getMonth() / 3) + 1}
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-1.5 text-[26px] font-light leading-none tracking-[-0.025em] text-[#F5F5F5] lg:text-[32px]"
+        >
+          {now.getDate()} <span className="text-[#9A9AA0]">de {now.toLocaleDateString('es', { month: 'long' })}</span>
+        </motion.p>
         {badge && (
           <span
             title={badge.label}
-            className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-2.5 pr-3 text-[11.5px] font-medium tracking-[0.01em] text-[#C4C4C4]"
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-2.5 pr-3 text-[11.5px] font-medium tracking-[0.01em] text-[#C4C4C4]"
           >
             <span className="flex items-center gap-1">
               {badge.items.map((item, i) => (
@@ -124,8 +146,14 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
             {badge.label}
           </span>
         )}
-      </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#A6A6A6] lg:text-[14px]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.55 }}
+          className="mt-3 text-[13.5px] font-light leading-snug text-[#A6A6A6] lg:ml-auto lg:max-w-[300px] lg:text-[14px]"
+        >
+          {praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}
+        </motion.p>
       </div>
     </div>
   )
