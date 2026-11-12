@@ -83,61 +83,48 @@ const ICON = {
   decision: I(<><path d="M12 3l9 9-9 9-9-9z" /><path d="M12 8v4l2.5 2" /></>),
 }
 
-// El estado del trimestre en una sola pieza: un anillo doble (afuera el tiempo que ya pasó, adentro el
-// progreso real de los objetivos) y una frase honesta que compara las dos cosas, más los números clave.
-function QuarterHero({ avg, elapsed, daysLeft, isCurrent, closed, count, stats }) {
-  const R1 = 62, R2 = 48
-  const C1 = 2 * Math.PI * R1, C2 = 2 * Math.PI * R2
+// El estado del trimestre, al estilo de las apps de Apple (Salud, Bolsa): una cifra grande y ligera,
+// una frase clara, una barra fina con el marcador de "dónde deberías ir hoy", y debajo los números
+// clave separados por líneas finas. Sin adornos: el color solo cuando informa.
+function QuarterSummary({ avg, elapsed, daysLeft, isCurrent, closed, count, stats }) {
   const delta = avg - elapsed
-  const tone = !isCurrent ? '#F4EEE2' : delta >= 5 ? '#7FC98F' : delta >= -5 ? '#F4EEE2' : '#E8A25A'
-  const headline = closed
-    ? 'Trimestre cerrado'
-    : !isCurrent
-      ? 'Trimestre por venir'
-      : count === 0
-        ? 'Aún sin objetivos'
-        : delta >= 5
-          ? 'Vas por delante del ritmo'
-          : delta >= -5
-            ? 'Vas al ritmo del trimestre'
-            : `Vas ${Math.abs(delta)} puntos por debajo del ritmo`
-  const sub = closed
-    ? `Cerraste con ${avg}% de avance promedio.`
-    : !isCurrent
-      ? 'Prepara las metas antes de que empiece.'
-      : `${avg}% de avance con ${elapsed}% del tiempo transcurrido · ${daysLeft} días restantes.`
+  const state = closed ? null : !isCurrent ? null : count === 0 ? null : delta >= 5 ? { text: 'Por delante del ritmo', color: '#7FC98F' } : delta >= -5 ? { text: 'Al ritmo del trimestre', color: '#F4EEE2' } : { text: `${Math.abs(delta)} pts por debajo del ritmo`, color: '#E8A25A' }
+  const line = closed ? 'Trimestre cerrado.' : !isCurrent ? 'Trimestre por venir.' : count === 0 ? 'Define las metas del trimestre.' : `${elapsed}% del tiempo transcurrido · ${daysLeft} días restantes`
   return (
-    <div className="ador-glass ador-grain flex flex-col items-center gap-6 rounded-[26px] p-6 sm:flex-row sm:gap-9 sm:p-8">
-      <div className="relative flex-shrink-0" style={{ width: 152, height: 152 }}>
-        <svg width="152" height="152" viewBox="0 0 152 152" className="-rotate-90" aria-hidden>
-          <circle cx="76" cy="76" r={R1} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5" />
-          <motion.circle cx="76" cy="76" r={R1} fill="none" stroke="rgba(255,255,255,0.34)" strokeWidth="5" strokeLinecap="round" strokeDasharray={C1} initial={{ strokeDashoffset: C1 }} animate={{ strokeDashoffset: C1 * (1 - Math.min(100, elapsed) / 100) }} transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }} />
-          <circle cx="76" cy="76" r={R2} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="9" />
-          <motion.circle cx="76" cy="76" r={R2} fill="none" stroke={tone} strokeWidth="9" strokeLinecap="round" strokeDasharray={C2} initial={{ strokeDashoffset: C2 }} animate={{ strokeDashoffset: C2 * (1 - Math.min(100, avg) / 100) }} transition={{ duration: 1.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[34px] font-semibold leading-none tabular-nums text-[#F5F5F5]"><AnimatedNumber value={avg} />%</span>
-          <span className="mt-1.5 text-[11px] uppercase tracking-[0.1em] text-[#8A8A8A]">avance</span>
+    <section className="py-2">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[13px] text-[#8E8E93]">Avance del trimestre</p>
+          <p className="mt-1 flex items-baseline leading-none text-[#F5F5F5]" style={{ fontSize: 'clamp(64px, 11vw, 104px)', fontWeight: 200, letterSpacing: '-0.045em' }}>
+            <AnimatedNumber value={avg} /><span className="ml-1 text-[0.42em] font-light text-[#8E8E93]">%</span>
+          </p>
+        </div>
+        <div className="sm:pb-3 sm:text-right">
+          {state && <p className="text-[17px] font-medium" style={{ color: state.color }}>{state.text}</p>}
+          <p className="mt-1 text-[14px] text-[#8E8E93]">{line}</p>
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 text-center sm:text-left">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#8A8A8A]">Estado del trimestre</p>
-        <h2 className="mt-2 text-[26px] leading-tight tracking-[-0.01em] text-[#F5F5F5] sm:text-[32px]" style={{ ...SERIF, color: tone === '#F4EEE2' ? '#F5F5F5' : tone }}>{headline}</h2>
-        <p className="mt-2 text-[14px] text-[#9A9A9A]">{sub}</p>
-        <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
-          {stats.map((it) => (
-            <div key={it.label} className="flex items-center gap-2.5 text-left">
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full" style={{ background: `${it.color}1F`, color: it.color }}>{it.icon}</span>
-              <div className="min-w-0">
-                <p className="text-[19px] font-semibold leading-none tabular-nums text-[#F5F5F5]"><AnimatedNumber value={it.value} /></p>
-                <p className="mt-1 truncate text-[11.5px] leading-tight text-[#8A8A8A]">{it.label}</p>
-              </div>
-            </div>
-          ))}
+      <div className="relative mt-5 py-2">
+        <div className="h-[6px] overflow-hidden rounded-full bg-white/[0.09]">
+          <motion.div className="h-full rounded-full" style={{ background: state?.color === '#E8A25A' ? '#E8A25A' : '#F4EEE2' }} initial={{ width: 0 }} animate={{ width: `${Math.min(100, avg)}%` }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} />
         </div>
+        {isCurrent && elapsed > 0 && elapsed < 100 && (
+          <span title={`Tiempo transcurrido: ${elapsed}%`} className="absolute top-0 h-full w-px -translate-x-1/2 bg-white/60" style={{ left: `${elapsed}%` }}>
+            <span className="absolute -top-px left-1/2 h-[6px] w-[6px] -translate-x-1/2 rounded-full bg-white/85" />
+          </span>
+        )}
       </div>
-    </div>
+
+      <dl className="mt-7 grid grid-cols-2 gap-y-6 sm:grid-cols-5 sm:gap-y-0">
+        {stats.map((it, i) => (
+          <div key={it.label} className={`px-1 sm:px-6 ${i > 0 ? 'sm:border-l sm:border-white/[0.08]' : 'sm:pl-0'}`}>
+            <dd className="text-[30px] font-light leading-none tabular-nums tracking-[-0.02em]" style={{ color: it.color }}><AnimatedNumber value={it.value} /></dd>
+            <dt className="mt-2 text-[12.5px] text-[#8E8E93]">{it.label}</dt>
+          </div>
+        ))}
+      </dl>
+    </section>
   )
 }
 
@@ -267,11 +254,11 @@ export default function ObjetivosModule({ user, onNavigate }) {
   const avg = objetivos.length ? Math.round(objetivos.reduce((n, o) => n + objetivoPct(o), 0) / objetivos.length) : 0
   const atRisk = statuses.filter((st) => st === 'riesgo' || st === 'bloqueado').length
   const stats = [
-    { icon: ICON.target, value: objetivos.filter((o, i) => statuses[i] !== 'logrado').length, label: 'Objetivos activos', color: '#F4EEE2' },
-    { icon: ICON.alert, value: atRisk, label: 'En riesgo', color: atRisk ? '#EF5350' : '#8A8A8A' },
-    { icon: ICON.tasks, value: openLinkedTasks.length, label: 'Iniciativas en curso', color: '#7FC98F' },
-    { icon: ICON.flask, value: activeExperiments, label: 'Experimentos', color: '#A78BDA' },
-    { icon: ICON.decision, value: quarterDecisions, label: 'Decisiones', color: '#E8C15A' },
+    { value: objetivos.filter((o, i) => statuses[i] !== 'logrado').length, label: 'Objetivos activos', color: '#F5F5F5' },
+    { value: atRisk, label: 'En riesgo', color: atRisk ? '#EF8A85' : '#F5F5F5' },
+    { value: openLinkedTasks.length, label: 'Iniciativas en curso', color: '#F5F5F5' },
+    { value: activeExperiments, label: 'Experimentos', color: '#F5F5F5' },
+    { value: quarterDecisions, label: 'Decisiones', color: '#F5F5F5' },
   ]
   const [filter, setFilter] = useState('all') // 'all' | 'riesgo' | un foco
   const focos = [...new Set(objetivos.map((o) => (o.foco || 'General').trim()).filter((f) => f && f !== 'General'))]
@@ -326,21 +313,25 @@ export default function ObjetivosModule({ user, onNavigate }) {
       </div>
 
       {!loaded && <PageSkeleton />}
-      {loaded && <QuarterHero avg={avg} elapsed={elapsed} daysLeft={daysLeft} isCurrent={isCurrentQuarter} closed={!isCurrentQuarter && viewQuarter < currentQuarterKey()} count={objetivos.length} stats={stats} />}
+      {loaded && <QuarterSummary avg={avg} elapsed={elapsed} daysLeft={daysLeft} isCurrent={isCurrentQuarter} closed={!isCurrentQuarter && viewQuarter < currentQuarterKey()} count={objetivos.length} stats={stats} />}
 
       {!loaded ? null : objetivos.length === 0 ? (
         <EmptyBoardCTA quarterKey={quarterKey} onCreate={() => openModal()} onPreset={openModal} />
       ) : (
         <div className="flex flex-col gap-4">
           {showFilters && (
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
-              {[['all', `Todos · ${objetivos.length}`], ...(atRisk ? [['riesgo', `En riesgo · ${atRisk}`]] : []), ...focos.map((f) => [f, f])].map(([id, label]) => (
-                <button key={id} type="button" onClick={() => setFilter(id)} className="relative flex-shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-colors" style={{ color: filter === id ? '#0A0A0A' : id === 'riesgo' ? '#EF9A98' : '#B8B8B8', background: filter === id ? '#F5F5F5' : 'rgba(255,255,255,0.06)' }}>
-                  {label}
-                </button>
-              ))}
+            <div className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none' }}>
+              <div className="inline-flex gap-0.5 rounded-full bg-white/[0.07] p-1">
+                {[['all', `Todos · ${objetivos.length}`], ...(atRisk ? [['riesgo', `En riesgo · ${atRisk}`]] : []), ...focos.map((f) => [f, f])].map(([id, label]) => (
+                  <button key={id} type="button" onClick={() => setFilter(id)} className="relative flex-shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors" style={{ color: filter === id ? '#0A0A0A' : '#A8A8AD' }}>
+                    {filter === id && <motion.span layoutId="objetivos-filter" className="absolute inset-0 rounded-full bg-[#F5F5F5]" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />}
+                    <span className="relative">{label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
+          <div className="overflow-hidden rounded-[24px] bg-[#1C1C1E] [&>div+div]:border-t [&>div+div]:border-white/[0.07]">
           <AnimatePresence mode="popLayout" initial={false}>
             {visible.map(({ o, i }, k) => (
               <motion.div key={o.id} layout="position" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.5, delay: Math.min(k, 6) * 0.05, ease: [0.22, 1, 0.36, 1] }}>
@@ -359,6 +350,7 @@ export default function ObjetivosModule({ user, onNavigate }) {
               </motion.div>
             ))}
           </AnimatePresence>
+          </div>
           {visible.length === 0 && <p className="py-10 text-center text-[14px] text-[#8A8A8A]">Ningún objetivo coincide con este filtro.</p>}
         </div>
       )}

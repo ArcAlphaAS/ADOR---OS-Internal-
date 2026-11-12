@@ -8,46 +8,42 @@ import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import CheckinModal from './CheckinModal'
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal'
-import { SERIF } from '../news/NewsLayout'
 
-// One objetivo as a wide, numbered row (from the user's reference): status
-// chip, serif title, description and the modules it's connected to on the
-// left; on the right the number, the bar and three facts — pace against
-// the quarter, owner, days left. Actions live in the ⋯ menu.
+// Un objetivo como una fila de un tablero de dirección (lista agrupada al estilo de Apple):
+// estado, título y responsable; el avance con su marcador de ritmo; y el valor frente a la meta.
+// Al tocarla se despliega el detalle (descripción, bloqueo, vínculos, check-in y acciones) sin
+// salir de la lista. Todo en grafito y marfil; el color solo aparece en el punto de estado.
+
+const SPRING = { type: 'spring', stiffness: 420, damping: 40 }
 
 function formatValue(value, unit) {
   if (unit === 'S/') return currencyPEN.format(value || 0)
   return `${Math.round(value || 0)}${unit ? ` ${unit}` : ''}`
 }
 
-function Fact({ icon, value, label, color }) {
+const Chevron = ({ open }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)' }} aria-hidden>
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+)
+
+function Bar({ pct, color, elapsedPct, showPace }) {
   return (
-    <div className="flex min-w-0 items-start gap-2.5">
-      <span className="mt-0.5 flex-shrink-0 text-[#8A8A8A]">{icon}</span>
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-medium" style={{ color: color || '#F5F5F5' }}>
-          {value}
-        </p>
-        <p className="truncate text-[11.5px] text-[#8A8A8A]">{label}</p>
+    <div className="relative py-1.5">
+      <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.09]">
+        <motion.div className="h-full rounded-full" style={{ background: color }} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} />
       </div>
+      {showPace && (
+        <span title={`Dónde deberías ir hoy: ${elapsedPct}%`} className="absolute top-0 h-full w-px -translate-x-1/2 bg-white/60" style={{ left: `${elapsedPct}%` }}>
+          <span className="absolute -top-px left-1/2 h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-white/80" />
+        </span>
+      )}
     </div>
   )
 }
 
-const TrendIcon = ({ up }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {up ? <path d="M3 17l6-6 4 4 8-8M15 7h6v6" /> : <path d="M3 7l6 6 4-4 8 8M15 17h6v-6" />}
-  </svg>
-)
-const CalendarSmall = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-    <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
-    <path d="M3.5 10h17M8 3v4M16 3v4" />
-  </svg>
-)
-
 export default function ObjetivoRow({ canManage = false, objetivo, index, owner, actorName, northStarId, elapsedPct, daysLeft, isCurrentQuarter, onNavigate }) {
-  const [menu, setMenu] = useState(false)
+  const [open, setOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -62,172 +58,121 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
   const links = objetivoLinks(o)
   const pace = isCurrentQuarter && !isMilestone ? pct - elapsedPct : null
   const label = o.metric === 'custom' ? o.customLabel || (o.unit === 'S/' ? 'Monto (S/)' : o.unit) || 'Métrica' : metricLabel(o.metric)
-  const lastCheckin = o.lastCheckinAt?.toDate?.() || null
-  const sinceCheckin = lastCheckin ? Math.floor((Date.now() - lastCheckin.getTime()) / 86400000) : null
-  const stale = isCurrentQuarter && (sinceCheckin === null || sinceCheckin >= 7)
-  const checkinText = sinceCheckin === null ? 'Aún sin check-in esta semana' : sinceCheckin === 0 ? 'Check-in de hoy' : `Último check-in hace ${sinceCheckin} ${sinceCheckin === 1 ? 'día' : 'días'}${o.lastCheckinBy ? ` · ${String(o.lastCheckinBy).split(' ')[0]}` : ''}`
   const barColor = pct >= 100 ? '#E8C15A' : status.color === '#EF5350' ? '#EF5350' : '#F4EEE2'
+  const lastCheckin = o.lastCheckinAt?.toDate?.() || null
+  const since = lastCheckin ? Math.floor((Date.now() - lastCheckin.getTime()) / 86400000) : null
+  const stale = isCurrentQuarter && (since === null || since >= 7)
+  const checkinText = since === null ? 'Sin check-in esta semana' : since === 0 ? 'Check-in de hoy' : `Check-in hace ${since} ${since === 1 ? 'día' : 'días'}`
+  const ownerName = owner ? (owner.displayName || owner.email || '').split(' ')[0] : null
+  const valueNow = isCurrentQuarter || o.metric === 'custom' ? formatValue(o.currentValue, o.unit) : '—'
 
   const saveValue = () => {
     const value = Number(draft)
     if (!Number.isNaN(value)) withTimeout(updateObjetivo(o.id, { currentValue: value })).catch(fail('guardar'))
     setEditing(false)
   }
-
-  const menuItem = (text, onClick, danger) => (
-    <button
-      type="button"
-      onClick={() => {
-        onClick()
-        if (!danger) setMenu(false)
-      }}
-      className={`w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/[0.05] ${danger ? 'text-[#FF6B63]' : 'text-[#DDDDDD]'}`}
-    >
-      {text}
-    </button>
-  )
+  const action = 'rounded-full px-3.5 py-1.5 text-[13px] font-medium text-[#F4EEE2] transition-colors hover:bg-white/[0.08]'
 
   return (
-    <article onContextMenu={(e) => { if (e.target.closest?.('input,textarea,a')) return; e.preventDefault(); setMenu(true) }}
-      className={`ador-wrap ador-glass ador-grain ador-card-hover relative grid grid-cols-1 gap-6 rounded-[22px] p-5 md:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10 ${o.isNorthStar ? 'ador-card-attention' : ''}`}
-    >
-      {/* Left: what and why */}
-      <div className="flex gap-4 md:gap-6">
-        <span className="mt-1 text-[15px] font-medium tabular-nums text-[#6A6A6A]">{String(index + 1).padStart(2, '0')}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium" style={{ color: status.color, background: `${status.color}1A` }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.color }} />
-              {status.label}
-            </span>
-            {o.isNorthStar && <span className="rounded-full bg-[#E8C15A]/15 px-2.5 py-1 text-[12px] font-medium text-[#E8C15A]">★ Métrica Norte</span>}
-            {o.foco && o.foco !== 'General' && <span className="text-[12px] text-[#8A8A8A]">{o.foco}</span>}
-          </div>
-          <h2 className="mt-3 text-[24px] leading-[1.15] text-[#F5F5F5] md:text-[28px]" style={SERIF}>
-            {o.title}
-          </h2>
-          {o.description && <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-[#9A9A9A]">{o.description}</p>}
-          {o.blocker && (o.confidence === 'rojo' || o.confidence === 'amarillo') && (
-            <p className="mt-2 text-[13px] text-[#CFC6B8]">
-              <span className="text-[#8A8A8A]">Bloqueo:</span> {o.blocker}
+    <article className="ador-wrap" onContextMenu={(e) => { if (e.target.closest?.('input,textarea,a,button')) return; e.preventDefault(); setOpen((v) => !v) }}>
+      {/* Fila */}
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.03] md:px-7 md:py-5 lg:grid-cols-[minmax(0,2.3fr)_minmax(0,1.5fr)_minmax(0,1.1fr)_20px] lg:gap-x-8">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="mt-[7px] h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: status.color }} title={status.label} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+              <h3 className="text-[17px] font-semibold leading-snug tracking-[-0.01em] text-[#F5F5F5]">{o.title}</h3>
+              {o.isNorthStar && <span className="text-[11.5px] font-medium uppercase tracking-[0.08em] text-[#E8C15A]">Métrica Norte</span>}
+            </div>
+            <p className="mt-0.5 truncate text-[13px] text-[#8E8E93]">
+              {[status.label, o.foco && o.foco !== 'General' ? o.foco : null, ownerName, isCurrentQuarter ? checkinText : null].filter(Boolean).join(' · ')}
             </p>
-          )}
-          {links.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {links.map((l) => (
-                <button key={l.label} type="button" onClick={() => onNavigate?.(l.module)} className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1 text-[12.5px] text-[#BBBBBB] hover:border-white/[0.2] hover:text-[#F5F5F5]">
-                  {l.label} ↗
-                </button>
-              ))}
+          </div>
+        </div>
+
+        <span className="justify-self-end lg:hidden"><Chevron open={open} /></span>
+
+        <div className="col-span-2 lg:col-span-1">
+          {isMilestone ? (
+            <p className="text-[14px]" style={{ color: o.completed ? '#E8C15A' : '#A8A8AD' }}>{o.completed ? '✓ Logrado' : 'Hito pendiente'}</p>
+          ) : (
+            <div className="flex items-center gap-3.5">
+              <div className="min-w-0 flex-1"><Bar pct={pct} color={barColor} elapsedPct={elapsedPct} showPace={isCurrentQuarter && elapsedPct > 0 && elapsedPct < 100} /></div>
+              <span className="w-11 text-right text-[15px] font-medium tabular-nums text-[#F5F5F5]">{pct}%</span>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Right: the number */}
-      <div className="flex flex-col gap-4 border-t border-white/[0.06] pt-5 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">{isMilestone ? 'Hito' : label}</p>
-          <div className="relative flex items-center gap-2">
-            <button type="button" onClick={() => setMenu((v) => !v)} aria-label="Más opciones" className="flex h-8 w-8 items-center justify-center rounded-full text-[18px] leading-none text-[#AAAAAA] hover:bg-white/[0.06]">
-              ⋯
-            </button>
-            {menu && (
-              <div className="absolute right-0 top-10 z-20 w-56 overflow-hidden rounded-xl border border-white/[0.1] bg-[#1C1C1E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                {menuItem('Check-in semanal', () => setCheckingIn(true))}
-                {canManage && !isMilestone && menuItem(o.isNorthStar ? 'Quitar Métrica Norte' : '★ Marcar como Métrica Norte', () => withTimeout(setNorthStar(o.id, northStarId)).catch(fail('actualizar')))}
-                {!isMilestone && o.metric === 'custom' && menuItem('Actualizar valor', () => {
-                  setDraft(String(o.currentValue || ''))
-                  setEditing(true)
-                })}
-                {canManage && menuItem('Eliminar objetivo…', () => { setMenu(false); setConfirmDelete(true) }, true)}
-              </div>
-            )}
-          </div>
+        <div className="col-span-2 flex items-baseline justify-between gap-2 lg:col-span-1 lg:justify-end lg:text-right">
+          {isMilestone ? <span className="text-[13px] text-[#8E8E93] lg:hidden">Hito del trimestre</span> : (
+            <p className="tabular-nums">
+              <span className="text-[17px] font-semibold text-[#F5F5F5]">{valueNow}</span>
+              <span className="ml-1.5 text-[13px] text-[#8E8E93]">de {formatValue(o.targetValue, o.unit)}</span>
+            </p>
+          )}
         </div>
 
-        {isMilestone ? (
-          <button
-            type="button"
-            onClick={() => withTimeout(updateObjetivo(o.id, { completed: !o.completed })).catch(fail('actualizar'))}
-            className="flex items-center gap-3 self-start rounded-2xl border px-4 py-3 transition-colors"
-            style={{ borderColor: o.completed ? 'rgba(232,193,90,0.5)' : 'rgba(255,255,255,0.12)', background: o.completed ? 'rgba(232,193,90,0.1)' : 'transparent' }}
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border" style={{ borderColor: o.completed ? '#E8C15A' : 'rgba(255,255,255,0.3)', color: '#E8C15A' }}>
-              {o.completed ? '✓' : ''}
-            </span>
-            <span className="text-[16px] font-medium" style={{ color: o.completed ? '#E8C15A' : '#F5F5F5' }}>
-              {o.completed ? 'Logrado' : 'Marcar como logrado'}
-            </span>
-          </button>
-        ) : editing ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveValue()
-                if (e.key === 'Escape') setEditing(false)
-              }}
-              className="w-40 rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[18px] text-[#F5F5F5] outline-none"
-            />
-            <button type="button" onClick={saveValue} className="ador-btn-primary rounded-lg px-3 py-2 text-[12.5px] font-medium">
-              Guardar
-            </button>
-            <button type="button" onClick={() => setEditing(false)} className="px-2 text-[12.5px] text-[#8A8A8A]">
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="text-[26px] font-semibold tabular-nums text-[#F5F5F5] md:text-[30px]">
-              {isCurrentQuarter || o.metric === 'custom' ? formatValue(o.currentValue, o.unit) : '—'}
-              <span className="text-[16px] font-normal text-[#8A8A8A]"> / {formatValue(o.targetValue, o.unit)}</span>
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 py-1.5">
-                <div className="h-[7px] overflow-hidden rounded-full bg-white/[0.08]">
-                  <motion.div className="h-full rounded-full" style={{ background: barColor }} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} />
-                </div>
-                {isCurrentQuarter && !isMilestone && elapsedPct > 0 && elapsedPct < 100 && (
-                  <span title={`Dónde deberías ir hoy: ${elapsedPct}%`} className="pointer-events-auto absolute top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-white/55" style={{ left: `${elapsedPct}%` }}>
-                    <span className="absolute -top-[3px] left-1/2 h-[7px] w-[7px] -translate-x-1/2 rounded-full bg-white/80" />
-                  </span>
+        <span className="hidden justify-self-end lg:block"><Chevron open={open} /></span>
+      </button>
+
+      {/* Detalle */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={SPRING} className="overflow-hidden">
+            <div className="grid grid-cols-1 gap-7 border-t border-white/[0.06] px-5 pb-6 pt-5 md:px-7 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-12 lg:pl-[54px]">
+              <div className="min-w-0">
+                {o.description ? <p className="max-w-[560px] text-[14.5px] leading-relaxed text-[#B5B5BA]">{o.description}</p> : <p className="text-[14px] text-[#6E6E73]">Sin descripción.</p>}
+                {o.blocker && (o.confidence === 'rojo' || o.confidence === 'amarillo') && (
+                  <p className="mt-3 text-[13.5px] text-[#E0D6C4]"><span className="text-[#8E8E93]">Bloqueo · </span>{o.blocker}</p>
+                )}
+                {links.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
+                    {links.map((l) => (
+                      <button key={l.label} type="button" onClick={() => onNavigate?.(l.module)} className="text-[13px] text-[#F4EEE2] hover:underline">{l.label} ↗</button>
+                    ))}
+                  </div>
                 )}
               </div>
-              <span className="w-14 text-right text-[17px] font-semibold tabular-nums text-[#F5F5F5]">{pct}%</span>
-            </div>
-          </>
-        )}
 
-        <div className="grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
-          {pace !== null ? (
-            <Fact icon={<TrendIcon up={pace >= 0} />} value={`${pace >= 0 ? '+' : '−'}${Math.abs(pace)} pts`} label="vs. ritmo del trimestre" color={pace >= 0 ? '#4CAF50' : '#EF5350'} />
-          ) : (
-            <Fact icon={<TrendIcon up={pct >= 100} />} value={`${pct}%`} label="avance" />
-          )}
-          <Fact
-            icon={owner ? <Avatar photoURL={owner.photoDataUrl} displayName={owner.displayName} email={owner.email} size={18} /> : <span className="text-[14px]">👤</span>}
-            value={owner ? (owner.displayName || owner.email || '').split(' ')[0] : 'Sin asignar'}
-            label="responsable"
-          />
-          <Fact icon={<CalendarSmall />} value={isCurrentQuarter ? `${daysLeft} días` : '—'} label={isCurrentQuarter ? 'restantes' : 'otro trimestre'} />
-        </div>
+              <div className="flex min-w-0 flex-col gap-4">
+                <dl className="grid grid-cols-3 gap-4">
+                  <div><dt className="text-[11.5px] text-[#8E8E93]">{pace !== null ? 'Frente al ritmo' : 'Avance'}</dt><dd className="mt-1 text-[16px] font-medium tabular-nums" style={{ color: pace === null ? '#F5F5F5' : pace >= 0 ? '#7FC98F' : '#E8A25A' }}>{pace !== null ? `${pace >= 0 ? '+' : '−'}${Math.abs(pace)} pts` : `${pct}%`}</dd></div>
+                  <div><dt className="text-[11.5px] text-[#8E8E93]">Responsable</dt><dd className="mt-1 flex items-center gap-1.5 truncate text-[16px] font-medium text-[#F5F5F5]">{owner && <Avatar photoURL={owner.photoDataUrl} displayName={owner.displayName} email={owner.email} size={18} />}{ownerName || 'Sin asignar'}</dd></div>
+                  <div><dt className="text-[11.5px] text-[#8E8E93]">Restan</dt><dd className="mt-1 text-[16px] font-medium tabular-nums text-[#F5F5F5]">{isCurrentQuarter ? `${daysLeft} días` : '—'}</dd></div>
+                </dl>
+                {!isMilestone && <p className="text-[12px] uppercase tracking-[0.08em] text-[#6E6E73]">{label}</p>}
 
-        {isCurrentQuarter && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: o.confidence ? confidenceColor(o.confidence) : '#555' }} />
-              <p className="truncate text-[13px]" style={{ color: stale ? '#E8C15A' : '#A8A8A8' }}>{checkinText}</p>
+                {isCurrentQuarter && (
+                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.045] px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: o.confidence ? confidenceColor(o.confidence) : '#555' }} />
+                      <p className="truncate text-[13px]" style={{ color: stale ? '#E8C15A' : '#A8A8AD' }}>{checkinText}{lastCheckin && o.lastCheckinBy ? ` · ${String(o.lastCheckinBy).split(' ')[0]}` : ''}</p>
+                    </div>
+                    <button type="button" onClick={() => setCheckingIn(true)} className={action}>{lastCheckin ? 'Hacer check-in' : 'Primer check-in'}</button>
+                  </div>
+                )}
+
+                {editing ? (
+                  <div className="flex items-center gap-2">
+                    <input type="number" autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveValue(); if (e.key === 'Escape') setEditing(false) }} className="w-40 rounded-lg border border-white/[0.14] bg-[#141414] px-3 py-2 text-[16px] text-[#F5F5F5] outline-none" />
+                    <button type="button" onClick={saveValue} className="ador-btn-primary rounded-full px-4 py-2 text-[13px] font-medium">Guardar</button>
+                    <button type="button" onClick={() => setEditing(false)} className="px-2 text-[13px] text-[#8E8E93]">Cancelar</button>
+                  </div>
+                ) : (
+                  <div className="-ml-3.5 flex flex-wrap items-center gap-x-1 gap-y-1">
+                    {isMilestone && (
+                      <button type="button" onClick={() => withTimeout(updateObjetivo(o.id, { completed: !o.completed })).catch(fail('actualizar'))} className={action}>{o.completed ? 'Reabrir hito' : 'Marcar como logrado'}</button>
+                    )}
+                    {!isMilestone && o.metric === 'custom' && <button type="button" onClick={() => { setDraft(String(o.currentValue || '')); setEditing(true) }} className={action}>Actualizar valor</button>}
+                    {canManage && !isMilestone && <button type="button" onClick={() => withTimeout(setNorthStar(o.id, northStarId)).catch(fail('actualizar'))} className={action}>{o.isNorthStar ? 'Quitar Métrica Norte' : 'Marcar como Métrica Norte'}</button>}
+                    {canManage && <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-[#FF6B63] transition-colors hover:bg-white/[0.08]">Eliminar…</button>}
+                  </div>
+                )}
+              </div>
             </div>
-            <button type="button" onClick={() => setCheckingIn(true)} className="flex-shrink-0 rounded-full border border-white/[0.16] px-3.5 py-1.5 text-[12.5px] font-medium text-[#E4E4E4] transition-colors hover:border-[#F4EEE2] hover:text-white">
-              {o.lastCheckinAt ? 'Hacer check-in' : 'Primer check-in'}
-            </button>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       <AnimatePresence>{checkingIn && <CheckinModal objetivo={o} actorName={actorName} onClose={() => setCheckingIn(false)} />}</AnimatePresence>
       {confirmDelete && (
