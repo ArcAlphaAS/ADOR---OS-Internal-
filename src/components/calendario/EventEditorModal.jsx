@@ -9,6 +9,7 @@ import { CloseIcon } from '../icons'
 import { SHEET } from '../../lib/motion'
 import GuestPicker from './GuestPicker'
 import GuestSheet from './GuestSheet'
+import WhereSection, { modeFromEvent, discordChannelOf, locationFor } from './WhereSection'
 import PersonAvatar from '../chat/PersonAvatar'
 import usePhone from '../../hooks/usePhone'
 import { subscribeUsers, subscribeDirectoryPeople } from '../../lib/firestore'
@@ -75,10 +76,13 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
   const [endDate, setEndDate] = useState(ymd(endShown0 < start0 ? start0 : endShown0))
   const [startTime, setStartTime] = useState(allDay0 ? '09:00' : hm(start0))
   const [endTime, setEndTime] = useState(allDay0 ? '10:00' : hm(end0))
-  const [location, setLocation] = useState(src.location || '')
+  const loc0 = (src.location || '').trim()
+  const mode0 = modeFromEvent(src, Boolean(src.meet))
+  const [mode, setMode] = useState(mode0)
+  const [place, setPlace] = useState(mode0 === 'presencial' || mode0 === 'enlace' ? loc0 : '')
+  const [channel, setChannel] = useState(mode0 === 'discord' ? discordChannelOf(loc0) : '')
   const [description, setDescription] = useState(src.description || '')
   const [colorId, setColorId] = useState(src.colorId || '')
-  const [meet, setMeet] = useState(Boolean(src.meet))
   const [guests, setGuests] = useState([
     ...(src.attendees || []).filter((a) => !a.self).map((a) => ({ email: a.email, responseStatus: a.status })),
     ...(draft?.guests || []).filter((e) => EMAIL_RE.test(e)).map((e) => ({ email: e.toLowerCase() })),
@@ -154,11 +158,11 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
     const self = (src.attendees || []).filter((a) => a.self).map((a) => ({ email: a.email, self: true, responseStatus: a.status }))
     const attendees = allGuests.length || self.length ? [...self, ...allGuests] : undefined
     onSave({
-      title: title.trim(), allDay, start, end, location: location.trim(), description: description.trim(),
+      title: title.trim(), allDay, start, end, location: locationFor({ mode, place, channel, fallback: src.location }), description: description.trim(),
       colorId: colorId || null,
       reminderMin: reminder === 'default' ? undefined : reminder,
       guests: attendees,
-      meet: meet && !src.meetLink,
+      meet: mode === 'meet' && !src.meetLink,
       notify: allGuests.length > 0 && notify,
     })
   }
@@ -249,11 +253,6 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añadir descripción" className="min-w-0 flex-1 bg-transparent py-1 text-[16px] text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
                       <Plus filled={Boolean(description)} onClear={() => setDescription('')} onAdd={() => {}} />
                     </div>
-                    <div className={`${rowCls} ${divider} py-3.5`}>
-                      <svg className="h-[18px] w-[18px] flex-shrink-0 text-[#8E8E93]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
-                      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Añadir lugar" className="min-w-0 flex-1 bg-transparent py-1 text-[16px] text-[#F5F5F5] placeholder:text-[#6E6E73] outline-none" />
-                      <Plus filled={Boolean(location)} onClear={() => setLocation('')} onAdd={() => {}} />
-                    </div>
                   </div>
 
                   {/* Cuándo */}
@@ -309,18 +308,18 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                     </div>
                   </div>
 
+                  {/* ¿Cómo se reúnen? */}
+                  <div>
+                    <p className="mb-3 px-1 text-[15px] text-[#8E8E93]">¿Cómo se reúnen?</p>
+                    <div className={`${card} p-4`}>
+                      <WhereSection phone mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} />
+                    </div>
+                  </div>
+
                   {/* Ajustes */}
                   <div>
                     <p className="mb-3 px-1 text-[15px] text-[#8E8E93]">Ajustes</p>
                     <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
-                      <div className="relative flex h-[150px] w-[168px] flex-shrink-0 snap-start flex-col justify-between rounded-[26px] bg-white/[0.06] p-4">
-                        <svg className="text-[#F5F5F5]" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="M16 10.5l5-3v9l-5-3z" /></svg>
-                        <div>
-                          <p className="text-[17px] font-medium leading-tight text-[#F5F5F5]">Videollamada</p>
-                          <p className="mt-0.5 text-[12.5px] leading-snug text-[#8E8E93]">Enlace de Google Meet</p>
-                          <div className="mt-2.5">{src.meetLink ? <span className="text-[13px] text-[#8FD19A]">✓ Ya tiene enlace</span> : <button type="button" role="switch" aria-checked={meet} onClick={() => setMeet((v) => !v)}><Switch on={meet} /></button>}</div>
-                        </div>
-                      </div>
                       <div className="relative flex h-[150px] w-[168px] flex-shrink-0 snap-start flex-col justify-between rounded-[26px] bg-white/[0.06] p-4">
                         <svg className="text-[#F5F5F5]" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 0 0 4 0" /></svg>
                         <div>
@@ -484,12 +483,14 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
             </div>
           </section>
 
+          {/* ¿Cómo se reúnen? */}
+          <section className="mt-7">
+            <p className={label}>{allDay ? '¿Cómo se reúnen?' : '4 · ¿Cómo se reúnen?'}</p>
+            <WhereSection mode={mode} setMode={setMode} place={place} setPlace={setPlace} channel={channel} setChannel={setChannel} hasMeetLink={Boolean(src.meetLink)} />
+          </section>
+
           {/* Detalles */}
           <section className="mt-7 divide-y divide-white/[0.07] overflow-hidden rounded-[22px] bg-white/[0.05]">
-            <label className={detail}>
-              <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Lugar: oficina, dirección…" className="min-w-0 flex-1 bg-transparent text-[14px] text-[#F5F5F5] placeholder:text-[#767676] outline-none" />
-            </label>
             <label className={detail}>
               <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
               <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción: notas, agenda, enlaces…" className="min-w-0 flex-1 resize-none bg-transparent text-[14px] leading-snug text-[#F5F5F5] placeholder:text-[#767676] outline-none" />
@@ -512,15 +513,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
           {/* Ajustes */}
           <section className="mt-7">
             <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Ajustes</p>
-            <div className="grid grid-cols-3 gap-2.5">
-              <Tile
-                icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="M16 10.5l5-3v9l-5-3z" /></svg>}
-                title="Videollamada"
-                hint="Enlace de Google Meet"
-                on={meet}
-                onToggle={() => setMeet((v) => !v)}
-                fixed={src.meetLink ? 'Ya tiene enlace' : null}
-              />
+            <div className="grid grid-cols-2 gap-2.5">
               <Tile
                 icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>}
                 title="Todo el día"
