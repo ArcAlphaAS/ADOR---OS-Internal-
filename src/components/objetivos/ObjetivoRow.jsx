@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { currencyPEN } from '../../lib/clientStages'
-import { metricLabel, objetivoPct, objetivoStatus, objetivoLinks, OBJETIVO_STATUS } from '../../lib/objetivos'
+import { metricLabel, objetivoPct, objetivoStatus, objetivoLinks, OBJETIVO_STATUS, confidenceColor } from '../../lib/objetivos'
 import { updateObjetivo, deleteObjetivo, setNorthStar } from '../../lib/firestore'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -62,6 +62,10 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
   const links = objetivoLinks(o)
   const pace = isCurrentQuarter && !isMilestone ? pct - elapsedPct : null
   const label = o.metric === 'custom' ? o.customLabel || (o.unit === 'S/' ? 'Monto (S/)' : o.unit) || 'Métrica' : metricLabel(o.metric)
+  const lastCheckin = o.lastCheckinAt?.toDate?.() || null
+  const sinceCheckin = lastCheckin ? Math.floor((Date.now() - lastCheckin.getTime()) / 86400000) : null
+  const stale = isCurrentQuarter && (sinceCheckin === null || sinceCheckin >= 7)
+  const checkinText = sinceCheckin === null ? 'Aún sin check-in esta semana' : sinceCheckin === 0 ? 'Check-in de hoy' : `Último check-in hace ${sinceCheckin} ${sinceCheckin === 1 ? 'día' : 'días'}${o.lastCheckinBy ? ` · ${String(o.lastCheckinBy).split(' ')[0]}` : ''}`
   const barColor = pct >= 100 ? '#E8C15A' : status.color === '#EF5350' ? '#EF5350' : '#F4EEE2'
 
   const saveValue = () => {
@@ -85,7 +89,7 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
 
   return (
     <article onContextMenu={(e) => { if (e.target.closest?.('input,textarea,a')) return; e.preventDefault(); setMenu(true) }}
-      className={`ador-wrap ador-glass ador-grain relative grid grid-cols-1 gap-6 rounded-[22px] p-5 md:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10 ${o.isNorthStar ? 'ador-card-attention' : ''}`}
+      className={`ador-wrap ador-glass ador-grain ador-card-hover relative grid grid-cols-1 gap-6 rounded-[22px] p-5 md:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10 ${o.isNorthStar ? 'ador-card-attention' : ''}`}
     >
       {/* Left: what and why */}
       <div className="flex gap-4 md:gap-6">
@@ -125,7 +129,6 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
         <div className="flex items-start justify-between gap-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">{isMilestone ? 'Hito' : label}</p>
           <div className="relative flex items-center gap-2">
-            <span className="rounded-full border border-white/[0.1] px-3 py-1 text-[12px] text-[#BBBBBB]">Trimestral</span>
             <button type="button" onClick={() => setMenu((v) => !v)} aria-label="Más opciones" className="flex h-8 w-8 items-center justify-center rounded-full text-[18px] leading-none text-[#AAAAAA] hover:bg-white/[0.06]">
               ⋯
             </button>
@@ -184,8 +187,15 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
               <span className="text-[16px] font-normal text-[#8A8A8A]"> / {formatValue(o.targetValue, o.unit)}</span>
             </p>
             <div className="flex items-center gap-4">
-              <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-                <motion.div className="h-full rounded-full" style={{ background: barColor }} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} />
+              <div className="relative flex-1 py-1.5">
+                <div className="h-[7px] overflow-hidden rounded-full bg-white/[0.08]">
+                  <motion.div className="h-full rounded-full" style={{ background: barColor }} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} />
+                </div>
+                {isCurrentQuarter && !isMilestone && elapsedPct > 0 && elapsedPct < 100 && (
+                  <span title={`Dónde deberías ir hoy: ${elapsedPct}%`} className="pointer-events-auto absolute top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-white/55" style={{ left: `${elapsedPct}%` }}>
+                    <span className="absolute -top-[3px] left-1/2 h-[7px] w-[7px] -translate-x-1/2 rounded-full bg-white/80" />
+                  </span>
+                )}
               </div>
               <span className="w-14 text-right text-[17px] font-semibold tabular-nums text-[#F5F5F5]">{pct}%</span>
             </div>
@@ -205,6 +215,18 @@ export default function ObjetivoRow({ canManage = false, objetivo, index, owner,
           />
           <Fact icon={<CalendarSmall />} value={isCurrentQuarter ? `${daysLeft} días` : '—'} label={isCurrentQuarter ? 'restantes' : 'otro trimestre'} />
         </div>
+
+        {isCurrentQuarter && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: o.confidence ? confidenceColor(o.confidence) : '#555' }} />
+              <p className="truncate text-[13px]" style={{ color: stale ? '#E8C15A' : '#A8A8A8' }}>{checkinText}</p>
+            </div>
+            <button type="button" onClick={() => setCheckingIn(true)} className="flex-shrink-0 rounded-full border border-white/[0.16] px-3.5 py-1.5 text-[12.5px] font-medium text-[#E4E4E4] transition-colors hover:border-[#F4EEE2] hover:text-white">
+              {o.lastCheckinAt ? 'Hacer check-in' : 'Primer check-in'}
+            </button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>{checkingIn && <CheckinModal objetivo={o} actorName={actorName} onClose={() => setCheckingIn(false)} />}</AnimatePresence>
