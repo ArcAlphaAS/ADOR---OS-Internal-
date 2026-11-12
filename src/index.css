@@ -953,3 +953,62 @@ html.light .ador-glass :is([class~='bg-white/[0.04]'], [class~='bg-white/[0.045]
 .ador-check-draw circle { stroke-dasharray: 54; stroke-dashoffset: 54; animation: ador-draw 0.38s ease-out forwards; }
 .ador-check-draw path { stroke-dasharray: 18; stroke-dashoffset: 18; animation: ador-draw 0.26s 0.24s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) { .ador-check-draw circle, .ador-check-draw path { animation: none; stroke-dashoffset: 0; } }
+
+/* ───────── Modo claro: colores de acento con paleta propia ─────────
+   El filtro de arriba invierte toda la página, y un acento pensado para fondo oscuro
+   (dorado, rojo, verde…) queda pálido o turbio sobre blanco. Aquí cada acento de la app
+   tiene su versión de modo claro (texto oscuro y legible, relleno vivo). Como el filtro se
+   aplica después, el valor que se escribe es el "de antes de invertir" (generado con
+   scripts de cálculo: final = hue-rotate(180°)(invertir(origen))). Generado, no editar a mano. */
+html.light [class~="text-[#E8C15A]" i], html.light [style^="color: rgb(232, 193, 90)" i], html.light [style*=" color: rgb(232, 193, 90)" i] { color: #C49B3A !important; }
+html.light [class~="bg-[#E8C15A]" i], html.light [style*="background: rgb(232, 193, 90)" i], html.light [style*="background-color: rgb(232, 193, 90)" i] { background-color: #915D00 !important; }
+html.light [class~="text-[#B8860B]" i], html.light [style^="color: rgb(184, 134, 11)" i], html.light [style*=" color: rgb(184, 134, 11)" i] { color: #C49B3A !important; }
+html.light [class~="bg-[#B8860B]" i], html.light [style*="background: rgb(184, 134, 11)" i], html.light [style*="background-color: rgb(184, 134, 11)" i] { background-color: #A77500 !important; }
+html.light [class~="text-[#C9A227]" i], html.light [style^="color: rgb(201, 162, 39)" i], html.light [style*=" color: rgb(201, 162, 39)" i] { color: #C49B3A !important; }
+html.light [class~="bg-[#C9A227]" i], html.light [style*="background: rgb(201, 162, 39)" i], html.light [style*="background-color: rgb(201, 162, 39)" i] { background-color: #855E00 !important; }
+html.light [class~="text-[#EF5350]" i], html.light [style^="color: rgb(239, 83, 80)" i], html.light [style*=" color: rgb(239, 83, 80)" i] { color: #FF9494 !important; }
+html.light [class~="bg-[#EF5350]" i], html.light [style*="background: rgb(239, 83, 80)" i], html.light [style*="background-color: rgb(239, 83, 80)" i] { background-color: #FF7D79 !important; }
+html.light [class~="text-[#E05252]" i], html.light [style^="color: rgb(224, 82, 82)" i], html.light [style*=" color: rgb(224, 82, 82)" i] { color: #FF9494 !important; }
+html.light [class~="bg-[#E05252]" i], html.light [style*="background: rgb(224, 82, 82)" i], html.light [style*="background-color: rgb(224, 82, 82)" i] { background-color: #FF7D79 !important; }
+html.light [class~="text-[#D98A86]" i], html.light [style^="color: rgb(217, 138, 134)" i], html.light [style*=" color: rgb(217, 138, 134)" i] { color: #FF9E96 !important; }
+html.light [class~="bg-[#D98A86]" i], html.light [style*="background: rgb(217, 138, 134)" i], html.light [style*="background-color: rgb(217, 138, 134)" i] { background-color: #A35450 !important; }
+html.light [class~="text-[#EF8A88]" i], html.light [style^="color: rgb(239, 138, 136)" i], html.light [style*=" color: rgb(239, 138, 136)" i] { color: #FF9494 !important; }
+html.light [class~="bg-[#EF8A88]" i], html.light [style*="background: rgb(239, 138, 136)" i], html.light [style*="background-color: rgb(239, 138, 136)" i] { background-color: #AF4A48 !important; }
+html.light [class~="text-[#FF6B63]" i], html.light [style^="color: rgb(255, 107, 99)" i], html.light [style*=" color: rgb(255, 107, 99)" i] { color: #FF9494 !important; }
+html.light [class~="bg-[#FF6B63]" i], html.light [style*="background: rgb(255, 107, 99)" i], html.light [style*="background-color: rgb(255, 107, 99)" i] { background-color: #FF7D79 !important; }
+html.light [class~="text-[#E5736F]" i], html.light [style^="color: rgb(229, 115, 111)" i], html.light [style*=" color: rgb(229, 115, 111)" i] { color: #FF9494 !important; }
+html.light [class~="bg-[#E5736F]" i], html.light [style*="background: rgb(229, 115, 111)" i], html.light [style*="background-color: rgb(229, 115, 111)" i] { background-color: #CE5C58 !important; }
+html.light [class~="text-[#FF5A6E]" i], html.light [style^="color: rgb(255, 90, 110)" i], html.light [style*=" color: rgb(255, 90, 110)" i] { color: #FF8A8A !important; }
+html.light [class~="bg-[#FF5A6E]" i], html.light [style*="background: rgb(255, 90, 110)" i], html.light [style*="background-color: rgb(255, 90, 110)" i] { background-color: #FF7F95 !important; }
+html.light [class~="text-[#EF9A98]" i], html.light [style^="color: rgb(239, 154, 152)" i], html.light [style*=" color: rgb(239, 154, 152)" i] { color: #FF9E96 !important; }
+html.light [class~="bg-[#EF9A98]" i], html.light [style*="background: rgb(239, 154, 152)" i], html.light [style*="background-color: rgb(239, 154, 152)" i] { background-color: #96413F !important; }
+html.light [class~="text-[#4CAF50]" i], html.light [style^="color: rgb(76, 175, 80)" i], html.light [style*=" color: rgb(76, 175, 80)" i] { color: #5AB578 !important; }
+html.light [class~="bg-[#4CAF50]" i], html.light [style*="background: rgb(76, 175, 80)" i], html.light [style*="background-color: rgb(76, 175, 80)" i] { background-color: #2C9C4D !important; }
+html.light [class~="text-[#8FD19A]" i], html.light [style^="color: rgb(143, 209, 154)" i], html.light [style*=" color: rgb(143, 209, 154)" i] { color: #5BAA7C !important; }
+html.light [class~="bg-[#8FD19A]" i], html.light [style*="background: rgb(143, 209, 154)" i], html.light [style*="background-color: rgb(143, 209, 154)" i] { background-color: #2A8D49 !important; }
+html.light [class~="text-[#FFC107]" i], html.light [style^="color: rgb(255, 193, 7)" i], html.light [style*=" color: rgb(255, 193, 7)" i] { color: #CE9E44 !important; }
+html.light [class~="bg-[#FFC107]" i], html.light [style*="background: rgb(255, 193, 7)" i], html.light [style*="background-color: rgb(255, 193, 7)" i] { background-color: #984F00 !important; }
+html.light [class~="text-[#FF9F0A]" i], html.light [style^="color: rgb(255, 159, 10)" i], html.light [style*=" color: rgb(255, 159, 10)" i] { color: #EE8D43 !important; }
+html.light [class~="bg-[#FF9F0A]" i], html.light [style*="background: rgb(255, 159, 10)" i], html.light [style*="background-color: rgb(255, 159, 10)" i] { background-color: #E16A03 !important; }
+html.light [class~="text-[#F59E0B]" i], html.light [style^="color: rgb(245, 158, 11)" i], html.light [style*=" color: rgb(245, 158, 11)" i] { color: #EE8D43 !important; }
+html.light [class~="bg-[#F59E0B]" i], html.light [style*="background: rgb(245, 158, 11)" i], html.light [style*="background-color: rgb(245, 158, 11)" i] { background-color: #B55D00 !important; }
+html.light [class~="text-[#F97316]" i], html.light [style^="color: rgb(249, 115, 22)" i], html.light [style*=" color: rgb(249, 115, 22)" i] { color: #EE8D43 !important; }
+html.light [class~="bg-[#F97316]" i], html.light [style*="background: rgb(249, 115, 22)" i], html.light [style*="background-color: rgb(249, 115, 22)" i] { background-color: #E16A03 !important; }
+html.light [class~="text-[#F472B6]" i], html.light [style^="color: rgb(244, 114, 182)" i], html.light [style*=" color: rgb(244, 114, 182)" i] { color: #FF96DB !important; }
+html.light [class~="bg-[#F472B6]" i], html.light [style*="background: rgb(244, 114, 182)" i], html.light [style*="background-color: rgb(244, 114, 182)" i] { background-color: #FF80D0 !important; }
+html.light [class~="text-[#1E5FAD]" i], html.light [style^="color: rgb(30, 95, 173)" i], html.light [style*=" color: rgb(30, 95, 173)" i] { color: #7FB8FF !important; }
+html.light [class~="bg-[#1E5FAD]" i], html.light [style*="background: rgb(30, 95, 173)" i], html.light [style*="background-color: rgb(30, 95, 173)" i] { background-color: #6FB0FE !important; }
+html.light [class~="text-[#A78BDA]" i], html.light [style^="color: rgb(167, 139, 218)" i], html.light [style*=" color: rgb(167, 139, 218)" i] { color: #B296F7 !important; }
+html.light [class~="bg-[#A78BDA]" i], html.light [style*="background: rgb(167, 139, 218)" i], html.light [style*="background-color: rgb(167, 139, 218)" i] { background-color: #9C7EE0 !important; }
+
+/* Modo claro: elevación y velos pensados, no invertidos.
+   - El velo detrás de una ventana (bg-black/xx) invertido sería una niebla blanca que borra la
+     página; aquí queda un oscurecido suave, como en iOS/macOS.
+   - Las sombras negras de menús, tarjetas flotantes y avisos se invertían en sombras blancas
+     (invisibles sobre fondo claro): se escriben en blanco para que el filtro las vuelva sombras
+     oscuras suaves. */
+html.light .fixed[class*="bg-black/"] { background-color: rgba(255, 255, 255, 0.34) !important; }
+html.light [class*="shadow-[0_"],
+html.light [class*="shadow-[0px"] {
+  box-shadow: 0 18px 44px -14px rgba(255, 255, 255, 0.55), 0 2px 10px rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
