@@ -26,7 +26,7 @@ export function Zone({ title, children, foldOnPhone = false }) {
   const folded = phone && foldOnPhone && !open
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center gap-4">
+      {title && <div className="flex items-center gap-4">
         <span className="text-[14px] font-medium text-[#8A8A8A]">{title}</span>
         <span className="h-px flex-1 bg-white/[0.06]" />
         {phone && foldOnPhone && (
@@ -34,7 +34,7 @@ export function Zone({ title, children, foldOnPhone = false }) {
             {open ? 'Ocultar' : 'Ver'}
           </button>
         )}
-      </div>
+      </div>}
       {!folded && children}
     </section>
   )

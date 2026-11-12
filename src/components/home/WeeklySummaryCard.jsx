@@ -15,7 +15,7 @@ export default function WeeklySummaryCard() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`ador-glass ador-grain ador-card-hover flex h-full w-full flex-col items-start ${CARD_RADIUS} ${CARD_PAD} text-left ${summary.level === 'urgent' ? 'ador-card-urgent' : summary.level === 'warn' ? 'ador-card-attention' : ''}`}
+        className={`ador-glass ador-grain ador-card-hover flex h-full w-full flex-col items-start ${CARD_RADIUS} ${CARD_PAD} text-left`}
       >
         <CardHeader label={summary.rhythm?.title || 'Resumen semanal'} dot={summary.level === 'urgent' ? '#EF5350' : summary.level === 'warn' ? '#E8C15A' : '#4CAF50'} />
         {summary.rhythm ? (
@@ -28,8 +28,8 @@ export default function WeeklySummaryCard() {
         )}
         <div className="mt-5 grid w-full grid-cols-3 gap-2.5">
           {[
-            ['Hechas', summary.stats?.completed ?? 0, '#F4EEE2'],
-            ['Vencidas', summary.stats?.overdue ?? 0, summary.stats?.overdue ? '#EF5350' : '#8A8A8A'],
+            ['Hechas · equipo', summary.stats?.completed ?? 0, '#F4EEE2'],
+            ['Vencidas · equipo', summary.stats?.overdue ?? 0, summary.stats?.overdue ? '#EF5350' : '#8A8A8A'],
             ['Ingresos', summary.stats?.income ?? 0, '#F4EEE2', (n) => currencyPEN.format(n)],
           ].map(([label, value, color, format]) => (
             <div key={label} className="rounded-2xl bg-white/[0.045] px-3 py-3">

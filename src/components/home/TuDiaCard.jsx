@@ -124,7 +124,7 @@ function WeekStrip({ events, dueByDay, onOpen }) {
     evCount[k] = (evCount[k] || 0) + 1
   }
   return (
-    <div className="grid grid-cols-7 gap-1 border-b border-white/[0.07] px-4 py-4 sm:px-8 lg:px-12">
+    <div className="grid grid-cols-7 gap-1 border-t border-white/[0.07] px-4 py-3 sm:px-8 lg:px-12">
       {days.map((d) => {
         const k = dayKey(d)
         const isToday = k === dayKey(today)
@@ -191,8 +191,9 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
   const { focus } = day
   const todayKey = dayKey(new Date())
   const todayEvents = events.filter((e) => !e.allDay && e.start && dayKey(new Date(e.start)) === todayKey && new Date(e.end || e.start).getTime() > now - 3600000).sort((a, b) => new Date(a.start) - new Date(b.start))
+  const isNext = (e) => nextMeeting && e.title === nextMeeting.title && new Date(e.start).getTime() === nextMeeting.start.getTime()
   const agenda = [
-    ...todayEvents.slice(0, 4).map((e) => ({ type: 'event', key: `e${e.id}`, event: e })),
+    ...todayEvents.filter((e) => !isNext(e)).slice(0, 4).map((e) => ({ type: 'event', key: `e${e.id}`, event: e })),
     ...day.upNext.map((t) => ({ type: 'task', key: `t${t.id}`, task: t })),
   ]
   const pct = day.totalToday ? Math.round((day.completedToday / day.totalToday) * 100) : 0
@@ -203,13 +204,32 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
         className="pointer-events-none absolute inset-x-10 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${GOLD}99, transparent)` }}
       />
-      <WeekStrip events={events} dueByDay={day.dueByDay} onOpen={() => onNavigate?.('calendario')} />
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
         {/* The one thing */}
-        <div className="flex flex-col px-7 py-9 sm:px-10 lg:px-14 lg:py-12">
-          <motion.p {...rise(0.15)} className="text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: GOLD }}>
-            Tu día
-          </motion.p>
+        <div className="flex flex-col px-7 py-9 sm:px-10 lg:px-14 lg:py-10">
+          <div className="flex items-center justify-between gap-4">
+            <motion.p {...rise(0.15)} className="text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: GOLD }}>
+              Tu día
+            </motion.p>
+            {day.totalToday > 0 && (
+              <motion.div {...rise(0.3)} className="flex items-center gap-2.5" title={`${day.completedToday} de ${day.totalToday} hechas hoy`}>
+                <svg width="30" height="30" viewBox="0 0 56 56" className="-rotate-90" aria-hidden>
+                  <circle cx="28" cy="28" r="23" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+                  <motion.circle
+                    cx="28" cy="28" r="23" fill="none" strokeWidth="6" strokeLinecap="round"
+                    stroke={pct >= 100 ? GOLD : '#F4EEE2'}
+                    strokeDasharray={2 * Math.PI * 23}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 23 }}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 23 * (1 - pct / 100) }}
+                    transition={{ duration: 1.4, delay: 0.6, ease: SLOW }}
+                  />
+                </svg>
+                <span className="text-[12.5px] tabular-nums text-[#A8A8A8]">
+                  {pct >= 100 ? 'Día despejado' : `${day.completedToday} de ${day.totalToday} hechas hoy`}
+                </span>
+              </motion.div>
+            )}
+          </div>
 
           {focus ? (
             <>
@@ -228,7 +248,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
               <motion.div {...rise(0.6)} className="mt-4">
                 <ExpandableTaskCard task={focus} label={day.workstreamName(focus) || 'Tarea'} userById={userById} actorUserId={user?.uid} actorName={actorName} onOpen={() => openTask(focus)} />
               </motion.div>
-              <motion.div {...rise(0.68)} className="mt-8 flex flex-wrap items-center gap-5">
+              <motion.div {...rise(0.68)} className="mt-7 flex flex-wrap items-center gap-5">
                 <button
                   type="button"
                   onClick={() => openTask(focus)}
@@ -265,29 +285,10 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
             </>
           )}
 
-          {day.totalToday > 0 && (
-            <motion.div {...rise(0.8)} className="mt-10 flex max-w-[360px] items-center gap-4">
-              <svg width="56" height="56" viewBox="0 0 56 56" className="flex-shrink-0 -rotate-90" aria-hidden>
-                <circle cx="28" cy="28" r="23" fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="4" />
-                <motion.circle
-                  cx="28" cy="28" r="23" fill="none" strokeWidth="4" strokeLinecap="round"
-                  stroke={pct >= 100 ? GOLD : '#F4EEE2'}
-                  strokeDasharray={2 * Math.PI * 23}
-                  initial={{ strokeDashoffset: 2 * Math.PI * 23 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 23 * (1 - pct / 100) }}
-                  transition={{ duration: 1.4, delay: 0.9, ease: SLOW }}
-                />
-              </svg>
-              <span>
-                <span className="block text-[15px] font-medium text-[#F5F5F5]">{pct >= 100 ? 'Día despejado' : `${pct}% del día`}</span>
-                <span className="block text-[12.5px] text-[#8A8A8A]">{day.completedToday} de {day.totalToday} {day.totalToday === 1 ? 'hecha' : 'hechas'} hoy</span>
-              </span>
-            </motion.div>
-          )}
         </div>
 
         {/* Next meeting + what follows */}
-        <div className="border-t border-white/[0.07] px-7 py-9 sm:px-10 lg:border-l lg:border-t-0 lg:px-12 lg:py-12">
+        <div className="border-t border-white/[0.07] px-7 py-9 sm:px-10 lg:border-l lg:border-t-0 lg:px-12 lg:py-10">
           <motion.div {...rise(0.4)}>
             <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próxima reunión</p>
             <Meeting meeting={nextMeeting} calendarStatus={calendarStatus} onOpenCalendar={() => onNavigate?.('calendario')} now={now} />
@@ -319,6 +320,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
           )}
         </div>
       </div>
+      <WeekStrip events={events} dueByDay={day.dueByDay} onOpen={() => onNavigate?.('calendario')} />
     </div>
   )
 }

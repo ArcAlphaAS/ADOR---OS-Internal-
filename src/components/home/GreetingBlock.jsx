@@ -110,7 +110,7 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
       </div>
       <div className="lg:flex-shrink-0 lg:pb-3 lg:text-right">
       <div className="mt-2 flex items-center gap-2.5 lg:mt-0 lg:justify-end">
-        <p className="text-[14px] font-light text-[#888888] lg:text-[15px]">{formatDate(now)}</p>
+        <p className="text-[14px] font-light text-[#B0B0B0] lg:text-[15px]">{formatDate(now)}</p>
         {badge && (
           <span
             title={badge.label}
@@ -125,7 +125,7 @@ export default function GreetingBlock({ name, doneToday = 0, totalToday = 0 }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[13px] font-light text-[#8A8A8A] lg:text-[14px]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
+      <p className="mt-0.5 text-[13px] font-light text-[#A6A6A6] lg:text-[14px]">{praise(doneToday, totalToday) || getSubtext(now, seasonsOff)}</p>
       </div>
     </div>
   )

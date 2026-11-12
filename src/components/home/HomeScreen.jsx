@@ -72,13 +72,13 @@ export default function HomeScreen({ user, onNavigate }) {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-10 px-4 pb-20 pt-6 md:px-8 lg:gap-16 lg:px-12 lg:pt-16"
+      className="ador-home mx-auto flex w-full max-w-[1680px] flex-col gap-10 px-4 pb-20 pt-6 md:px-8 lg:gap-12 lg:px-12 lg:pt-10"
     >
       <motion.div variants={itemVariants}>
         <GreetingBlock name={firstName(user)} doneToday={day.completedToday} totalToday={day.totalToday} />
       </motion.div>
 
-      <Zone title="Hoy">
+      <Zone>
         {/* Escritorio: lo principal a la izquierda y, a su lado, lo que pide atención; así todo
             queda a la vista sin bajar. En teléfono es una sola columna. */}
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">

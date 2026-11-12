@@ -41,7 +41,7 @@ function NavButton({ id, label, Icon, active, accent, onClick, badge }) {
     if (timerRef.current) clearTimeout(timerRef.current)
   }
 
-  const color = active || hovered ? '#F5F5F5' : accent ? '#F4EEE2' : '#444444'
+  const color = active || hovered ? '#F5F5F5' : accent ? '#F4EEE2' : '#7C7C80'
 
   return (
     <div className="relative flex justify-center" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
