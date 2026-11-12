@@ -9,7 +9,7 @@ const fold = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 const STATUS = { accepted: '#7FC98F', declined: '#EF5350', tentative: '#E8C15A' }
 const STATUS_LABEL = { accepted: 'Aceptó', declined: 'Rechazó', tentative: 'Tal vez' }
 
-export default function GuestPicker({ guests, people, draft, setDraft, onAdd, onAddRaw, onRemove, onRemoveLast, hasError }) {
+export default function GuestPicker({ guests, people, draft, setDraft, onAdd, onAddRaw, onRemove, onRemoveLast, hasError, showChips = true, inputRef }) {
   const [focused, setFocused] = useState(false)
   const [active, setActive] = useState(0)
   const byEmail = useMemo(() => Object.fromEntries(people.map((p) => [p.email, p])), [people])
@@ -35,7 +35,7 @@ export default function GuestPicker({ guests, people, draft, setDraft, onAdd, on
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5 rounded-xl border bg-[#1A1A1A] px-2.5 py-2 transition-colors" style={{ borderColor: hasError ? 'rgba(239,83,80,0.6)' : focused ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)' }}>
-        {guests.map((g) => {
+        {showChips && guests.map((g) => {
           const p = byEmail[g.email]
           return (
             <span key={g.email} title={`${p?.name ? p.name + ' · ' : ''}${g.email}${STATUS_LABEL[g.responseStatus] ? ' · ' + STATUS_LABEL[g.responseStatus] : ''}`} className="flex items-center gap-1.5 rounded-full bg-white/[0.1] py-0.5 pl-0.5 pr-2 text-[12.5px] text-[#E4E4E4]">
@@ -49,6 +49,7 @@ export default function GuestPicker({ guests, people, draft, setDraft, onAdd, on
           )
         })}
         <input
+          ref={inputRef}
           value={draft}
           onChange={(e) => {
             const v = e.target.value

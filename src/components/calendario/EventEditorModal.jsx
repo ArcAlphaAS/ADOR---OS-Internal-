@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { GOOGLE_EVENT_COLORS } from '../../lib/googleCalendar'
@@ -6,6 +6,7 @@ import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
 import { CloseIcon } from '../icons'
 import GuestPicker from './GuestPicker'
+import PersonAvatar from '../chat/PersonAvatar'
 import { subscribeUsers, subscribeDirectoryPeople } from '../../lib/firestore'
 
 // Crear o editar un evento de tu Google Calendar. Mismo patrón de portal + envoltorio con
@@ -17,7 +18,39 @@ const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 const parseLocal = (date, time) => { const [y, m, d] = date.split('-').map(Number); const [h, mi] = (time || '00:00').split(':').map(Number); return new Date(y, m - 1, d, h, mi, 0, 0) }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function EventEditorModal({ event, draft, busy, onSave, onDelete, onClose }) {
+const SLOTS = Array.from({ length: 36 }, (_, i) => `${pad(6 + Math.floor(i / 2))}:${i % 2 ? '30' : '00'}`) // 06:00 – 23:30
+const DAY_CHIPS = 5
+const fmt12 = (t) => { const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}` }
+
+function Switch({ on }) {
+  return (
+    <span className="relative inline-block h-[26px] w-[44px] flex-shrink-0 rounded-full transition-colors duration-200" style={{ background: on ? '#F4EEE2' : 'rgba(255,255,255,0.14)' }}>
+      <span className="absolute top-[3px] h-5 w-5 rounded-full shadow transition-all duration-200" style={{ left: on ? 21 : 3, background: on ? '#1A1814' : '#F5F5F5' }} />
+    </span>
+  )
+}
+
+// Ajuste en baldosa: icono, nombre y un interruptor (o un texto fijo cuando no se puede cambiar).
+function Tile({ icon, title, hint, on, onToggle, disabled, fixed }) {
+  return (
+    <button
+      type="button"
+      onClick={disabled || fixed ? undefined : onToggle}
+      aria-pressed={fixed ? undefined : on}
+      className="flex min-h-[112px] flex-col justify-between rounded-[22px] bg-white/[0.05] p-4 text-left transition-colors hover:bg-white/[0.08] disabled:opacity-40"
+      style={{ opacity: disabled ? 0.45 : 1, cursor: disabled || fixed ? 'default' : 'pointer' }}
+    >
+      <span className="text-[#E4E4E4]">{icon}</span>
+      <span className="mt-3 block">
+        <span className="block text-[13.5px] font-medium leading-tight text-[#F0F0F0]">{title}</span>
+        {hint && <span className="mt-0.5 block text-[11.5px] leading-snug text-[#8A8A8A]">{hint}</span>}
+        {fixed ? <span className="mt-2 block text-[11.5px] text-[#8FD19A]">✓ {fixed}</span> : <span className="mt-2.5 block"><Switch on={on && !disabled} /></span>}
+      </span>
+    </button>
+  )
+}
+
+export default function EventEditorModal({ event, draft, busy, events = [], onSave, onDelete, onClose }) {
   useEscape(onClose)
   const isEdit = Boolean(event)
   const src = event || draft || {}
@@ -37,11 +70,17 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
   const [description, setDescription] = useState(src.description || '')
   const [colorId, setColorId] = useState(src.colorId || '')
   const [meet, setMeet] = useState(Boolean(src.meet))
-  const [guests, setGuests] = useState((src.attendees || []).filter((a) => !a.self).map((a) => ({ email: a.email, responseStatus: a.status })))
-  const [guestDraft, setGuestDraft] = useState((draft?.guests || []).join(' '))
+  const [guests, setGuests] = useState([
+    ...(src.attendees || []).filter((a) => !a.self).map((a) => ({ email: a.email, responseStatus: a.status })),
+    ...(draft?.guests || []).filter((e) => EMAIL_RE.test(e)).map((e) => ({ email: e.toLowerCase() })),
+  ])
+  const [guestDraft, setGuestDraft] = useState('')
   const [notify, setNotify] = useState(true)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [exact, setExact] = useState(false)
+  const guestInput = useRef(null)
+  const slotsRef = useRef(null)
   const [people, setPeople] = useState([])
   const [users, setUsers] = useState([])
   const [directory, setDirectory] = useState([])
@@ -70,6 +109,11 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
     if (ok.length) setGuests((g) => [...g, ...ok.map((email) => ({ email }))])
     setGuestDraft(emails.filter((x) => !EMAIL_RE.test(x)).join(' '))
   }
+
+  useEffect(() => {
+    const el = slotsRef.current?.querySelector('[data-selected="true"]')
+    if (el && slotsRef.current) slotsRef.current.scrollTop = Math.max(0, el.offsetTop - 60)
+  }, [allDay]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al mover la hora de inicio, el fin acompaña (se conserva la duración).
   const changeStart = (v) => {
@@ -109,48 +153,138 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
   }
 
   const field = 'w-full rounded-xl border border-white/[0.08] bg-[#1A1A1A] px-3.5 py-2.5 text-[13.5px] text-[#F5F5F5] placeholder:text-[#8A8A8A] outline-none transition-colors focus:border-white/[0.22]'
-  const label = 'mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]'
+  const label = 'mb-2 block text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]'
+
+  // Días a elegir de un toque: hoy, mañana y los tres siguientes.
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0)
+  const dayChips = Array.from({ length: DAY_CHIPS }, (_, i) => {
+    const d = new Date(today0); d.setDate(d.getDate() + i)
+    return { key: ymd(d), label: i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es', { weekday: 'short', day: 'numeric' }).replace('.', '').replace(/^./, (c) => c.toUpperCase()) }
+  })
+  if (!dayChips.some((c) => c.key === date)) {
+    const d = parseLocal(date, '00:00')
+    dayChips.push({ key: date, label: d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '').replace(/^./, (c) => c.toUpperCase()) })
+  }
+
+  // Horas ocupadas ese día (otros eventos de tu calendario), para marcarlas en la cuadrícula.
+  const dayStart = parseLocal(date, '00:00').getTime()
+  const dayEnd = dayStart + 86400000
+  const others = events.filter((e) => !e.allDay && e.start && (!event || e.id !== event.id) && new Date(e.end || e.start).getTime() > dayStart && new Date(e.start).getTime() < dayEnd)
+  const durMin = Math.max(15, Math.round((parseLocal(date, endTime) - parseLocal(date, startTime)) / 60000) || 60)
+  const clash = (slot) => {
+    const s0 = parseLocal(date, slot).getTime(), s1 = s0 + durMin * 60000
+    return others.find((e) => new Date(e.start).getTime() < s1 && new Date(e.end || e.start).getTime() > s0)
+  }
+  const startClash = !allDay && clash(startTime)
+
+  const detail = 'flex items-start gap-3.5 px-4 py-3.5'
+  const iconCls = 'mt-[3px] h-[18px] w-[18px] flex-shrink-0 text-[#8A8A8A]'
 
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6 backdrop-blur-[10px]" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="w-full max-w-[520px]">
-        <form onSubmit={submit} className="ador-modal-surface ador-grain max-h-[88vh] overflow-y-auto rounded-[28px] p-7">
+      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} transition={SPRING} onClick={(e) => e.stopPropagation()} className="w-full max-w-[580px]">
+        <form onSubmit={submit} className="ador-modal-surface ador-grain max-h-[90vh] overflow-y-auto rounded-[30px] p-7 sm:p-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold text-[#F5F5F5]">{isEdit ? 'Editar evento' : 'Nuevo evento'}</h2>
+            <h2 className="text-[13px] font-medium uppercase tracking-[0.1em] text-[#8A8A8A]">{isEdit ? 'Editar evento' : 'Nuevo evento'}</h2>
             <button type="button" onClick={onClose} aria-label="Cerrar" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[#B5B5B5] hover:bg-white/[0.12]"><CloseIcon size={11} /></button>
           </div>
 
-          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título del evento" className="mt-5 w-full bg-transparent text-[24px] font-semibold tracking-[-0.01em] text-[#F5F5F5] placeholder:text-[#555] outline-none" />
+          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título del evento" className="mt-4 w-full bg-transparent text-[28px] font-semibold tracking-[-0.02em] text-[#F5F5F5] placeholder:text-[#555] outline-none" />
 
-          <div className="mt-5 flex flex-col gap-3">
-            <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[#D0D0D0]">
-              <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} className="h-3.5 w-3.5 accent-[#F4EEE2]" /> Todo el día
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={label}>{allDay ? 'Desde' : 'Fecha'}</label>
-                <input type="date" value={date} onChange={(e) => { setDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} className={field} />
+          {/* 1 · Cuándo */}
+          <section className="mt-7">
+            <p className={label}>{allDay ? 'Días' : '1 · Fecha'}</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {dayChips.map((c) => (
+                <button key={c.key} type="button" onClick={() => { setDate(c.key); if (endDate < c.key) setEndDate(c.key) }} className="rounded-full px-3.5 py-1.5 text-[13px] transition-colors" style={c.key === date ? { background: '#F5F5F5', color: '#0A0A0A', fontWeight: 600 } : { background: 'rgba(255,255,255,0.06)', color: '#C9C9C9' }}>
+                  {c.label}
+                </button>
+              ))}
+              <label className="relative cursor-pointer rounded-full bg-white/[0.06] px-3.5 py-1.5 text-[13px] text-[#C9C9C9] transition-colors hover:bg-white/[0.12]">
+                Otra fecha
+                <input type="date" value={date} onChange={(e) => { if (!e.target.value) return; setDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label="Elegir otra fecha" />
+              </label>
+            </div>
+            {allDay && (
+              <div className="mt-3 flex items-center gap-3">
+                <span className="text-[12.5px] text-[#8A8A8A]">Hasta</span>
+                <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} className={`${field} max-w-[190px]`} />
               </div>
-              {allDay ? (
-                <div><label className={label}>Hasta</label><input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} className={field} /></div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
+            )}
+          </section>
+
+          {!allDay && (
+            <section className="mt-6">
+              <div className="mb-2 flex items-baseline justify-between">
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">2 · Hora de inicio</p>
+                {startClash && <p className="text-[11.5px] text-[#E8C15A]">Cruza con «{startClash.title}»</p>}
+              </div>
+              <div ref={slotsRef} className="relative grid max-h-[178px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+                {SLOTS.map((t) => {
+                  const sel = t === startTime
+                  const busyWith = !sel && clash(t)
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      data-selected={sel}
+                      onClick={() => changeStart(t)}
+                      title={busyWith ? `Ocupado: ${busyWith.title}` : undefined}
+                      className="flex items-center justify-between gap-2 rounded-full py-2 pl-3.5 pr-2.5 text-[13px] tabular-nums transition-colors"
+                      style={sel ? { background: '#F5F5F5', color: '#0A0A0A', fontWeight: 600 } : { background: 'rgba(255,255,255,0.06)', color: busyWith ? '#767676' : '#D8D8D8' }}
+                    >
+                      <span>{fmt12(t)}</span>
+                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: sel ? '#C9A24B' : 'transparent', boxShadow: sel ? 'none' : `inset 0 0 0 1.5px ${busyWith ? 'rgba(232,193,90,0.7)' : 'rgba(255,255,255,0.2)'}` }} />
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                <span className="mr-1 text-[12.5px] text-[#8A8A8A]">Dura</span>
+                {[[30, '30 min'], [45, '45 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, l]) => (
+                  <button key={m} type="button" onClick={() => quick(m)} className="rounded-full px-3 py-1 text-[12px] transition-colors" style={durMin === m ? { background: 'rgba(244,238,226,0.16)', color: '#F4EEE2' } : { background: 'rgba(255,255,255,0.06)', color: '#B8B8B8' }}>{l}</button>
+                ))}
+                <span className="ml-auto text-[12.5px] tabular-nums text-[#A8A8A8]">{startTime} – {endTime}</span>
+                <button type="button" onClick={() => setExact((v) => !v)} className="text-[12px] text-[#8A8A8A] underline-offset-2 hover:text-[#F5F5F5] hover:underline">{exact ? 'Ocultar' : 'Hora exacta'}</button>
+              </div>
+              {exact && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
                   <div><label className={label}>Inicio</label><input type="time" value={startTime} onChange={(e) => changeStart(e.target.value)} className={field} /></div>
                   <div><label className={label}>Fin</label><input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={field} /></div>
                 </div>
               )}
-            </div>
-            {!allDay && (
-              <div className="flex flex-wrap gap-1.5">
-                {[[30, '30 min'], [45, '45 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h']].map(([m, l]) => (
-                  <button key={m} type="button" onClick={() => quick(m)} className="rounded-full bg-white/[0.06] px-3 py-1 text-[12px] text-[#C9C9C9] hover:bg-white/[0.12]">{l}</button>
-                ))}
-              </div>
-            )}
+            </section>
+          )}
 
-            <div>
-              <label className={label}>Invitados</label>
+          {/* 2 · Personas */}
+          <section className="mt-7">
+            <p className={label}>{allDay ? 'Personas' : '3 · Personas'}</p>
+            <div className="flex items-start gap-4 overflow-x-auto pb-2">
+              <button type="button" onClick={() => guestInput.current?.focus()} className="flex w-[64px] flex-shrink-0 flex-col items-center gap-1.5">
+                <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/[0.18] text-[22px] font-light text-[#E4E4E4] transition-colors hover:bg-white/[0.08]">+</span>
+                <span className="text-[12px] font-medium text-[#E4E4E4]">Añadir</span>
+              </button>
+              {guests.map((g) => {
+                const p = people.find((x) => x.email === g.email)
+                const first = (p?.name || g.email).split(/[\s@]/)[0]
+                const ring = { accepted: '#7FC98F', declined: '#EF5350', tentative: '#E8C15A' }[g.responseStatus]
+                return (
+                  <div key={g.email} className="group relative flex w-[64px] flex-shrink-0 flex-col items-center gap-1.5" title={`${p?.name || ''} ${g.email}`.trim()}>
+                    <span className="relative rounded-full" style={ring ? { boxShadow: `0 0 0 2px #141414, 0 0 0 3.5px ${ring}` } : undefined}>
+                      <PersonAvatar name={p?.name || g.email} photo={p?.photo} size={52} />
+                      <button type="button" aria-label={`Quitar ${g.email}`} onClick={() => setGuests((cur) => cur.filter((x) => x.email !== g.email))} className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#2A2A2A] text-[11px] leading-none text-[#E4E4E4] opacity-0 ring-2 ring-[#141414] transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100">×</button>
+                    </span>
+                    <span className="w-full truncate text-center text-[12px] font-medium text-[#E4E4E4]">{first}</span>
+                    {p?.role && <span className="-mt-1 w-full truncate text-center text-[10.5px] text-[#8A8A8A]">{p.role}</span>}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-2">
               <GuestPicker
+                showChips={false}
+                inputRef={guestInput}
                 guests={guests}
                 people={people}
                 draft={guestDraft}
@@ -161,49 +295,72 @@ export default function EventEditorModal({ event, draft, busy, onSave, onDelete,
                 onRemoveLast={() => setGuests((g) => g.slice(0, -1))}
                 hasError={Boolean(error) && /correo|lista/.test(error)}
               />
-              {(guests.length > 0 || guestDraft.trim()) && (
-                <label className="mt-2 flex cursor-pointer items-center gap-2 text-[12.5px] text-[#B5B5B5]">
-                  <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="h-3.5 w-3.5 accent-[#F4EEE2]" /> Enviarles la invitación por correo
-                </label>
-              )}
             </div>
+          </section>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className={label}>Lugar</label><input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Oficina, dirección…" className={field} /></div>
-              <div>
-                <label className={label}>Videollamada</label>
-                {src.meetLink ? <p className="py-2.5 text-[12.5px] text-[#8FD19A]">✓ Ya tiene enlace de Meet</p> : (
-                  <button type="button" onClick={() => setMeet((v) => !v)} className="w-full rounded-xl border px-3.5 py-2.5 text-left text-[13px] transition-colors" style={{ borderColor: meet ? 'rgba(244,238,226,0.5)' : 'rgba(255,255,255,0.08)', background: meet ? 'rgba(244,238,226,0.08)' : '#1A1A1A', color: meet ? '#F4EEE2' : '#9A9A9A' }}>
-                    {meet ? '✓ Con Google Meet' : 'Añadir Google Meet'}
-                  </button>
-                )}
-              </div>
+          {/* Detalles */}
+          <section className="mt-7 divide-y divide-white/[0.07] overflow-hidden rounded-[22px] bg-white/[0.05]">
+            <label className={detail}>
+              <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Lugar: oficina, dirección…" className="min-w-0 flex-1 bg-transparent text-[14px] text-[#F5F5F5] placeholder:text-[#767676] outline-none" />
+            </label>
+            <label className={detail}>
+              <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+              <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción: notas, agenda, enlaces…" className="min-w-0 flex-1 resize-none bg-transparent text-[14px] leading-snug text-[#F5F5F5] placeholder:text-[#767676] outline-none" />
+            </label>
+          </section>
+
+          {/* Ajustes */}
+          <section className="mt-7">
+            <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A]">Ajustes</p>
+            <div className="grid grid-cols-3 gap-2.5">
+              <Tile
+                icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="M16 10.5l5-3v9l-5-3z" /></svg>}
+                title="Videollamada"
+                hint="Enlace de Google Meet"
+                on={meet}
+                onToggle={() => setMeet((v) => !v)}
+                fixed={src.meetLink ? 'Ya tiene enlace' : null}
+              />
+              <Tile
+                icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>}
+                title="Todo el día"
+                hint="Sin hora de inicio"
+                on={allDay}
+                onToggle={() => setAllDay((v) => !v)}
+              />
+              <Tile
+                icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 8l9 6 9-6" /></svg>}
+                title="Avisar por correo"
+                hint={guests.length || guestDraft.trim() ? 'Les llega la invitación' : 'Añade personas primero'}
+                on={notify}
+                onToggle={() => setNotify((v) => !v)}
+                disabled={!guests.length && !guestDraft.trim()}
+              />
             </div>
+          </section>
 
-            <div><label className={label}>Descripción</label><textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Notas, agenda, enlaces…" className={`${field} resize-none`} /></div>
-
-            <div>
-              <label className={label}>Color</label>
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => setColorId('')} title="Predeterminado" className="h-6 w-6 rounded-full ring-offset-2 ring-offset-[#141414]" style={{ background: '#1E5FAD', boxShadow: colorId === '' ? '0 0 0 2px #F4EEE2' : 'none' }} />
-                {Object.entries(GOOGLE_EVENT_COLORS).map(([id, hex]) => (
-                  <button key={id} type="button" onClick={() => setColorId(id)} className="h-6 w-6 rounded-full" style={{ background: hex, boxShadow: colorId === id ? '0 0 0 2px #141414, 0 0 0 4px #F4EEE2' : 'none' }} aria-label={`Color ${id}`} />
-                ))}
-              </div>
+          <section className="mt-7">
+            <p className={label}>Color</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setColorId('')} title="Predeterminado" className="h-6 w-6 rounded-full" style={{ background: '#1E5FAD', boxShadow: colorId === '' ? '0 0 0 2px #141414, 0 0 0 4px #F4EEE2' : 'none' }} />
+              {Object.entries(GOOGLE_EVENT_COLORS).map(([id, hex]) => (
+                <button key={id} type="button" onClick={() => setColorId(id)} className="h-6 w-6 rounded-full" style={{ background: hex, boxShadow: colorId === id ? '0 0 0 2px #141414, 0 0 0 4px #F4EEE2' : 'none' }} aria-label={`Color ${id}`} />
+              ))}
             </div>
-          </div>
+          </section>
 
           {isEdit && src.recurring && <p className="mt-4 text-[11.5px] text-[#8A8A8A]">Este evento se repite: los cambios se aplican solo a esta fecha.</p>}
           {error && <p className="mt-4 text-[12.5px] text-[#EF9A98]">{error}</p>}
 
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-7 flex items-center gap-3">
             {isEdit && (
               <button type="button" onClick={() => (confirmDelete ? onDelete(event) : setConfirmDelete(true))} className="mr-auto rounded-xl px-2 py-2 text-[13px] transition-colors" style={{ color: confirmDelete ? '#EF5350' : '#8A8A8A' }}>
                 {confirmDelete ? 'Pulsa otra vez para eliminar' : 'Eliminar'}
               </button>
             )}
             <button type="button" onClick={onClose} className={`rounded-xl px-4 py-2 text-[13px] text-[#888888] hover:text-[#F5F5F5] ${isEdit ? '' : 'ml-auto'}`}>Cancelar</button>
-            <button type="submit" disabled={busy} className="ador-btn-primary rounded-xl px-6 py-2.5 text-[13px] font-semibold disabled:opacity-60">{busy ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear evento'}</button>
+            <button type="submit" disabled={busy} className="ador-btn-primary rounded-full px-7 py-3 text-[13.5px] font-semibold disabled:opacity-60">{busy ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear evento'}</button>
           </div>
         </form>
       </motion.div>

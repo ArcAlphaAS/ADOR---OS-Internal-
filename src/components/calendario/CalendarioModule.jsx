@@ -583,7 +583,7 @@ export default function CalendarioModule({ user }) {
       )}
 
       <AnimatePresence>{openEvent && <EventDetailModal event={openEvent} uid={user?.uid} onClose={() => setOpenEvent(null)} onEdit={openEdit} onRespond={canWrite ? respond : null} />}</AnimatePresence>
-      <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
+      <AnimatePresence>{editor && <EventEditorModal event={editor.event} draft={editor.draft} events={events} busy={saving} onSave={saveEditor} onDelete={removeEvent} onClose={() => setEditor(null)} />}</AnimatePresence>
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} title={ctx.kind === 'event' ? ctx.event.title : 'Este horario'} subtitle={ctx.kind === 'event' ? (ctx.event.allDay ? 'Todo el día' : `${new Date(ctx.event.start).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })} – ${new Date(ctx.event.end).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })}`) : ctx.date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })} onClose={() => setCtx(null)} items={ctxItems()} />}
       <AnimatePresence>{needPermission && <PermissionPrompt onConnect={connect} onClose={() => setNeedPermission(false)} />}</AnimatePresence>
     </motion.div>
