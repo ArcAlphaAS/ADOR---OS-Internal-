@@ -50,14 +50,20 @@ function Sparkline({ points }) {
 // Same figures as Finanzas (useFinanceData): this month's income — client
 // payments received plus manual incomes — its change vs. last month, and
 // the last six months as a sparkline. Click opens Finanzas.
-export default function FinanceBlock({ hasData, ingresosDelMes, ingresosDeltaPct, series = [], onOpen }) {
+export default function FinanceBlock({ loading = false, hasData, ingresosDelMes, ingresosDeltaPct, series = [], onOpen }) {
   const points = series.map((p) => ({ month: p.month, amount: p.ingresos }))
 
   return (
     <button type="button" onClick={onOpen} className={`ador-glass ador-quiet ador-grain ador-card-hover flex h-full w-full flex-col ${CARD_RADIUS} ${CARD_PAD} text-left`}>
       <CardHeader label="Resumen financiero" dot="#F4EEE2" action="→" />
 
-      {!hasData ? (
+      {loading ? (
+        <div className="mt-5 flex flex-1 flex-col" aria-hidden>
+          <div className="ador-skeleton h-3 w-28 rounded-full" />
+          <div className="ador-skeleton mt-3 h-9 w-44 rounded-xl" />
+          <div className="ador-skeleton mt-auto h-16 w-full rounded-xl" />
+        </div>
+      ) : !hasData ? (
         <div className="flex flex-1 items-center gap-4 py-6">
           <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-[#F4EEE2]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l5-5 4 4 8-9M15 7h5v5" /></svg>

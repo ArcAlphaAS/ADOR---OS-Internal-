@@ -64,6 +64,22 @@ export function useWeeklySummary() {
     return completedAt && completedAt >= range.start && completedAt <= range.end
   }).length
   const tasksOverdue = tasks.filter(isOverdue)
+  const completedPrev = tasks.filter((t) => {
+    const c = t.completedAt?.toDate?.()
+    return c && c >= range.prevStart && c <= range.prevEnd
+  }).length
+  // Tareas cerradas por día de esta semana (lunes a domingo) para el mini gráfico.
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const daily = Array.from({ length: 7 }, (_, i) => {
+    const d0 = new Date(range.start); d0.setDate(range.start.getDate() + i)
+    const d1 = new Date(d0); d1.setHours(23, 59, 59, 999)
+    return {
+      label: d0.toLocaleDateString('es', { weekday: 'narrow' }).toUpperCase(),
+      count: tasks.filter((t) => { const c = t.completedAt?.toDate?.(); return c && c >= d0 && c <= d1 }).length,
+      isToday: d0.getTime() === todayStart.getTime(),
+      future: d0.getTime() > todayStart.getTime(),
+    }
+  })
   const workload = computeWorkload(tasks, users)
 
   const birthdaysThisWeek = users.filter((u) => {
@@ -107,5 +123,5 @@ export function useWeeklySummary() {
     incomeThisWeek,
   })
 
-  return { ...narrative, range, rhythm, stats: { completed: tasksCompletedThisWeek, overdue: tasksOverdue.length, dueThisWeek: tasksDueThisWeek, income: incomeThisWeek } }
+  return { ...narrative, range, rhythm, stats: { daily, completedPrev, completed: tasksCompletedThisWeek, overdue: tasksOverdue.length, dueThisWeek: tasksDueThisWeek, income: incomeThisWeek } }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { toggleTaskComplete, subscribeUsers } from '../../lib/firestore'
+import { toggleTaskComplete, applyTaskUpdate, subscribeUsers } from '../../lib/firestore'
 import ExpandableTaskCard from '../common/ExpandableTaskCard'
 import { withTimeout, isOverdue } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
@@ -49,6 +49,15 @@ function dueLabel(task) {
 }
 
 function Meeting({ meeting, calendarStatus, onOpenCalendar, now }) {
+  if (calendarStatus === 'checking' || calendarStatus === 'connecting') {
+    return (
+      <div aria-hidden>
+        <div className="ador-skeleton h-10 w-28 rounded-xl" />
+        <div className="ador-skeleton mt-3 h-3 w-40 rounded-full" />
+        <div className="ador-skeleton mt-2 h-3 w-24 rounded-full" />
+      </div>
+    )
+  }
   if (calendarStatus !== 'ready') {
     return (
       <button type="button" onClick={onOpenCalendar} className="text-left text-[13px] text-[#8A8A8A] transition-colors hover:text-[#C9C9C9]">
@@ -187,6 +196,21 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
   const actorName = user?.displayName || user?.email?.split('@')[0] || 'Usuario'
   const complete = (task) =>
     withTimeout(toggleTaskComplete(task, actorName)).catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+  const [acting, setActing] = useState(false)
+  const act = (fn, done) => {
+    if (acting) return
+    setActing(true)
+    Promise.resolve(fn())
+      .then(() => showToast(done))
+      .catch((error) => showToast(`No se pudo actualizar: ${error.message}`))
+      .finally(() => setActing(false))
+  }
+  const postpone = (task) => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    d.setHours(12, 0, 0, 0)
+    return withTimeout(applyTaskUpdate(task, { dueDate: d }, user?.uid, actorName))
+  }
   const openTask = (task) => onNavigate?.('workspace', { type: 'task', id: task.id })
   const { focus } = day
   const todayKey = dayKey(new Date())
@@ -231,7 +255,15 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
             )}
           </div>
 
-          {focus ? (
+          {!day.loaded ? (
+            <div className="mt-6" aria-hidden>
+              <div className="ador-skeleton h-3 w-36 rounded-full" />
+              <div className="ador-skeleton mt-4 h-8 w-4/5 rounded-xl" />
+              <div className="ador-skeleton mt-3 h-8 w-3/5 rounded-xl" />
+              <div className="ador-skeleton mt-5 h-3 w-28 rounded-full" />
+              <div className="ador-skeleton mt-8 h-11 w-40 rounded-full" />
+            </div>
+          ) : focus ? (
             <>
               <motion.p {...rise(0.3)} className="mt-6 text-[13px] text-[#8A8A8A]">
                 Lo más importante ahora
@@ -248,13 +280,30 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
               <motion.div {...rise(0.6)} className="mt-4">
                 <ExpandableTaskCard task={focus} label={day.workstreamName(focus) || 'Tarea'} userById={userById} actorUserId={user?.uid} actorName={actorName} onOpen={() => openTask(focus)} />
               </motion.div>
-              <motion.div {...rise(0.68)} className="mt-7 flex flex-wrap items-center gap-5">
+              <motion.div {...rise(0.68)} className="mt-7 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => openTask(focus)}
                   className="rounded-full bg-[#F5F5F5] px-7 py-2.5 text-[13.5px] font-semibold text-[#0A0A0A] transition-opacity duration-200 hover:opacity-85"
                 >
                   Empezar
+                </button>
+                <button
+                  type="button"
+                  disabled={acting}
+                  onClick={() => act(() => complete(focus), 'Tarea completada')}
+                  className="flex items-center gap-2 rounded-full border border-white/[0.16] px-5 py-2.5 text-[13.5px] font-medium text-[#E4E4E4] transition-colors hover:border-[#F4EEE2] hover:text-white disabled:opacity-50"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                  Hecha
+                </button>
+                <button
+                  type="button"
+                  disabled={acting}
+                  onClick={() => act(() => postpone(focus), 'Pasó a mañana')}
+                  className="rounded-full px-3 py-2.5 text-[13.5px] text-[#A8A8A8] transition-colors hover:bg-white/[0.06] hover:text-[#F5F5F5] disabled:opacity-50"
+                >
+                  Mañana
                 </button>
                 <button
                   type="button"

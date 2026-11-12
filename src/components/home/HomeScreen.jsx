@@ -96,7 +96,7 @@ export default function HomeScreen({ user, onNavigate }) {
               <>
                 <motion.div variants={itemVariants}>
                   <AccordionCard title="Necesita tu atención" subtitle="Cobros, tareas y alertas" defaultOpen>
-                    <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+                    <AttentionCard finance={finance} uid={user?.uid} actorName={user?.displayName || user?.email?.split('@')[0]} onNavigate={onNavigate} />
                   </AccordionCard>
                 </motion.div>
                 <motion.div variants={itemVariants}>
@@ -108,7 +108,7 @@ export default function HomeScreen({ user, onNavigate }) {
             ) : (
               <>
                 <motion.div variants={itemVariants}>
-                  <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
+                  <AttentionCard finance={finance} uid={user?.uid} actorName={user?.displayName || user?.email?.split('@')[0]} onNavigate={onNavigate} />
                 </motion.div>
                 <motion.div variants={itemVariants} className="flex-1">
                   <WeeklySummaryCard />
@@ -139,6 +139,7 @@ export default function HomeScreen({ user, onNavigate }) {
         <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5 lg:[&:has(>div:last-child:empty)]:grid-cols-1">
           <motion.div variants={itemVariants} className="h-full lg:col-span-5">
             <FinanceBlock
+              loading={!finance.loaded}
               hasData={finance.movements.length > 0}
               ingresosDelMes={finance.ingresosDelMes}
               ingresosDeltaPct={finance.ingresosDeltaPct}
@@ -147,7 +148,7 @@ export default function HomeScreen({ user, onNavigate }) {
             />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full empty:hidden lg:col-span-7">
-            <InterventionsBlock interventions={interventions} />
+            <InterventionsBlock interventions={interventions} loading={!finance.loaded} />
           </motion.div>
         </div>
       </Zone>

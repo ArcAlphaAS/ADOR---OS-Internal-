@@ -85,6 +85,7 @@ export function buildAttention({ finance, clients, objetivos, tasks, users, uid 
       title: `${mineOverdue.length} ${mineOverdue.length === 1 ? 'tarea vencida tuya' : 'tareas vencidas tuyas'}`,
       detail: mineOverdue[0].title,
       target: ['workspace', null],
+      action: { kind: 'today', label: 'Pasar a hoy', tasks: mineOverdue },
     })
   }
 

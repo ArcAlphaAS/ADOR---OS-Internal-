@@ -27,12 +27,24 @@ function InterventionRow({ client, week, totalWeeks, progress }) {
   )
 }
 
-export default function InterventionsBlock({ interventions = [] }) {
+export default function InterventionsBlock({ interventions = [], loading = false }) {
   return (
     <div className={`ador-glass ador-quiet ador-grain ador-card-hover h-full ${CARD_RADIUS} ${CARD_PAD}`}>
       <CardHeader label="Intervenciones activas" count={interventions.length > 0 ? interventions.length : null} />
 
-      {interventions.length === 0 ? (
+      {loading ? (
+        <div className="mt-4 space-y-5" aria-hidden>
+          {[0, 1].map((i) => (
+            <div key={i} className="flex items-center gap-3.5">
+              <span className="ador-skeleton h-10 w-10 flex-shrink-0 rounded-full" />
+              <div className="flex-1">
+                <div className="ador-skeleton h-3 w-1/2 rounded-full" />
+                <div className="ador-skeleton mt-3 h-[5px] w-full rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : interventions.length === 0 ? (
         <div className="flex items-center gap-5 py-5">
           <div className="flex-shrink-0"><ParticleLogo size={84} /></div>
           <div className="min-w-0">
