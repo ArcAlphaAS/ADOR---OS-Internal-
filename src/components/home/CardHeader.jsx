@@ -27,8 +27,8 @@ export function Zone({ title, children, foldOnPhone = false }) {
   return (
     <section className="flex flex-col gap-4">
       {title && <div className="flex items-center gap-4">
-        <span className="text-[14px] font-medium text-[#8A8A8A]">{title}</span>
-        <span className="h-px flex-1 bg-white/[0.06]" />
+        <span className="text-[15px] font-semibold tracking-[-0.005em] text-[#C8C8C8]">{title}</span>
+        <span className="h-px flex-1 bg-white/[0.09]" />
         {phone && foldOnPhone && (
           <button type="button" onClick={() => setOpen((v) => !v)} className="text-[12.5px] font-medium text-[#F4EEE2]">
             {open ? 'Ocultar' : 'Ver'}

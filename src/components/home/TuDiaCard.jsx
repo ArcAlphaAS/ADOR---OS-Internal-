@@ -199,15 +199,15 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
   const pct = day.totalToday ? Math.round((day.completedToday / day.totalToday) * 100) : 0
 
   return (
-    <div className="ador-glass ador-glow ador-grain relative overflow-hidden rounded-[28px]">
+    <div className="ador-glass ador-glow ador-grain relative flex h-full flex-col overflow-hidden rounded-[28px]">
       <div
         className="pointer-events-none absolute inset-x-10 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${GOLD}99, transparent)` }}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid flex-1 grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
         {/* The one thing */}
         <div className="flex flex-col px-7 py-9 sm:px-10 lg:px-14 lg:py-10">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex h-8 items-center justify-between gap-4">
             <motion.p {...rise(0.15)} className="text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: GOLD }}>
               Tu día
             </motion.p>
@@ -290,7 +290,7 @@ export default function TuDiaCard({ user, events = [], nextMeeting, calendarStat
         {/* Next meeting + what follows */}
         <div className="border-t border-white/[0.07] px-7 py-9 sm:px-10 lg:border-l lg:border-t-0 lg:px-12 lg:py-10">
           <motion.div {...rise(0.4)}>
-            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próxima reunión</p>
+            <p className="mb-3 flex h-8 items-center text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próxima reunión</p>
             <Meeting meeting={nextMeeting} calendarStatus={calendarStatus} onOpenCalendar={() => onNavigate?.('calendario')} now={now} />
           </motion.div>
 

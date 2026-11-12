@@ -5,11 +5,13 @@ import { useTodaysBirthdays } from '../../hooks/useTodaysBirthdays'
 import { useAccess } from '../../hooks/useAccess'
 import PersonAvatar from '../chat/PersonAvatar'
 import { notifyFail } from '../../lib/notifyFail'
+import { ago } from '../../lib/chat'
 
 // "Comunidad" on Inicio: the team's shared plans (events posted in Comunidad)
 // plus the human moments — birthdays today and people who just joined — which
 // only appear when there is one. Faces come from HomePeople's context.
-const WELCOME_DAYS = 14
+const WELCOME_DAYS = 3
+const TYPE_LABELS = { actualizacion: 'Actualización', idea: 'Idea', pregunta: 'Pregunta', logro: 'Logro', recurso: 'Recurso' }
 
 function eventStart(ev) {
   if (!ev?.date) return null
@@ -72,6 +74,26 @@ function EventRow({ post, uid, name, onOpen }) {
   )
 }
 
+// La última publicación real de Comunidad (lo humano, por encima de lo automático).
+function LatestPost({ post, onOpen }) {
+  const body = (post.title ? `${post.title} — ` : '') + (post.text || '').replace(/\s+/g, ' ').trim()
+  const type = TYPE_LABELS[post.type]
+  const at = post.createdAt?.toMillis?.()
+  return (
+    <button type="button" onClick={onOpen} className="group flex w-full items-start gap-3.5 rounded-2xl bg-white/[0.04] p-3.5 text-left transition-colors hover:bg-white/[0.07]">
+      <PersonAvatar uid={post.authorUid} name={post.authorName} size={36} />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate text-[13.5px] font-medium text-[#F5F5F5]">{post.authorName || 'Alguien'}</span>
+          {at && <span className="flex-shrink-0 text-[11.5px] text-[#8A8A8A]">{ago(Date.now() - at)}</span>}
+          {type && <span className="ml-auto flex-shrink-0 rounded-full bg-white/[0.07] px-2 py-px text-[10.5px] text-[#A8A8A8]">{type}</span>}
+        </span>
+        <span className="mt-1 line-clamp-2 block text-[13.5px] leading-snug text-[#CFCFCF]">{body || 'Compartió una publicación.'}</span>
+      </span>
+    </button>
+  )
+}
+
 function MomentRow({ uid, name, text, action, onAction }) {
   return (
     <li className="flex items-center gap-3 py-3">
@@ -112,6 +134,10 @@ export default function CommunityCard({ user, onNavigate }) {
     })
     .slice(-2)
 
+  const latestPost = posts
+    .filter((p) => p.type !== 'evento' && (p.text || p.title))
+    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))[0]
+
   const moments = [
     ...birthdays.map((b) => ({
       key: `b-${b.uid}`,
@@ -140,6 +166,12 @@ export default function CommunityCard({ user, onNavigate }) {
             <MomentRow key={m.key} {...m} />
           ))}
         </ul>
+      )}
+
+      {latestPost && (
+        <div className="mt-3">
+          <LatestPost post={latestPost} onOpen={() => onNavigate?.('news', { type: 'community', id: latestPost.id })} />
+        </div>
       )}
 
       <p className="mb-0.5 mt-5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8A8A8A]">Próximos encuentros</p>

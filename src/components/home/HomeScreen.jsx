@@ -81,30 +81,17 @@ export default function HomeScreen({ user, onNavigate }) {
       <Zone>
         {/* Escritorio: lo principal a la izquierda y, a su lado, lo que pide atención; así todo
             queda a la vista sin bajar. En teléfono es una sola columna. */}
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">
-          <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
-            <motion.div variants={itemVariants}>
-              {phone ? (
-                <PhoneTuDia user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
-              ) : (
-                <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
-              )}
-            </motion.div>
-            <motion.div variants={itemVariants} className="empty:hidden">
-              <CierraTuDiaCard user={user} />
-            </motion.div>
-            <HomePeople>
-              <motion.div variants={itemVariants} className="empty:hidden">
-                <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
-              </motion.div>
-            </HomePeople>
-            {phone && (
-              <motion.div variants={itemVariants} className="empty:hidden">
-                <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
-              </motion.div>
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12 lg:gap-5">
+          <motion.div variants={itemVariants} className="min-w-0 lg:col-span-8">
+            {phone ? (
+              <PhoneTuDia user={user} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
+            ) : (
+              <TuDiaCard user={user} events={calendar.status === 'ready' ? calendar.events : []} nextMeeting={nextMeeting} calendarStatus={calendar.status} onNavigate={onNavigate} />
             )}
-          </div>
-          <div className="flex min-w-0 flex-col gap-3 lg:col-span-4 lg:gap-5">
+          </motion.div>
+
+          {/* Lo que pide atención: en escritorio comparte fila con Tu día y termina a su misma altura. */}
+          <div className="order-last flex min-w-0 flex-col gap-3 lg:order-none lg:col-span-4 lg:gap-5">
             {phone ? (
               <>
                 <motion.div variants={itemVariants}>
@@ -123,10 +110,26 @@ export default function HomeScreen({ user, onNavigate }) {
                 <motion.div variants={itemVariants}>
                   <AttentionCard finance={finance} uid={user?.uid} onNavigate={onNavigate} />
                 </motion.div>
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} className="flex-1">
                   <WeeklySummaryCard />
                 </motion.div>
               </>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 empty:hidden lg:col-span-12 lg:gap-5">
+            <motion.div variants={itemVariants} className="empty:hidden">
+              <CierraTuDiaCard user={user} />
+            </motion.div>
+            <HomePeople>
+              <motion.div variants={itemVariants} className="empty:hidden">
+                <TeEsperanCard uid={user?.uid} onNavigate={onNavigate} />
+              </motion.div>
+            </HomePeople>
+            {phone && (
+              <motion.div variants={itemVariants} className="empty:hidden">
+                <PhoneSocial uid={user?.uid} onNavigate={onNavigate} />
+              </motion.div>
             )}
           </div>
         </div>
@@ -153,7 +156,7 @@ export default function HomeScreen({ user, onNavigate }) {
         <HomePeople>
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[5fr_4fr_3fr] lg:gap-5 lg:[&:has(>div:nth-child(2):empty)]:grid-cols-[6fr_5fr]">
             <motion.div variants={itemVariants} className="h-full">
-              <TeamPulseCard user={user} />
+              <TeamPulseCard user={user} onNavigate={onNavigate} />
             </motion.div>
             <motion.div variants={itemVariants} className="h-full empty:hidden">
               <LatestNewsCard uid={user?.uid} onNavigate={onNavigate} />
