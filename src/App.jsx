@@ -125,6 +125,7 @@ function App() {
     content = (
       <WelcomeScreen
         key="welcome"
+        uid={user.uid}
         name={firstName(user)}
         isReturning={welcome.isReturning}
         onDismiss={() => setWelcomeDismissed(true)}
