@@ -285,19 +285,40 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
   const containerRef = scrollRef || internalRef
   const daysKey = days.map((d) => d.toDateString()).join(',')
 
-  // Open scrolled to roughly the current time — same "don't make me scroll
-  // from midnight" behavior Apple/Google Calendar both default to — rather
-  // than always starting at 12 AM. Falls back to a reasonable 8 AM start
-  // for a range that doesn't include today (e.g. paging to a future week).
+  // Abre mostrando "ahora" (un poco por encima de la mitad), no desde las 7 de la mañana.
+  // Dos cosas lo hacían fallar en la app real: (1) el área con scroll podía quedar más alta
+  // que la ventana, y entonces "ahora" estaba dentro de ella pero fuera de lo visible, y
+  // (2) si el módulo se monta oculto o aún sin tamaño, el desplazamiento se perdía. Por eso
+  // el alto se ajusta a la ventana y el desplazamiento se hace cuando el área ya tiene tamaño.
+  const [maxH, setMaxH] = useState(null)
+  const pendingScroll = useRef(true)
+  const nowTopRef = useRef(0)
+  nowTopRef.current = showNowLine ? nowTop : (8 - START_HOUR) * ROW_HEIGHT
+
+  useEffect(() => { pendingScroll.current = true }, [daysKey, full])
+
   useEffect(() => {
-    if (!containerRef.current) return
-    // Abre mostrando "ahora" (centrado un poco más arriba de la mitad) y llega con un
-    // deslizamiento suave desde un poco antes, no con un salto.
     const el = containerRef.current
-    const target = Math.max((showNowLine ? nowTop : (8 - START_HOUR) * ROW_HEIGHT) - el.clientHeight * 0.4, 0)
-    el.scrollTop = Math.max(target - 140, 0)
-    const t = setTimeout(() => el.scrollTo({ top: target, behavior: 'smooth' }), 80)
-    return () => clearTimeout(t)
+    if (!el) return
+    const fit = () => {
+      const top = el.getBoundingClientRect().top
+      if (el.clientHeight === 0 && top === 0) return // oculto (display:none): se reintenta al aparecer
+      setMaxH(Math.max(380, Math.min(window.innerHeight - Math.max(top, 0) - 28, 900)))
+    }
+    const tryScroll = () => {
+      if (!pendingScroll.current || el.clientHeight === 0) return
+      pendingScroll.current = false
+      const target = Math.max(nowTopRef.current - el.clientHeight * 0.4, 0)
+      el.scrollTop = Math.max(target - 140, 0)
+      requestAnimationFrame(() => el.scrollTo({ top: target, behavior: 'smooth' }))
+    }
+    const run = () => { fit(); tryScroll() }
+    run()
+    const t = setTimeout(run, 120) // por si la animación de entrada aún movía el área
+    const ro = new ResizeObserver(run)
+    ro.observe(el)
+    window.addEventListener('resize', run)
+    return () => { clearTimeout(t); ro.disconnect(); window.removeEventListener('resize', run) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daysKey, full])
 
@@ -317,7 +338,7 @@ export default function CalendarioGrid({ days, events, scrollRef, tasks = [], ac
       <AllDayStrip days={days} events={events} onOpenEvent={onOpenEvent} />
       <TasksStrip days={days} tasks={tasks} actorName={actorName} />
 
-      <div ref={containerRef} className="overflow-y-auto" style={{ maxHeight: 'clamp(380px, calc(100vh - 340px), 780px)', ...(drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : {}) }}>
+      <div ref={containerRef} className="overflow-y-auto" style={{ maxHeight: maxH ? `${maxH}px` : 'clamp(380px, calc(100vh - 340px), 780px)', ...(drag ? { userSelect: 'none', cursor: drag.kind === 'resize' ? 'ns-resize' : 'grabbing' } : {}) }}>
         <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER_WIDTH}px repeat(${days.length}, minmax(0, 1fr))`, height: HOURS.length * ROW_HEIGHT }}>
           {/* Hour labels */}
           <div className="relative">
