@@ -101,7 +101,7 @@ function Clock({ now, phone, still }) {
   )
 }
 
-export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = false, onDismiss }) {
+export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = false, overlay = false, onDismiss }) {
   const phone = usePhone()
   const reduce = useReducedMotion()
   const [now, setNow] = useState(() => new Date())
@@ -174,13 +174,14 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const dragScale = useTransform(dragY, [-320, 0], [0.92, 1])
 
   const { greeting, subtext } = getMessages(now.getHours(), isReturning, name)
-  const line = brief.ready && brief.text ? brief.text : subtext
+  const lines = brief.ready && brief.lines.length ? brief.lines : [subtext]
+  const line = lines.join('|')
   const sky = SKY[skyBucket(now.getHours())]
   const date = now.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 overflow-hidden bg-[#000000]"
+      className={`fixed inset-0 ${overlay ? 'z-[200]' : 'z-40'} overflow-hidden bg-[#000000]`}
       animate={{ opacity: dismissing ? 0 : 1 }}
       transition={{ duration: reduce ? 0.15 : 0.6, delay: dismissing && !reduce ? 0.1 : 0, ease: 'easeInOut' }}
     >
@@ -250,18 +251,25 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
             {greeting}, <span className="font-semibold text-[#F5F5F5]">{name}</span>
           </motion.h1>
 
-          <div className="mt-3 min-h-[44px] max-w-[min(88vw,560px)] text-center">
+          <div className="mt-4 min-h-[56px] max-w-[min(88vw,560px)] text-center">
             <AnimatePresence mode="wait" initial>
-              <motion.p
+              <motion.div
                 key={line}
                 initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -6, filter: 'blur(4px)' }}
                 transition={{ duration: 0.55, delay: 0.95, ease: 'easeOut' }}
-                className="text-[15px] font-normal leading-snug tracking-[-0.005em] text-white/50 md:text-[17px]"
+                className="flex flex-col items-center gap-1"
               >
-                {line}
-              </motion.p>
+                {lines.map((l, i) => (
+                  <p
+                    key={i}
+                    className={i === 0 ? 'text-[16px] font-medium leading-snug tracking-[-0.01em] text-white/80 md:text-[18px]' : 'text-[14px] font-normal leading-snug text-white/50 md:text-[15px]'}
+                  >
+                    {l}
+                  </p>
+                ))}
+              </motion.div>
             </AnimatePresence>
           </div>
         </motion.div>
@@ -275,21 +283,14 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
         className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)' }}
       >
-        {phone ? (
-          <>
-            <motion.div
-              animate={reduce ? undefined : { y: [0, -7, 0] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="h-[5px] w-[132px] rounded-full bg-white/40"
-            />
-            <p className="text-[12px] text-white/50">Desliza hacia arriba para entrar</p>
-          </>
-        ) : (
-          <p className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[12px] text-white/50">
-            Toca en cualquier lugar o presiona
-            <kbd className="rounded-md border border-white/15 px-1.5 py-px text-[11px] text-white/70">Enter</kbd>
-          </p>
-        )}
+        <motion.div
+          animate={reduce ? undefined : { y: [0, -6, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          className="h-[5px] w-[132px] rounded-full bg-white/40"
+        />
+        <p className="text-[12px] text-white/50">
+          {phone ? 'Desliza hacia arriba para entrar' : 'Toca en cualquier lugar o presiona Enter'}
+        </p>
       </motion.div>
     </motion.div>
   )

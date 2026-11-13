@@ -6,6 +6,7 @@ import WelcomeScreen from './components/WelcomeScreen'
 import AppShell from './components/shell/AppShell'
 import { useAuth } from './hooks/useAuth'
 import { useWelcomeScreen } from './hooks/useWelcomeScreen'
+import { useIdleLock } from './hooks/useIdleLock'
 import { firstName } from './lib/user'
 import { saveUserProfile, getUserProfile, getAllowedEmail } from './lib/firestore'
 import LoadingMark from './components/common/LoadingMark'
@@ -101,6 +102,8 @@ function App() {
   }
 
   let content = null
+  const inApp = !!user && welcome.checked && !(welcome.show && !welcomeDismissed)
+  const idle = useIdleLock(inApp && !PREVIEW_MOCK_USER, 10)
 
   // The welcome screen is only for people who arrive without a session;
   // anyone already signed in goes straight in.
@@ -158,6 +161,11 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#000000]">
       <AnimatePresence mode="wait">{content}</AnimatePresence>
+      <AnimatePresence>
+        {idle.locked && (
+          <WelcomeScreen key="idle" overlay uid={user.uid} name={firstName(user)} isReturning onDismiss={idle.unlock} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

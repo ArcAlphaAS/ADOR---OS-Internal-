@@ -33,7 +33,7 @@ export function useWelcomeBrief(uid, hour) {
 
   const calendarSettled = calendar.status !== 'checking' && calendar.status !== 'connecting'
   const ready = tasks !== null && (calendarSettled || timedOut)
-  if (!ready) return { ready: false, text: '' }
+  if (!ready) return { ready: false, text: '', lines: [] }
 
   const now = new Date()
   const mine = tasks.filter((t) => t.status !== 'completado' && !isPendingFor(t, uid))
@@ -71,5 +71,5 @@ export function useWelcomeBrief(uid, hour) {
       parts.push(start <= now ? `En curso: ${clip(today.title)}.` : `${clip(today.title)} a las ${hhmm(start)}.`)
     }
   }
-  return { ready: true, text: parts.join(' ') }
+  return { ready: true, text: parts.join(' '), lines: parts }
 }
