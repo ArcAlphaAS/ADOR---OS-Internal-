@@ -53,6 +53,7 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
   const items = useChatNotifications(uid, onNavigate)
   const unread = useChatUnreadCount(uid)
   const seenRef = useRef(null)
+  const mountedAt = useRef(Date.now())
   const [toasts, setToasts] = useState([])
   const [myPresence, setMyPresence] = useState(null)
 
@@ -73,7 +74,13 @@ export default function ChatMessageToaster({ user, activeModule, onNavigate }) {
       seenRef.current = new Set(incoming.map((i) => i.key))
       return
     }
-    const fresh = incoming.filter((i) => !seenRef.current.has(i.key))
+    // Data lands in pieces after a reload (the conversations often arrive before
+    // your read markers), so a conversation you already read can look "new" for a
+    // moment. A real new message is one that was written after ADOR OS opened; anything
+    // older is backlog — recorded as seen, never toasted. (30 s of margin for clock skew.)
+    const unseen = incoming.filter((i) => !seenRef.current.has(i.key))
+    const fresh = unseen.filter((i) => i.at >= mountedAt.current - 30000)
+    unseen.filter((i) => !fresh.includes(i)).forEach((i) => seenRef.current.add(i.key))
     if (!fresh.length) return
     fresh.forEach((i) => seenRef.current.add(i.key))
 
