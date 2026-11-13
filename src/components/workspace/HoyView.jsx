@@ -195,7 +195,7 @@ function HoyHeader({ total, completedCount, overdueCount }) {
         <h2 className="ador-subtitle">Mis tareas</h2>
         <p className="mt-0.5 text-[14px] text-[#8E8E93]">{dateLabel}</p>
         <p className="mt-2 text-[13px] text-[#8E8E93]">
-          {total} tarea{total === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}
+          {Math.max(0, total - completedCount)} abierta{total - completedCount === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}
           <span style={{ color: statusColor }}>{statusLabel}.</span>
         </p>
       </div>

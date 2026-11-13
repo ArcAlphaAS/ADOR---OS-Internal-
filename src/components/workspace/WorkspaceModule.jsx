@@ -231,8 +231,8 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 }}
                 className="w-full rounded-full bg-[#1C1C1E] px-5 py-3 text-[16px] text-[#F5F5F5] outline-none"
               >
-                <option value="__mine">Personal — lo mío</option>
-                <option value="__all">Grupo — todo el equipo</option>
+                <option value="__mine">Mías — asignadas a mí</option>
+                <option value="__all">Equipo — todas las tareas</option>
                 {workstreams.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}

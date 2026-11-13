@@ -116,9 +116,14 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, o
 
   return (
     <div className="hidden h-full w-[232px] flex-shrink-0 flex-col gap-6 overflow-y-auto border-r border-white/[0.07] px-3 pb-6 pt-[88px] md:flex">
-      <div className="grid grid-cols-2 gap-2.5">
-        <SmartTile label="Personal" count={myTaskCount} active={!neutral && onlyMine} Icon={UsersIcon} onClick={onToggleOnlyMine} />
-        <SmartTile label="Grupo" count={totalOpen} active={!neutral && !onlyMine && selectedId === null} Icon={BriefcaseIcon} onClick={() => onSelect(null)} />
+      <div className="flex flex-col gap-2">
+        {/* Esta barra decide QUÉ tareas ven Lista, Kanban, Timeline y Calendario (y de qué proyecto). "Mis tareas" es
+            otra cosa: tu plan del día, ordenado por tiempo. Por eso el rótulo lo dice y los mosaicos se llaman "Mías" y "Equipo". */}
+        <span className={sectionTitle}>Ver por proyecto</span>
+        <div className="grid grid-cols-2 gap-2.5">
+          <SmartTile label="Mías" count={myTaskCount} active={!neutral && onlyMine} Icon={UsersIcon} onClick={onToggleOnlyMine} />
+          <SmartTile label="Equipo" count={totalOpen} active={!neutral && !onlyMine && selectedId === null} Icon={BriefcaseIcon} onClick={() => onSelect(null)} />
+        </div>
       </div>
 
       {intervenciones.length > 0 && (
