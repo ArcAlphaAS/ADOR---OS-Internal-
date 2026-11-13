@@ -90,7 +90,7 @@ export default function CalendarView({ tasks, onOpenTask, actorUserId, actorName
         <button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="flex h-8 w-8 items-center justify-center rounded-full text-[#888888] hover:bg-white/[0.07] hover:text-[#F5F5F5]" title="Mes siguiente">
           <ChevronRightIcon size={14} />
         </button>
-        <button type="button" onClick={() => setMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))} className="ml-1 rounded-lg px-2.5 py-1 text-[12px] text-[#AAAAAA] hover:bg-white/[0.06]">
+        <button type="button" onClick={() => setMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))} className="ml-1 rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[13px] text-[#E4E4E4] hover:bg-white/[0.12]">
           Hoy
         </button>
         <span className="ml-auto text-[11.5px] text-[#8A8A8A]">Arrastra una tarea a otro día para reprogramarla</span>
@@ -103,7 +103,7 @@ export default function CalendarView({ tasks, onOpenTask, actorUserId, actorName
               <span key={n} className="px-2 text-[10.5px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">{n}</span>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06]">
+          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-[22px] bg-white/[0.07]">
             {days.map((d) => {
               const k = key(d)
               const inMonth = d.getMonth() === month.getMonth()

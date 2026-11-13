@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { priorityMeta, statusMeta, timelineEnd } from '../../lib/workspace'
 import { applyTaskUpdate } from '../../lib/firestore'
 import { useToast } from '../../hooks/useToast'
@@ -251,17 +252,18 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-[12px] text-[#888888]">Rango visible: {spanLabel}</span>
-        <div className="ador-glass flex items-center gap-1 rounded-full p-1">
+        <span className="text-[13px] text-[#8E8E93]">{spanLabel}</span>
+        <div className="flex items-center gap-0.5 rounded-full bg-white/[0.07] p-1">
           {RANGE_ORDER.map((id) => (
             <button
               key={id}
               type="button"
               onClick={() => setRange(id)}
-              className="rounded-full px-3 py-1 text-[12px] font-medium transition-colors duration-150"
-              style={{ background: range === id ? '#F5F5F5' : 'transparent', color: range === id ? '#0A0A0A' : '#888888' }}
+              className="relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150"
+              style={{ color: range === id ? '#0A0A0A' : '#A8A8AD' }}
             >
-              {RANGES[id].label}
+              {range === id && <motion.span layoutId="timeline-range" className="absolute inset-0 rounded-full bg-[#F5F5F5]" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />}
+              <span className="relative">{RANGES[id].label}</span>
             </button>
           ))}
         </div>
@@ -276,7 +278,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
               .map((tick) => (
                 <span
                   key={tick.getTime()}
-                  className="absolute whitespace-nowrap text-[11px] text-[#8A8A8A]"
+                  className="absolute whitespace-nowrap text-[12px] text-[#8E8E93]"
                   style={{ left: dateToX(tick), transform: 'translateX(-50%)' }}
                 >
                   {config.format(tick)}
@@ -335,7 +337,7 @@ export default function TimelineView({ workstreams, tasksByWorkstream, onOpenTas
                 <div key={workstream.id}>
                   <div className="mb-2 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: accent }} />
-                    <span className="text-[12px] font-medium text-[#888888]">{workstream.name}</span>
+                    <span className="text-[14px] font-semibold text-[#E4E4E4]">{workstream.name}</span>
                   </div>
 
                   <div className="flex flex-col gap-2.5">

@@ -38,24 +38,22 @@ function TaskCard({ task, workstream, workstreams = [], userById, onOpen, resolv
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
       }}
-      className="ador-glass ador-grain relative cursor-pointer rounded-xl border-l-[3px] p-3.5"
-      style={{ borderLeftColor: accent }}
+      className="relative cursor-pointer rounded-[16px] bg-[#232326] p-4 transition-colors duration-150 hover:bg-[#2A2A2E]"
     >
-      <span className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        {workstream?.name || 'Sin grupo'}
+      <span className="flex items-center gap-2 text-[12px] text-[#8E8E93]">
+        <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: accent }} />
+        <span className="truncate">{workstream?.name || 'Sin grupo'}</span>
       </span>
-      <div className="mt-1 text-[14px] font-medium text-[#F5F5F5]">{task.title}</div>
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
-            style={{ borderColor: priority.color, background: `${priority.color}26`, color: priority.color }}
-          >
+      <div className="mt-1.5 text-[15px] font-medium leading-snug text-[#F5F5F5]">{task.title}</div>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex items-center gap-1.5 text-[12.5px] text-[#C8C8CD]">
+            <span className="h-[7px] w-[7px] rounded-full" style={{ background: priority.color }} />
             {priority.label}
           </span>
-          {dueLabel && <span className="text-[11px] text-[#8A8A8A]">{dueLabel}</span>}
-          {subs.length > 0 && <span className="text-[11px] text-[#8A8A8A]" title="Subtareas completadas">☑ {subs.filter((s) => s.done).length}/{subs.length}</span>}
-          {task.commentCount > 0 && <span className="text-[11px] text-[#E8C15A]" title="Actualizaciones">💬 {task.commentCount}</span>}
+          {dueLabel && <span className="text-[12.5px] text-[#8E8E93]">{dueLabel}</span>}
+          {subs.length > 0 && <span className="text-[12.5px] text-[#8E8E93]" title="Subtareas completadas">☑ {subs.filter((s) => s.done).length}/{subs.length}</span>}
+          {task.commentCount > 0 && <span className="text-[12.5px] text-[#8E8E93]" title="Actualizaciones">💬 {task.commentCount}</span>}
         </div>
         <AvatarStack userIds={task.assignedTo || []} userById={userById} pendingIds={task.pendingConfirmations || []} size={20} />
       </div>
@@ -85,19 +83,17 @@ function KanbanColumn({ status, tasks, workstreamById, userById, registerRef, on
         ref.current = el
         registerRef(status.id, el)
       }}
-      className="flex w-[280px] flex-shrink-0 flex-col rounded-2xl"
-      style={{ background: 'rgba(255,255,255,0.02)', padding: 16 }}
+      className="flex w-[300px] flex-shrink-0 flex-col rounded-[22px] bg-white/[0.035] p-3.5"
     >
-      <div className="mb-3 flex items-center justify-between px-1">
-        <span className="text-[13px] font-medium" style={{ color: status.color }}>
-          {status.label}
-        </span>
-        <span className="text-[11px] text-[#8A8A8A]">{tasks.length}</span>
+      <div className="mb-3 flex items-center gap-2.5 px-2 pt-1">
+        <span className="h-2 w-2 rounded-full" style={{ background: status.color }} />
+        <span className="flex-1 text-[14.5px] font-semibold text-[#F5F5F5]">{status.label}</span>
+        <span className="text-[13px] tabular-nums text-[#8E8E93]">{tasks.length}</span>
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         {tasks.length === 0 ? (
-          <div className="flex items-center justify-center rounded-xl border border-dashed border-white/[0.06] py-8">
-            <span className="text-[12px] text-[#8A8A8A]">Sin tareas</span>
+          <div className="flex items-center justify-center py-10">
+            <span className="text-[13px] text-[#6E6E73]">Sin tareas</span>
           </div>
         ) : (
           tasks.map((task) => (

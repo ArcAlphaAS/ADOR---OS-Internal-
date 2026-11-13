@@ -177,21 +177,23 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
       initial={false}
       className={phone ? 'ador-ws-phone flex' : '-mt-16 flex h-[calc(100%+4rem)]'}
     >
-      {view !== 'hoy' && (
-        <WorkspaceSidebar
-          canManage={access.isAdmin}
-          taskCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.length]))}
-          actorName={actorName}
-          workstreams={workstreams}
-          selectedId={selectedWorkstreamId}
-          onSelect={selectWorkstream}
-          onNewProyecto={() => setShowNewProyecto(true)}
-          onlyMine={onlyMine}
-          onToggleOnlyMine={toggleOnlyMine}
-          myTaskCount={myTaskCount}
-          workload={workload}
-        />
-      )}
+      {/* La barra lateral está siempre: antes se escondía en "Mis tareas" y todo el contenido saltaba 232 px al
+          cambiar de pestaña. Desde "Mis tareas" funciona como atajo: elegir un proyecto o Grupo lleva a Lista. */}
+      <WorkspaceSidebar
+        canManage={access.isAdmin}
+        taskCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.length]))}
+        openCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.filter((t) => t.status !== 'completado').length]))}
+        actorName={actorName}
+        workstreams={workstreams}
+        selectedId={selectedWorkstreamId}
+        neutral={view === 'hoy'}
+        onSelect={(id) => { selectWorkstream(id); if (view === 'hoy') changeView('lista') }}
+        onNewProyecto={() => setShowNewProyecto(true)}
+        onlyMine={onlyMine}
+        onToggleOnlyMine={() => { if (view === 'hoy') { setSelectedWorkstreamId(null); setOnlyMine(true); changeView('lista') } else toggleOnlyMine() }}
+        myTaskCount={myTaskCount}
+        workload={workload}
+      />
 
       <div className={`min-w-0 flex-1 px-4 md:px-8 ${phone ? 'pb-4 pt-6' : 'overflow-y-auto pb-16 pt-[88px] [scrollbar-gutter:stable] lg:pt-[104px]'}`}>
         {/* Hoy renders its own richer header (date, rotating quote, live
