@@ -34,9 +34,9 @@ export function PillCell({ options, value, meta, onChange, emptyLabel }) {
         ref={triggerRef}
         type="button"
         onClick={openMenu}
-        className="w-fit rounded-full px-2.5 py-1 text-[11px] font-medium transition-opacity duration-150 hover:opacity-80"
-        style={meta ? { background: `${meta.color}22`, color: meta.color } : { color: '#8A8A8A', border: '1px dashed rgba(255,255,255,0.14)' }}
+        className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-1 text-[13px] transition-colors duration-150 hover:bg-white/[0.07] ${meta ? 'text-[#D8D8D8]' : 'ador-ph text-[#6E6E73]'}`}
       >
+        {meta && <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: meta.color }} />}
         {meta ? meta.label : emptyLabel}
       </button>
 
@@ -175,8 +175,8 @@ function DatePopoverCell({ label, emptyLabel, color, children }) {
           setRect(triggerRef.current.getBoundingClientRect())
           setOpen(true)
         }}
-        className="w-fit max-w-full truncate text-left text-[12px] transition-opacity duration-150 hover:opacity-80"
-        style={{ color: label ? color : '#444444' }}
+        className={`w-fit max-w-full truncate rounded-md px-1 py-0.5 text-left text-[13px] transition-colors duration-150 hover:bg-white/[0.07] ${label ? '' : 'ador-ph'}`}
+        style={{ color: label ? (color === '#888888' ? '#C8C8C8' : color) : '#6E6E73' }}
       >
         {label || emptyLabel}
       </button>

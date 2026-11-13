@@ -215,70 +215,45 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
 
   return (
     <div className="ador-glass ador-grain overflow-hidden rounded-2xl">
-      <div className="flex items-center gap-3 border-l-2 px-5 py-3.5" style={{ borderColor: accent }}>
+      <div className="flex items-center gap-4 px-5 py-4 md:px-6">
         <button type="button" onClick={() => setCollapsed((v) => !v)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <ChevronDownIcon
             size={14}
             className="flex-shrink-0"
             style={{ color: '#8A8A8A', transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease-out' }}
           />
-          {/* min-w-0 + truncate is the element that gives ground when the row
-              runs out of space — without it, flexbox's default min-width:auto
-              on this span forces the fixed-size badge/progress siblings below
-              to wrap mid-word instead (confirmed via getBoundingClientRect at
-              narrow widths: the badge wraps to "PROYECTO"/"INTERNO" the moment
-              the progress stat is also present). The title is the one thing
-              here that's fine to ellipsize; the badge and stat never should. */}
-          <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#F5F5F5]">{workstream.name}</span>
-          {tasks.length > 0 && (
-            <span className="flex-shrink-0 whitespace-nowrap text-[12px] text-[#8A8A8A]">
-              {completedCount} de {tasks.length} completadas
-            </span>
-          )}
-          <span
-            className="flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 font-medium"
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              color: accent,
-              background: `${accent}1F`,
-            }}
-          >
-            {virtual ? 'Grupo' : workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto Interno'}
+          <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: accent }} />
+          {/* min-w-0 + truncate: el título es lo único que cede cuando falta espacio; el resto nunca debe partirse. */}
+          <span className="min-w-0 truncate text-[17px] font-semibold tracking-[-0.01em] text-[#F5F5F5]">{workstream.name}</span>
+          <span className="hidden flex-shrink-0 whitespace-nowrap text-[13px] text-[#8E8E93] sm:inline">
+            {virtual ? 'Grupo' : workstream.kind === 'intervencion' ? 'Intervención' : 'Proyecto interno'}
           </span>
-          {/* Salud del proyecto — adapted from a project-pipeline reference
-              the user shared (colored Schedule/Budget Health columns), but
-              computed live from real overdue tasks rather than a manual
-              status field, matching this project's "never a hand-entered
-              cross-module signal" rule (§7 in CLAUDE.md and everywhere else). */}
-          {health && (
-            <span className="flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 font-medium" style={{ fontSize: 10, color: health.color, background: `${health.color}1A` }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: health.color }} />
-              {health.label}
-            </span>
-          )}
         </button>
+
+        {/* Avance y salud, en una sola línea sobria: barra fina, "9 de 14" y un punto de estado con texto
+            (calculado en vivo con tareas vencidas reales, nunca un campo a mano). */}
+        {tasks.length > 0 && (
+          <div className="flex flex-shrink-0 items-center gap-4">
+            <div className="hidden w-[110px] items-center sm:flex" title={`${pct}% completado`}>
+              <div className="h-[4px] w-full overflow-hidden rounded-full bg-white/[0.09]">
+                <motion.div className="h-full rounded-full bg-[#F4EEE2]" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-[13px] tabular-nums text-[#A8A8AD]">{completedCount} de {tasks.length}</span>
+            {health && (
+              <span className="hidden items-center gap-1.5 whitespace-nowrap text-[13px] md:flex" style={{ color: health.color }}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: health.color }} />
+                {health.label}
+              </span>
+            )}
+          </div>
+        )}
         {workstream.kind === 'intervencion' && (
-          <span className="flex-shrink-0 text-[11px] text-[#888888]">
+          <span className="hidden flex-shrink-0 text-[13px] text-[#8E8E93] lg:inline">
             Semana {workstream.interventionWeek} de {workstream.interventionTotalWeeks}
           </span>
         )}
       </div>
-
-      {tasks.length > 0 && (
-        <div className="relative h-[3px] w-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: accent }} />
-          {/* The small scrubber dot at the progress edge is the one detail
-              borrowed directly from the widget reference — it's what turns a
-              flat fill bar into something that reads as "a position on a
-              track," not just a percentage. */}
-          <span
-            className="absolute top-1/2 h-2.5 w-2.5 rounded-full border-2 border-[#000000]"
-            style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)', background: accent }}
-          />
-        </div>
-      )}
 
       <AnimatePresence initial={false}>
         {!collapsed && (
@@ -310,19 +285,19 @@ function WorkstreamGroup({ workstream, allWorkstreams = [], tasks, userById, use
 
             <div className="overflow-x-auto px-3 pb-3">
               <div className="md:min-w-[780px]">
-                <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3 md:grid" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
+                <div className="hidden gap-3 border-t border-white/[0.07] px-2 pb-2 pt-3.5 md:grid" style={{ gridTemplateColumns: TASK_ROW_GRID }}>
                   {COLUMN_HEADERS.map((h, i) => (
                     <span
                       key={h || i}
-                      className="font-medium text-[#8A8A8A]"
-                      style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                      className="font-medium text-[#6E6E73]"
+                      style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}
                     >
                       {h}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex flex-col divide-y divide-white/[0.04]">
+                <div className="flex flex-col divide-y divide-white/[0.05]">
                   {openTasks.map((task) => (
                     <TaskRow
                       key={task.id}

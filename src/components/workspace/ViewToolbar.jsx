@@ -22,11 +22,11 @@ function Trigger({ label, active, badge, children, width = 260 }) {
           setRect(ref.current.getBoundingClientRect())
           setOpen(true)
         }}
-        className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-white/[0.05]"
-        style={{ borderColor: active ? 'rgba(232,193,90,0.5)' : 'rgba(255,255,255,0.1)', color: active ? '#E8C15A' : '#AAAAAA', background: active ? 'rgba(184,134,11,0.1)' : 'transparent' }}
+        className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors"
+        style={{ color: active ? '#F4EEE2' : '#B8B8BD', background: active ? 'rgba(244,238,226,0.15)' : 'rgba(255,255,255,0.06)' }}
       >
         {label}
-        {badge ? <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#E8C15A] px-1 text-[10px] font-semibold text-[#1C1A16]">{badge}</span> : null}
+        {badge ? <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#F4EEE2] px-1 text-[10px] font-semibold text-[#0A0A0A]">{badge}</span> : null}
       </button>
       {open && (
         <CellPopover anchorRect={rect} onClose={() => setOpen(false)} width={width}>
@@ -77,13 +77,16 @@ export default function ViewToolbar({
   const dirty = count > 0 || sort.by !== 'manual' || group !== DEFAULT_GROUP
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
-      <input
-        value={filters.q}
-        onChange={(e) => onFilters({ ...filters, q: e.target.value })}
-        placeholder="Buscar tarea…"
-        className="w-[170px] rounded-lg border border-white/[0.1] bg-transparent px-3 py-1.5 text-[12px] text-[#F5F5F5] outline-none placeholder:text-[#8A8A8A] focus:border-white/[0.25]"
-      />
+    <div className="mb-5 flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-2 rounded-full bg-white/[0.06] px-3.5 py-2 transition-colors focus-within:bg-white/[0.1]">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+        <input
+          value={filters.q}
+          onChange={(e) => onFilters({ ...filters, q: e.target.value })}
+          placeholder="Buscar tarea"
+          className="w-[150px] bg-transparent text-[13px] text-[#F5F5F5] outline-none placeholder:text-[#8E8E93]"
+        />
+      </label>
 
       <Trigger label="Filtrar" active={count - (filters.q ? 1 : 0) > 0} badge={count - (filters.q ? 1 : 0) || null}>
         <div className="flex max-h-[60vh] flex-col overflow-y-auto p-1">
@@ -223,8 +226,8 @@ export default function ViewToolbar({
         <button
           type="button"
           onClick={onToggleSelect}
-          className="rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-white/[0.05]"
-          style={{ borderColor: selectMode ? 'rgba(232,193,90,0.5)' : 'rgba(255,255,255,0.1)', color: selectMode ? '#E8C15A' : '#AAAAAA', background: selectMode ? 'rgba(184,134,11,0.1)' : 'transparent' }}
+          className="rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors"
+          style={{ color: selectMode ? '#F4EEE2' : '#B8B8BD', background: selectMode ? 'rgba(244,238,226,0.15)' : 'rgba(255,255,255,0.06)' }}
         >
           {selectMode ? 'Terminar selección' : 'Seleccionar'}
         </button>
@@ -238,7 +241,7 @@ export default function ViewToolbar({
             onSort(DEFAULT_SORT)
             onGroup(DEFAULT_GROUP)
           }}
-          className="px-1.5 text-[12px] text-[#888888] hover:text-[#F5F5F5]"
+          className="px-2 text-[13px] text-[#8E8E93] hover:text-[#F5F5F5]"
         >
           Limpiar
         </button>

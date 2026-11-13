@@ -1030,3 +1030,12 @@ html.light [class*="shadow-[0px"] {
 /* Lista que se desplaza sin barra visible (la pista de que hay más la da un degradado). */
 .ador-noscroll { scrollbar-width: none; }
 .ador-noscroll::-webkit-scrollbar { display: none; }
+
+/* Marcadores de campo vacío ("Agregar fecha", "Prioridad"…): en una fila de tabla solo aparecen al pasar
+   el cursor o enfocar, para que la lista no se llene de texto repetido. En filas nuevas (borrador) y en
+   pantallas táctiles se ven siempre, atenuados. */
+.ador-ph { transition: opacity 0.15s ease; }
+[data-task-row=""] .ador-ph { opacity: 0; }
+[data-task-row=""]:hover .ador-ph,
+[data-task-row=""]:focus-within .ador-ph { opacity: 1; }
+@media (hover: none) { [data-task-row=""] .ador-ph { opacity: 0.7; } }

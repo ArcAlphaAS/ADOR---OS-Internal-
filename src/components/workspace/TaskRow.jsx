@@ -39,7 +39,7 @@ export default function TaskRow({ task, userById, users, workstreams = [], onOpe
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
       }}
-      className={`grid items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.035] ${selected ? 'bg-[#B8860B]/10' : ''}`}
+      className={`grid items-center gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-white/[0.04] ${selected ? 'bg-[#B8860B]/10' : ''}`}
       style={{ gridTemplateColumns: TASK_ROW_GRID }}
     >
       {/* The completion "pop" (spring scale-in on the checkmark, a tactile
