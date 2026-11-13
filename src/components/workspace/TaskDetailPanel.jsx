@@ -1,7 +1,7 @@
 import { registerUndo } from '../../lib/undo'
 import { restoreTask } from '../../lib/firestore'
 import { shareLink } from '../../lib/share'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { applyTaskUpdate, deleteTask, subscribeTaskHistory, subscribeObjetivos, subscribeTaskViewers, pingTaskViewing, clearTaskViewing } from '../../lib/firestore'
@@ -49,11 +49,12 @@ function relativeDue(due, completed) {
   return { text: completed ? `hace ${-days} días` : `vencida hace ${-days} días`, color: completed ? '#777777' : '#EF5350' }
 }
 
-// Compact chips for Estado / Prioridad — all options visible, the active one
-// filled with its colour.
-function Chips({ options, value, onChange }) {
+// Estado / Prioridad as one segmented control: every option visible, the active one raised on a pill that slides to it (a spring, as in
+// iOS) and marked by its colour as a dot — colour is a signal, not a fill.
+function Chips({ options, value, onChange, label }) {
+  const id = useId()
   return (
-    <div className="flex flex-wrap gap-1">
+    <div role="radiogroup" aria-label={label} className="relative flex w-full rounded-[12px] bg-white/[0.06] p-[3px]">
       {options.map((opt) => {
         const active = value === opt.id
         const color = opt.color === '#444444' ? '#9A9A9A' : opt.color
@@ -61,11 +62,15 @@ function Chips({ options, value, onChange }) {
           <button
             key={opt.id}
             type="button"
+            role="radio"
+            aria-checked={active}
             onClick={() => onChange(opt.id)}
-            className="rounded-full border px-2 py-1 text-[11.5px] font-medium transition-colors duration-150"
-            style={{ borderColor: active ? color : 'rgba(255,255,255,0.1)', background: active ? `${color}26` : 'transparent', color: active ? color : '#8A8A8A' }}
+            className="relative flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[9px] px-1.5 py-[5px] text-[12px] font-medium transition-colors duration-150 hover:text-[#F5F5F5]"
+            style={{ color: active ? '#F5F5F5' : '#8A8A8A' }}
           >
-            {opt.label}
+            {active && <motion.span layoutId={`seg-${id}`} className="absolute inset-0 rounded-[9px] bg-white/[0.13] shadow-[0_1px_2px_rgba(0,0,0,0.45)]" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />}
+            {active && <span className="relative h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: color }} />}
+            <span className="relative">{opt.label}</span>
           </button>
         )
       })}
@@ -77,9 +82,9 @@ function Chips({ options, value, onChange }) {
 // control on the right. Hints live in the tooltip instead of long captions.
 function Prop({ icon: Icon, label, hint, children }) {
   return (
-    <div className="ador-prop grid grid-cols-[104px_1fr] items-start gap-2 py-1.5" title={hint}>
-      <span className="flex items-center gap-2 pt-1.5 text-[12px] text-[#8A8A8A]">
-        <Icon size={13} />
+    <div className="ador-prop grid grid-cols-[104px_1fr] items-start gap-3 border-t border-white/[0.06] px-4 py-2.5 first:border-t-0" title={hint}>
+      <span className="flex items-center gap-2.5 pt-1.5 text-[12.5px] text-[#9A9A9A]">
+        <Icon size={14} />
         {label}
       </span>
       <div className="min-w-0">{children}</div>
@@ -88,7 +93,7 @@ function Prop({ icon: Icon, label, hint, children }) {
 }
 
 const fieldClass = 'rounded-lg border border-transparent bg-transparent px-2.5 py-1.5 text-[13px] text-[#F5F5F5] outline-none transition-colors hover:bg-white/[0.05] focus:border-white/[0.18] focus:bg-white/[0.05]'
-const dateClass = `w-[142px] ${fieldClass}`
+const dateClass = `w-[142px] tabular-nums ${fieldClass}`
 
 const TABS = [
   { id: 'details', label: 'Detalles' },
@@ -291,11 +296,11 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
         exit={origin ? { ...origin, opacity: 0 } : { x: 520, opacity: 0 }}
         transition={origin ? { ...SHEET, opacity: { duration: 0.16 } } : SHEET}
         {...swipeToClose('x', onClose)}
-        className="fixed right-0 top-0 z-50 h-full w-[540px] max-w-full"
+        className="fixed right-0 top-0 z-50 h-full w-[540px] max-w-full md:right-3 md:top-3 md:h-[calc(100%-24px)] md:rounded-[26px]"
         style={{ boxShadow: '-40px 0 80px -30px rgba(0,0,0,0.7)', ...(origin ? { transformOrigin: '0 0' } : null) }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto border-l border-white/[0.06]">
+        <div className="ador-modal-surface ador-grain flex h-full flex-col overflow-y-auto border-l border-white/[0.06] md:rounded-[26px] md:border md:border-white/[0.09]">
           {/* Sticky header: where this task lives, who else is looking, ‹ ›
               through the list, the ⋯ menu and close. */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[#0C0C0C]/90 px-6 py-3 backdrop-blur-md">
@@ -399,7 +404,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                 onChange={(e) => setTitle(e.target.value)}
                 onBlur={saveTitle}
                 rows={1}
-                className="ml-1 min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[22px] font-semibold leading-snug outline-none"
+                className="ml-1 min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] outline-none"
                 style={{ color: completed ? '#777777' : '#F5F5F5', textDecoration: completed ? 'line-through' : 'none' }}
               />
             </div>
@@ -427,18 +432,20 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
 
             {/* Detalles */}
             <div className={tab === 'details' ? 'block' : 'hidden'}>
-              <div className="ador-props py-2">
+              <div className="ador-props mt-3 rounded-[18px] bg-white/[0.035]">
                 <Prop icon={CheckCircleIcon} label="Estado">
-                  <Chips options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
+                  <Chips label="Estado" options={STATUSES} value={task.status} onChange={(id) => applyUpdate({ status: id })} />
                 </Prop>
                 <Prop icon={FlagIcon} label="Prioridad">
-                  <Chips options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
+                  <Chips label="Prioridad" options={PRIORITIES} value={task.priority} onChange={(id) => applyUpdate({ priority: id })} />
                 </Prop>
                 <Prop icon={UsersIcon} label="Asignado a">
                   <div className="px-1.5 pt-0.5">
                     <AssigneeCell assignedTo={assignedTo} userById={userById} users={users} pendingIds={task.pendingConfirmations || []} onChange={(next) => applyUpdate({ assignedTo: next })} />
                   </div>
                 </Prop>
+              </div>
+              <div className="ador-props mt-3 rounded-[18px] bg-white/[0.035]">
                 <Prop icon={CalendarIcon} label="Fecha límite" hint="Es el plazo: decide cuándo aparece en Hoy y cuándo se marca atrasada.">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
@@ -455,7 +462,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                         ['Mañana', () => plusDays(1)],
                         ['Próx. lunes', nextMonday],
                       ].map(([label, make]) => (
-                        <button key={label} type="button" onClick={() => setDue(make())} className="rounded-full border border-white/[0.1] px-2 py-0.5 text-[11px] text-[#999999] transition-colors hover:border-white/[0.25] hover:text-[#F5F5F5]">
+                        <button key={label} type="button" onClick={() => setDue(make())} className="rounded-md bg-white/[0.06] px-2 py-[3px] text-[11.5px] text-[#B0B0B0] transition-colors hover:bg-white/[0.12] hover:text-[#F5F5F5]">
                           {label}
                         </button>
                       ))}
@@ -471,7 +478,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                   <div className="flex flex-wrap items-center gap-1 px-1">
                     {task.remindAt && <span className="mr-1 text-[12px] font-medium text-[#E8C15A]">{remindLabel(task)}</span>}
                     {REMIND_OPTIONS.map((o) => (
-                      <button key={o.days} type="button" onClick={() => applyUpdate({ remindAt: remindDate(o.days) })} className="rounded-full border border-white/[0.1] px-2 py-0.5 text-[11px] text-[#999999] transition-colors hover:border-white/[0.25] hover:text-[#F5F5F5]">
+                      <button key={o.days} type="button" onClick={() => applyUpdate({ remindAt: remindDate(o.days) })} className="rounded-md bg-white/[0.06] px-2 py-[3px] text-[11.5px] text-[#B0B0B0] transition-colors hover:bg-white/[0.12] hover:text-[#F5F5F5]">
                         {o.label}
                       </button>
                     ))}
@@ -488,6 +495,8 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                     <input type="date" value={endValue} onChange={(e) => applyUpdate({ endDate: e.target.value ? new Date(`${e.target.value}T00:00:00`) : null })} className={dateClass} />
                   </div>
                 </Prop>
+              </div>
+              <div className="ador-props mt-3 rounded-[18px] bg-white/[0.035]">
                 <Prop icon={TargetIcon} label="Objetivo" hint="Conecta esta tarea al Objetivo del trimestre que está empujando.">
                   <select value={task.objetivoId || ''} onChange={(e) => applyUpdate({ objetivoId: e.target.value || null })} className={`${fieldClass} max-w-full`} style={task.objetivoId ? undefined : { color: '#8A8A8A' }}>
                     <option value="">Ninguno</option>
@@ -534,7 +543,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                 </Prop>
               </div>
 
-              <div className="border-t border-white/[0.07] pt-4">
+              <div className="mt-3">
                 <textarea
                   key={task.id}
                   ref={descRef}
@@ -546,7 +555,7 @@ export default function TaskDetailPanel({ task, workstream, users, userById, act
                   }}
                   rows={3}
                   placeholder="Añade una descripción…"
-                  className="w-full resize-none rounded-xl border border-transparent bg-transparent px-2 py-2 text-[14px] leading-relaxed text-[#E5E5E5] outline-none transition-colors placeholder:text-[#8A8A8A] hover:bg-white/[0.03] focus:border-white/[0.14] focus:bg-white/[0.03]"
+                  className="w-full resize-none rounded-2xl border border-transparent bg-white/[0.035] px-4 py-3.5 text-[14px] leading-relaxed text-[#E5E5E5] outline-none transition-colors placeholder:text-[#8A8A8A] hover:bg-white/[0.03] focus:border-white/[0.14] focus:bg-white/[0.03]"
                 />
               </div>
 
