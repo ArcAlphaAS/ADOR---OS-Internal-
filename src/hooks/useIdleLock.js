@@ -49,7 +49,7 @@ function busy() {
 }
 
 export function useIdleLock(enabled) {
-  const [locked, setLocked] = useState(false)
+  const [lockedAt, setLockedAt] = useState(null) // null = no bloqueado; si no, cuándo te fuiste
   const last = useRef(Date.now())
   const hiddenAt = useRef(null)
 
@@ -57,16 +57,17 @@ export function useIdleLock(enabled) {
     if (!enabled) return undefined
     last.current = Date.now()
     const touch = () => { last.current = Date.now() }
-    const lock = () => { if (!busy()) setLocked(true) }
+    const lock = (since) => { if (!busy()) setLockedAt(since ?? last.current) }
     const onVis = () => {
       const lim = limits()
       if (document.visibilityState === 'hidden') {
         hiddenAt.current = Date.now()
         return
       }
-      const away = hiddenAt.current ? Date.now() - hiddenAt.current : 0
+      const since = hiddenAt.current
+      const away = since ? Date.now() - since : 0
       hiddenAt.current = null
-      if (lim && away >= lim.away) lock()
+      if (lim && away >= lim.away) lock(since)
       else last.current = Date.now()
     }
     EVENTS.forEach((e) => window.addEventListener(e, touch, { passive: true, capture: true }))
@@ -84,8 +85,8 @@ export function useIdleLock(enabled) {
 
   const unlock = useCallback(() => {
     last.current = Date.now()
-    setLocked(false)
+    setLockedAt(null)
   }, [])
 
-  return { locked: enabled && locked, unlock }
+  return { locked: enabled && lockedAt !== null, leftAt: lockedAt, unlock }
 }

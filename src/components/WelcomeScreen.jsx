@@ -102,7 +102,7 @@ function Clock({ now, phone, still }) {
   )
 }
 
-export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = false, overlay = false, onDismiss }) {
+export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = false, overlay = false, leftAt = null, onDismiss }) {
   const phone = usePhone()
   const reduce = useReducedMotion()
   const [now, setNow] = useState(() => new Date())
@@ -176,7 +176,19 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const dragScale = useTransform(dragY, [-320, 0], [0.92, 1])
 
   const { greeting, subtext } = getMessages(now.getHours(), isReturning, name)
-  const lines = brief.ready && brief.lines.length ? brief.lines : [subtext]
+  // Dos pantallas, dos razones. Al abrir el día: el plan completo (resumen). Al volver de
+  // una ausencia: solo lo que pide atención YA, sin repetir lo que Inicio ya muestra.
+  const awayMin = leftAt ? Math.max(1, Math.round((Date.now() - leftAt) / 60000)) : 0
+  const awayText = awayMin >= 60 ? `${Math.floor(awayMin / 60)} h${awayMin % 60 ? ` ${awayMin % 60} min` : ''}` : `${awayMin} min`
+  const soon = brief.stats?.next && brief.stats.next.startMs - Date.now() <= 90 * 60000 ? brief.stats.next : null
+  const soonMin = soon ? Math.max(1, Math.round((soon.startMs - Date.now()) / 60000)) : 0
+  const idleLines = [
+    `Estuviste fuera ${awayText}.`,
+    soon ? `${soon.title.length > 28 ? `${soon.title.slice(0, 27)}…` : soon.title} empieza en ${soonMin < 60 ? `${soonMin} min` : `${Math.floor(soonMin / 60)} h ${soonMin % 60} min`}.` : null,
+  ].filter(Boolean)
+  const lines = overlay
+    ? idleLines
+    : brief.ready && brief.lines.length ? brief.lines : [subtext]
   const line = lines.join('|')
   const sky = SKY[skyBucket(now.getHours())]
   const date = now.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -282,9 +294,11 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
               className="mt-6 flex flex-wrap items-center justify-center gap-2"
             >
               {[
-                brief.stats?.tareas > 0 && { k: 't', label: `${brief.stats.tareas} ${brief.stats.tareas === 1 ? 'tarea' : 'tareas'}`, hot: brief.stats.vencidas > 0 },
+                overlay
+                  ? brief.stats?.vencidas > 0 && { k: 't', label: `${brief.stats.vencidas} ${brief.stats.vencidas === 1 ? 'vencida' : 'vencidas'}`, hot: true }
+                  : brief.stats?.tareas > 0 && { k: 't', label: `${brief.stats.tareas} ${brief.stats.tareas === 1 ? 'tarea' : 'tareas'}`, hot: brief.stats.vencidas > 0 },
                 unread > 0 && { k: 'm', label: `${unread} ${unread === 1 ? 'chat sin leer' : 'chats sin leer'}` },
-                brief.stats?.next && { k: 'r', label: `${brief.stats.next.time} · ${brief.stats.next.title.length > 22 ? `${brief.stats.next.title.slice(0, 21)}…` : brief.stats.next.title}` },
+                !overlay && brief.stats?.next && { k: 'r', label: `${brief.stats.next.time} · ${brief.stats.next.title.length > 22 ? `${brief.stats.next.title.slice(0, 21)}…` : brief.stats.next.title}` },
               ].filter(Boolean).map((c) => (
                 <span key={c.k} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-1.5 text-[13px] text-white/75">
                   <i className={`h-1.5 w-1.5 rounded-full ${c.hot ? 'bg-[#EF5350]' : c.k === 'm' ? 'bg-[#F4EEE2]' : 'bg-white/45'}`} />

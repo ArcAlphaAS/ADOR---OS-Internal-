@@ -163,7 +163,7 @@ function App() {
       <AnimatePresence mode="wait">{content}</AnimatePresence>
       <AnimatePresence>
         {idle.locked && (
-          <WelcomeScreen key="idle" overlay uid={user.uid} name={firstName(user)} isReturning onDismiss={idle.unlock} />
+          <WelcomeScreen key="idle" overlay leftAt={idle.leftAt} uid={user.uid} name={firstName(user)} isReturning onDismiss={idle.unlock} />
         )}
       </AnimatePresence>
     </div>

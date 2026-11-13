@@ -71,6 +71,6 @@ export function useWelcomeBrief(uid, hour) {
       parts.push(start <= now ? `En curso: ${clip(today.title)}.` : `${clip(today.title)} a las ${hhmm(start)}.`)
     }
   }
-  const next = today && new Date(today.start) > now ? { title: today.title, time: hhmm(new Date(today.start)) } : null
+  const next = today && new Date(today.start) > now ? { title: today.title, time: hhmm(new Date(today.start)), startMs: new Date(today.start).getTime() } : null
   return { ready: true, text: parts.join(' '), lines: parts, stats: { tareas: hoy + vencidas, vencidas, next } }
 }
