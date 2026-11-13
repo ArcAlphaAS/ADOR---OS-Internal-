@@ -51,6 +51,8 @@ const DIGIT_STYLE = {
   backgroundClip: 'text',
   WebkitBackgroundClip: 'text',
   color: 'transparent',
+  paddingRight: '0.06em',
+  marginRight: '-0.06em',
 }
 
 // Un dígito que rueda hacia arriba cuando cambia (como un odómetro).
@@ -82,7 +84,7 @@ function Clock({ now, phone, still }) {
     fontSize: size,
     letterSpacing: '-0.035em',
     lineHeight: phone ? 0.84 : 1,
-    fontFamily: "ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
+    fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
     fontOpticalSizing: 'auto',
     textRendering: 'geometricPrecision',
     WebkitFontSmoothing: 'antialiased',
@@ -92,7 +94,7 @@ function Clock({ now, phone, still }) {
   // Entra desde un peso muy fino y se asienta, enfocándose.
   const entry = {
     initial: still ? false : { opacity: 0, y: 14, filter: 'blur(14px)', fontWeight: 300 },
-    animate: { opacity: 1, y: 0, filter: 'blur(0px)', fontWeight: 600 },
+    animate: { opacity: 1, y: 0, filter: 'blur(0px)', fontWeight: 500 },
     transition: { duration: 1.3, ease: [0.22, 1, 0.36, 1] },
   }
   if (phone) {
@@ -108,7 +110,7 @@ function Clock({ now, phone, still }) {
       <motion.span className="flex items-center" animate={{ x: optical }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
       <RollDigit d={hh[0]} still={still} />
       <RollDigit d={hh[1]} still={still} />
-      <span className="mx-[0.015em] inline-block pb-[0.09em]" style={{ ...DIGIT_STYLE, fontWeight: 600, fontSize: '0.8em', opacity: 0.55, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
+      <span className="mx-[0.015em] inline-block pb-[0.09em]" style={{ ...DIGIT_STYLE, fontWeight: 500, fontSize: '0.8em', opacity: 0.55, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
       <RollDigit d={mm[0]} still={still} />
       <RollDigit d={mm[1]} still={still} />
       </motion.span>
