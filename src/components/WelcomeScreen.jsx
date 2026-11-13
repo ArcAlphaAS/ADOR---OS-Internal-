@@ -15,11 +15,25 @@ const SKY = {
   night: { glow: ['64,76,200', 0.62], rim: ['184,134,11', 0.26], far: ['100,70,170', 0.14] },
 }
 
-function skyBucket(hour) {
-  if (hour >= 6 && hour < 12) return 'dawn'
-  if (hour >= 12 && hour < 18) return 'day'
-  if (hour >= 18 && hour < 21) return 'dusk'
-  return 'night'
+// La luz cambia de forma continua: entre una franja y la siguiente se mezclan los
+// colores minuto a minuto (como el cielo real), sin saltos.
+const STOPS = [
+  [0, 'night'], [5, 'night'], [7, 'dawn'], [11, 'dawn'], [13, 'day'], [17, 'day'], [18.5, 'dusk'], [20, 'dusk'], [22, 'night'], [24, 'night'],
+]
+const mix = (a, b, t) => a + (b - a) * t
+const mixLayer = (x, y, t) => [x[0].split(',').map((n, i) => Math.round(mix(+n, +y[0].split(',')[i], t))).join(','), mix(x[1], y[1], t)]
+
+function skyAt(date) {
+  const h = date.getHours() + date.getMinutes() / 60
+  let i = STOPS.findIndex(([at]) => at > h) - 1
+  if (i < 0) i = STOPS.length - 2
+  const [h0, k0] = STOPS[i]
+  const [h1, k1] = STOPS[i + 1]
+  const t = h1 === h0 ? 0 : (h - h0) / (h1 - h0)
+  const e = t * t * (3 - 2 * t) // suavizado
+  const A = SKY[k0]
+  const B = SKY[k1]
+  return { glow: mixLayer(A.glow, B.glow, e), rim: mixLayer(A.rim, B.rim, e), far: mixLayer(A.far, B.far, e) }
 }
 
 function getMessages(hour, isReturning, name) {
@@ -190,7 +204,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
     ? idleLines
     : brief.ready && brief.lines.length ? brief.lines : [subtext]
   const line = lines.join('|')
-  const sky = SKY[skyBucket(now.getHours())]
+  const sky = skyAt(now)
   const date = now.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
