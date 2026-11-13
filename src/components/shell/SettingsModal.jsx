@@ -6,6 +6,7 @@ import Avatar from './Avatar'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
+import { IDLE_KEY, IDLE_OPTIONS, readIdlePref } from '../../hooks/useIdleLock'
 
 function Section({ title, children }) {
   return (
@@ -13,6 +14,33 @@ function Section({ title, children }) {
       <h3 className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.12em] text-[#8A8A8A]">{title}</h3>
       {children}
     </section>
+  )
+}
+
+function IdlePicker() {
+  const [pref, setPref] = useState(readIdlePref)
+  const pick = (id) => {
+    setPref(id)
+    try { localStorage.setItem(IDLE_KEY, id) } catch { /* sin almacenamiento: queda en auto */ }
+  }
+  return (
+    <div className="ador-glass rounded-2xl p-3">
+      <div className="flex gap-1 rounded-xl bg-white/[0.05] p-1">
+        {IDLE_OPTIONS.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => pick(o.id)}
+            className={`flex-1 rounded-lg px-2 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ${pref === o.id ? 'bg-[#F5F5F5] text-[#111]' : 'text-[#B5B5B5] hover:text-white'}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-2.5 px-1 text-[12px] leading-snug text-[#8A8A8A]">
+        Si te alejas un rato, al volver te recibe con lo que importa ahora. Auto: 5 min en celular y 10 en escritorio. No interrumpe si estás escribiendo.
+      </p>
+    </div>
   )
 }
 
@@ -88,6 +116,10 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
           <div className="mt-6 flex flex-col gap-5">
             <Section title="Avisos">
               <PushNotificationsCard user={user} />
+            </Section>
+
+            <Section title="Pantalla de reposo">
+              <IdlePicker />
             </Section>
 
             <Section title="Ayuda y cuenta">

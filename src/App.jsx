@@ -103,7 +103,7 @@ function App() {
 
   let content = null
   const inApp = !!user && welcome.checked && !(welcome.show && !welcomeDismissed)
-  const idle = useIdleLock(inApp && !PREVIEW_MOCK_USER, 10)
+  const idle = useIdleLock(inApp && !PREVIEW_MOCK_USER)
 
   // The welcome screen is only for people who arrive without a session;
   // anyone already signed in goes straight in.
