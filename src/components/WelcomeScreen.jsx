@@ -32,7 +32,7 @@ const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")"
 
 const DIGIT_STYLE = {
-  backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.42) 100%)',
+  backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.55) 100%)',
   backgroundClip: 'text',
   WebkitBackgroundClip: 'text',
   color: 'transparent',
@@ -62,12 +62,12 @@ function RollDigit({ d, still }) {
 function Clock({ now, phone, still }) {
   const hh = String(now.getHours()).padStart(2, '0')
   const mm = String(now.getMinutes()).padStart(2, '0')
-  const size = phone ? 'min(46vw, 240px)' : 'clamp(110px, 17vw, 220px)'
+  const size = phone ? 'min(46vw, 240px)' : 'clamp(100px, 15vw, 196px)'
   const common = {
     fontSize: size,
-    letterSpacing: '-0.05em',
+    letterSpacing: '-0.035em',
     lineHeight: phone ? 0.84 : 1,
-    fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
+    fontFamily: "ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
     fontOpticalSizing: 'auto',
     textRendering: 'geometricPrecision',
     WebkitFontSmoothing: 'antialiased',
@@ -76,8 +76,8 @@ function Clock({ now, phone, still }) {
   const optical = hh[0] === '1' ? '-0.035em' : '0em'
   // Entra desde un peso muy fino y se asienta, enfocándose.
   const entry = {
-    initial: still ? false : { opacity: 0, y: 14, filter: 'blur(14px)', fontWeight: 100 },
-    animate: { opacity: 1, y: 0, filter: 'blur(0px)', fontWeight: 200 },
+    initial: still ? false : { opacity: 0, y: 14, filter: 'blur(14px)', fontWeight: 300 },
+    animate: { opacity: 1, y: 0, filter: 'blur(0px)', fontWeight: 600 },
     transition: { duration: 1.3, ease: [0.22, 1, 0.36, 1] },
   }
   if (phone) {
@@ -93,7 +93,7 @@ function Clock({ now, phone, still }) {
       <motion.span className="flex items-center" animate={{ x: optical }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
       <RollDigit d={hh[0]} still={still} />
       <RollDigit d={hh[1]} still={still} />
-      <span className="mx-[0.015em] inline-block pb-[0.09em]" style={{ ...DIGIT_STYLE, fontWeight: 200, fontSize: '0.86em', opacity: 0.8, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
+      <span className="mx-[0.015em] inline-block pb-[0.09em]" style={{ ...DIGIT_STYLE, fontWeight: 600, fontSize: '0.8em', opacity: 0.55, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
       <RollDigit d={mm[0]} still={still} />
       <RollDigit d={mm[1]} still={still} />
       </motion.span>
