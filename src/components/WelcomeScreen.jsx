@@ -22,10 +22,10 @@ function skyBucket(hour) {
 }
 
 function getMessages(hour, isReturning, name) {
-  if (hour >= 6 && hour < 12) return { greeting: `Buenos días, ${name}.`, subtext: 'Hoy es un buen día para construir.' }
-  if (hour >= 12 && hour < 15 && isReturning) return { greeting: `Bienvenido de vuelta, ${name}.`, subtext: 'Vamos con fuerza al cierre del día.' }
-  if (hour >= 12 && hour < 19) return { greeting: `Buenas tardes, ${name}.`, subtext: 'Último tramo. Que valga.' }
-  return { greeting: `Buenas noches, ${name}.`, subtext: 'Cerrando el día con ADOR.' }
+  if (hour >= 6 && hour < 12) return { greeting: 'Buenos días', subtext: 'Hoy es un buen día para construir.' }
+  if (hour >= 12 && hour < 15 && isReturning) return { greeting: 'Bienvenido de vuelta', subtext: 'Vamos con fuerza al cierre del día.' }
+  if (hour >= 12 && hour < 19) return { greeting: 'Buenas tardes', subtext: 'Último tramo. Que valga.' }
+  return { greeting: 'Buenas noches', subtext: 'Cerrando el día con ADOR.' }
 }
 
 const GRAIN =
@@ -63,7 +63,17 @@ function Clock({ now, phone, still }) {
   const hh = String(now.getHours()).padStart(2, '0')
   const mm = String(now.getMinutes()).padStart(2, '0')
   const size = phone ? 'min(46vw, 240px)' : 'clamp(110px, 17vw, 220px)'
-  const common = { fontSize: size, letterSpacing: '-0.045em', lineHeight: phone ? 0.84 : 1 }
+  const common = {
+    fontSize: size,
+    letterSpacing: '-0.05em',
+    lineHeight: phone ? 0.84 : 1,
+    fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
+    fontOpticalSizing: 'auto',
+    textRendering: 'geometricPrecision',
+    WebkitFontSmoothing: 'antialiased',
+  }
+  // Un "1" es estrecho y deja el peso visual a la derecha: se compensa para que quede centrado.
+  const optical = hh[0] === '1' ? '-0.035em' : '0em'
   // Entra desde un peso muy fino y se asienta, enfocándose.
   const entry = {
     initial: still ? false : { opacity: 0, y: 14, filter: 'blur(14px)', fontWeight: 100 },
@@ -80,11 +90,13 @@ function Clock({ now, phone, still }) {
   }
   return (
     <motion.div {...entry} className="flex select-none items-center" style={common} aria-label={`${hh}:${mm}`}>
+      <motion.span className="flex items-center" animate={{ x: optical }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
       <RollDigit d={hh[0]} still={still} />
       <RollDigit d={hh[1]} still={still} />
-      <span className="mx-[0.02em] inline-block pb-[0.06em]" style={{ ...DIGIT_STYLE, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
+      <span className="mx-[0.015em] inline-block pb-[0.09em]" style={{ ...DIGIT_STYLE, fontWeight: 200, fontSize: '0.86em', opacity: 0.8, animation: still ? undefined : 'ador-pulse 2.4s ease-in-out infinite' }}>:</span>
       <RollDigit d={mm[0]} still={still} />
       <RollDigit d={mm[1]} still={still} />
+      </motion.span>
     </motion.div>
   )
 }
@@ -141,8 +153,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const sy = useSpring(my, { stiffness: 50, damping: 18 })
   const glowX = useTransform(sx, (v) => v * -34)
   const glowY = useTransform(sy, (v) => v * -14)
-  const clockX = useTransform(sx, (v) => v * 7)
-  const clockY = useTransform(sy, (v) => v * 5)
+    const clockY = useTransform(sy, (v) => v * 5)
   const spotX = useSpring(useMotionValue(-600), { stiffness: 90, damping: 22 })
   const spotY = useSpring(useMotionValue(-600), { stiffness: 90, damping: 22 })
   useEffect(() => {
@@ -225,7 +236,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
             {date}
           </motion.p>
 
-          <motion.div style={phone ? undefined : { x: clockX, y: clockY }}>
+          <motion.div style={phone ? undefined : { y: clockY }}>
             <Clock now={now} phone={phone} still={reduce} />
           </motion.div>
 
@@ -233,10 +244,10 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-7 text-center font-semibold tracking-[-0.01em] text-[#F5F5F5] md:mt-9"
-            style={{ fontSize: phone ? 24 : 28 }}
+            className="mt-8 text-center tracking-[-0.025em] text-white/60 md:mt-10"
+            style={{ fontSize: phone ? 25 : 32, fontWeight: 500, fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif" }}
           >
-            {greeting}
+            {greeting}, <span className="font-semibold text-[#F5F5F5]">{name}</span>
           </motion.h1>
 
           <div className="mt-3 min-h-[44px] max-w-[min(88vw,560px)] text-center">
@@ -247,7 +258,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -6, filter: 'blur(4px)' }}
                 transition={{ duration: 0.55, delay: 0.95, ease: 'easeOut' }}
-                className="text-[15px] font-light leading-snug text-white/65 md:text-[16px]"
+                className="text-[15px] font-normal leading-snug tracking-[-0.005em] text-white/50 md:text-[17px]"
               >
                 {line}
               </motion.p>
