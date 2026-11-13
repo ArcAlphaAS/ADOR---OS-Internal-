@@ -184,7 +184,8 @@ function QuickCapture({ user, actorName, inputRef }) {
 // line summarizing the whole day (open + completed, with a color-coded
 // status word instead of a bare count).
 function HoyHeader({ total, completedCount, overdueCount }) {
-  const dateLabel = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+  const rawDate = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+  const dateLabel = rawDate.charAt(0).toUpperCase() + rawDate.slice(1) // solo la primera letra, no "12 De Noviembre"
   const statusLabel = overdueCount > 0 ? `${overdueCount} atrasada${overdueCount === 1 ? '' : 's'}` : 'Todo al día'
   const statusColor = overdueCount > 0 ? '#EF5350' : '#4CAF50'
 
@@ -192,8 +193,8 @@ function HoyHeader({ total, completedCount, overdueCount }) {
     <div className="flex items-start justify-between gap-6">
       <div>
         <h2 className="ador-subtitle">Mis tareas</h2>
-        <p className="mt-0.5 text-[13px] capitalize text-[#888888]">Hoy · {dateLabel}</p>
-        <p className="mt-2 text-[12px] text-[#8A8A8A]">
+        <p className="mt-0.5 text-[14px] text-[#8E8E93]">{dateLabel}</p>
+        <p className="mt-2 text-[13px] text-[#8E8E93]">
           {total} tarea{total === 1 ? '' : 's'} · {completedCount} completada{completedCount === 1 ? '' : 's'} ·{' '}
           <span style={{ color: statusColor }}>{statusLabel}.</span>
         </p>
@@ -222,7 +223,7 @@ function FocusCard({ task, workstream, onStartFocus }) {
           <CheckCircleIcon size={16} />
         </span>
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#888888]">Enfoque actual</p>
+          <p className="text-[12.5px] text-[#8E8E93]">Enfoque actual</p>
           <p className="text-[13px] text-[#F5F5F5]">Nada urgente en este momento — buen momento para avanzar algo de Mis Pendientes.</p>
         </div>
       </div>
@@ -237,7 +238,7 @@ function FocusCard({ task, workstream, onStartFocus }) {
           <ListViewIcon size={16} />
         </span>
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#888888]">Enfoque actual</p>
+          <p className="text-[12.5px] text-[#8E8E93]">Enfoque actual</p>
           <p className="truncate text-[15px] font-semibold text-[#F5F5F5]">{task.title}</p>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#8A8A8A]">
             {workstream && <span>{workstream.name}</span>}
@@ -350,12 +351,8 @@ function FocusModeOverlay({ task, workstream, actorName, onClose, onOpenDetail }
 
 const COLUMN_HEADERS = ['', 'Tarea', 'Proyecto', 'Asignado', 'Prioridad', 'Vencimiento', 'Timeline', 'Estado']
 
-function SectionIcon({ Icon, color }) {
-  return (
-    <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full" style={{ background: color, color: '#F5F5F5' }}>
-      <Icon size={13} />
-    </span>
-  )
+function SectionIcon({ color }) {
+  return <span className="h-[9px] w-[9px] flex-shrink-0 rounded-full" style={{ background: color }} />
 }
 
 
@@ -405,9 +402,9 @@ function HechoCard({ tasks, userId, userById, workstreamById, onOpenTask }) {
       <div className="flex items-center justify-between gap-2 px-5 py-3.5">
         <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2.5 text-left">
           <ChevronDownIcon size={13} className="text-[#8A8A8A] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
-          <SectionIcon Icon={CheckCircleIcon} color="#4CAF50" />
-          <span className="text-[14px] font-semibold text-[#4CAF50]">Hecho</span>
-          <span className="text-[12px] text-[#8A8A8A]">{done.length}</span>
+          <SectionIcon color="#4CAF50" />
+          <span className="text-[15px] font-semibold text-[#F5F5F5]">Hecho</span>
+          <span className="text-[13px] tabular-nums text-[#8E8E93]">{done.length}</span>
         </button>
         <div className="flex items-center gap-0.5 rounded-full bg-white/[0.05] p-0.5">
           {HECHO_RANGES.map((r) => (
@@ -501,11 +498,11 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left">
         <div className="flex items-center gap-2.5">
           <ChevronDownIcon size={13} className="text-[#8A8A8A] transition-transform duration-150" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
-          <SectionIcon Icon={Icon} color={color} />
-          <span className="text-[14px] font-semibold" style={{ color }}>
+          <SectionIcon color={color} />
+          <span className="text-[15px] font-semibold text-[#F5F5F5]">
             {title}
           </span>
-          {tasks.length > 0 && <span className="text-[12px] text-[#8A8A8A]">{tasks.length}</span>}
+          {tasks.length > 0 && <span className="text-[13px] tabular-nums text-[#8E8E93]">{tasks.length}</span>}
         </div>
         {headerAction && <div onClick={(e) => e.stopPropagation()}>{headerAction}</div>}
       </button>
@@ -515,13 +512,13 @@ function Section({ title, color, Icon, tasks, onOpenTask, actorName, actorUserId
             {tasks.length > 0 && (
               <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-1 md:grid" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
                 {COLUMN_HEADERS.map((h, i) => (
-                  <span key={h || i} className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <span key={h || i} className="font-medium text-[#6E6E73]" style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                     {h}
                   </span>
                 ))}
               </div>
             )}
-            <div className="flex flex-col divide-y divide-white/[0.04]">
+            <div className="flex flex-col divide-y divide-white/[0.05]">
               {tasks.map((task) => (
                 <ProjectTaskRow
                   key={task.id}

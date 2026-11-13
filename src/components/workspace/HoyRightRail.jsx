@@ -269,7 +269,7 @@ function QuickAction({ Icon, label, onClick }) {
 export function QuickActionsCard({ onNewTask, onNewNote, onNavigate }) {
   return (
     <div className="ador-glass ador-grain rounded-2xl p-3">
-      <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Quick Actions</span>
+      <span className="px-2.5 pb-1 text-[15px] font-semibold text-[#F5F5F5]">Acciones rápidas</span>
       <div className="flex flex-col gap-0.5 pt-1">
         <QuickAction Icon={PlusIcon} label="Nueva tarea" onClick={onNewTask} />
         <QuickAction Icon={NoteIcon} label="Nueva nota" onClick={onNewNote} />
