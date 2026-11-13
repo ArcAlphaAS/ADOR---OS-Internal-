@@ -268,7 +268,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
             <div className="md:min-w-[760px]">
               <div className="hidden gap-3 border-b border-white/[0.06] px-2 pb-1.5 pt-3 md:grid" style={{ gridTemplateColumns: PROJECT_TASK_ROW_GRID }}>
                 {COLUMN_HEADERS.map((h, i) => (
-                  <span key={h || i} className="font-medium text-[#8A8A8A]" style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <span key={h || i} className="font-medium text-[#6E6E73]" style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                     {h}
                   </span>
                 ))}
@@ -301,7 +301,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
 
       <div className="flex flex-col gap-4">
         <div className="ador-glass ador-grain rounded-2xl p-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-[#888888]">Enfoque actual</p>
+          <p className="mb-2 text-[12.5px] text-[#8E8E93]">Enfoque actual</p>
           {focusTask ? (
             <>
               <p className="truncate text-[14px] font-semibold text-[#F5F5F5]">{focusTask.title}</p>
@@ -383,7 +383,7 @@ export default function PersonalOverview({ user, tasks, workstreams, workstreamB
         </div>
 
         <div className="ador-glass ador-grain rounded-2xl p-3">
-          <span className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">Acciones rápidas</span>
+          <span className="px-2.5 pb-1 text-[15px] font-semibold text-[#F5F5F5]">Acciones rápidas</span>
           <div className="flex flex-col gap-0.5 pt-1">
             <button type="button" onClick={quickNewTask} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-white/[0.05]">
               <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#F4EEE2]">

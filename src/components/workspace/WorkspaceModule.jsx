@@ -54,6 +54,15 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
   const { workstreams, tasksByWorkstream, tasks, users, userById, loaded } = useWorkspaceData()
   const [notes, setNotes] = useState([])
   const [view, setView] = useState('hoy')
+  // Mis tareas se puede ver de dos formas: por tiempo (vencidas, hoy, próximas) o por proyecto (tus tareas agrupadas
+  // por proyecto, con tu avance en cada uno). Es lo mismo, mirado desde dos lados; se recuerda la última elegida.
+  const [mineMode, setMineMode] = useState(() => {
+    try { return localStorage.getItem('ador_mine_mode') === 'proyecto' ? 'proyecto' : 'tiempo' } catch { return 'tiempo' }
+  })
+  const changeMineMode = (m) => {
+    setMineMode(m)
+    try { localStorage.setItem('ador_mine_mode', m) } catch { /* sin almacenamiento */ }
+  }
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState(null)
   const [onlyMine, setOnlyMine] = useState(false)
   const [openTaskId, setOpenTaskId] = useState(null)
@@ -341,20 +350,50 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
         <AnimatePresence initial={false}>
           {phone && !loaded && view !== 'kanban' ? null : view === 'hoy' ? (
             <motion.div key="hoy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
-              <HoyView
-                user={user}
-                tasks={tasks}
-                userId={user?.uid}
-                userById={userById}
-                users={users}
-                workstreams={workstreams}
-                workstreamById={workstreamById}
-                onOpenTask={openTaskPanel}
-                actorUserId={user?.uid}
-                actorName={actorName}
-                notes={notes}
-                onNavigate={onNavigate}
-              />
+              {!phone && (
+                <div className="mb-5 flex justify-end">
+                  <div className="inline-flex gap-0.5 rounded-full bg-white/[0.07] p-1" role="tablist" aria-label="Cómo ver tus tareas">
+                    {[['tiempo', 'Por tiempo'], ['proyecto', 'Por proyecto']].map(([id, label]) => (
+                      <button key={id} type="button" role="tab" aria-selected={mineMode === id} onClick={() => changeMineMode(id)} className="relative rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors" style={{ color: mineMode === id ? '#0A0A0A' : '#A8A8AD' }}>
+                        {mineMode === id && <motion.span layoutId="mine-mode" className="absolute inset-0 rounded-full bg-[#F5F5F5]" transition={{ type: 'spring', stiffness: 500, damping: 36 }} />}
+                        <span className="relative">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {mineMode === 'proyecto' && !phone ? (
+                <PersonalOverview
+                  user={user}
+                  tasks={tasks}
+                  workstreams={workstreams}
+                  workstreamById={workstreamById}
+                  userById={userById}
+                  users={users}
+                  onOpenTask={openTaskPanel}
+                  actorUserId={user?.uid}
+                  actorName={actorName}
+                  onToggleOnlyMine={() => { setOnlyMine(false); setSelectedWorkstreamId(null); changeView('lista') }}
+                  onGoToHoy={() => changeMineMode('tiempo')}
+                  onNavigate={onNavigate}
+                  onNewProyecto={() => setShowNewProyecto(true)}
+                />
+              ) : (
+                <HoyView
+                  user={user}
+                  tasks={tasks}
+                  userId={user?.uid}
+                  userById={userById}
+                  users={users}
+                  workstreams={workstreams}
+                  workstreamById={workstreamById}
+                  onOpenTask={openTaskPanel}
+                  actorUserId={user?.uid}
+                  actorName={actorName}
+                  notes={notes}
+                  onNavigate={onNavigate}
+                />
+              )}
             </motion.div>
           ) : view === 'lista' ? (
             <motion.div key="lista" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
