@@ -178,7 +178,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
       className={phone ? 'ador-ws-phone flex' : '-mt-16 flex h-[calc(100%+4rem)]'}
     >
       {/* La barra lateral está siempre: antes se escondía en "Mis tareas" y todo el contenido saltaba 232 px al
-          cambiar de pestaña. Desde "Mis tareas" funciona como atajo: elegir un proyecto o Grupo lleva a Lista. */}
+          cambiar de pestaña. "Personal" abre Mis tareas; elegir Equipo o un proyecto desde Mis tareas lleva a Lista. */}
       <WorkspaceSidebar
         canManage={access.isAdmin}
         taskCounts={Object.fromEntries([...tasksByWorkstream.entries()].map(([k, v]) => [k, v.length]))}
@@ -186,11 +186,12 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
         actorName={actorName}
         workstreams={workstreams}
         selectedId={selectedWorkstreamId}
-        neutral={view === 'hoy'}
+        personalActive={view === 'hoy'}
+        onPersonal={() => { setOnlyMine(false); setSelectedWorkstreamId(null); changeView('hoy') }}
         onSelect={(id) => { selectWorkstream(id); if (view === 'hoy') changeView('lista') }}
         onNewProyecto={() => setShowNewProyecto(true)}
         onlyMine={onlyMine}
-        onToggleOnlyMine={() => { if (view === 'hoy') { setSelectedWorkstreamId(null); setOnlyMine(true); changeView('lista') } else toggleOnlyMine() }}
+        onToggleOnlyMine={toggleOnlyMine}
         myTaskCount={myTaskCount}
         workload={workload}
       />
@@ -231,7 +232,7 @@ export default function WorkspaceModule({ user, focusTaskId, onFocusHandled, onN
                 }}
                 className="w-full rounded-full bg-[#1C1C1E] px-5 py-3 text-[16px] text-[#F5F5F5] outline-none"
               >
-                <option value="__mine">Mías — asignadas a mí</option>
+                <option value="__mine">Personal — asignadas a mí</option>
                 <option value="__all">Equipo — todas las tareas</option>
                 {workstreams.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>

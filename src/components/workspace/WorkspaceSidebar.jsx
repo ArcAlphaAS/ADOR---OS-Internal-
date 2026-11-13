@@ -96,7 +96,7 @@ function WorkloadPanel({ workload }) {
 // WorkspaceModule.jsx), so this sidebar now only scopes the team views
 // (Lista/Kanban/Timeline) — Personal (everything assigned to me, any
 // workstream) vs. Equipo (a specific Intervención/Proyecto, or all of them).
-export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, openCounts = {}, neutral = false, actorName = 'Usuario',
+export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, openCounts = {}, personalActive = false, onPersonal, actorName = 'Usuario',
   workstreams,
   selectedId,
   onSelect,
@@ -116,14 +116,11 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, o
 
   return (
     <div className="hidden h-full w-[232px] flex-shrink-0 flex-col gap-6 overflow-y-auto border-r border-white/[0.07] px-3 pb-6 pt-[88px] md:flex">
-      <div className="flex flex-col gap-2">
-        {/* Esta barra decide QUÉ tareas ven Lista, Kanban, Timeline y Calendario (y de qué proyecto). "Mis tareas" es
-            otra cosa: tu plan del día, ordenado por tiempo. Por eso el rótulo lo dice y los mosaicos se llaman "Mías" y "Equipo". */}
-        <span className={sectionTitle}>Ver por proyecto</span>
-        <div className="grid grid-cols-2 gap-2.5">
-          <SmartTile label="Mías" count={myTaskCount} active={!neutral && onlyMine} Icon={UsersIcon} onClick={onToggleOnlyMine} />
-          <SmartTile label="Equipo" count={totalOpen} active={!neutral && !onlyMine && selectedId === null} Icon={BriefcaseIcon} onClick={() => onSelect(null)} />
-        </div>
+      {/* "Personal" abre Mis tareas (tu plan, ordenado por tiempo); "Equipo" y los proyectos muestran el trabajo de todos
+          en Lista, Kanban, Timeline y Calendario. Así "lo mío" vive en un solo lugar. */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <SmartTile label="Personal" count={myTaskCount} active={personalActive} Icon={UsersIcon} onClick={onPersonal} />
+        <SmartTile label="Equipo" count={totalOpen} active={!personalActive && !onlyMine && selectedId === null} Icon={BriefcaseIcon} onClick={() => onSelect(null)} />
       </div>
 
       {intervenciones.length > 0 && (
@@ -136,7 +133,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, o
               sublabel={`Semana ${w.interventionWeek} de ${w.interventionTotalWeeks}`}
               count={openCounts[w.id]}
               accentColor="#F4EEE2"
-              active={!neutral && !onlyMine && selectedId === w.id}
+              active={!personalActive && !onlyMine && selectedId === w.id}
               onClick={() => onSelect(w.id)}
             />
           ))}
@@ -146,7 +143,7 @@ export default function WorkspaceSidebar({ canManage = false, taskCounts = {}, o
       <div className="flex flex-col gap-0.5">
         <span className={sectionTitle}>Proyectos internos</span>
         {proyectos.map((w) => (
-          <NavItem key={w.id} label={w.name} count={openCounts[w.id]} accentColor="#B8860B" active={!neutral && !onlyMine && selectedId === w.id} onClick={() => onSelect(w.id)} {...bind(w)} />
+          <NavItem key={w.id} label={w.name} count={openCounts[w.id]} accentColor="#B8860B" active={!personalActive && !onlyMine && selectedId === w.id} onClick={() => onSelect(w.id)} {...bind(w)} />
         ))}
         <button
           type="button"
