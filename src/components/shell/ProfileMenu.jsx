@@ -1,3 +1,4 @@
+import { lockNow } from '../../hooks/useIdleLock'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
@@ -87,6 +88,11 @@ function StatusAndHelp({ user, onClose, onSelect, onNavigate }) {
           ))}
         </div>
       )}
+      <button type="button" onClick={() => { onClose?.(); setTimeout(lockNow, 120) }} className={row}>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[13px] text-[#C9C9C9]">☾</span>
+        <span className="flex-1">Pantalla de reposo</span>
+        <span className="text-[11px] text-[#8A8A8A]">⌘⇧L</span>
+      </button>
       <button type="button" onClick={() => { onSelect?.('tour'); onClose?.() }} className={row}>
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-[#C9C9C9]">✦</span>Conoce ADOR OS
       </button>

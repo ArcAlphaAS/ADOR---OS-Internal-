@@ -197,7 +197,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const soon = brief.stats?.next && brief.stats.next.startMs - Date.now() <= 90 * 60000 ? brief.stats.next : null
   const soonMin = soon ? Math.max(1, Math.round((soon.startMs - Date.now()) / 60000)) : 0
   const idleLines = [
-    `Estuviste fuera ${awayText}.`,
+    awayMin >= 2 ? `Estuviste fuera ${awayText}.` : null,
     soon ? `${soon.title.length > 28 ? `${soon.title.slice(0, 27)}…` : soon.title} empieza en ${soonMin < 60 ? `${soonMin} min` : `${Math.floor(soonMin / 60)} h ${soonMin % 60} min`}.` : null,
   ].filter(Boolean)
   const lines = overlay

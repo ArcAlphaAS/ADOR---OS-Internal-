@@ -21,6 +21,9 @@ export const IDLE_OPTIONS = [
   { id: 'off', label: 'Nunca' },
 ]
 
+// Bloqueo manual: desde el menú del perfil o con ⌘⇧L / Ctrl⇧L.
+export const lockNow = () => window.dispatchEvent(new Event('ador:lock'))
+
 export function readIdlePref() {
   try {
     return localStorage.getItem(IDLE_KEY) || 'auto'
@@ -70,6 +73,15 @@ export function useIdleLock(enabled) {
       if (lim && away >= lim.away) lock(since)
       else last.current = Date.now()
     }
+    const manual = () => setLockedAt(Date.now())
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault()
+        manual()
+      }
+    }
+    window.addEventListener('ador:lock', manual)
+    window.addEventListener('keydown', onKey)
     EVENTS.forEach((e) => window.addEventListener(e, touch, { passive: true, capture: true }))
     document.addEventListener('visibilitychange', onVis)
     const id = setInterval(() => {
@@ -77,6 +89,8 @@ export function useIdleLock(enabled) {
       if (lim && document.visibilityState === 'visible' && Date.now() - last.current >= lim.idle) lock()
     }, 15000)
     return () => {
+      window.removeEventListener('ador:lock', manual)
+      window.removeEventListener('keydown', onKey)
       EVENTS.forEach((e) => window.removeEventListener(e, touch, { capture: true }))
       document.removeEventListener('visibilitychange', onVis)
       clearInterval(id)

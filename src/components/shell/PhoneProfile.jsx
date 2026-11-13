@@ -1,3 +1,4 @@
+import { lockNow } from '../../hooks/useIdleLock'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -218,6 +219,7 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
 
         <p className="mb-2 mt-6 px-3 text-[13px] font-medium text-[#8E8E93]">Preferencias</p>
         <Group>
+          <Row icon={I.moon} label="Pantalla de reposo" hint="Bloquear ahora" onClick={() => { onClose?.(); setTimeout(lockNow, 250) }} />
           <Row icon={I.moon} label="Tema" hint="Oscuro o claro" right={<ThemeSegment />} />
           {(push === 'on' || push === 'off') && <Row icon={I.bell} label="Avisos" hint={pushHint} right={<Switch on={push === 'on'} disabled={busy || push === 'on'} onChange={turnOnPush} label="Avisos en este dispositivo" />} />}
           {push && push !== 'on' && push !== 'off' && <Row icon={I.bell} label="Avisos" hint={pushHint} />}
