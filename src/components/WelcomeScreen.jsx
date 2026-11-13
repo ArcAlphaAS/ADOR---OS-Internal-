@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, u
 import usePhone from '../hooks/usePhone'
 import { useWelcomeBrief } from '../hooks/useWelcomeBrief'
 import { haptic } from '../lib/haptics'
+import { useChatUnreadCount } from '../hooks/useChatNotifications'
 
 // La luz del día entra desde el borde inferior, como un horizonte: dorada al amanecer,
 // azul abierta de tarde, índigo profundo de noche. [rgb, alpha] del resplandor principal,
@@ -108,6 +109,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const [dismissing, setDismissing] = useState(false)
   const finished = useRef(false)
   const brief = useWelcomeBrief(uid, now.getHours())
+  const unread = useChatUnreadCount(uid)
 
   // Reloj alineado al cambio de minuto (el odómetro gira justo cuando toca).
   useEffect(() => {
@@ -272,6 +274,25 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
               </motion.div>
             </AnimatePresence>
           </div>
+          {brief.ready && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.25, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-6 flex flex-wrap items-center justify-center gap-2"
+            >
+              {[
+                brief.stats?.tareas > 0 && { k: 't', label: `${brief.stats.tareas} ${brief.stats.tareas === 1 ? 'tarea' : 'tareas'}`, hot: brief.stats.vencidas > 0 },
+                unread > 0 && { k: 'm', label: `${unread} ${unread === 1 ? 'chat sin leer' : 'chats sin leer'}` },
+                brief.stats?.next && { k: 'r', label: `${brief.stats.next.time} · ${brief.stats.next.title.length > 22 ? `${brief.stats.next.title.slice(0, 21)}…` : brief.stats.next.title}` },
+              ].filter(Boolean).map((c) => (
+                <span key={c.k} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-1.5 text-[13px] text-white/75">
+                  <i className={`h-1.5 w-1.5 rounded-full ${c.hot ? 'bg-[#EF5350]' : c.k === 'm' ? 'bg-[#F4EEE2]' : 'bg-white/45'}`} />
+                  {c.label}
+                </span>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
 
