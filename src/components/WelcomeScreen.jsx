@@ -4,6 +4,8 @@ import usePhone from '../hooks/usePhone'
 import { useWelcomeBrief } from '../hooks/useWelcomeBrief'
 import { haptic } from '../lib/haptics'
 import { useChatUnreadCount } from '../hooks/useChatNotifications'
+import { useUserPhoto } from '../hooks/useUserPhoto'
+import Avatar from './shell/Avatar'
 
 // La luz del día entra desde el borde inferior, como un horizonte: dorada al amanecer,
 // azul abierta de tarde, índigo profundo de noche. [rgb, alpha] del resplandor principal,
@@ -126,6 +128,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   const finished = useRef(false)
   const brief = useWelcomeBrief(uid, now.getHours())
   const unread = useChatUnreadCount(uid)
+  const photo = useUserPhoto(uid)
 
   // Reloj alineado al cambio de minuto (el odómetro gira justo cuando toca).
   useEffect(() => {
@@ -341,9 +344,29 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
             className="h-[5px] w-[132px] rounded-full bg-white/40"
           />
         )}
-        <p className="text-[12px] text-white/50">
-          {phone ? 'Desliza hacia arriba para entrar' : 'Toca en cualquier lugar o presiona Enter'}
-        </p>
+        {phone ? (
+          <p className="text-[12px] text-white/50">Desliza hacia arriba para entrar</p>
+        ) : (
+          // Como la pantalla de bloqueo de macOS: tu cara, tu nombre y la forma de entrar.
+          <div className="flex flex-col items-center gap-2.5">
+            <div className="relative">
+              <motion.span
+                aria-hidden
+                className="absolute -inset-1.5 rounded-full border border-white/25"
+                animate={reduce ? undefined : { opacity: [0.15, 0.55, 0.15], scale: [1, 1.08, 1] }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="overflow-hidden rounded-full ring-1 ring-white/20">
+                <Avatar photoURL={photo} displayName={name} size={46} />
+              </div>
+            </div>
+            <p className="flex items-center gap-1.5 text-[12.5px] text-white/55">
+              Presiona
+              <kbd className="rounded-[5px] bg-white/[0.12] px-1.5 py-px text-[11px] font-medium text-white/80">Enter</kbd>
+              para entrar
+            </p>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )
