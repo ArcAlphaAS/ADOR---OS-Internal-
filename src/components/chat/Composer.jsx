@@ -92,7 +92,19 @@ function useVoiceRecorder({ onDone, onError }) {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return onError('Este navegador no permite grabar audio.')
     if (preparing || recording) return
     setPreparing(true)
+    const clickedAt = performance.now()
     const quality = readVoiceQuality()
+    // El contexto de audio se crea y despierta MIENTRAS el navegador abre el micrófono, no después:
+    // así lo que tarda en estar lista la grabación (lo que se pierde si hablas antes) es menor.
+    let earlyCtx = null
+    let earlyResume = null
+    if (quality === 'alta') {
+      try {
+        const AC0 = window.AudioContext || window.webkitAudioContext
+        earlyCtx = new AC0()
+        earlyResume = earlyCtx.resume?.()
+      } catch { earlyCtx = null }
+    }
     let stream
     try {
       // Igual que la primera versión, que sonaba nítida: sin restricciones de audio.
@@ -101,6 +113,7 @@ function useVoiceRecorder({ onDone, onError }) {
       })
       streamRef.current = stream
     } catch {
+      earlyCtx?.close?.().catch(() => {})
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
@@ -112,11 +125,12 @@ function useVoiceRecorder({ onDone, onError }) {
     let recStream = stream
     try {
       const AC = window.AudioContext || window.webkitAudioContext
-      ctx = new AC()
+      ctx = earlyCtx || new AC()
       an = ctx.createAnalyser()
       an.fftSize = 256
       const src = ctx.createMediaStreamSource(stream)
       if (quality === 'alta') {
+        await earlyResume
         await ctx.resume?.()
         const comp = ctx.createDynamicsCompressor()
         comp.threshold.value = -32
@@ -160,6 +174,7 @@ function useVoiceRecorder({ onDone, onError }) {
     // Diagnóstico a la vista: con qué calidad capturó el micrófono (un teléfono en "modo
     // llamada" suele dar 8 o 16 kHz y suena como radio).
     let info = ''
+    let readyMs = 0
     try {
       const st = stream.getAudioTracks()[0]?.getSettings?.() || {}
       info = [st.sampleRate ? `${Math.round(st.sampleRate / 1000)} kHz` : null, quality === 'alta' ? 'alta fidelidad' : 'voz', st.echoCancellation ? 'eco sí' : 'eco no'].filter(Boolean).join(' · ')
@@ -179,7 +194,7 @@ function useVoiceRecorder({ onDone, onError }) {
       reader.onload = async () => {
         if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
         const analysis = await computePeaks(blob)
-        setReview({ dataUrl: reader.result, duration, peaks: analysis?.peaks || null, boost: analysis?.boost || 1, info }) // se escucha y se decide: enviar o descartar
+        setReview({ dataUrl: reader.result, duration, peaks: analysis?.peaks || null, boost: analysis?.boost || 1, info: readyMs ? `${info} · listo en ${(readyMs / 1000).toFixed(1)} s` : info }) // se escucha y se decide: enviar o descartar
       }
       reader.readAsDataURL(blob)
     }
@@ -192,6 +207,7 @@ function useVoiceRecorder({ onDone, onError }) {
       onError('Se interrumpió la grabación.')
     }
     rec.onstart = () => {
+      readyMs = Math.round(performance.now() - clickedAt)
       startedAt = Date.now()
       setSeconds(0)
       setLevels([])
@@ -532,7 +548,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
       <div className="flex items-center gap-2.5 pt-1">
         <div className="flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full bg-[#2C2C2E] px-5 text-[13.5px] text-[#9A9A9A]">
           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
-          Abriendo el micrófono… espera un momento
+          Abriendo el micrófono… habla cuando veas la onda roja
         </div>
       </div>
     )
