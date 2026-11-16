@@ -85,7 +85,48 @@ function useVoiceRecorder({ onDone, onError }) {
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 })
+    // La voz pasa por un compresor suave y una ganancia antes de grabarse: el navegador
+    // suele entregar el micrófono muy bajo, y así la nota se oye con buen volumen sin
+    // que los picos distorsionen. Si el audio del navegador falla, se graba el micrófono tal cual.
+    let ctx = null
+    let an = null
+    let recStream = stream
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext
+      ctx = new AC()
+      await ctx.resume?.()
+      const src = ctx.createMediaStreamSource(stream)
+      const comp = ctx.createDynamicsCompressor()
+      comp.threshold.value = -32
+      comp.knee.value = 24
+      comp.ratio.value = 3.5
+      comp.attack.value = 0.004
+      comp.release.value = 0.22
+      const gain = ctx.createGain()
+      gain.gain.value = 1.6
+      // Limitador final: la ganancia nunca empuja los picos más allá de lo que cabe (sin distorsión).
+      const limiter = ctx.createDynamicsCompressor()
+      limiter.threshold.value = -6
+      limiter.knee.value = 0
+      limiter.ratio.value = 20
+      limiter.attack.value = 0.002
+      limiter.release.value = 0.08
+      const dest = ctx.createMediaStreamDestination()
+      src.connect(comp)
+      comp.connect(gain)
+      gain.connect(limiter)
+      limiter.connect(dest)
+      an = ctx.createAnalyser()
+      an.fftSize = 256
+      limiter.connect(an)
+      recStream = dest.stream
+    } catch {
+      ctx?.close?.().catch(() => {})
+      ctx = null
+      an = null
+      recStream = stream
+    }
+    const rec = new MediaRecorder(recStream, { mimeType, audioBitsPerSecond: 32000 })
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
@@ -124,12 +165,7 @@ function useVoiceRecorder({ onDone, onError }) {
     rec.start(250)
     recRef.current = rec
     // Medidor de volumen: alimenta la onda que se dibuja mientras grabas.
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext
-      const ctx = new AC({ latencyHint: 'playback' }) // solo mide el volumen: que no le quite tiempo a la grabación
-      const an = ctx.createAnalyser()
-      an.fftSize = 256
-      ctx.createMediaStreamSource(stream).connect(an)
+    if (ctx && an) {
       const buf = new Uint8Array(an.fftSize)
       const t0 = Date.now()
       const arr = []
@@ -137,13 +173,13 @@ function useVoiceRecorder({ onDone, onError }) {
         an.getByteTimeDomainData(buf)
         let sum = 0
         for (let i = 0; i < buf.length; i++) sum += ((buf[i] - 128) / 128) ** 2
-        const rms = Math.min(1, Math.sqrt(sum / buf.length) * 4)
+        const rms = Math.min(1, Math.sqrt(sum / buf.length) * 3)
         const slot = Math.min(99, Math.floor((Date.now() - t0) / 600))
         arr[slot] = Math.max(arr[slot] || 0, rms)
         setLevels([...arr].map((v) => v || 0.04))
       }, 90)
       meterRef.current = { ctx, timer }
-    } catch {
+    } else {
       meterRef.current = null
     }
 
