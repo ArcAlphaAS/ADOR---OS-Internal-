@@ -1,3 +1,4 @@
+import { releaseAudio } from '../../lib/audioBoost'
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { EMOJIS, findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
@@ -276,7 +277,7 @@ function VoicePlayer({ attachment, mine }) {
   const [speed, setSpeed] = useState(1)
 
   const boostRef = useRef(null)
-  useEffect(() => () => { audioRef.current?.pause(); boostRef.current?.close?.().catch(() => {}) }, [])
+  useEffect(() => () => { releaseAudio(audioRef.current) }, [])
   // 1× → 1,5× → 2×, como en WhatsApp: escuchar una nota larga sin perder tiempo.
   const cycleSpeed = () => {
     const next = speed === 1 ? 1.5 : speed === 1.5 ? 2 : 1
@@ -328,6 +329,8 @@ function VoicePlayer({ attachment, mine }) {
       audio.onended = () => {
         setState('idle')
         setProgress(0)
+        releaseAudio(audio)
+        audioRef.current = null // la próxima vez se vuelve a armar desde la copia en memoria
       }
       audio.onerror = () => fail('Este dispositivo no puede reproducir este audio.', audio.error)
       audio.playbackRate = speed

@@ -373,7 +373,7 @@ function TypeCards({ tree, counts, onSelect, docs, dnd, dropKey }) {
               type="button"
               {...(dnd ? dnd(`c:${cat.id}`, cat.subcategories[0]?.id) : {})}
               onClick={() => onSelect(cat.id)}
-              className="group flex flex-col items-start gap-4 rounded-3xl bg-white/[0.04] p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
+              className="group flex flex-col items-start gap-4 rounded-3xl bg-white/[0.04] p-6 text-left transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]"
               style={dropKey === `c:${cat.id}` ? { background: 'rgba(244,238,226,0.16)', boxShadow: '0 0 0 1.5px rgba(244,238,226,0.55)' } : undefined}
             >
               <FolderIllustration id={cat.id} size={96} tint={tint} />

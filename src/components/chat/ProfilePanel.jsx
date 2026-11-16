@@ -142,7 +142,7 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
                 className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
                 style={{ background: muted ? '#F4EEE2' : 'rgba(255,255,255,0.12)' }}
               >
-                <span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-all duration-200" style={{ left: muted ? 19 : 3 }} />
+                <span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-transform duration-200" style={{ left: 3, transform: `translateX(${muted ? 16 : 0}px)` }} />
               </button>
             </div>
           </>

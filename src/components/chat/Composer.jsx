@@ -9,6 +9,7 @@ import { ArrowRightIcon, CloseIcon, PaperclipIcon, ImageIcon, SmileIcon, ClockIc
 import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
+import { releaseAudio } from '../../lib/audioBoost'
 import { haptic } from '../../lib/haptics'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
@@ -203,12 +204,12 @@ export function VoiceReview({ review, onSend, onDiscard }) {
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const boostRef = useRef(null)
-  useEffect(() => () => { audioRef.current?.pause(); boostRef.current?.close?.().catch(() => {}) }, [])
+  useEffect(() => () => { releaseAudio(audioRef.current) }, [])
   const toggle = () => {
     if (!audioRef.current) {
       const a = new Audio(review.dataUrl)
       a.ontimeupdate = () => setProgress(a.currentTime / (review.duration || a.duration || 1))
-      a.onended = () => { setPlaying(false); setProgress(0) }
+      a.onended = () => { setPlaying(false); setProgress(0); releaseAudio(a); audioRef.current = null }
       audioRef.current = a
     }
     if (playing) { audioRef.current.pause(); setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
@@ -776,7 +777,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className={`ador-pop-in ador-lg-white ml-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
+            className={`ador-pop-in ador-lg-white ml-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />

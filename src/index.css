@@ -2,6 +2,10 @@
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+  /* Una sola curva para todo lo que se anima con clases `transition-*`: arranca rápido y se
+     asienta suave, como los resortes de Apple. Antes cada pieza usaba la curva por defecto. */
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 220ms;
 }
 
 :root {

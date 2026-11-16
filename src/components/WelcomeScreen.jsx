@@ -95,8 +95,8 @@ function Clock({ now, phone, still }) {
   const optical = hh[0] === '1' ? '-0.035em' : '0em'
   // Entra desde un peso muy fino y se asienta, enfocándose.
   const entry = {
-    initial: still ? false : { opacity: 0, y: 14, filter: 'blur(14px)', fontWeight: 300 },
-    animate: { opacity: 1, y: 0, filter: 'blur(0px)', fontWeight: 500 },
+    initial: still ? false : { opacity: 0, y: 14, filter: 'blur(8px)' },
+    animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
     transition: { duration: 1.3, ease: [0.22, 1, 0.36, 1] },
   }
   if (phone) {
@@ -261,9 +261,9 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
           animate={
             dismissing && !reduce
               ? phone
-                ? { y: -70, scale: 0.93, opacity: 0, filter: 'blur(14px)' }
-                : { x: '34vw', y: '-36vh', scale: 0.3, opacity: 0, filter: 'blur(6px)' } // se recoge hacia la esquina, como al abrir un Mac
-              : { x: 0, y: 0, scale: 1, opacity: 1, filter: 'blur(0px)' }
+                ? { y: -70, scale: 0.93, opacity: 0 }
+                : { x: '34vw', y: '-36vh', scale: 0.3, opacity: 0 } // se recoge hacia la esquina, como al abrir un Mac
+              : { x: 0, y: 0, scale: 1, opacity: 1 }
           }
           transition={{ duration: phone ? 0.6 : 0.72, ease: [0.4, 0, 0.2, 1] }}
         >

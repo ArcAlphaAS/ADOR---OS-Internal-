@@ -215,7 +215,7 @@ export function SeasonSection() {
         className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
         style={{ background: off ? 'rgba(255,255,255,0.12)' : '#B8860B' }}
       >
-        <span className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-200" style={{ left: off ? 2 : 18 }} />
+        <span className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-transform duration-200" style={{ left: 2, transform: `translateX(${!off ? 16 : 0}px)` }} />
       </button>
     </div>
   )

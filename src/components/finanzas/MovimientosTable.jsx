@@ -111,7 +111,7 @@ export default function MovimientosTable({ movements, onNavigate, scopeLabel, mo
                           type="button"
                           aria-label="Más acciones"
                           onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ movement: m, x: r.left - 190, y: r.bottom + 4 }) }}
-                          className="rounded-full px-2 py-0.5 text-[16px] leading-none text-[#8A8A8A] opacity-0 transition-all hover:bg-white/[0.08] hover:text-[#F5F5F5] group-hover:opacity-100"
+                          className="rounded-full px-2 py-0.5 text-[16px] leading-none text-[#8A8A8A] opacity-0 transition-[color,background-color,border-color,opacity,transform,box-shadow] hover:bg-white/[0.08] hover:text-[#F5F5F5] group-hover:opacity-100"
                         >⋯</button>
                       </div>
                     )

@@ -119,7 +119,7 @@ export default function PushNotificationsCard({ user, variant = 'settings' }) {
             className="relative mt-0.5 h-[26px] w-[44px] flex-shrink-0 rounded-full transition-colors duration-200 disabled:opacity-60"
             style={{ background: on ? '#4CAF50' : 'rgba(255,255,255,0.16)', cursor: on ? 'default' : 'pointer' }}
           >
-            <span className="absolute top-[2px] h-[22px] w-[22px] rounded-full bg-white shadow transition-all duration-200" style={{ left: on ? 20 : 2 }} />
+            <span className="absolute top-[2px] h-[22px] w-[22px] rounded-full bg-white shadow transition-transform duration-200" style={{ left: 2, transform: `translateX(${on ? 18 : 0}px)` }} />
           </button>
         )}
         {status === 'denied' && <span className="flex-shrink-0 text-[11px] font-medium text-[#D98A86]">Bloqueadas</span>}

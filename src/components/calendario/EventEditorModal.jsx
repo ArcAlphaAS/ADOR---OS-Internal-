@@ -31,7 +31,7 @@ const fmt12 = (t) => { const [h, m] = t.split(':').map(Number); return `${h % 12
 function Switch({ on }) {
   return (
     <span className="relative inline-block h-[26px] w-[44px] flex-shrink-0 rounded-full transition-colors duration-200" style={{ background: on ? '#F4EEE2' : 'rgba(255,255,255,0.14)' }}>
-      <span className="absolute top-[3px] h-5 w-5 rounded-full shadow transition-all duration-200" style={{ left: on ? 21 : 3, background: on ? '#1A1814' : '#F5F5F5' }} />
+      <span className="absolute top-[3px] h-5 w-5 rounded-full shadow transition-[transform,background-color] duration-200" style={{ left: 3, transform: `translateX(${on ? 18 : 0}px)`, background: on ? '#1A1814' : '#F5F5F5' }} />
     </span>
   )
 }

@@ -1,25 +1,19 @@
-// Subida de volumen al reproducir una nota de voz que quedó baja. Se calcula al grabar
-// (`boost` = cuántas veces subir) y se aplica aquí con Web Audio, con un limitador al final
-// para no distorsionar. Sin `boost` (o menor a 1,05) el audio suena tal cual.
-export function attachBoost(audio, boost) {
-  if (!boost || boost <= 1.05) return null
+// Suelta un <audio> por completo cuando termina: sin esto el sistema lo sigue mostrando en
+// "Reproduciendo" (barra de notificaciones / Centro de control) aunque ya acabó.
+export function releaseAudio(audio) {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext
-    const ctx = new AC()
-    const src = ctx.createMediaElementSource(audio)
-    const gain = ctx.createGain()
-    gain.gain.value = boost
-    const limiter = ctx.createDynamicsCompressor()
-    limiter.threshold.value = -3
-    limiter.knee.value = 0
-    limiter.ratio.value = 20
-    limiter.attack.value = 0.002
-    limiter.release.value = 0.08
-    src.connect(gain)
-    gain.connect(limiter)
-    limiter.connect(ctx.destination)
-    return ctx
+    if (!audio) return
+    audio.onerror = null // al soltar el audio el navegador avisa de "sin fuente": no es un fallo
+    audio.ontimeupdate = null
+    audio.onended = null
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null
+      navigator.mediaSession.playbackState = 'none'
+    }
   } catch {
-    return null
+    /* nunca debe romper la reproducción */
   }
 }

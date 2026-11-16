@@ -14,7 +14,7 @@ export default function KanbanColumn({ stage, clients, users, registerRef, onOpe
   return (
     <div
       ref={ref}
-      className="flex flex-shrink-0 flex-col rounded-2xl transition-all duration-200"
+      className="flex flex-shrink-0 flex-col rounded-2xl transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-200"
       style={{
         width: 280,
         padding: 16,

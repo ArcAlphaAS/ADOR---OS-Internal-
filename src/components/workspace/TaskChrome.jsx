@@ -34,7 +34,7 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
           onToggleExpand()
         }}
         title={expanded ? 'Ocultar subtareas' : 'Subtareas'}
-        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#888888] transition-all duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5] ${subtasks.length > 0 || expanded ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
+        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#888888] transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5] ${subtasks.length > 0 || expanded ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
       >
         <span className="flex transition-transform duration-150" style={{ transform: expanded ? 'rotate(90deg)' : 'none' }}>
           <ChevronRightIcon size={12} />
@@ -62,7 +62,7 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
           onOpen(task, 'comments')
         }}
         title={comments ? `${comments} actualización${comments === 1 ? '' : 'es'}` : 'Escribir una actualización'}
-        className={`relative ml-auto flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-all duration-150 hover:bg-white/[0.08] ${comments ? 'text-[#E8C15A] opacity-100' : 'text-[#888888] opacity-0 group-hover/title:opacity-100'}`}
+        className={`relative ml-auto flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-150 hover:bg-white/[0.08] ${comments ? 'text-[#E8C15A] opacity-100' : 'text-[#888888] opacity-0 group-hover/title:opacity-100'}`}
       >
         <MessageIcon size={14} />
         {comments > 0 && (
@@ -77,7 +77,7 @@ export function TaskTitleCell({ task, completed, expanded, onToggleExpand, onOpe
           onOpen(task)
         }}
         title="Abrir tarea"
-        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[#888888] opacity-0 transition-all duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5] group-hover/title:opacity-100"
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[#888888] opacity-0 transition-[color,background-color,border-color,opacity,transform,box-shadow] duration-150 hover:bg-white/[0.08] hover:text-[#F5F5F5] group-hover/title:opacity-100"
       >
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9" />
