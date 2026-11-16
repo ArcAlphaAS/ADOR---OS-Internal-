@@ -9,7 +9,7 @@ import { reportError } from '../../lib/errorLog'
 export default class ModuleErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { error: null }
+    this.state = { error: null, where: '' }
   }
 
   static getDerivedStateFromError(error) {
@@ -18,6 +18,7 @@ export default class ModuleErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     reportError(error, { source: 'render' })
+    this.setState({ where: (info?.componentStack || '').split('\n').slice(1, 4).map((l) => l.trim()).join(' ← ') })
     if (info?.componentStack) console.error(info.componentStack)
   }
 
@@ -34,7 +35,11 @@ export default class ModuleErrorBoundary extends Component {
           <p className="mt-2 text-[13px] leading-relaxed text-[#888888]">
             Ya quedó registrado para revisarlo. El resto de ADOR OS sigue funcionando — puedes reintentar o ir a otra sección.
           </p>
-          <button type="button" onClick={() => this.setState({ error: null })} className="ador-btn-primary mt-5 rounded-xl px-4 py-2 text-[13px] font-medium">
+          <p className="mt-4 select-text break-words rounded-lg bg-white/[0.05] px-3 py-2 text-left font-mono text-[11px] leading-snug text-[#9A9A9A]">
+            {String(this.state.error?.message || this.state.error).slice(0, 220)}
+            {this.state.where ? `\n${this.state.where.slice(0, 220)}` : ''}
+          </p>
+          <button type="button" onClick={() => this.setState({ error: null })} className="ador-btn-primary mt-4 rounded-xl px-4 py-2 text-[13px] font-medium">
             Reintentar
           </button>
         </div>
