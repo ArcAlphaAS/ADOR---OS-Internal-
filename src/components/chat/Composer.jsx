@@ -10,7 +10,6 @@ import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
 import { haptic } from '../../lib/haptics'
-import { attachBoost } from '../../lib/audioBoost'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
 // in their own chatBlobs doc, so each can use most of that on its own.
@@ -77,11 +76,8 @@ function useVoiceRecorder({ onDone, onError }) {
     setPreparing(true)
     let stream
     try {
-      // Como al principio: el procesado de voz del sistema (eco, ruido y nivel automático)
-      // es lo que sube el volumen del micrófono del Mac. Una sola pista (mono).
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      })
+      // Igual que la primera versión, que sonaba nítida: sin restricciones de audio.
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
@@ -92,7 +88,7 @@ function useVoiceRecorder({ onDone, onError }) {
     let an = null
     try {
       const AC = window.AudioContext || window.webkitAudioContext
-      ctx = new AC({ latencyHint: 'playback' })
+      ctx = new AC()
       an = ctx.createAnalyser()
       an.fftSize = 256
       ctx.createMediaStreamSource(stream).connect(an)
@@ -101,7 +97,7 @@ function useVoiceRecorder({ onDone, onError }) {
       ctx = null
       an = null
     }
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 })
+    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
@@ -137,7 +133,7 @@ function useVoiceRecorder({ onDone, onError }) {
       setRecording(true)
       haptic('tap')
     }
-    rec.start(250)
+    rec.start()
     recRef.current = rec
     // Medidor de volumen: alimenta la onda que se dibuja mientras grabas.
     if (ctx && an) {
@@ -211,12 +207,11 @@ export function VoiceReview({ review, onSend, onDiscard }) {
   const toggle = () => {
     if (!audioRef.current) {
       const a = new Audio(review.dataUrl)
-      boostRef.current = attachBoost(a, review.boost)
       a.ontimeupdate = () => setProgress(a.currentTime / (review.duration || a.duration || 1))
       a.onended = () => { setPlaying(false); setProgress(0) }
       audioRef.current = a
     }
-    if (playing) { audioRef.current.pause(); setPlaying(false) } else { boostRef.current?.resume?.(); audioRef.current.play().catch(() => {}); setPlaying(true) }
+    if (playing) { audioRef.current.pause(); setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
   }
   const peaks = review.peaks?.length ? review.peaks : Array.from({ length: 36 }, () => 30)
   return (

@@ -360,7 +360,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         attachment = { kind: 'image', thumbUrl: draft.image.thumbUrl, blobId: blob.id, name: draft.image.name }
       } else if (draft.voice) {
         const blob = await withTimeout(createChatBlob(draft.voice.dataUrl, 'voice'))
-        attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz', ...(draft.voice.peaks ? { peaks: draft.voice.peaks } : {}), ...(draft.voice.boost > 1.05 ? { boost: draft.voice.boost } : {}) }
+        attachment = { kind: 'voice', blobId: blob.id, duration: Math.round(draft.voice.duration), name: 'Nota de voz', ...(draft.voice.peaks ? { peaks: draft.voice.peaks } : {}) }
       } else if (draft.entity) {
         const e = draft.entity
         attachment = { kind: 'entity', entityType: e.type, id: e.id, title: e.title, subtitle: e.subtitle || '' }
