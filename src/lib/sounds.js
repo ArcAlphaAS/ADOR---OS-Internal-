@@ -19,6 +19,10 @@ export function setSoundsOn(on) {
   }
 }
 
+// El contexto de audio vive solo unos segundos: uno abierto todo el tiempo mantiene el
+// dispositivo en "modo reproducción" y degrada el micrófono al grabar notas de voz
+// (más bajo y sin nitidez, sobre todo en iPhone y con la cancelación de eco).
+let closeTimer = null
 function audio() {
   if (typeof window === 'undefined') return null
   if (!ctx) {
@@ -26,19 +30,12 @@ function audio() {
     if (!AC) return null
     ctx = new AC()
   }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+  clearTimeout(closeTimer)
+  closeTimer = setTimeout(() => {
+    ctx?.close?.().catch(() => {})
+    ctx = null
+  }, 3000)
   return ctx
-}
-
-// El navegador solo deja sonar tras un gesto: el primer toque despierta el audio.
-if (typeof window !== 'undefined') {
-  const unlock = () => {
-    audio()
-    window.removeEventListener('pointerdown', unlock)
-    window.removeEventListener('keydown', unlock)
-  }
-  window.addEventListener('pointerdown', unlock, { once: false })
-  window.addEventListener('keydown', unlock, { once: false })
 }
 
 function tone(c, freq, start, dur, gain) {
@@ -59,13 +56,17 @@ export function playSound(kind) {
     if (!soundsOn()) return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     const c = audio()
-    if (!c || c.state !== 'running') return
-    if (kind === 'send') {
-      tone(c, 880, 0, 0.09, 0.05)
-    } else if (kind === 'done') {
-      tone(c, 659, 0, 0.14, 0.05)
-      tone(c, 988, 0.07, 0.2, 0.045)
+    if (!c) return
+    const go = () => {
+      if (kind === 'send') {
+        tone(c, 880, 0, 0.09, 0.05)
+      } else if (kind === 'done') {
+        tone(c, 659, 0, 0.14, 0.05)
+        tone(c, 988, 0.07, 0.2, 0.045)
+      }
     }
+    if (c.state === 'running') go()
+    else c.resume().then(go).catch(() => {})
   } catch {
     /* nunca debe romper la acción */
   }

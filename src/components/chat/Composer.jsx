@@ -83,6 +83,7 @@ function useVoiceRecorder({ onDone, onError }) {
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
+    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
     // Solo para dibujar la onda en vivo: no toca lo que se graba.
     let ctx = null
     let an = null
@@ -97,7 +98,6 @@ function useVoiceRecorder({ onDone, onError }) {
       ctx = null
       an = null
     }
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
