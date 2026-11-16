@@ -993,7 +993,7 @@ export function MessageBubble({ message, mine, groupStart = true, groupEnd = tru
           )}
           {showBubble && !emojiOnly && (
             <div
-              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'} ${groupEnd && !message.important ? `ador-tail ${mine ? 'ador-tail-r' : 'ador-tail-l'}` : ''}` : 'rounded-2xl px-3.5 py-2 text-[13.5px]'}`}
+              className={`whitespace-pre-wrap break-words leading-relaxed ${phone ? `rounded-[20px] px-4 py-2.5 text-[14.5px] ${mine ? 'ador-lg-mine' : 'ador-lg-theirs'} ${groupEnd && !message.important ? `ador-tail ${mine ? 'ador-tail-r' : 'ador-tail-l'}` : ''}` : 'rounded-[20px] px-4 py-2.5 text-[15px]'}`}
               style={{
                 // Phones: flat Apple dark-mode greys (index.css .ador-lg-*) —
                 // yours the elevated grey, what you receive the darker one.

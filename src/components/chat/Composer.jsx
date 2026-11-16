@@ -701,7 +701,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
           squeezing the text box down to a few characters. */}
       {/* Teléfono (como WhatsApp): [+]  [ caja de texto ]  [cámara] [micrófono o enviar].
             Cada cosa va suelta, sin una barra que las envuelva; en computadora sigue la barra de siempre. */}
-      <div className="flex flex-nowrap items-end gap-x-2 md:gap-x-2 md:gap-y-1 md:flex-wrap md:rounded-[22px] md:border md:border-white/[0.1] md:bg-white/[0.03] md:py-1.5 md:pr-1.5 md:pl-4">
+      <div className="flex flex-nowrap items-end gap-x-2 md:gap-x-2 md:gap-y-1 md:flex-wrap md:rounded-[24px] md:border md:border-white/[0.1] md:bg-white/[0.05] md:py-2.5 md:pr-2 md:pl-5">
         <textarea
           ref={inputRef}
           rows={1}
@@ -734,7 +734,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             }
           }}
           placeholder={placeholder || (typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mensaje' : 'Escribe un mensaje...')}
-          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none max-md:order-2 max-md:rounded-[22px] max-md:bg-[#1C1C1E] max-md:px-4 max-md:py-2 md:text-[13.5px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
+          className={`max-h-[140px] min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-[16px] leading-relaxed text-[#F5F5F5] placeholder:text-[#858585] outline-none max-md:order-2 max-md:rounded-[22px] max-md:bg-[#1C1C1E] max-md:px-4 max-md:py-2 md:text-[15px] ${compact ? 'md:basis-full' : 'md:basis-[220px]'}`}
         />
         <div className="flex flex-shrink-0 items-center gap-0.5 max-md:contents md:ml-auto">
           {/* Only the everyday tools stay in view (emoji, imagen, voz);
@@ -763,7 +763,7 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
             type="button"
             onClick={submit}
             disabled={!text.trim() && !pendingImage}
-            className={`ador-pop-in ador-lg-white ml-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
+            className={`ador-pop-in ador-lg-white ml-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#F4EEE2] text-[#1A1814] transition-all duration-150 active:scale-95 disabled:opacity-40 max-md:order-4 max-md:ml-0 max-md:h-11 max-md:w-11 ${hasContent ? '' : 'max-md:hidden'}`}
             title="Enviar"
           >
             <ArrowRightIcon size={15} />

@@ -26,13 +26,8 @@ function dayLabel(ts) {
 function DateDivider({ ts }) {
   return (
     <>
-      <div className="flex items-center gap-3 py-2 max-md:hidden">
-        <div className="h-px flex-1 bg-white/[0.06]" />
-        <span className="text-[11px] font-medium text-[#8A8A8A]">{dayLabel(ts)}</span>
-        <div className="h-px flex-1 bg-white/[0.06]" />
-      </div>
-      <div className="flex justify-center py-3 md:hidden">
-        <span className="rounded-full bg-[#1C1C1E] px-3 py-1 text-[12px] font-medium text-[#B5B5BA]">{dayLabel(ts)}</span>
+      <div className="flex justify-center py-4">
+        <span className="rounded-full bg-[#1C1C1E] px-3.5 py-1 text-[12px] font-medium text-[#B5B5BA] md:bg-white/[0.06] md:text-[12.5px]">{dayLabel(ts)}</span>
       </div>
     </>
   )
@@ -291,7 +286,7 @@ export function MessageThread({ conversationKey, isDm, peerUid, newSince, messag
           lastDay = key
           const { start } = flags[i]
           const end = al ? flags[al.to].end : flags[i].end
-          const gap = i === 0 ? 0 : start || showDivider ? 14 : 3
+          const gap = i === 0 ? 0 : start || showDivider ? 18 : 3
           return (
             <div key={m.id} id={`msg-${m.id}`} data-day={dayLabel(m.createdAt)} className={`flex flex-col ${isNew(m.id) ? (mine ? 'ador-msg-send' : 'ador-msg-in') : ''}`} style={{ marginTop: gap }}>
               {showDivider && <DateDivider ts={m.createdAt} />}

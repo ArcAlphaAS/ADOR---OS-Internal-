@@ -47,6 +47,7 @@ import {
   conversationKind,
   isMember,
   membersOf,
+  sharedInConversation,
   userLabel,
   groupLabel,
   typingNames,
@@ -61,6 +62,7 @@ import {
 import { deliverMessage } from '../../lib/chatSend'
 import { beginWrite, endWrite } from '../../lib/liveStatus'
 import ChatContextRail from './ChatContextRail'
+import { ConvTabs, FilesPane, PinsPane } from './ConversationTabs'
 import { withTimeout } from '../../lib/workspace'
 import { useToast } from '../../hooks/useToast'
 import { sendPush } from '../../lib/push'
@@ -224,6 +226,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
   // Where "Nuevos mensajes" goes: the read marker as it was the moment the
   // conversation opened — captured before opening it marks it read.
   const [newSince, setNewSince] = useState(null)
+  const [convTab, setConvTab] = useState('msgs') // msgs | files | pins
+  useEffect(() => setConvTab('msgs'), [activeConversationId])
   useEffect(() => {
     setNewSince(activeConversationId ? profile?.chatLastRead?.[activeConversationId]?.toMillis?.() ?? null : null)
   }, [activeConversationId])
@@ -816,7 +820,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         ) : view === 'files' ? (
           <FilesView files={myFiles} onOpen={openConversation} onOpenImage={setLightbox} />
         ) : selected && (conversation || dmUser) ? (
-          <>
+          <div className="mx-auto flex min-h-0 w-full max-w-[820px] flex-1 flex-col">
             <ConversationHeader
               onBack={() => setMobilePane('list')}
               selected={selected}
@@ -836,7 +840,8 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               searching={searchQuery !== null}
               onToggleSearch={() => setSearchQuery((q) => (q === null ? '' : null))}
             />
-            {pinnedList.length > 0 && (
+            <ConvTabs tab={convTab} onTab={setConvTab} fileCount={(() => { const sh = sharedInConversation(messages); return sh.files.length + sh.links.length })()} pinCount={pinnedList.length} />
+            {pinnedList.length > 0 && convTab === 'msgs' && (
               <PinnedBar
                 pins={pinnedList}
                 open={pinsOpen}
@@ -865,6 +870,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
                 </button>
               </div>
             )}
+            <div className={`${convTab === 'msgs' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col`}>
             <MessageThread
               conversationKey={activeConversationId}
               isDm={selected.type === 'dm'}
@@ -991,7 +997,10 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
               mentionCandidates={mentionCandidates}
               placeholder={selected.type === 'dm' ? `Mensaje a ${userLabel(dmUser).split(' ')[0]}...` : mentionCandidates.length ? 'Escribe un mensaje... usa @ para mencionar' : undefined}
             />
-          </>
+            </div>
+            {convTab === 'files' && <FilesPane messages={messages} onOpenImage={setLightbox} />}
+            {convTab === 'pins' && <PinsPane pins={pinnedList} onJump={(id) => { setConvTab('msgs'); setTimeout(() => jumpToMessage(id), 60) }} onUnpin={(id) => handleTogglePin({ id })} />}
+          </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
             <MessageIcon size={20} className="text-[#8A8A8A]" />
@@ -1107,7 +1116,24 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
         />
       )}
 
-      {!panel && !view && !showInfo && !profileUser && selected && <ChatContextRail user={user} onNavigate={onNavigate} />}
+      {!panel && !view && !showInfo && !profileUser && selected && (
+        <ChatContextRail
+          user={user}
+          onNavigate={onNavigate}
+          selected={selected}
+          conversation={conversation}
+          dmUser={dmUser}
+          dmEntry={dmUser && directoryFor(dmUser.id)}
+          dmPresence={dmUser && presence[dmUser.id]}
+          messages={messages}
+          pins={pinnedList}
+          memberCount={conversation ? membersOf(conversation, users).length : 0}
+          onJump={(id) => { setConvTab('msgs'); setTimeout(() => jumpToMessage(id), 60) }}
+          onOpenImage={setLightbox}
+          onOpenProfile={() => dmUser && setPanel({ type: 'profile', uid: dmUser.id })}
+          onOpenInfo={() => setPanel({ type: 'info' })}
+        />
+      )}
 
       {readyCall && <ReadyCallSheet call={readyCall} onClose={() => setReadyCall(null)} />}
       <AnimatePresence>
