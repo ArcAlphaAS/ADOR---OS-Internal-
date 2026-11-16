@@ -17,14 +17,14 @@ function shortDate(ts) {
 
 function ActionButton({ icon, label, onClick, active, buttonRef }) {
   return (
-    <button ref={buttonRef} type="button" onClick={onClick} className="group flex w-[64px] flex-col items-center gap-1.5">
+    <button ref={buttonRef} type="button" onClick={onClick} className="group flex w-[64px] flex-col items-center gap-1.5 max-md:w-[84px] max-md:gap-2">
       <span
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.1] text-[#BBBBBB] transition-colors duration-150 group-hover:border-white/[0.2] group-hover:text-[#F5F5F5]"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.1] text-[#BBBBBB] transition-colors duration-150 group-hover:border-white/[0.2] group-hover:text-[#F5F5F5] max-md:h-[58px] max-md:w-[58px] max-md:border-0 max-md:bg-[#1C1C1E] max-md:text-[#F5F5F5] max-md:active:scale-95"
         style={active ? { background: 'rgba(255,255,255,0.08)', color: '#F5F5F5' } : undefined}
       >
         {icon}
       </span>
-      <span className="text-[11px] text-[#888888]">{label}</span>
+      <span className="text-[11px] text-[#888888] max-md:text-[12.5px]">{label}</span>
     </button>
   )
 }
@@ -33,9 +33,9 @@ function ListSection({ title, items, render, empty }) {
   const [all, setAll] = useState(false)
   const shown = all ? items : items.slice(0, 4)
   return (
-    <div className="border-t border-white/[0.06] pt-4">
+    <div className="border-t border-white/[0.06] pt-4 max-md:rounded-2xl max-md:border-0 max-md:bg-[#1C1C1E] max-md:p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-[12.5px] font-semibold text-[#DDDDDD]">{title}</p>
+        <p className="text-[12.5px] font-semibold text-[#DDDDDD] max-md:text-[16px] max-md:font-medium">{title}</p>
         {items.length > 4 && (
           <button type="button" onClick={() => setAll((v) => !v)} className="text-[12.5px] text-[#F4EEE2] hover:underline">
             {all ? 'Ver menos' : `Ver todos (${items.length})`}
@@ -59,6 +59,7 @@ function ListSection({ title, items, render, empty }) {
 // Presence comes from presence/{uid} heartbeats (usePresenceHeartbeat).
 export default function ProfilePanel({ person, directoryEntry, presence, inDm, messages, muted, searching, onClose, onMessage, onCall, onToggleSearch, onToggleMute, onOpenImage }) {
   const callRef = useRef(null)
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches
   const name = directoryEntry?.name || userLabel(person)
   const photo = directoryEntry?.photoDataUrl || person?.photoDataUrl
   const subtitle = [directoryEntry?.role, directoryEntry?.area].filter(Boolean).join(' · ')
@@ -68,20 +69,20 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
     <SidePanel title="Perfil" onClose={onClose}>
         <div className="flex flex-col items-center text-center">
           <span className="relative">
-            <PersonAvatar uid={person?.id} name={name} photo={photo} size={84} />
+            <PersonAvatar uid={person?.id} name={name} photo={photo} size={phone ? 104 : 84} />
             {presenceOf(presence).color && (
               <span className="absolute right-1 bottom-1 h-4 w-4 rounded-full ring-[3px] ring-[#121212]" style={{ background: presenceOf(presence).color }} />
             )}
           </span>
-          <p className="mt-3 text-[17px] font-semibold text-[#F5F5F5]">{name}</p>
+          <p className="mt-3 text-[17px] font-semibold text-[#F5F5F5] max-md:mt-4 max-md:text-[24px] max-md:tracking-[-0.02em]">{name}</p>
           {presenceOf(presence).label && (
-            <p className="text-[12.5px]" style={{ color: presenceOf(presence).color || '#858585' }}>
+            <p className="text-[12.5px] max-md:text-[14px]" style={{ color: presenceOf(presence).color || '#858585' }}>
               {presenceOf(presence).label}
             </p>
           )}
-          {subtitle && <p className="mt-0.5 text-[12.5px] text-[#888888]">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 text-[12.5px] text-[#888888] max-md:text-[14px]">{subtitle}</p>}
           {directoryEntry?.about && <p className="mt-2 text-[12.5px] leading-relaxed text-[#858585]">{directoryEntry.about}</p>}
-          {person?.email && <p className="mt-2 text-[11px] text-[#8A8A8A]">{person.email}</p>}
+          {person?.email && <p className="mt-2 text-[11px] text-[#8A8A8A] max-md:text-[13px]">{person.email}</p>}
         </div>
 
         <div className="flex justify-center gap-1">
@@ -129,20 +130,20 @@ export default function ProfilePanel({ person, directoryEntry, presence, inDm, m
               )}
             />
 
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
+            <div className="flex items-center justify-between border-t border-white/[0.06] pt-4 max-md:rounded-2xl max-md:border-0 max-md:bg-[#1C1C1E] max-md:p-4">
               <div>
-                <p className="text-[12.5px] font-semibold text-[#DDDDDD]">Silenciar</p>
-                <p className="text-[11px] text-[#8A8A8A]">Sin punto de no leído en la barra</p>
+                <p className="text-[12.5px] font-semibold text-[#DDDDDD] max-md:text-[16px] max-md:font-medium">Silenciar</p>
+                <p className="text-[11px] text-[#8A8A8A] max-md:text-[13px]">Sin punto de no leído en la barra</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={muted}
                 onClick={onToggleMute}
-                className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200"
+                className="relative h-[22px] w-[38px] flex-shrink-0 rounded-full transition-colors duration-200 max-md:h-[31px] max-md:w-[51px]"
                 style={{ background: muted ? '#F4EEE2' : 'rgba(255,255,255,0.12)' }}
               >
-                <span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-transform duration-200" style={{ left: 3, transform: `translateX(${muted ? 16 : 0}px)` }} />
+                <span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-transform duration-200 max-md:top-[2px] max-md:h-[27px] max-md:w-[27px]" style={{ left: 3, transform: `translateX(${muted ? (phone ? 20 : 16) : 0}px)` }} />
               </button>
             </div>
           </>
