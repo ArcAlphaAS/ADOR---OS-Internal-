@@ -334,11 +334,13 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
         className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)' }}
       >
-        <motion.div
-          animate={reduce ? undefined : { y: [0, -6, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          className="h-[5px] w-[132px] rounded-full bg-white/40"
-        />
+        {phone && (
+          <motion.div
+            animate={reduce ? undefined : { y: [0, -6, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            className="h-[5px] w-[132px] rounded-full bg-white/40"
+          />
+        )}
         <p className="text-[12px] text-white/50">
           {phone ? 'Desliza hacia arriba para entrar' : 'Toca en cualquier lugar o presiona Enter'}
         </p>
