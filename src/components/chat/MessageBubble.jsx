@@ -196,7 +196,7 @@ function ExpiredAttachment({ attachment }) {
       className="inline-flex items-center gap-2 rounded-xl border border-dashed border-white/[0.12] px-3 py-2 text-[12.5px] text-[#8A8A8A]"
       title="Los archivos de conversación se borran a los 90 días. Lo importante va en Google Drive."
     >
-      {voice ? <MicIcon size={13} /> : <ImageIcon size={13} />}
+      {voice ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4.5 10v4M8.25 7v10M12 4v16M15.75 8v8M19.5 10.5v3" /></svg> : <ImageIcon size={13} />}
       {voice ? 'Nota de voz expirada' : `Imagen expirada${attachment.name ? ` · ${attachment.name}` : ''}`}
     </span>
   )
