@@ -260,7 +260,21 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
             negra es de la ventana de iOS o de la app. */}
         <button
           type="button"
-          onClick={() => document.documentElement.classList.toggle('ador-diag')}
+          onClick={() => {
+            const on = document.documentElement.classList.toggle('ador-diag')
+            document.getElementById('ador-diag-probes')?.remove()
+            if (!on) return
+            // Barras de prueba (4 px de ancho, de izquierda a derecha): qué unidad de altura llega al borde real.
+            // fijas: 100vh · 100dvh · 100lvh · 100svh · 932 px.  absolutas: 932 px · 100lvh.
+            const wrap = document.createElement('div')
+            wrap.id = 'ador-diag-probes'
+            const mk = (h, pos, left, color) => `<i style="position:${pos};top:0;left:${left}px;width:10px;height:${h};background:${color};z-index:2147483646"></i>`
+            wrap.innerHTML = [
+              mk('100vh', 'fixed', 4, '#ff3b30'), mk('100dvh', 'fixed', 16, '#34c759'), mk('100lvh', 'fixed', 28, '#0a84ff'), mk('100svh', 'fixed', 40, '#ffd60a'), mk('932px', 'fixed', 52, '#ffffff'),
+              mk('932px', 'absolute', 70, '#ff9500'), mk('100lvh', 'absolute', 82, '#bf5af2'),
+            ].join('')
+            document.body.appendChild(wrap)
+          }}
           className="mx-auto mt-3 block rounded-full bg-[#1C1C1E] px-4 py-2 text-[12.5px] text-[#8E8E93] active:opacity-60"
         >
           Marcar bordes de pantalla (diagnóstico)

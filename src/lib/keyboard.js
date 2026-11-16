@@ -22,7 +22,9 @@ function installIosGap() {
     const full = Math.max(screen.width, screen.height)
     const gap = Math.round(full - window.innerHeight)
     // Una diferencia de 8 a 120 pt es la franja de la barra de inicio que iOS no cuenta como ventana.
-    const short = gap > 8 && gap < 120
+    // DESACTIVADO: en un iPhone real, estirar el cuerpo hasta el borde deja la barra inferior fuera
+    // de la zona que iOS dibuja (queda recortada y se pierde la barra). Se mantiene la medición.
+    const short = false && gap > 8 && gap < 120
     root.style.setProperty('--ios-full-h', `${full}px`)
     root.classList.toggle('ios-short', short)
   }
