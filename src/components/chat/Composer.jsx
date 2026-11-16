@@ -74,13 +74,18 @@ function useVoiceRecorder({ onDone, onError }) {
     setPreparing(true)
     let stream
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Una nota de voz no necesita cancelación de eco (no suena nada mientras grabas) y esa
+      // etapa es la que más "come" sílabas y entrecorta. Mono a 48 kHz, con reducción de
+      // ruido y nivel automático para que se oiga parejo.
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, sampleRate: 48000, echoCancellation: false, noiseSuppression: true, autoGainControl: true },
+      })
     } catch {
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 })
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
@@ -121,7 +126,7 @@ function useVoiceRecorder({ onDone, onError }) {
     // Medidor de volumen: alimenta la onda que se dibuja mientras grabas.
     try {
       const AC = window.AudioContext || window.webkitAudioContext
-      const ctx = new AC()
+      const ctx = new AC({ latencyHint: 'playback' }) // solo mide el volumen: que no le quite tiempo a la grabación
       const an = ctx.createAnalyser()
       an.fftSize = 256
       ctx.createMediaStreamSource(stream).connect(an)
