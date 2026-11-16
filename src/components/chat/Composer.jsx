@@ -114,7 +114,7 @@ function useVoiceRecorder({ onDone, onError }) {
       setReview(null)
       setPreparing(false)
       setRecording(true)
-      haptic('light')
+      haptic('tap')
     }
     rec.start(250)
     recRef.current = rec
