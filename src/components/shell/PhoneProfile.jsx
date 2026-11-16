@@ -255,6 +255,16 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
             return ''
           }
         })()}</p>
+        {/* Diagnóstico de pantalla: pinta el fondo de magenta y marca los bordes reales de la app
+            (línea cian abajo, magenta arriba). Una captura así muestra al instante si la franja
+            negra es de la ventana de iOS o de la app. */}
+        <button
+          type="button"
+          onClick={() => document.documentElement.classList.toggle('ador-diag')}
+          className="mx-auto mt-3 block rounded-full bg-[#1C1C1E] px-4 py-2 text-[12.5px] text-[#8E8E93] active:opacity-60"
+        >
+          Marcar bordes de pantalla (diagnóstico)
+        </button>
       </div>
 
       <AnimatePresence>

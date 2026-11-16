@@ -1043,3 +1043,11 @@ html.light [class*="shadow-[0px"] {
 [data-task-row=""]:hover .ador-ph,
 [data-task-row=""]:focus-within .ador-ph { opacity: 1; }
 @media (hover: none) { [data-task-row=""] .ador-ph { opacity: 0.7; } }
+
+/* Diagnóstico de pantalla (Perfil → "Marcar bordes de pantalla"): lo que la app no pinta se ve
+   magenta; una línea cian marca el borde inferior real de la ventana y otra verde el superior. */
+html.ador-diag { background: #ff00ff !important; }
+html.ador-diag body { background: transparent !important; }
+html.ador-diag::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 8px; background: #00e5ff; z-index: 2147483647; pointer-events: none; }
+html.ador-diag::before { content: ''; position: fixed; left: 0; right: 0; top: 0; height: 8px; background: #00ff66; z-index: 2147483647; pointer-events: none; }
+html.ador-diag .ador-app-root { outline: 3px solid #ffd400; outline-offset: -3px; }
