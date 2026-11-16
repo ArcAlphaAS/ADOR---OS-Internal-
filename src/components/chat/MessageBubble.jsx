@@ -42,7 +42,18 @@ export function formatDuration(sec) {
 // a voice note or reopening an image never re-downloads it.
 const blobCache = new Map()
 export function loadBlob(blobId) {
-  if (!blobCache.has(blobId)) blobCache.set(blobId, getChatBlob(blobId))
+  if (!blobCache.has(blobId)) {
+    // Un fallo (red, permisos) o un documento que aún no llega NO se queda guardado:
+    // si no, la nota no volvería a cargar hasta recargar la app.
+    const p = getChatBlob(blobId).then((v) => {
+      if (!v) blobCache.delete(blobId)
+      return v
+    }, (e) => {
+      blobCache.delete(blobId)
+      throw e
+    })
+    blobCache.set(blobId, p)
+  }
   return blobCache.get(blobId)
 }
 
@@ -259,7 +270,8 @@ function VoiceNote({ attachment, mine }) {
 
 function VoicePlayer({ attachment, mine }) {
   const audioRef = useRef(null)
-  const [state, setState] = useState('idle') // idle | loading | playing | paused
+  const [state, setState] = useState('idle') // idle | loading | playing | paused | error
+  const [failMsg, setFailMsg] = useState('')
   const [progress, setProgress] = useState(0)
   const [speed, setSpeed] = useState(1)
 
@@ -271,6 +283,29 @@ function VoicePlayer({ attachment, mine }) {
     if (audioRef.current) audioRef.current.playbackRate = next
   }
 
+  // Safari solo deja reproducir dentro del toque: la grabación se baja antes (al aparecer la
+  // nota en pantalla) para que, al tocar, `play()` sea inmediato.
+  const wrapRef = useRef(null)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || !attachment.blobId || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        loadBlob(attachment.blobId).catch(() => {})
+        io.disconnect()
+      }
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [attachment.blobId])
+
+  const fail = (msg, err) => {
+    console.error('Nota de voz:', msg, err || '')
+    audioRef.current = null
+    setFailMsg(msg)
+    setState('error')
+  }
+
   const toggle = async () => {
     if (state === 'playing') {
       audioRef.current.pause()
@@ -279,24 +314,35 @@ function VoicePlayer({ attachment, mine }) {
     }
     if (!audioRef.current) {
       setState('loading')
-      const dataUrl = await loadBlob(attachment.blobId).catch(() => null)
-      if (!dataUrl) return setState('idle')
+      setFailMsg('')
+      let dataUrl = null
+      try {
+        dataUrl = await loadBlob(attachment.blobId)
+      } catch (e) {
+        return fail('No se pudo descargar la nota. Toca para reintentar.', e)
+      }
+      if (!dataUrl) return fail('La grabación no está disponible. Toca para reintentar.')
       const audio = new Audio(dataUrl)
-      audio.ontimeupdate = () => setProgress(audio.currentTime / (attachment.duration || audio.duration || 1))
+      audio.ontimeupdate = () => setProgress(audio.currentTime / (attachment.duration || (Number.isFinite(audio.duration) ? audio.duration : 0) || 1))
       audio.onended = () => {
         setState('idle')
         setProgress(0)
       }
+      audio.onerror = () => fail('Este dispositivo no puede reproducir este audio.', audio.error)
       audio.playbackRate = speed
       audioRef.current = audio
     }
-    await audioRef.current.play().catch(() => {})
-    setState('playing')
+    try {
+      await audioRef.current.play()
+      setState('playing')
+    } catch (e) {
+      fail(e?.name === 'NotAllowedError' ? 'El navegador bloqueó el sonido. Toca otra vez.' : 'No se pudo reproducir. Toca para reintentar.', e)
+    }
   }
 
   const showSpeed = state === 'playing' || state === 'paused' || speed !== 1
   return (
-    <div className={`flex w-[280px] max-w-full items-center gap-3 overflow-hidden rounded-[22px] px-3 py-2.5 ${mine ? 'max-md:!border-0 max-md:!bg-[#2C2C2E]' : 'max-md:!bg-[#1C1C1E]'}`} style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
+    <div ref={wrapRef} className={`flex w-[280px] max-w-full flex-wrap items-center gap-3 overflow-hidden rounded-[22px] px-3 py-2.5 ${mine ? 'max-md:!border-0 max-md:!bg-[#2C2C2E]' : 'max-md:!bg-[#1C1C1E]'}`} style={{ background: mine ? MINE_BG : 'rgba(255,255,255,0.06)', border: mine ? `1px solid ${MINE_BORDER}` : '1px solid transparent' }}>
       <button type="button" onClick={toggle} aria-label={state === 'playing' ? 'Pausar' : 'Escuchar'} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-150" style={{ background: state === 'playing' ? '#F5F5F5' : 'rgba(255,255,255,0.14)', color: state === 'playing' ? '#0A0A0A' : '#FFFFFF' }}>
         {state === 'playing' ? <PauseIcon size={15} /> : state === 'loading' ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" /> : <PlayIcon size={14} />}
       </button>
@@ -313,6 +359,7 @@ function VoicePlayer({ attachment, mine }) {
         </div>
       )}
       <span className="flex-shrink-0 text-[12.5px] tabular-nums text-white/80">{formatDuration(attachment.duration)}</span>
+      {state === 'error' && failMsg && <p className="w-full text-[11.5px] leading-snug text-[#FF8A84]">{failMsg}</p>}
       {showSpeed && (
         <button type="button" onClick={cycleSpeed} aria-label="Velocidad" className="flex-shrink-0 rounded-full bg-white/[0.16] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">{speed === 1 ? '1×' : speed === 1.5 ? '1,5×' : '2×'}</button>
       )}
