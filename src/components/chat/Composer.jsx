@@ -70,6 +70,22 @@ function useVoiceRecorder({ onDone, onError }) {
   const recRef = useRef(null)
   const cancelRef = useRef(false)
   const meterRef = useRef(null)
+  const streamRef = useRef(null)
+  const ctxRef = useRef(null)
+
+  // Suelta el micrófono POR COMPLETO: pistas detenidas (se apaga el punto naranja del
+  // sistema), medidor y contexto de audio cerrados. Se llama al parar, cancelar, enviar,
+  // descartar, si algo falla, al salir de la conversación y al ocultar la página.
+  const releaseMic = () => {
+    try {
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+    } catch { /* ya detenido */ }
+    streamRef.current = null
+    if (meterRef.current?.timer) clearInterval(meterRef.current.timer)
+    meterRef.current = null
+    ctxRef.current?.close?.().catch(() => {})
+    ctxRef.current = null
+  }
 
   const start = async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return onError('Este navegador no permite grabar audio.')
@@ -79,12 +95,12 @@ function useVoiceRecorder({ onDone, onError }) {
     try {
       // Igual que la primera versión, que sonaba nítida: sin restricciones de audio.
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
     } catch {
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
     // Solo para dibujar la onda en vivo: no toca lo que se graba.
     let ctx = null
     let an = null
@@ -94,22 +110,26 @@ function useVoiceRecorder({ onDone, onError }) {
       an = ctx.createAnalyser()
       an.fftSize = 256
       ctx.createMediaStreamSource(stream).connect(an)
+      ctxRef.current = ctx
     } catch {
       ctx?.close?.().catch(() => {})
       ctx = null
       an = null
+    }
+    let rec
+    try {
+      rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+    } catch {
+      releaseMic()
+      setPreparing(false)
+      return onError('No se pudo iniciar la grabación en este dispositivo.')
     }
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
     rec.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop())
-      if (meterRef.current) {
-        clearInterval(meterRef.current.timer)
-        meterRef.current.ctx.close().catch(() => {})
-        meterRef.current = null
-      }
+      releaseMic()
       setRecording(false)
       if (cancelRef.current) return
       const duration = (Date.now() - startedAt) / 1000
@@ -125,6 +145,12 @@ function useVoiceRecorder({ onDone, onError }) {
     }
     // La grabadora ya está abierta cuando aparece "grabando": nada de lo que digas
     // al tocar el botón se pierde. El medidor de onda se prepara después, sin retrasarla.
+    rec.onerror = () => {
+      releaseMic()
+      setRecording(false)
+      setPreparing(false)
+      onError('Se interrumpió la grabación.')
+    }
     rec.onstart = () => {
       startedAt = Date.now()
       setSeconds(0)
@@ -168,15 +194,20 @@ function useVoiceRecorder({ onDone, onError }) {
     return () => clearInterval(timer)
   }, [recording])
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const onHide = () => {
       if (recRef.current?.state === 'recording') {
         cancelRef.current = true
         recRef.current.stop()
       }
-    },
-    []
-  )
+      releaseMic()
+    }
+    window.addEventListener('pagehide', onHide)
+    return () => {
+      window.removeEventListener('pagehide', onHide)
+      onHide()
+    }
+  }, [])
 
   return {
     recording,
@@ -187,13 +218,20 @@ function useVoiceRecorder({ onDone, onError }) {
     send: () => {
       if (review) onDone(review)
       setReview(null)
+      releaseMic()
     },
-    discard: () => setReview(null),
+    discard: () => {
+      setReview(null)
+      releaseMic()
+    },
     start,
     stop: () => recRef.current?.stop(),
     cancel: () => {
       cancelRef.current = true
-      recRef.current?.stop()
+      if (recRef.current?.state === 'recording') recRef.current.stop()
+      else releaseMic()
+      setPreparing(false)
+      setRecording(false)
     },
   }
 }
@@ -205,14 +243,16 @@ export function VoiceReview({ review, onSend, onDiscard }) {
   const [progress, setProgress] = useState(0)
   const boostRef = useRef(null)
   useEffect(() => () => { releaseAudio(audioRef.current) }, [])
+  const resumeAt = useRef(0)
   const toggle = () => {
     if (!audioRef.current) {
       const a = new Audio(review.dataUrl)
+      if (resumeAt.current > 0) { const at = resumeAt.current; a.addEventListener('loadedmetadata', () => { try { a.currentTime = at } catch { /* sin posición */ } }, { once: true }) }
       a.ontimeupdate = () => setProgress(a.currentTime / (review.duration || a.duration || 1))
-      a.onended = () => { setPlaying(false); setProgress(0); releaseAudio(a); audioRef.current = null }
+      a.onended = () => { setPlaying(false); setProgress(0); resumeAt.current = 0; releaseAudio(a); audioRef.current = null }
       audioRef.current = a
     }
-    if (playing) { audioRef.current.pause(); setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
+    if (playing) { resumeAt.current = audioRef.current.currentTime || 0; releaseAudio(audioRef.current); audioRef.current = null; setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
   }
   const peaks = review.peaks?.length ? review.peaks : Array.from({ length: 36 }, () => 30)
   return (

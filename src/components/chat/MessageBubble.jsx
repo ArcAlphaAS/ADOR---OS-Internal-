@@ -269,7 +269,11 @@ function VoiceNote({ attachment, mine }) {
   return <VoicePlayer attachment={attachment} mine={mine} />
 }
 
+// Solo suena una nota a la vez: al empezar otra, la anterior se pausa y se suelta.
+let stopActiveVoice = null
+
 function VoicePlayer({ attachment, mine }) {
+  const resumeAt = useRef(0)
   const audioRef = useRef(null)
   const [state, setState] = useState('idle') // idle | loading | playing | paused | error
   const [failMsg, setFailMsg] = useState('')
@@ -310,7 +314,11 @@ function VoicePlayer({ attachment, mine }) {
 
   const toggle = async () => {
     if (state === 'playing') {
-      audioRef.current.pause()
+      // Al pausar se suelta el audio por completo (no queda activo en el sistema) y se
+      // recuerda el punto para seguir desde ahí.
+      resumeAt.current = audioRef.current?.currentTime || 0
+      releaseAudio(audioRef.current)
+      audioRef.current = null
       setState('paused')
       return
     }
@@ -330,13 +338,27 @@ function VoicePlayer({ attachment, mine }) {
         setState('idle')
         setProgress(0)
         releaseAudio(audio)
+        resumeAt.current = 0
+        if (stopActiveVoice) stopActiveVoice = null
         audioRef.current = null // la próxima vez se vuelve a armar desde la copia en memoria
       }
       audio.onerror = () => fail('Este dispositivo no puede reproducir este audio.', audio.error)
       audio.playbackRate = speed
+      if (resumeAt.current > 0) {
+        const at = resumeAt.current
+        audio.addEventListener('loadedmetadata', () => { try { audio.currentTime = at } catch { /* sin posición */ } }, { once: true })
+      }
       audioRef.current = audio
     }
     try {
+      stopActiveVoice?.()
+      stopActiveVoice = () => {
+        releaseAudio(audioRef.current)
+        audioRef.current = null
+        resumeAt.current = 0
+        setState('idle')
+        setProgress(0)
+      }
       await audioRef.current.play()
       setState('playing')
     } catch (e) {

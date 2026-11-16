@@ -106,6 +106,35 @@ export function MessageThread({ conversationKey, isDm, peerUid, newSince, messag
   // further up, a new message from someone else doesn't yank them down —
   // a "↓ N mensajes nuevos" button appears instead (Slack/WhatsApp).
   const atBottomRef = useRef(true)
+  const stickUntil = useRef(0)
+  const stickRaf = useRef(0)
+  // Como WhatsApp o iMessage: al enviar, el chat baja hasta tu mensaje y se queda ahí aunque
+  // la altura cambie después (llega la hora del servidor, carga una imagen, sube el teclado o
+  // crece la caja de escribir). Se vuelve a fijar abajo durante un instante; si tocas o mueves
+  // la lista, deja de hacerlo para no pelear contigo.
+  const pinToBottom = (ms) => {
+    cancelAnimationFrame(stickRaf.current)
+    stickUntil.current = performance.now() + ms
+    const tick = () => {
+      const el = scrollRef.current
+      if (!el || performance.now() > stickUntil.current) return
+      el.scrollTop = el.scrollHeight
+      stickRaf.current = requestAnimationFrame(tick)
+    }
+    tick()
+  }
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return undefined
+    const cancel = () => { stickUntil.current = 0 }
+    el.addEventListener('touchstart', cancel, { passive: true })
+    el.addEventListener('wheel', cancel, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', cancel)
+      el.removeEventListener('wheel', cancel)
+      cancelAnimationFrame(stickRaf.current)
+    }
+  }, [])
   const [atBottom, setAtBottom] = useState(true)
   const [anchorId, setAnchorId] = useState(null) // last message seen at the bottom
   const prevQRef = useRef(q)
@@ -153,6 +182,7 @@ export function MessageThread({ conversationKey, isDm, peerUid, newSince, messag
     const last = messages[messages.length - 1]
     if (opening || searchChanged || atBottomRef.current || last?.authorUid === currentUid) {
       el.scrollTop = el.scrollHeight
+      pinToBottom(last?.authorUid === currentUid ? 1100 : 450)
       setAnchorId(lastId)
     }
   }, [lastId, messages.length, q, conversationKey])
