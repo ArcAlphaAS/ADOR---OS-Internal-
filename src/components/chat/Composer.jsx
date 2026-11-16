@@ -10,6 +10,7 @@ import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
 import { haptic } from '../../lib/haptics'
+import { attachBoost } from '../../lib/audioBoost'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
 // in their own chatBlobs doc, so each can use most of that on its own.
@@ -35,7 +36,7 @@ function ToolButton({ title, onClick, active, disabled, children, className = ''
 // The recording's real shape, ~36 bars (0–100), measured by decoding the
 // audio — stored on the message so the player can draw a true waveform.
 // Best effort: if the browser can't decode it the note just has no waveform.
-async function computePeaks(blob, bars = 36) {
+async function computePeaks(blob, bars = 36) { // → { peaks, boost } | null
   const AC = window.AudioContext || window.webkitAudioContext
   if (!AC) return null
   const ctx = new AC()
@@ -50,7 +51,9 @@ async function computePeaks(blob, bars = 36) {
       raw.push(max)
     }
     const top = Math.max(...raw) || 1
-    return raw.map((v) => Math.round((v / top) * 100))
+    // Cuánto subirla al reproducir para que suene a buen volumen (pico objetivo 0,8, hasta 8 veces).
+    const boost = top < 0.8 ? Math.min(8, Math.round((0.8 / Math.max(top, 0.02)) * 10) / 10) : 1
+    return { peaks: raw.map((v) => Math.round((v / top) * 100)), boost }
   } catch {
     return null
   } finally {
@@ -146,8 +149,8 @@ function useVoiceRecorder({ onDone, onError }) {
       const reader = new FileReader()
       reader.onload = async () => {
         if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
-        const peaks = await computePeaks(blob)
-        setReview({ dataUrl: reader.result, duration, peaks }) // se escucha y se decide: enviar o descartar
+        const analysis = await computePeaks(blob)
+        setReview({ dataUrl: reader.result, duration, peaks: analysis?.peaks || null, boost: analysis?.boost || 1 }) // se escucha y se decide: enviar o descartar
       }
       reader.readAsDataURL(blob)
     }
@@ -231,15 +234,17 @@ export function VoiceReview({ review, onSend, onDiscard }) {
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
-  useEffect(() => () => audioRef.current?.pause(), [])
+  const boostRef = useRef(null)
+  useEffect(() => () => { audioRef.current?.pause(); boostRef.current?.close?.().catch(() => {}) }, [])
   const toggle = () => {
     if (!audioRef.current) {
       const a = new Audio(review.dataUrl)
+      boostRef.current = attachBoost(a, review.boost)
       a.ontimeupdate = () => setProgress(a.currentTime / (review.duration || a.duration || 1))
       a.onended = () => { setPlaying(false); setProgress(0) }
       audioRef.current = a
     }
-    if (playing) { audioRef.current.pause(); setPlaying(false) } else { audioRef.current.play().catch(() => {}); setPlaying(true) }
+    if (playing) { audioRef.current.pause(); setPlaying(false) } else { boostRef.current?.resume?.(); audioRef.current.play().catch(() => {}); setPlaying(true) }
   }
   const peaks = review.peaks?.length ? review.peaks : Array.from({ length: 36 }, () => 30)
   return (

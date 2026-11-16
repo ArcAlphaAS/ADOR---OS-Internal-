@@ -1,3 +1,4 @@
+import { attachBoost } from '../../lib/audioBoost'
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { EMOJIS, findDriveLink, driveDocType, splitLinks, splitFormatting, splitMentions, QUICK_REACTIONS, callState, reminderOptions, pollResults, isEmojiOnly } from '../../lib/chat'
 import { getChatBlob, subscribeChatCall, respondToChatCall, setChatCallStatus } from '../../lib/firestore'
@@ -275,7 +276,8 @@ function VoicePlayer({ attachment, mine }) {
   const [progress, setProgress] = useState(0)
   const [speed, setSpeed] = useState(1)
 
-  useEffect(() => () => audioRef.current?.pause(), [])
+  const boostRef = useRef(null)
+  useEffect(() => () => { audioRef.current?.pause(); boostRef.current?.close?.().catch(() => {}) }, [])
   // 1× → 1,5× → 2×, como en WhatsApp: escuchar una nota larga sin perder tiempo.
   const cycleSpeed = () => {
     const next = speed === 1 ? 1.5 : speed === 1.5 ? 2 : 1
@@ -323,6 +325,7 @@ function VoicePlayer({ attachment, mine }) {
       }
       if (!dataUrl) return fail('La grabación no está disponible. Toca para reintentar.')
       const audio = new Audio(dataUrl)
+      boostRef.current = attachBoost(audio, attachment.boost)
       audio.ontimeupdate = () => setProgress(audio.currentTime / (attachment.duration || (Number.isFinite(audio.duration) ? audio.duration : 0) || 1))
       audio.onended = () => {
         setState('idle')
@@ -333,6 +336,7 @@ function VoicePlayer({ attachment, mine }) {
       audioRef.current = audio
     }
     try {
+      boostRef.current?.resume?.()
       await audioRef.current.play()
       setState('playing')
     } catch (e) {
