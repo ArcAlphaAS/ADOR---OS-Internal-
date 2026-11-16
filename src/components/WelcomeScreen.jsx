@@ -341,7 +341,7 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
         animate={{ opacity: dismissing ? 0 : 1 }}
         transition={{ duration: 0.6, delay: dismissing ? 0 : 1.4 }}
         className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-3"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 28px)' }}
+        style={{ paddingBottom: 'calc(var(--sab) + 28px)' }}
       >
         {phone && (
           <motion.div

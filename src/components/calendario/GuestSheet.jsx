@@ -74,7 +74,7 @@ export default function GuestSheet({ guests, setGuests, people, onClose }) {
                 )}
               </div>
 
-              <div ref={sheet.scrollRef} className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ overscrollBehavior: 'contain' }}>
+              <div ref={sheet.scrollRef} className="flex-1 overflow-y-auto pb-[calc(var(--sab)+24px)]" style={{ overscrollBehavior: 'contain' }}>
                 {offerEmail && (
                   <button type="button" onClick={addTyped} className="flex w-full items-center gap-3.5 px-5 py-3 text-left active:bg-white/[0.06]">
                     <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.09] text-[#E4E4E4]">

@@ -398,7 +398,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const isOpen = (k) => phone || !collapsed[k]
 
   return (
-    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 max-md:pb-[calc(112px+env(safe-area-inset-bottom,0px))] [overscroll-behavior-x:none] md:w-[230px]">
+    <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 max-md:pb-[calc(112px+var(--sab))] [overscroll-behavior-x:none] md:w-[230px]">
       <div>
         <MeHeader presence={presence[currentUid]} uid={currentUid} onSetDnd={onSetDnd} calendarConnected={calendarConnected} />
         <div className={phone ? 'mt-3 flex items-center gap-2.5 rounded-full bg-[#1C1C1E] px-4' : 'mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5'} style={phone ? { height: 44 } : undefined}>

@@ -232,7 +232,7 @@ export default function EventEditorModal({ event, draft, busy, events = [], onSa
                   </div>
                 </div>
 
-                <div ref={sheet.scrollRef} className="flex-1 space-y-6 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-1" style={{ overscrollBehavior: 'contain' }}>
+                <div ref={sheet.scrollRef} className="flex-1 space-y-6 overflow-y-auto px-4 pb-[calc(var(--sab)+32px)] pt-1" style={{ overscrollBehavior: 'contain' }}>
                   {/* Título y detalles */}
                   <div className={card}>
                     <div className={`${rowCls} py-3`}>

@@ -50,7 +50,7 @@ export default function SplashScreen({ onFinish }) {
 
       <div
         className="w-full max-w-[380px] px-6 text-center"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 36px)' }}
+        style={{ paddingBottom: 'calc(var(--sab) + 36px)' }}
       >
         <motion.h1
           initial={{ opacity: 0, y: 8 }}

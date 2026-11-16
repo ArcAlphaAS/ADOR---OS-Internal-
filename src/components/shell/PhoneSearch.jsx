@@ -53,7 +53,7 @@ export default function PhoneSearch({ query, setQuery, results, onSelect, onClos
         <button type="button" onClick={onClose} className="flex-shrink-0 px-1 text-[16px] text-[#F4EEE2]" style={{ minHeight: 44 }}>Cancelar</button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }} data-keep-scroll>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4" style={{ paddingBottom: 'calc(var(--sab) + 24px)' }} data-keep-scroll>
         {!has ? (
           <div className="pt-6">
             <p className="text-[13px] text-[#8E8E93]">Busca en todo ADOR OS</p>

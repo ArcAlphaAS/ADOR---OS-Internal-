@@ -14,13 +14,21 @@ function installIosGap() {
   const measure = () => {
     if (root.classList.contains('kb-open')) return
     const portrait = window.innerHeight >= window.innerWidth
-    const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)
-    const gap = Math.round(screenH - window.innerHeight)
-    root.style.setProperty('--ios-gap', '0px') // desactivado: empujaba la barra fuera de la pantalla
-    void gap
+    if (!portrait) {
+      root.classList.remove('ios-short')
+      return
+    }
+    // Alto real de la pantalla en puntos CSS (932 en un iPhone 15 Pro Max).
+    const full = Math.max(screen.width, screen.height)
+    const gap = Math.round(full - window.innerHeight)
+    // Una diferencia de 8 a 120 pt es la franja de la barra de inicio que iOS no cuenta como ventana.
+    const short = gap > 8 && gap < 120
+    root.style.setProperty('--ios-full-h', `${full}px`)
+    root.classList.toggle('ios-short', short)
   }
   measure()
   window.addEventListener('resize', measure)
+  window.addEventListener('ador:measure', measure)
   window.addEventListener('orientationchange', () => setTimeout(measure, 300))
 }
 
@@ -62,6 +70,9 @@ export function installKeyboardHandling() {
     root.style.setProperty('--app-top', `${Math.round(vv.offsetTop)}px`)
     const open = window.innerHeight - vv.height > 100
     root.classList.toggle('kb-open', open)
+    // Con el teclado manda la altura visible; al cerrarlo se vuelve a medir la franja de abajo.
+    if (open) root.classList.remove('ios-short')
+    else setTimeout(() => window.dispatchEvent(new Event('ador:measure')), 80)
     // Undo iOS's own slide-up so the resized app lines up with the screen.
     if (window.scrollY !== 0) window.scrollTo(0, 0)
   }

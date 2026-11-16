@@ -127,7 +127,7 @@ export default function TaskContextMenu({ task, x, y, workstreams = [], actorUse
         animate={isTouchLayout() ? { y: 0, opacity: 1 } : { opacity: 1, scale: 1 }}
         transition={isTouchLayout() ? SHEET : { duration: 0.12, ease: 'easeOut' }}
         className={isTouchLayout() ? 'fixed inset-x-3 z-[999] mx-auto max-w-[520px]' : 'fixed z-[999] w-[230px]'}
-        style={isTouchLayout() ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' } : { left: pos.left, top: pos.top, transformOrigin: 'top left' }}
+        style={isTouchLayout() ? { bottom: 'calc(var(--sab) + 10px)' } : { left: pos.left, top: pos.top, transformOrigin: 'top left' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={isTouchLayout() ? 'max-h-[72vh] overflow-y-auto rounded-[22px] bg-[#1C1C1E]/95 backdrop-blur-xl' : 'ador-glass ador-grain max-h-[70vh] overflow-y-auto rounded-xl p-1.5'} data-keep-scroll>

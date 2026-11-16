@@ -10,7 +10,27 @@
 
 :root {
   color-scheme: dark;
+  /* Margen inferior seguro (barra de inicio del iPhone). Todo lo que lo usa lee --sab: así, si
+     la ventana de iOS llega corta (ver abajo), basta con cambiar este valor en un solo sitio. */
+  --sab: env(safe-area-inset-bottom, 0px);
 }
+
+/* iPhone instalado con la ventana más corta que la pantalla (queda una franja abajo, de unos
+   65 pt, que iOS no cuenta como ventana pero sí pinta): la cuenta de pantalla completa se fija
+   por JS (lib/keyboard.js), el cuerpo se estira hasta el borde real y se vuelve el bloque de
+   referencia de todo lo "fixed". Como esa zona ya no es de la ventana, el margen de la barra
+   de inicio (34 pt) lo ponemos nosotros. */
+html.ios-short { --sab: 34px; }
+html.ios-short body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--ios-full-h);
+  overflow: hidden;
+  transform: translateZ(0);
+}
+html.ios-short #root { height: 100%; }
 
 * {
   box-sizing: border-box;
@@ -471,7 +491,7 @@ input:-webkit-autofill:focus {
     max-width: none !important;
   }
   html.ador-chat-open .ador-chat-bg {
-    padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(var(--sab) + 10px);
   }
 }
 
@@ -559,7 +579,7 @@ html.light .ador-grain::after { opacity: 0.015; }
     border-radius: 32px 32px 0 0;
     background: #1c1c1e;
     border: none;
-    padding: 28px 20px calc(env(safe-area-inset-bottom) + 20px);
+    padding: 28px 20px calc(var(--sab) + 20px);
     will-change: auto;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -655,7 +675,7 @@ html.light .ador-grain::after { opacity: 0.015; }
 /* Chat en el teléfono: la fila de escribir (+, mensaje, cámara, micrófono) baja
    hasta casi tocar el borde de abajo, o el teclado cuando está arriba. */
 @media (max-width: 767px) {
-  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); }
+  html.ador-chat-open .ador-chat-bg { padding-bottom: calc(var(--sab) + 4px); }
   html.ador-chat-open.kb-open .ador-chat-bg { padding-bottom: 5px; }
   html.ador-chat-open.kb-open main { padding-bottom: 0 !important; }
 }

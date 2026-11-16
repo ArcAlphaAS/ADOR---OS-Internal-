@@ -127,7 +127,7 @@ export default function NewConversationModal({ kind, users, currentUid, existing
         <motion.div
           ref={(el) => { sheet.sheetRef.current = el; sheet.scrollRef.current = el }}
           style={{ y: sheet.y, overscrollBehavior: 'contain' }}
-          className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-3"
+          className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pb-[calc(var(--sab)+20px)] pt-3"
         >
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
           <div className="flex items-center justify-between gap-3">

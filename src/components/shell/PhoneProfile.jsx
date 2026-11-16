@@ -90,7 +90,7 @@ function MiniSheet({ title, onClose, children }) {
         <motion.div
           ref={(el) => { sheet.sheetRef.current = el; sheet.scrollRef.current = el }}
           className="max-h-[80dvh] w-full overflow-y-auto rounded-t-[32px] bg-[#1C1C1E] px-5 pt-3"
-          style={{ y: sheet.y, paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)', overscrollBehavior: 'contain' }}
+          style={{ y: sheet.y, paddingBottom: 'calc(var(--sab) + 20px)', overscrollBehavior: 'contain' }}
         >
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/[0.22]" />
           <h2 className="mb-3 text-[19px] font-semibold text-[#F5F5F5]">{title}</h2>
@@ -176,7 +176,7 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
       transition={SHEET}
       {...swipeToClose('x', onClose)}
       className="fixed inset-0 z-[90] overflow-y-auto bg-black"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
+      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(var(--sab) + 24px)' }}
     >
       <div className="mx-auto w-full max-w-[560px] px-4 pb-6 pt-3">
         <div className="relative flex h-12 items-center justify-center">
@@ -245,7 +245,7 @@ export default function PhoneProfile({ user, isAdmin, onClose, onEditProfile, on
         <p className="mt-0.5 text-center text-[11px] text-[#636366]">{(() => {
           try {
             const probe = document.createElement('div')
-            probe.style.cssText = 'position:fixed;left:0;top:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden'
+            probe.style.cssText = 'position:fixed;left:0;top:0;padding-bottom:var(--sab);visibility:hidden'
             document.body.appendChild(probe)
             const inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0
             probe.remove()

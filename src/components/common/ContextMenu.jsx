@@ -26,7 +26,7 @@ function ActionSheet({ title, subtitle, items, onClose }) {
         {...swipeToClose('y', onClose)}
         onClick={(e) => e.stopPropagation()}
         className="absolute inset-x-3 mx-auto max-w-[520px]"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}
+        style={{ bottom: 'calc(var(--sab) + 10px)' }}
       >
         <div className="max-h-[68vh] overflow-y-auto rounded-[22px] bg-[#1C1C1E]/95 backdrop-blur-xl" data-keep-scroll>
           {title && (

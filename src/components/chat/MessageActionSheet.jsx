@@ -78,7 +78,7 @@ export default function MessageActionSheet({ preview, reactions, onReact, option
         {...swipeToClose('y', onClose)}
         onClick={(e) => e.stopPropagation()}
         className="px-2"
-        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(8px + var(--sab))' }}
       >
         {preview && <p className="mx-3 mb-2 line-clamp-3 rounded-2xl bg-white/[0.07] px-4 py-2.5 text-[14px] leading-snug text-[#DDDDDD]">{preview}</p>}
         {reactions && view === 'main' && allEmojis && (

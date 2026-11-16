@@ -14,7 +14,7 @@ export default function SidePanel({ title, subtitle, onClose, children, bodyClas
   return (
     <motion.aside
       {...(phone ? swipeToClose('x', onClose) : {})}
-      className="ador-kb-fit fixed inset-0 z-[46] flex flex-col bg-[#000000] pb-[env(safe-area-inset-bottom)] md:static md:z-auto md:w-[320px] md:flex-shrink-0 md:bg-transparent md:p-0 md:pb-0"
+      className="ador-kb-fit fixed inset-0 z-[46] flex flex-col bg-[#000000] pb-[var(--sab)] md:static md:z-auto md:w-[320px] md:flex-shrink-0 md:bg-transparent md:p-0 md:pb-0"
     >
       {/* Teléfono: barra superior estilo iOS */}
       <div className="relative z-10 flex flex-shrink-0 items-center px-2 pb-1 pt-[calc(env(safe-area-inset-top)+4px)] md:hidden">

@@ -34,7 +34,7 @@ export default function BottomSheet({ title, onClose, children, initial = 'mediu
         transition={SHEET}
         onClick={(e) => e.stopPropagation()}
         className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[680px] flex-col rounded-t-[30px] bg-[#1C1C1E]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ paddingBottom: 'var(--sab)' }}
         role="dialog"
         aria-label={title}
       >

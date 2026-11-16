@@ -1208,7 +1208,7 @@ function ReadyCallSheet({ call, onClose }) {
         {...swipeToClose('y', onClose)}
         onClick={(e) => e.stopPropagation()}
         className="ador-modal-surface w-full rounded-t-[24px] px-5 pt-3"
-        style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(20px + var(--sab))' }}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
         <p className="text-[15px] font-semibold text-[#F5F5F5]">{video ? 'Videollamada lista' : 'Llamada lista'}</p>

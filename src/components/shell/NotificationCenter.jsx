@@ -131,7 +131,7 @@ export default function NotificationCenter({ items = [], archivedItems = [], onA
         className="z-[999]"
         style={{ position: 'fixed', left: 0, right: 0, bottom: 0, pointerEvents: visible ? 'auto' : 'none' }}
       >
-        <div className="ador-modal-surface overflow-hidden rounded-t-[30px]" style={{ background: '#161616', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="ador-modal-surface overflow-hidden rounded-t-[30px]" style={{ background: '#161616', paddingBottom: 'var(--sab)' }}>
           <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-white/[0.22]" />
           <Panel items={items} archivedItems={archivedItems} onArchive={onArchive} onRestore={onRestore} onItemClick={onItemClick} />
         </div>

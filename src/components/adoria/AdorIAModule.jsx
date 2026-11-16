@@ -529,7 +529,7 @@ export default function AdorIAModule({ user, onNavigate }) {
   return (
     <motion.div
       initial={false}
-      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] pb-[calc(env(safe-area-inset-bottom,0px)+10px)] md:px-8 md:pb-8 md:pt-6 lg:px-12 lg:pt-10"
+      className="mx-auto flex h-full w-full max-w-[820px] flex-col px-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] pb-[calc(var(--sab)+10px)] md:px-8 md:pb-8 md:pt-6 lg:px-12 lg:pt-10"
     >
       <div className="flex items-center justify-between gap-3 md:hidden">
         <button type="button" onClick={() => { haptic(); onNavigate?.('inicio') }} aria-label="Cerrar ADOR IA" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.07] text-[#F5F5F5] active:bg-white/[0.12]">

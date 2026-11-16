@@ -815,7 +815,7 @@ export default function DirectorioModule({ user, focus, onFocusHandled, onNaviga
                   exit={{ ...o, opacity: 0 }}
                   transition={{ ...SHEET, opacity: { duration: 0.16 } }}
                   {...swipeToClose('y', () => setSelectedPersonId(null))}
-                  className="fixed inset-x-0 bottom-0 z-[61] overflow-y-auto rounded-t-[30px] bg-[#1C1C1E] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3"
+                  className="fixed inset-x-0 bottom-0 z-[61] overflow-y-auto rounded-t-[30px] bg-[#1C1C1E] px-4 pb-[calc(var(--sab)+24px)] pt-3"
                   style={{ top, transformOrigin: '0 0' }}
                   data-keep-scroll
                 >
