@@ -20,10 +20,30 @@ function UnreadDot() {
   return <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: '#F4EEE2' }} />
 }
 
-function SectionHeader({ label, onAdd, addTitle }) {
+function Chevron({ open }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 180ms ease' }} aria-hidden>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  )
+}
+
+// Encabezado de sección. En escritorio se pliega (y recuerda cómo lo dejaste), muestra
+// cuántas hay y, si está plegado, un aviso de lo que tiene sin leer: con muchas personas
+// y canales, cada quien deja abierto solo lo que usa.
+function SectionHeader({ label, onAdd, addTitle, count, open = true, onToggle, unread = 0 }) {
   return (
     <div className="mb-1 flex items-center justify-between px-1">
-      <p className="text-[13px] font-medium text-[#8E8E93] md:text-[11px] md:uppercase md:tracking-[0.08em] md:text-[#8A8A8A]">{label}</p>
+      {onToggle ? (
+        <button type="button" onClick={onToggle} aria-expanded={open} className="group/hd flex min-w-0 items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8A8A8A] hover:text-[#F5F5F5]">
+          <Chevron open={open} />
+          <span className="truncate">{label}</span>
+          {count > 0 && <span className="normal-case tracking-normal tabular-nums text-[#6F6F6F]">{count}</span>}
+          {!open && unread > 0 && <span className="ml-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold normal-case tracking-normal" style={{ background: '#F2EBDD', color: '#1C1A16' }}>{unread > 9 ? '9+' : unread}</span>}
+        </button>
+      ) : (
+        <p className="text-[13px] font-medium text-[#8E8E93] md:text-[11px] md:uppercase md:tracking-[0.08em] md:text-[#8A8A8A]">{label}</p>
+      )}
       {onAdd && (
         <button
           type="button"
@@ -38,6 +58,20 @@ function SectionHeader({ label, onAdd, addTitle }) {
   )
 }
 
+function MoreButton({ n, onClick, open }) {
+  return (
+    <button type="button" onClick={onClick} className="mt-0.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] text-[#8A8A8A] transition-colors hover:bg-white/[0.04] hover:text-[#F5F5F5]">
+      {open ? 'Ver menos' : `Ver ${n} más`}
+    </button>
+  )
+}
+
+const FILTERS = [
+  { id: 'all', label: 'Todo' },
+  { id: 'unread', label: 'Sin leer' },
+  { id: 'mentions', label: 'Menciones' },
+]
+
 function SubLabel({ children }) {
   return <p className="mt-1.5 mb-0.5 px-2.5 text-[11px] font-medium text-[#8A8A8A]">{children}</p>
 }
@@ -51,7 +85,23 @@ function DraftMark() {
   )
 }
 
-function ConversationButton({ active, unread, draft, onClick, children }) {
+function MutedMark() {
+  return (
+    <span title="Silenciada" className="flex flex-shrink-0 items-center text-[#6F6F6F]">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 8a6 6 0 0 0-9.3-5M6.3 6.3A6 6 0 0 0 6 8c0 7-3 9-3 9h14M10.3 21a2 2 0 0 0 3.4 0M2 2l20 20" /></svg>
+    </span>
+  )
+}
+
+function ChannelTile({ locked, active }) {
+  return (
+    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold" style={{ background: active ? 'rgba(244,238,226,0.16)' : 'rgba(255,255,255,0.06)', color: active ? '#F4EEE2' : '#9A9A9A' }}>
+      {locked ? <LockIcon size={12} /> : '#'}
+    </span>
+  )
+}
+
+function ConversationButton({ active, unread, draft, count, muted, onClick, children }) {
   return (
     <button
       type="button"
@@ -64,10 +114,11 @@ function ConversationButton({ active, unread, draft, onClick, children }) {
       }}
     >
       <span className="flex min-w-0 items-center gap-2">{children}</span>
-      {(unread || (draft && !active)) && (
+      {(unread || muted || (draft && !active)) && (
         <span className="flex flex-shrink-0 items-center gap-1.5">
           {draft && !active && <DraftMark />}
-          {unread && <UnreadDot />}
+          {muted && !unread && <MutedMark />}
+          {unread && (count > 0 ? <span className="flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: '#F4EEE2', color: '#1C1A16' }}>{count > 9 ? '9+' : count}</span> : <UnreadDot />)}
         </span>
       )}
     </button>
@@ -93,7 +144,8 @@ function PreviewRow({ ctx, big, active, unreadCount, unread, draftText, preview,
             <span className={`truncate ${big ? 'text-[17px]' : 'text-[13.5px]'}`} style={{ color: active ? '#F4EEE2' : unread ? '#F5F5F5' : '#D5D5D5', fontWeight: unread ? 600 : 500 }}>
               {label}
             </span>
-            <span className={`flex-shrink-0 ${big ? 'text-[13px]' : 'text-[10.5px]'}`} style={{ color: unread ? '#F4EEE2' : '#8E8E93' }}>
+            <span className={`flex flex-shrink-0 items-center gap-1 ${big ? 'text-[13px]' : 'text-[10.5px]'}`} style={{ color: unread ? '#F4EEE2' : '#8E8E93' }}>
+              {muted && !big && <MutedMark />}
               {time}
             </span>
           </span>
@@ -197,7 +249,18 @@ function ViewNav({ view, counts, onSelectView }) {
 
 export default function ChatSidebar({ channels, groups, users, presence, currentUid, selected, view, viewCounts, unreadMap, activity = {}, pinned = [], onSetPinned, onSelect, onSelectView, onNewChannel, onNewGroup, onSetDnd, calendarConnected, onSearchMessages, mutedMap = {}, onToggleMute }) {
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all') // all | unread
+  const [expanded, setExpanded] = useState({})
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ador_chat_sections') || '{}') } catch { return {} }
+  })
+  const searchRef = useRef(null)
   const phone = usePhone()
+  const toggleSection = (k) => setCollapsed((c) => {
+    const n = { ...c, [k]: !c[k] }
+    try { localStorage.setItem('ador_chat_sections', JSON.stringify(n)) } catch { /* sin almacenamiento */ }
+    return n
+  })
   const drafts = useChatDrafts()
   const { menu, bind, close } = useContextMenu()
   // Clic derecho en una conversación: abrir, fijar, y lo que corresponda.
@@ -257,7 +320,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         onClick={() => onSelect({ type: 'dm', id: u.id })}
         ctx={ctxFor({ label: userLabel(u), subtitle: 'Mensaje directo', key, open: () => onSelect({ type: 'dm', id: u.id }) })}
         big={phone}
-        avatar={<PersonAvatar uid={u.id} name={userLabel(u)} size={phone ? 54 : 32} showPresence />}
+        avatar={<PersonAvatar uid={u.id} name={userLabel(u)} size={phone ? 54 : 36} showPresence />}
         label={userLabel(u)}
         pinned={isPinned(key)}
         onTogglePin={() => togglePin(key)}
@@ -281,7 +344,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         onClick={() => onSelect({ type: 'conv', id: g.id })}
         ctx={ctxFor({ label: groupLabel(g, users, currentUid), subtitle: 'Grupo', key: g.id, open: () => onSelect({ type: 'conv', id: g.id }) })}
         big={phone}
-        avatar={<UsersBadge count={(g.memberUids || []).length} large size={phone ? 54 : 32} />}
+        avatar={<UsersBadge count={(g.memberUids || []).length} large size={phone ? 54 : 36} />}
         label={groupLabel(g, users, currentUid)}
         pinned={isPinned(g.id)}
         onTogglePin={() => togglePin(g.id)}
@@ -295,8 +358,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
     const active = isActive('conv', c.id)
     return (
       <div key={`c-${c.id}`} className="group/row relative" {...dragProps(c.id)} onContextMenu={ctxFor({ label: `#${c.name}`, subtitle: locked ? 'Canal privado' : 'Canal', key: c.id, open: () => onSelect({ type: 'conv', id: c.id }) }).onContextMenu}>
-        <ConversationButton active={active} unread={!active && unreadMap[c.id]} draft={Boolean(drafts[c.id])} onClick={() => onSelect({ type: 'conv', id: c.id })}>
-          {locked ? <LockIcon size={11} className="w-3 flex-shrink-0 text-[#858585]" /> : <span className="w-3 text-center text-[#858585]">#</span>}
+        <ConversationButton active={active} unread={!active && unreadMap[c.id]} count={activity[c.id]?.unreadCount || 0} muted={Boolean(mutedMap[c.id])} draft={Boolean(drafts[c.id])} onClick={() => onSelect({ type: 'conv', id: c.id })}>
+          <ChannelTile locked={locked} active={active} />
           <span className="truncate">{c.name}</span>
         </ConversationButton>
         <button type="button" onClick={() => togglePin(c.id)} title={isPinned(c.id) ? 'Quitar de fijados' : 'Fijar arriba'} className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#141414] text-[#888888] opacity-0 transition-opacity hover:text-[#F4EEE2] group-hover/row:opacity-100" style={isPinned(c.id) ? { color: '#F4EEE2' } : undefined}>
@@ -309,6 +372,31 @@ export default function ChatSidebar({ channels, groups, users, presence, current
   const listCls = 'flex flex-col gap-0.5'
   const isActive = (type, id) => !view && selected?.type === type && selected.id === id
 
+  // Pensado para crecer: con un equipo grande no se listan todas las personas, solo con
+  // quien hay conversación (con 8 o menos se ven todas); cada sección muestra lo más reciente
+  // y "Ver N más"; lo que tiene algo sin leer o está abierto nunca queda escondido.
+  const unreadOnly = filter === 'unread'
+  const showAll = searching || unreadOnly
+  const smallTeam = allOthers.length <= 8
+  const byActivity = (keyOf) => (a, b) => ms(keyOf(b)) - ms(keyOf(a))
+  const dmList = allOthers
+    .filter((u) => (smallTeam || searching || ms(dmKey(u)) > 0 || unreadMap[dmKey(u)]) && match(userLabel(u)) && !isPinned(dmKey(u)) && (!unreadOnly || unreadMap[dmKey(u)]))
+    .sort((a, b) => ms(dmKey(b)) - ms(dmKey(a)) || userLabel(a).localeCompare(userLabel(b), 'es'))
+  const groupList = groups.filter((g) => match(groupLabel(g, users, currentUid)) && !isPinned(g.id) && (!unreadOnly || unreadMap[g.id])).sort(byActivity((g) => g.id))
+  const chanSort = (a, b) => ms(b.id) - ms(a.id) || a.name.localeCompare(b.name, 'es')
+  const pubList = channels.filter((c) => !isPrivate(c) && match(c.name) && !isPinned(c.id) && (!unreadOnly || unreadMap[c.id])).sort(chanSort)
+  const privList = channels.filter((c) => isPrivate(c) && match(c.name) && !isPinned(c.id) && (!unreadOnly || unreadMap[c.id])).sort(chanSort)
+  const cut = (list, key, limit, keep) => (showAll || expanded[key] || list.length <= limit ? list : list.filter((x, i) => i < limit || keep(x)))
+  const dmShown = cut(dmList, 'dm', 8, (u) => unreadMap[dmKey(u)] || isActive('dm', u.id))
+  const groupShown = cut(groupList, 'group', 6, (g) => unreadMap[g.id] || isActive('conv', g.id))
+  const pubShown = cut(pubList, 'pub', 8, (c) => unreadMap[c.id] || isActive('conv', c.id))
+  const privShown = cut(privList, 'priv', 8, (c) => unreadMap[c.id] || isActive('conv', c.id))
+  const toggleMore = (k) => setExpanded((e) => ({ ...e, [k]: !e[k] }))
+  const unreadIn = (list, keyOf) => list.filter((x) => unreadMap[keyOf(x)]).length
+  const totalUnread = Object.values(unreadMap).filter(Boolean).length
+  const sec = (k) => (phone ? {} : { open: !collapsed[k], onToggle: () => toggleSection(k) })
+  const isOpen = (k) => phone || !collapsed[k]
+
   return (
     <div className="flex w-full flex-shrink-0 flex-col gap-5 overflow-y-auto overflow-x-hidden pb-4 max-md:pb-[calc(112px+env(safe-area-inset-bottom,0px))] [overscroll-behavior-x:none] md:w-[230px]">
       <div>
@@ -316,6 +404,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         <div className={phone ? 'mt-3 flex items-center gap-2.5 rounded-full bg-[#1C1C1E] px-4' : 'mt-3 flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5'} style={phone ? { height: 44 } : undefined}>
           <SearchIcon size={phone ? 16 : 12} className={phone ? 'text-[#8E8E93]' : 'text-[#858585]'} />
           <input
+            ref={searchRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -355,6 +444,32 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         </div>
       )}
 
+      {!phone && (
+        <div className="flex items-center gap-0.5" role="tablist" aria-label="Filtrar conversaciones">
+          {FILTERS.map((f) => {
+            const active = f.id === 'mentions' ? view === 'mentions' : !view && filter === f.id
+            const n = f.id === 'unread' ? totalUnread : f.id === 'mentions' ? viewCounts.mentions || 0 : 0
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  if (f.id === 'mentions') return onSelectView('mentions')
+                  setFilter(f.id)
+                  if (view) onSelectView(null)
+                }}
+                className={`flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-[12px] font-medium transition-colors duration-150 ${active ? 'bg-white/[0.12] text-[#F5F5F5]' : 'text-[#8A8A8A] hover:text-[#F5F5F5]'}`}
+              >
+                {f.label}
+                {n > 0 && <span className="flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: f.id === 'mentions' ? '#E8C15A' : '#F2EBDD', color: '#1C1A16' }}>{n > 9 ? '9+' : n}</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <ViewNav view={view} counts={viewCounts} onSelectView={onSelectView} />
 
       {pinnedItems.length > 0 && (
@@ -366,40 +481,63 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         </div>
       )}
 
-      <div>
-        <SectionHeader label="Mensajes directos" />
-        <div className={listCls}>
-          {allOthers.length === 0 && (
-            <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#8A8A8A]">
-              Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.
-            </p>
-          )}
-          {otherUsers.map(dmRow)}
-        </div>
-      </div>
-
-      <div>
-        <SectionHeader label="Grupos" onAdd={onNewGroup} addTitle="Nuevo grupo privado" />
-        <div className={listCls}>
-          {visibleGroups.map(groupRow)}
-          {groups.length === 0 && !searching && (
-            <button type="button" onClick={onNewGroup} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#858585] transition-colors hover:bg-white/[0.04] hover:text-[#F5F5F5]">
-              <PlusIcon size={12} /> Nuevo grupo
-            </button>
+      {(!unreadOnly || dmShown.length > 0) && (
+        <div>
+          <SectionHeader label="Mensajes directos" count={dmList.length} unread={unreadIn(dmList, dmKey)} onAdd={phone ? undefined : () => searchRef.current?.focus()} addTitle="Escribir a alguien: busca su nombre" {...sec('dm')} />
+          {isOpen('dm') && (
+            <div className={listCls}>
+              {allOthers.length === 0 && (
+                <p className="px-2.5 py-1 text-[12.5px] leading-relaxed text-[#8A8A8A]">Aparecerán aquí en cuanto tus socios entren a ADOR OS por primera vez.</p>
+              )}
+              {dmShown.map(dmRow)}
+              {!showAll && dmList.length > 8 && <MoreButton open={expanded.dm} n={dmList.length - dmShown.length} onClick={() => toggleMore('dm')} />}
+              {!smallTeam && !searching && !unreadOnly && dmList.length === 0 && <p className="px-2.5 py-1 text-[12.5px] text-[#8A8A8A]">Busca un nombre para escribirle a alguien.</p>}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
-      <div>
-        <SectionHeader label="Canales" onAdd={onNewChannel} addTitle="Nuevo canal" />
-        <div className="flex flex-col gap-0.5">
-          {channels.length === 0 && !searching && <p className="px-2.5 py-1 text-[12.5px] text-[#8A8A8A]">Sin canales todavía</p>}
-          {publicChannels.length > 0 && <SubLabel>Empresa</SubLabel>}
-          {publicChannels.map((c) => channelRow(c, false))}
-          {privateChannels.length > 0 && <SubLabel>Privados</SubLabel>}
-          {privateChannels.map((c) => channelRow(c, true))}
+      {(!unreadOnly || groupShown.length > 0) && (
+        <div>
+          <SectionHeader label="Grupos" count={groupList.length} unread={unreadIn(groupList, (g) => g.id)} onAdd={onNewGroup} addTitle="Nuevo grupo privado" {...sec('group')} />
+          {isOpen('group') && (
+            <div className={listCls}>
+              {groupShown.map(groupRow)}
+              {!showAll && groupList.length > 6 && <MoreButton open={expanded.group} n={groupList.length - groupShown.length} onClick={() => toggleMore('group')} />}
+              {groups.length === 0 && !searching && (
+                <button type="button" onClick={onNewGroup} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#858585] transition-colors hover:bg-white/[0.04] hover:text-[#F5F5F5]">
+                  <PlusIcon size={12} /> Nuevo grupo
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {(!unreadOnly || pubShown.length + privShown.length > 0) && (
+        <div>
+          <SectionHeader label="Canales" count={pubList.length + privList.length} unread={unreadIn(pubList, (c) => c.id) + unreadIn(privList, (c) => c.id)} onAdd={onNewChannel} addTitle="Nuevo canal" {...sec('channels')} />
+          {isOpen('channels') && (
+            <div className="flex flex-col gap-0.5">
+              {channels.length === 0 && !searching && (
+                <button type="button" onClick={onNewChannel} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-[#858585] transition-colors hover:bg-white/[0.04] hover:text-[#F5F5F5]">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-[13px] font-semibold">#</span> Crear el primer canal
+                </button>
+              )}
+              {pubShown.length > 0 && <SubLabel>Empresa</SubLabel>}
+              {pubShown.map((c) => channelRow(c, false))}
+              {!showAll && pubList.length > 8 && <MoreButton open={expanded.pub} n={pubList.length - pubShown.length} onClick={() => toggleMore('pub')} />}
+              {privShown.length > 0 && <SubLabel>Privados</SubLabel>}
+              {privShown.map((c) => channelRow(c, true))}
+              {!showAll && privList.length > 8 && <MoreButton open={expanded.priv} n={privList.length - privShown.length} onClick={() => toggleMore('priv')} />}
+            </div>
+          )}
+        </div>
+      )}
+
+      {unreadOnly && dmShown.length + groupShown.length + pubShown.length + privShown.length === 0 && pinnedItems.length === 0 && (
+        <p className="px-2.5 py-2 text-center text-[12.5px] text-[#8A8A8A]">Estás al día. No hay nada sin leer.</p>
+      )}
 
       <PushNotificationsCard variant="prompt" user={{ uid: currentUid }} />
 
@@ -413,6 +551,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
           items={[
             { label: 'Abrir', onClick: menu.payload.open },
             { label: isPinned(menu.payload.key) ? 'Quitar de fijados' : 'Fijar arriba', onClick: () => togglePin(menu.payload.key) },
+            ...(onToggleMute ? [{ label: mutedMap[menu.payload.key] ? 'Activar avisos' : 'Silenciar', onClick: () => onToggleMute(menu.payload.key, !mutedMap[menu.payload.key]) }] : []),
           ]}
         />
       )}
