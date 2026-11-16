@@ -10,7 +10,7 @@ export function ConvTabs({ tab, onTab, fileCount, pinCount }) {
     { id: 'pins', label: 'Fijados', n: pinCount },
   ]
   return (
-    <div className="mt-2 flex items-center gap-1 max-md:hidden" role="tablist">
+    <div className="mt-2 flex items-center gap-1 max-md:mt-1 max-md:px-1" role="tablist">
       {items.map((t) => (
         <button
           key={t.id}
@@ -18,7 +18,7 @@ export function ConvTabs({ tab, onTab, fileCount, pinCount }) {
           role="tab"
           aria-selected={tab === t.id}
           onClick={() => onTab(t.id)}
-          className={`relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150 ${tab === t.id ? 'bg-white/[0.1] text-[#F5F5F5]' : 'text-[#8A8A8A] hover:text-[#F5F5F5]'}`}
+          className={`relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150 max-md:px-4 max-md:py-2 max-md:text-[14px] ${tab === t.id ? 'bg-white/[0.1] text-[#F5F5F5]' : 'text-[#8A8A8A] hover:text-[#F5F5F5]'}`}
         >
           {t.label}
           {t.n > 0 && <span className="ml-1.5 text-[11.5px] tabular-nums text-[#8A8A8A]">{t.n}</span>}

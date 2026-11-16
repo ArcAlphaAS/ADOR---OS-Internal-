@@ -444,8 +444,8 @@ export default function ChatSidebar({ channels, groups, users, presence, current
         </div>
       )}
 
-      {!phone && (
-        <div className="flex items-center gap-0.5" role="tablist" aria-label="Filtrar conversaciones">
+      {(
+        <div className={phone ? 'flex items-center gap-1.5' : 'flex items-center gap-0.5'} role="tablist" aria-label="Filtrar conversaciones">
           {FILTERS.map((f) => {
             const active = f.id === 'mentions' ? view === 'mentions' : !view && filter === f.id
             const n = f.id === 'unread' ? totalUnread : f.id === 'mentions' ? viewCounts.mentions || 0 : 0
@@ -460,7 +460,7 @@ export default function ChatSidebar({ channels, groups, users, presence, current
                   setFilter(f.id)
                   if (view) onSelectView(null)
                 }}
-                className={`flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-[12px] font-medium transition-colors duration-150 ${active ? 'bg-white/[0.12] text-[#F5F5F5]' : 'text-[#8A8A8A] hover:text-[#F5F5F5]'}`}
+                className={`flex items-center gap-1 whitespace-nowrap rounded-full font-medium transition-colors duration-150 ${phone ? 'px-3.5 py-2 text-[14px]' : 'px-2 py-1 text-[12px]'} ${active ? 'bg-white/[0.12] text-[#F5F5F5]' : 'text-[#8A8A8A] hover:text-[#F5F5F5]'}`}
               >
                 {f.label}
                 {n > 0 && <span className="flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[10px] font-semibold" style={{ background: f.id === 'mentions' ? '#E8C15A' : '#F2EBDD', color: '#1C1A16' }}>{n > 9 ? '9+' : n}</span>}
