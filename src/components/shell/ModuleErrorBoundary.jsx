@@ -35,7 +35,7 @@ export default class ModuleErrorBoundary extends Component {
           <p className="mt-2 text-[13px] leading-relaxed text-[#888888]">
             Ya quedó registrado para revisarlo. El resto de ADOR OS sigue funcionando — puedes reintentar o ir a otra sección.
           </p>
-          <p className="mt-4 select-text break-words rounded-lg bg-white/[0.05] px-3 py-2 text-left font-mono text-[11px] leading-snug text-[#9A9A9A]">
+          <p className="mt-4 select-text whitespace-pre-wrap break-words rounded-lg bg-white/[0.05] px-3 py-2 text-left font-mono text-[11px] leading-snug text-[#9A9A9A]">
             {String(this.state.error?.message || this.state.error).slice(0, 220)}
             {this.state.where ? `\n${this.state.where.slice(0, 220)}` : ''}
           </p>
