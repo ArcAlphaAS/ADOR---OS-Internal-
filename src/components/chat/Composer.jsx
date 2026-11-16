@@ -60,6 +60,7 @@ async function computePeaks(blob, bars = 36) {
 
 function useVoiceRecorder({ onDone, onError }) {
   const [recording, setRecording] = useState(false)
+  const [preparing, setPreparing] = useState(false) // el micrófono se está abriendo: aún no se graba
   const [seconds, setSeconds] = useState(0)
   const [levels, setLevels] = useState([]) // volumen en vivo, una barra cada 0,6 s (para dibujar la onda mientras grabas)
   const [review, setReview] = useState(null) // nota ya grabada, esperando "enviar" o "descartar"
@@ -69,14 +70,54 @@ function useVoiceRecorder({ onDone, onError }) {
 
   const start = async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return onError('Este navegador no permite grabar audio.')
+    if (preparing || recording) return
+    setPreparing(true)
     let stream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
+      setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
     const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+    const chunks = []
+    let startedAt = Date.now()
+    cancelRef.current = false
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
+    rec.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop())
+      if (meterRef.current) {
+        clearInterval(meterRef.current.timer)
+        meterRef.current.ctx.close().catch(() => {})
+        meterRef.current = null
+      }
+      setRecording(false)
+      if (cancelRef.current) return
+      const duration = (Date.now() - startedAt) / 1000
+      if (duration < 1) return
+      const blob = new Blob(chunks, { type: rec.mimeType })
+      const reader = new FileReader()
+      reader.onload = async () => {
+        if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
+        const peaks = await computePeaks(blob)
+        setReview({ dataUrl: reader.result, duration, peaks }) // se escucha y se decide: enviar o descartar
+      }
+      reader.readAsDataURL(blob)
+    }
+    // La grabadora ya está abierta cuando aparece "grabando": nada de lo que digas
+    // al tocar el botón se pierde. El medidor de onda se prepara después, sin retrasarla.
+    rec.onstart = () => {
+      startedAt = Date.now()
+      setSeconds(0)
+      setLevels([])
+      setReview(null)
+      setPreparing(false)
+      setRecording(true)
+      haptic('light')
+    }
+    rec.start(250)
+    recRef.current = rec
     // Medidor de volumen: alimenta la onda que se dibuja mientras grabas.
     try {
       const AC = window.AudioContext || window.webkitAudioContext
@@ -100,36 +141,7 @@ function useVoiceRecorder({ onDone, onError }) {
     } catch {
       meterRef.current = null
     }
-    const chunks = []
-    const startedAt = Date.now()
-    cancelRef.current = false
-    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
-    rec.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop())
-      if (meterRef.current) {
-        clearInterval(meterRef.current.timer)
-        meterRef.current.ctx.close().catch(() => {})
-        meterRef.current = null
-      }
-      setRecording(false)
-      if (cancelRef.current) return
-      const duration = (Date.now() - startedAt) / 1000
-      if (duration < 1) return
-      const blob = new Blob(chunks, { type: rec.mimeType })
-      const reader = new FileReader()
-      reader.onload = async () => {
-        if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
-        const peaks = await computePeaks(blob)
-        setReview({ dataUrl: reader.result, duration, peaks }) // se escucha y se decide: enviar o descartar
-      }
-      reader.readAsDataURL(blob)
-    }
-    rec.start()
-    recRef.current = rec
-    setSeconds(0)
-    setLevels([])
-    setReview(null)
-    setRecording(true)
+
   }
 
   useEffect(() => {
@@ -155,6 +167,7 @@ function useVoiceRecorder({ onDone, onError }) {
 
   return {
     recording,
+    preparing,
     seconds,
     levels,
     review,
@@ -416,6 +429,17 @@ export default function Composer({ onSend, onError, onTyping, mentionCandidates 
   }
 
   const togglePanel = (id) => setPanel((p) => (p === id ? null : id))
+
+  if (voice.preparing && !voice.recording) {
+    return (
+      <div className="flex items-center gap-2.5 pt-1">
+        <div className="flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full bg-[#2C2C2E] px-5 text-[13.5px] text-[#9A9A9A]">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
+          Abriendo el micrófono… espera un momento
+        </div>
+      </div>
+    )
+  }
 
   if (voice.recording) {
     // Grabando: una cápsula con la onda en vivo (rojo), el tiempo y el botón de parar.
