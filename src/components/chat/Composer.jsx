@@ -77,59 +77,31 @@ function useVoiceRecorder({ onDone, onError }) {
     setPreparing(true)
     let stream
     try {
-      // Una nota de voz no necesita cancelación de eco (no suena nada mientras grabas) y esa
-      // etapa es la que más "come" sílabas y entrecorta. Mono a 48 kHz, con reducción de
-      // ruido y nivel automático para que se oiga parejo.
+      // Como al principio: el procesado de voz del sistema (eco, ruido y nivel automático)
+      // es lo que sube el volumen del micrófono del Mac. Una sola pista (mono).
       stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 48000, echoCancellation: false, noiseSuppression: true, autoGainControl: true },
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       })
     } catch {
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    // La voz pasa por un compresor suave y una ganancia antes de grabarse: el navegador
-    // suele entregar el micrófono muy bajo, y así la nota se oye con buen volumen sin
-    // que los picos distorsionen. Si el audio del navegador falla, se graba el micrófono tal cual.
+    // Solo para dibujar la onda en vivo: no toca lo que se graba.
     let ctx = null
     let an = null
-    let recStream = stream
     try {
       const AC = window.AudioContext || window.webkitAudioContext
-      ctx = new AC()
-      await ctx.resume?.()
-      const src = ctx.createMediaStreamSource(stream)
-      const comp = ctx.createDynamicsCompressor()
-      comp.threshold.value = -32
-      comp.knee.value = 24
-      comp.ratio.value = 3.5
-      comp.attack.value = 0.004
-      comp.release.value = 0.22
-      const gain = ctx.createGain()
-      gain.gain.value = 1.6
-      // Limitador final: la ganancia nunca empuja los picos más allá de lo que cabe (sin distorsión).
-      const limiter = ctx.createDynamicsCompressor()
-      limiter.threshold.value = -6
-      limiter.knee.value = 0
-      limiter.ratio.value = 20
-      limiter.attack.value = 0.002
-      limiter.release.value = 0.08
-      const dest = ctx.createMediaStreamDestination()
-      src.connect(comp)
-      comp.connect(gain)
-      gain.connect(limiter)
-      limiter.connect(dest)
+      ctx = new AC({ latencyHint: 'playback' })
       an = ctx.createAnalyser()
       an.fftSize = 256
-      limiter.connect(an)
-      recStream = dest.stream
+      ctx.createMediaStreamSource(stream).connect(an)
     } catch {
       ctx?.close?.().catch(() => {})
       ctx = null
       an = null
-      recStream = stream
     }
-    const rec = new MediaRecorder(recStream, { mimeType, audioBitsPerSecond: 32000 })
+    const rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 })
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
