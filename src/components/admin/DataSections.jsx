@@ -1,3 +1,4 @@
+import { toggleScreenDiagnostic, screenInfo } from '../../lib/screenDiagnostic'
 import { useEffect, useState } from 'react'
 import { subscribeUserProfile, subscribeMaintenance, recordBackup, subscribeDriveFolder, setDriveFolder, subscribeSeasonSettings, setSeasonsOff } from '../../lib/firestore'
 import { useDrivePicker } from '../../hooks/useDrivePicker'
@@ -216,6 +217,29 @@ export function SeasonSection() {
         style={{ background: off ? 'rgba(255,255,255,0.12)' : '#B8860B' }}
       >
         <span className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-transform duration-200" style={{ left: 2, transform: `translateX(${!off ? 16 : 0}px)` }} />
+      </button>
+    </div>
+  )
+}
+
+// Herramienta para revisar la pantalla de un teléfono: marca los bordes que usa la app.
+export function ScreenDiagnosticSection() {
+  const [on, setOn] = useState(false)
+  return (
+    <div className="ador-glass flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3">
+      <span className="min-w-0">
+        <span className="block text-[13px] font-medium text-[#F5F5F5]">Diagnóstico de pantalla</span>
+        <span className="mt-0.5 block text-[12px] leading-relaxed text-[#888888]">
+          Marca los bordes reales de la pantalla (magenta, cian y verde) para ver qué zona usa la app en un teléfono. Vuelve a tocarlo para quitarlo.
+        </span>
+        <span className="mt-1 block break-words text-[11px] text-[#636366]">{screenInfo()}</span>
+      </span>
+      <button
+        type="button"
+        onClick={() => setOn(toggleScreenDiagnostic())}
+        className="flex-shrink-0 rounded-full bg-white/[0.1] px-4 py-2 text-[12.5px] font-medium text-[#F5F5F5] hover:bg-white/[0.16]"
+      >
+        {on ? 'Quitar marcas' : 'Marcar bordes'}
       </button>
     </div>
   )

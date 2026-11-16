@@ -27,7 +27,7 @@ import { withTimeout, LAYERS, PRIORITIES, layerWeekSpan } from '../../lib/worksp
 import { useToast } from '../../hooks/useToast'
 import Avatar from '../shell/Avatar'
 import PhotoCropper from '../common/PhotoCropper'
-import { DriveFolderSection, BackupSection, SeasonSection, DeadlineTestSection } from './DataSections'
+import { DriveFolderSection, BackupSection, ScreenDiagnosticSection, SeasonSection, DeadlineTestSection } from './DataSections'
 import ServicesTab from './ServicesTab'
 
 // Administración (admins only — lib/access.js). Four tabs:
@@ -629,6 +629,7 @@ export default function AdminModule({ user }) {
           <DeadlineTestSection user={user} />
           <DriveFolderSection user={user} />
           <BackupSection user={user} />
+          <ScreenDiagnosticSection />
         </div>
       )}
     </motion.div>
