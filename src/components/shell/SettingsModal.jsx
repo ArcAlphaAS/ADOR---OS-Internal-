@@ -6,6 +6,7 @@ import Avatar from './Avatar'
 import { useUserPhoto } from '../../hooks/useUserPhoto'
 import { SPRING } from '../../lib/motion'
 import { useEscape } from '../../hooks/useEscape'
+import VoiceQualityPicker from '../common/VoiceQualityPicker'
 import { IDLE_KEY, IDLE_OPTIONS, readIdlePref } from '../../hooks/useIdleLock'
 
 function Section({ title, children }) {
@@ -116,6 +117,10 @@ export default function SettingsModal({ user, onClose, onResetPassword, onShowOn
           <div className="mt-6 flex flex-col gap-5">
             <Section title="Avisos">
               <PushNotificationsCard user={user} />
+            </Section>
+
+            <Section title="Notas de voz">
+              <div className="ador-glass rounded-2xl p-3"><VoiceQualityPicker /></div>
             </Section>
 
             <Section title="Pantalla de reposo">

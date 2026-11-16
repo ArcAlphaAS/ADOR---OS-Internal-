@@ -10,6 +10,7 @@ import { formatDuration } from './MessageBubble'
 import PersonAvatar from './PersonAvatar'
 import GifPicker, { gifsEnabled } from './GifPicker'
 import { releaseAudio } from '../../lib/audioBoost'
+import { readVoiceQuality } from '../../lib/voiceQuality'
 import { haptic } from '../../lib/haptics'
 
 // Firestore caps a document at 1MB; full-size images and voice notes live
@@ -91,39 +92,78 @@ function useVoiceRecorder({ onDone, onError }) {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return onError('Este navegador no permite grabar audio.')
     if (preparing || recording) return
     setPreparing(true)
+    const quality = readVoiceQuality()
     let stream
     try {
       // Igual que la primera versión, que sonaba nítida: sin restricciones de audio.
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: quality === 'alta' ? { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } : true,
+      })
       streamRef.current = stream
     } catch {
       setPreparing(false)
       return onError('Necesitamos permiso para usar el micrófono.')
     }
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t))
-    // Solo para dibujar la onda en vivo: no toca lo que se graba.
+    // El medidor de la onda mira el volumen. En alta fidelidad el micrófono llega sin nivel
+    // automático (bajo), así que la voz pasa por compresor, ganancia y limitador antes de grabarse.
     let ctx = null
     let an = null
+    let recStream = stream
     try {
       const AC = window.AudioContext || window.webkitAudioContext
       ctx = new AC()
       an = ctx.createAnalyser()
       an.fftSize = 256
-      ctx.createMediaStreamSource(stream).connect(an)
+      const src = ctx.createMediaStreamSource(stream)
+      if (quality === 'alta') {
+        await ctx.resume?.()
+        const comp = ctx.createDynamicsCompressor()
+        comp.threshold.value = -32
+        comp.knee.value = 24
+        comp.ratio.value = 3.5
+        comp.attack.value = 0.004
+        comp.release.value = 0.22
+        const gain = ctx.createGain()
+        gain.gain.value = 2.4
+        const limiter = ctx.createDynamicsCompressor()
+        limiter.threshold.value = -6
+        limiter.knee.value = 0
+        limiter.ratio.value = 20
+        limiter.attack.value = 0.002
+        limiter.release.value = 0.08
+        const dest = ctx.createMediaStreamDestination()
+        src.connect(comp)
+        comp.connect(gain)
+        gain.connect(limiter)
+        limiter.connect(dest)
+        limiter.connect(an)
+        recStream = dest.stream
+      } else {
+        src.connect(an)
+      }
       ctxRef.current = ctx
     } catch {
       ctx?.close?.().catch(() => {})
       ctx = null
       an = null
+      recStream = stream
     }
     let rec
     try {
-      rec = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 24000 })
+      rec = new MediaRecorder(recStream, { mimeType, audioBitsPerSecond: quality === 'alta' ? 48000 : 24000 })
     } catch {
       releaseMic()
       setPreparing(false)
       return onError('No se pudo iniciar la grabación en este dispositivo.')
     }
+    // Diagnóstico a la vista: con qué calidad capturó el micrófono (un teléfono en "modo
+    // llamada" suele dar 8 o 16 kHz y suena como radio).
+    let info = ''
+    try {
+      const st = stream.getAudioTracks()[0]?.getSettings?.() || {}
+      info = [st.sampleRate ? `${Math.round(st.sampleRate / 1000)} kHz` : null, quality === 'alta' ? 'alta fidelidad' : 'voz', st.echoCancellation ? 'eco sí' : 'eco no'].filter(Boolean).join(' · ')
+    } catch { /* sin datos */ }
     const chunks = []
     let startedAt = Date.now()
     cancelRef.current = false
@@ -139,7 +179,7 @@ function useVoiceRecorder({ onDone, onError }) {
       reader.onload = async () => {
         if (reader.result.length > MAX_BLOB_CHARS) return onError('La nota de voz es demasiado larga.')
         const analysis = await computePeaks(blob)
-        setReview({ dataUrl: reader.result, duration, peaks: analysis?.peaks || null, boost: analysis?.boost || 1 }) // se escucha y se decide: enviar o descartar
+        setReview({ dataUrl: reader.result, duration, peaks: analysis?.peaks || null, boost: analysis?.boost || 1, info }) // se escucha y se decide: enviar o descartar
       }
       reader.readAsDataURL(blob)
     }
@@ -256,6 +296,7 @@ export function VoiceReview({ review, onSend, onDiscard }) {
   }
   const peaks = review.peaks?.length ? review.peaks : Array.from({ length: 36 }, () => 30)
   return (
+    <div>
     <div className="flex items-center gap-2.5 pt-1">
       <button type="button" onClick={onDiscard} aria-label="Descartar" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#2C2C2E] text-[#FF8A84]">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
@@ -274,6 +315,8 @@ export function VoiceReview({ review, onSend, onDiscard }) {
           <ArrowRightIcon size={17} />
         </button>
       </div>
+    </div>
+    {review.info && <p className="mt-1.5 px-14 text-[11px] text-[#6F6F6F]">Grabado: {review.info}</p>}
     </div>
   )
 }
