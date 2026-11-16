@@ -23,6 +23,7 @@ export function useAchievements(user) {
   useEffect(() => {
     if (!user?.uid || user.uid === 'preview') return undefined
     const uid = user.uid
+    const first = (user.displayName || '').trim().split(/\s+/)[0]
     const startedAt = Date.now()
     const live = () => Date.now() - startedAt > GRACE_MS
 
@@ -85,7 +86,7 @@ export function useAchievements(user) {
             } catch {
               /* ignore */
             }
-            celebrate({ title: 'Día despejado', subtitle: 'Completaste todo lo de hoy' })
+            celebrate({ title: `Día cerrado${first ? `, ${first}` : ''}`, subtitle: 'Completaste todo lo de hoy', variant: 'day' })
           }
         }
       }

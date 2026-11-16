@@ -16,6 +16,8 @@ export function usePerson(uid) {
     // Directorio photo first (curated), then the one on the account profile.
     photo: entry?.photoDataUrl || user?.photoDataUrl || null,
     presence: uid ? presence[uid] : null,
+    role: entry?.role || '',
+    area: entry?.area || '',
   }
 }
 

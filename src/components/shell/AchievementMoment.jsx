@@ -9,12 +9,42 @@ import { SPRING } from '../../lib/motion'
 // from the motion wrapper per the transform+blur rule (CLAUDE.md §11).
 const GOLD = '#E8C15A'
 const SHOW_MS = 5200
+const SHOW_DAY_MS = 6400
 const BURST = Array.from({ length: 12 }, (_, i) => {
   const angle = (i / 12) * Math.PI * 2
   return { x: Math.cos(angle) * 30, y: Math.sin(angle) * 30, size: i % 2 ? 3 : 2 }
 })
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+// El cierre del día: un anillo grande que se completa despacio, como los del Apple Watch,
+// con un destello al cerrarse.
+function DayRing() {
+  const spark = Array.from({ length: 16 }, (_, i) => {
+    const a = (i / 16) * Math.PI * 2
+    return { x: Math.cos(a) * 42, y: Math.sin(a) * 42, size: i % 3 ? 2 : 3 }
+  })
+  return (
+    <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center">
+      {!reduced() &&
+        spark.map((b, i) => (
+          <motion.span
+            key={i}
+            className="absolute rounded-full"
+            style={{ width: b.size, height: b.size, background: GOLD }}
+            initial={{ x: 0, y: 0, opacity: 0, scale: 1 }}
+            animate={{ x: b.x, y: b.y, opacity: [0, 1, 0], scale: 0.3 }}
+            transition={{ duration: 1, delay: 1.15, ease: 'easeOut' }}
+          />
+        ))}
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="28" cy="28" r="23" stroke={GOLD} strokeOpacity="0.16" strokeWidth="5" />
+        <motion.circle cx="28" cy="28" r="23" stroke={GOLD} strokeWidth="5" transform="rotate(-90 28 28)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }} />
+        <motion.path d="M19 28.5l6 6 12-13.5" stroke={GOLD} strokeWidth="3" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.45, delay: 1.0, ease: 'easeOut' }} />
+      </svg>
+    </div>
+  )
+}
 
 function CheckRing() {
   return (
@@ -44,10 +74,10 @@ export default function AchievementMoment() {
 
   useEffect(() => {
     const onMoment = (event) => {
-      const { title, subtitle } = event.detail || {}
+      const { title, subtitle, variant } = event.detail || {}
       if (!title) return
       idRef.current += 1
-      setQueue((q) => [...q, { id: idRef.current, title, subtitle }])
+      setQueue((q) => [...q, { id: idRef.current, title, subtitle, variant }])
     }
     window.addEventListener(MOMENT_EVENT, onMoment)
     return () => window.removeEventListener(MOMENT_EVENT, onMoment)
@@ -58,7 +88,7 @@ export default function AchievementMoment() {
 
   useEffect(() => {
     if (!current) return undefined
-    const timer = setTimeout(dismiss, SHOW_MS)
+    const timer = setTimeout(dismiss, current.variant === 'day' ? SHOW_DAY_MS : SHOW_MS)
     return () => clearTimeout(timer)
   }, [current?.id, dismiss])
 
@@ -83,7 +113,7 @@ export default function AchievementMoment() {
               className="ador-modal-surface flex max-w-[min(420px,calc(100vw-32px))] items-center gap-3.5 rounded-2xl py-3 pl-3.5 pr-6 text-left"
               style={{ boxShadow: `0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px ${GOLD}33` }}
             >
-              <CheckRing />
+              {current.variant === 'day' ? <DayRing /> : <CheckRing />}
               <span className="min-w-0">
                 <span className="block text-[13.5px] font-semibold text-[#F5F5F5]">{current.title}</span>
                 {current.subtitle && <span className="mt-0.5 block truncate text-[12.5px] text-[#9A9A9A]">{current.subtitle}</span>}

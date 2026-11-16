@@ -1,3 +1,4 @@
+import PersonAvatar, { usePerson } from './PersonAvatar'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageIcon } from '../icons'
@@ -66,7 +67,25 @@ function groupFlags(list) {
   })
 }
 
-export function MessageThread({ conversationKey, isDm, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onCreateEvent, onOpenEvent, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
+// Primer mensaje de una conversación directa: quién es la otra persona, como el
+// encabezado de iMessage al empezar un chat.
+function EmptyDm({ uid }) {
+  const person = usePerson(uid)
+  const first = (person.name || '').split(' ')[0]
+  const sub = [person.role, person.area].filter(Boolean).join(' · ')
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-1 px-6 text-center">
+      <div style={{ animation: 'ador-msg-in 420ms cubic-bezier(0.22,1,0.36,1) both' }} className="flex flex-col items-center">
+        <PersonAvatar uid={uid} name={person.name} size={76} showPresence />
+        <p className="mt-4 text-[19px] font-semibold tracking-[-0.01em] text-[#F5F5F5]">{person.name || 'Conversación'}</p>
+        {sub && <p className="mt-0.5 text-[13px] text-[#8A8A8A]">{sub}</p>}
+        <p className="mt-5 text-[13.5px] text-[#8A8A8A]">{first ? `Empieza la conversación con ${first}.` : 'Empieza la conversación.'}</p>
+      </div>
+    </div>
+  )
+}
+
+export function MessageThread({ conversationKey, isDm, peerUid, newSince, messages, currentUid, query, hasMore, onLoadMore, savedIds, userName, userPhoto, receiptFor, onEdit, onDelete, onOpenProfile, onReact, onToggleSave, onOpenImage, onOpenThread, pinnedIds, onTogglePin, onRemind, onCreateTask, onCreateEvent, onOpenEvent, onOpenTask, onOpenEntity, onReply, onForward, onJump, onVote, onClosePoll, onAck, audienceUids }) {
   const scrollRef = useRef(null)
   const loadingOlderRef = useRef(null)
   const positionedRef = useRef(null) // conversationKey already positioned on open
@@ -253,10 +272,14 @@ export function MessageThread({ conversationKey, isDm, newSince, messages, curre
         </div>
       )}
       {messages.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <MessageIcon size={20} className="text-[#8A8A8A]" />
-          <p className="text-[13.5px] text-[#8A8A8A]">Sin mensajes todavía — escribe el primero.</p>
-        </div>
+        isDm && peerUid ? (
+          <EmptyDm uid={peerUid} />
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+            <MessageIcon size={20} className="text-[#8A8A8A]" />
+            <p className="text-[13.5px] text-[#8A8A8A]">Sin mensajes todavía — escribe el primero.</p>
+          </div>
+        )
       ) : (
         shown.map((mi, i) => {
           if (skipIdx.has(i)) return null

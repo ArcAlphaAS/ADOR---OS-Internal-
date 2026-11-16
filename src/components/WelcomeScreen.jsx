@@ -163,9 +163,9 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
   useEffect(() => {
     if (!dismissing || finished.current) return
     finished.current = true
-    const timer = setTimeout(onDismiss, reduce ? 150 : 620)
+    const timer = setTimeout(onDismiss, reduce ? 150 : phone ? 620 : 760)
     return () => clearTimeout(timer)
-  }, [dismissing, onDismiss, reduce])
+  }, [dismissing, onDismiss, reduce, phone])
 
   // Escritorio: la luz y el reloj siguen al cursor con un parallax muy leve.
   const mx = useMotionValue(0)
@@ -258,8 +258,14 @@ export default function WelcomeScreen({ uid, name = 'Ángel', isReturning = fals
       >
         <motion.div
           className="flex h-full flex-col items-center justify-center px-6"
-          animate={dismissing && !reduce ? { y: -70, scale: 0.93, opacity: 0, filter: 'blur(14px)' } : { y: 0, scale: 1, opacity: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          animate={
+            dismissing && !reduce
+              ? phone
+                ? { y: -70, scale: 0.93, opacity: 0, filter: 'blur(14px)' }
+                : { x: '34vw', y: '-36vh', scale: 0.3, opacity: 0, filter: 'blur(6px)' } // se recoge hacia la esquina, como al abrir un Mac
+              : { x: 0, y: 0, scale: 1, opacity: 1, filter: 'blur(0px)' }
+          }
+          transition={{ duration: phone ? 0.6 : 0.72, ease: [0.4, 0, 0.2, 1] }}
         >
           <motion.p
             initial={{ opacity: 0, y: 8 }}

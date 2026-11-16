@@ -868,6 +868,7 @@ export default function ChatModule({ user, focus, onFocusHandled, onNavigate, sc
             <MessageThread
               conversationKey={activeConversationId}
               isDm={selected.type === 'dm'}
+              peerUid={selected.type === 'dm' ? selected.id : undefined}
               newSince={newSince}
               messages={messages}
               currentUid={user.uid}
